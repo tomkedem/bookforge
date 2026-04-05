@@ -8,9 +8,9 @@
 
 ## הסוכנים במערכת
 
-Explorer, Parser, Content Architect,
-Organizer, UI Designer, Builder,
-Memory Keeper, Quality Gate
+Explorer, Parser, Content Architect, Organizer,
+Translator, UI Designer, Builder, Memory Keeper,
+Error Handler, Code Reviewer, Quality Gate
 
 ## דרישות
 
@@ -20,4 +20,9 @@ Git
 
 ## מבנה הפרויקט
 
-יתעדכן פרק אחר פרק לאורך הספר.
+מתעדכן פרק אחר פרק לאורך הספר.
+
+## הקוד בפעולה
+
+עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
+https://github.com/tomkedem/bookforge
