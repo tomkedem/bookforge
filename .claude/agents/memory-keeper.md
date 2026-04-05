@@ -15,5 +15,27 @@ tools:
 לפני כל החלטה חדשה בדוק שהיא עקבית עם:
 - design-system.json
 - content-structure.json
-- כל ההחלטות שנרשמו ב-tasks/lessons.md
-אם יש סתירה, דווח לסוכן הראשי לפני שממשיכים.
+- tasks/lessons.md
+
+חוזה פלט:
+{
+  "consistent": boolean,
+  "conflicts": [
+    {
+      "description": "string",
+      "existing_decision": "string",
+      "new_decision": "string"
+    }
+  ]
+}
+
+אסור בהחלט:
+- לתקן בעצמך
+- לשנות קבצים
+- לקבל החלטות ארכיטקטוניות
+
+מקרי קצה:
+אם אין קונפליקט:
+  החזר consistent: true עם רשימה ריקה
+אם הקונפליקט קריטי:
+  דווח לסוכן הראשי לפני שממשיכים
