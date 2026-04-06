@@ -1,0 +1,52 @@
+---
+interface Props {
+  prevChapter?: { id: string; title: string };
+  nextChapter?: { id: string; title: string };
+  lang?: 'he' | 'en';
+}
+
+const { prevChapter, nextChapter, lang = 'he' } = Astro.props;
+
+const labels = {
+  prev: lang === 'he' ? 'הפרק הקודם' : 'Previous chapter',
+  next: lang === 'he' ? 'הפרק הבא' : 'Next chapter',
+};
+---
+
+<nav
+  dir="rtl"
+  class="flex justify-between items-center py-6 px-4 border-t border-gray-200 mt-12 gap-4"
+  aria-label={lang === 'he' ? 'ניווט בין פרקים' : 'Chapter navigation'}
+>
+  <div class="flex-1">
+    {nextChapter && (
+      <a
+        href={`/sample-book/${nextChapter.id}`}
+        class="group flex flex-col items-start gap-1 text-sm"
+      >
+        <span class="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
+          ← {labels.next}
+        </span>
+        <span class="text-gray-800 font-medium group-hover:text-blue-600 transition-colors line-clamp-1">
+          {nextChapter.title}
+        </span>
+      </a>
+    )}
+  </div>
+
+  <div class="flex-1 text-left">
+    {prevChapter && (
+      <a
+        href={`/sample-book/${prevChapter.id}`}
+        class="group flex flex-col items-end gap-1 text-sm"
+      >
+        <span class="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
+          {labels.prev} →
+        </span>
+        <span class="text-gray-800 font-medium group-hover:text-blue-600 transition-colors line-clamp-1">
+          {prevChapter.title}
+        </span>
+      </a>
+    )}
+  </div>
+</nav>

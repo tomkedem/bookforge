@@ -1,0 +1,47 @@
+---
+interface Chapter {
+  id: string;
+  title: { he: string; en: string };
+  order: number;
+}
+
+interface Props {
+  chapters: Chapter[];
+  currentChapterId: string;
+  lang?: 'he' | 'en';
+}
+
+const { chapters, currentChapterId, lang = 'he' } = Astro.props;
+---
+
+<nav
+  dir="rtl"
+  class="hidden md:block w-64 shrink-0 sticky top-8 h-fit px-4 py-6 border-l border-gray-200"
+  aria-label="תוכן עניינים"
+>
+  <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+    {lang === 'he' ? 'תוכן עניינים' : 'Contents'}
+  </p>
+  <ul class="space-y-1">
+    {chapters.map((ch) => {
+      const isActive = ch.id === currentChapterId;
+      const title = lang === 'he' ? ch.title.he : ch.title.en;
+      return (
+        <li>
+          <a
+            href={`/sample-book/${ch.id}`}
+            class:list={[
+              'block py-2 px-3 text-sm rounded-md transition-colors duration-150',
+              isActive
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50',
+            ]}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            {title}
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</nav>
