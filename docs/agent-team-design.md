@@ -1,10 +1,9 @@
-# agent-team-design.md
 # תכנון צוות הסוכנים של BookForge
 
 ## מתי משתמשים ב-Agent Teams
 
 Agent Teams מופעלים כשיש צורך בתקשורת ישירה בין סוכנים.
-ב-BookForge זה קורה בשלב הביקורת, כשMemory Keeper,
+ב-BookForge זה קורה בשלב הביקורת, כש-Memory Keeper,
 Error Handler, ו-Code Reviewer עובדים במקביל על אותו קומפוננט.
 
 ## הרכב הצוות
@@ -19,25 +18,29 @@ Error Handler, ו-Code Reviewer עובדים במקביל על אותו קומפ
 
 ## תקשורת מותרת בין teammates
 
+```
 memory   <-> reviewer
 memory   <-> error
-error    <-> builder
 reviewer  -> quality-gate
 memory    -> quality-gate
 error     -> quality-gate
-builder   -> quality-gate
+```
 
 כל תקשורת שלא מוגדרת כאן עוברת דרך הסוכן הראשי.
 
 ## מבנה ה-inbox
 
+```
 .claude/
 └── team/
-├── memory-inbox.json
-├── reviewer-inbox.json
-├── error-inbox.json
-└── quality-gate-inbox.json
+    ├── memory-inbox.json
+    ├── reviewer-inbox.json
+    ├── error-inbox.json
+    └── quality-gate-inbox.json
+```
+
 ## פורמט הודעה
+
 ```json
 {
   "from": "string",
@@ -86,6 +89,7 @@ Code Reviewer מגלה שקומפוננט BookCard לא עקבי עם design-sys
 ## הפעלה
 
 הוסף ל-settings.json:
+
 ```json
 {
   "env": {

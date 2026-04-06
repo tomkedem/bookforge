@@ -58,3 +58,15 @@
 output/{book-name}/chapter-01.he.md    פרק בעברית
 output/{book-name}/chapter-01.en.md    פרק באנגלית
 output/{book-name}/assets/             תמונות
+
+## כלל בחירה: Subagents או Agent Teams
+
+השתמש ב-Subagents כשהמשימות עצמאיות:
+Explorer, Parser, Content Architect, Organizer,
+Translator, UI Designer, Builder.
+כל אחד עובד לבד ומחזיר תוצאה לסוכן הראשי.
+
+השתמש ב-Agent Teams כשהסוכנים צריכים לדבר:
+Memory Keeper, Error Handler, Code Reviewer.
+שלושתם עובדים על אותו קומפוננט בו זמנית
+ומשפיעים אחד על השני תוך כדי עבודה.
