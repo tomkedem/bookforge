@@ -21,24 +21,16 @@
 
 ```
 output/
-├── ai-developer-fitness/
-│   ├── chapter-01.he.md
-│   ├── chapter-01.en.md
-│   ├── chapter-02.he.md
-│   ├── chapter-02.en.md
-│   └── assets/
-│       ├── chapter-01/
-│       │   ├── image-01.png
-│       │   └── image-02.png
-│       └── chapter-02/
-│           └── image-01.png
-├── mipkuda-lemaatzar/
-│   ├── chapter-01.he.md
-│   ├── chapter-01.en.md
-│   └── assets/
-└── sefer-shlishi/
-    ├── chapter-01.he.md
-    └── assets/
+├── chapter-01.he.md
+├── chapter-01.en.md
+├── chapter-02.he.md
+├── chapter-02.en.md
+└── assets/
+    ├── chapter-01/
+    │   ├── image-01.png
+    │   └── image-02.png
+    └── chapter-02/
+        └── image-01.png
 ```
 
 בניית קומפוננטים של Yuval לפי מבנה התוכן.
@@ -109,6 +101,46 @@ output/
 
 תמונות מאורגנות בתיקייה נפרדת:
 - assets/chapter-01/image-01.png
+
+## פיצ'רים גרסה ראשונה
+
+שלושה פיצ'רים בלבד. עשה אותם טוב יותר מכולם.
+
+**Mobile-first**
+הממשק מתוכנן קודם למסך קטן ואז מורחב למסך גדול.
+בטלפון: טקסט נקי שתופס את כל המסך, תפריטים נסתרים.
+במחשב: עיצוב יוקרתי עם שני תפריטים צידיים.
+
+**Reading Progress**
+הקורא עוצר באמצע פרק, פותח מחר בטלפון, ממשיך מאותה שורה.
+נשמר ב-cookie. פשוט ובלתי ניתן להחלפה.
+
+**שיתוף ציטוט**
+סימון טקסט פותח כפתור אחד: שתף.
+מייצר תמונה עם הציטוט ושם הספר.
+מנגנון השיווק הכי חזק לספרים.
+
+## החלטות טכנולוגיות
+
+### Framework
+Astro. נבחר כי Yuval היא פלטפורמת קריאה עם תוכן סטטי בעיקרה.
+ביצועים מעולים מחוץ לקופסה ותמיכה מלאה ב-RTL.
+
+### CSS
+Tailwind CSS. רספונסיביות מלאה עם breakpoints מובנים.
+תמיכה ב-RTL דרך rtl: prefix.
+
+### שפה
+TypeScript לאורך כל הפרויקט.
+
+### בדיקות
+Vitest לבדיקות יחידה.
+Playwright לבדיקות רספונסיביות ו-end-to-end.
+
+### רספונסיביות
+האתר חייב לעבוד במלואו בכל מכשיר.
+Tailwind breakpoints: sm, md, lg, xl.
+בדיקות Playwright על mobile, tablet, desktop.
 
 ---
 

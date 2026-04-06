@@ -1,5 +1,20 @@
-## Project Index
+# BookForge
 
+## מה המערכת עושה
+מקבלת ספר בעברית בפורמט Word או PDF, מפרקת אותו לפרקים,
+לכל פרק קובץ MD נפרד. כל פרק מתורגם לאנגלית אוטומטית.
+הפלט הסופי: שתי גרסאות מלאות של הספר, עברית ואנגלית.
+מהתוכן הזה נבנית Yuval, פלטפורמת קריאה דיגיטלית ברמה עולמית.
+
+## טכנולוגיות
+
+Framework: Astro
+CSS: Tailwind CSS עם תמיכה מלאה ב-RTL
+שפה: TypeScript
+בדיקות: Vitest לבדיקות יחידה, Playwright לבדיקות רספונסיביות
+רספונסיביות: מלאה, breakpoints: sm, md, lg, xl
+
+## Project Index
 
 ### סוכנים
 .claude/agents/explorer.md           סורק מבנה קבצים
@@ -8,11 +23,28 @@
 .claude/agents/organizer.md          מסדר קבצי MD
 .claude/agents/translator.md         מתרגם מעברית לאנגלית
 .claude/agents/ui-designer.md        מעצב קומפוננטים
-.claude/agents/builder.md            בונה קוד Next.js
+.claude/agents/builder.md            בונה קוד Astro
 .claude/agents/memory-keeper.md      שומר עקביות
 .claude/agents/error-handler.md      מזהה ומתקן שגיאות
 .claude/agents/code-reviewer.md      בודק איכות קוד
 .claude/agents/quality-gate.md       שער איכות סופי
+
+### פלט
+output/{book-name}/chapter-01.he.md    פרק בעברית
+output/{book-name}/chapter-01.en.md    פרק באנגלית
+output/{book-name}/assets/             תמונות
+
+## כלל בחירה: Subagents או Agent Teams
+
+השתמש ב-Subagents כשהמשימות עצמאיות:
+Explorer, Parser, Content Architect, Organizer,
+Translator, UI Designer, Builder.
+כל אחד עובד לבד ומחזיר תוצאה לסוכן הראשי.
+
+השתמש ב-Agent Teams כשהסוכנים צריכים לדבר:
+Memory Keeper, Error Handler, Code Reviewer.
+שלושתם עובדים על אותו קומפוננט בו זמנית
+ומשפיעים אחד על השני תוך כדי עבודה.
 
 ## סדר הפעלת הסוכנים
 
@@ -44,7 +76,7 @@
 
 7. הפעל Builder
    קלט: כל קבצי MD + design-system.json
-   פלט: קומפוננטים ב-Next.js
+   פלט: קומפוננטים ב-Astro
 
 8. הפעל במקביל: Memory Keeper, Error Handler, Code Reviewer
    קלט: פלט ה-Builder
@@ -54,19 +86,27 @@
    קלט: כל הדוחות
    פלט: אישור או דחייה
 
-### פלט
-output/{book-name}/chapter-01.he.md    פרק בעברית
-output/{book-name}/chapter-01.en.md    פרק באנגלית
-output/{book-name}/assets/             תמונות
+## עקרונות SOLID
 
-## כלל בחירה: Subagents או Agent Teams
+כל סוכן אחראי על דבר אחד בלבד.
+כל סוכן מקבל ומחזיר פורמט מוגדר.
+סוכן לא יודע על המימוש הפנימי של סוכן אחר.
+תלות בממשק, לא בהתנהגות פנימית.
+רשימת הבדיקות ניתנת להרחבה ללא שינוי הלוגיקה.
 
-השתמש ב-Subagents כשהמשימות עצמאיות:
-Explorer, Parser, Content Architect, Organizer,
-Translator, UI Designer, Builder.
-כל אחד עובד לבד ומחזיר תוצאה לסוכן הראשי.
+## כללי עבודה
 
-השתמש ב-Agent Teams כשהסוכנים צריכים לדבר:
-Memory Keeper, Error Handler, Code Reviewer.
-שלושתם עובדים על אותו קומפוננט בו זמנית
-ומשפיעים אחד על השני תוך כדי עבודה.
+- תכנן לפני שאתה מבצע
+- כתוב לtasks/todo.md לפני כל משימה
+- אחרי כל תיקון שהמשתמש עושה, עדכן tasks/lessons.md
+- שאל את עצמך: would a staff engineer approve this?
+- עבוד תמיד על branch נפרד
+- mobile-first בכל קומפוננט, תכנן למסך קטן ואז הרחב
+- שלושת פיצ'רי הגרסה הראשונה: Reading Progress, שיתוף ציטוט, Mobile-first
+
+## גבולות
+
+- אל תגע בoutput/ ללא אישור מפורש
+- אל תמחק קבצים, רק צור ועדכן
+- אל תריץ פקודות שמשנות סביבה גלובלית
+- אל תשנה design-system.json ללא אישור מפורש
