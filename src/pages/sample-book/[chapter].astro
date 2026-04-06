@@ -20,6 +20,8 @@ const CHAPTERS = [
 ] as const;
 
 const { chapter } = Astro.params;
+if (!chapter) return Astro.redirect('/404');
+
 const lang = (Astro.url.searchParams.get('lang') ?? 'he') as 'he' | 'en';
 
 const currentIndex = CHAPTERS.findIndex((c) => c.id === chapter);
