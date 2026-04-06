@@ -110,3 +110,21 @@ Memory Keeper, Error Handler, Code Reviewer.
 - אל תמחק קבצים, רק צור ועדכן
 - אל תריץ פקודות שמשנות סביבה גלובלית
 - אל תשנה design-system.json ללא אישור מפורש
+
+## כללי Git
+
+- עבוד תמיד על branch נפרד, לעולם לא על main
+- שם ה-branch: feature/{task-name} או fix/{issue-name}
+- בצע commit אחרי כל שלב עצמאי שהושלם
+- הודעת commit: {type}: {description} בקיצור ובאנגלית
+- אל תמזג ל-main בלי אישור מפורש
+- אם משהו משתבש, עצור ודווח לפני שתמשיך
+
+## כללי branches ו-PRs
+
+- branch חדש לכל ספר: feature/add-{book-name}
+- לעולם אל תמזג ל-main בלי אישור מפורש
+- פתח PR עם תיאור מלא לפני סיום העבודה
+- תיאור ה-PR חייב לכלול: שם הספר, מספר פרקים, שפות
+
+
