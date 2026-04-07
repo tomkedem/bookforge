@@ -1,0 +1,210 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-ouamjn2i> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>פרק 1: שינוי מודל המנטלי</title><link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Heebo:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/_astro/_chapterNum_.CzEznPy_.css">
+<style>main[data-astro-cid-z3kgy54x]{direction:rtl}article[data-astro-cid-z3kgy54x] h1[data-astro-cid-z3kgy54x]{font-family:Frank Ruhl Libre,serif;font-size:2.5rem;font-weight:700;margin-bottom:2rem}article[data-astro-cid-z3kgy54x] p[data-astro-cid-z3kgy54x]{margin-bottom:1.5rem;line-height:1.8}
+</style></head> <body data-astro-cid-ouamjn2i> <header class="sticky top-0 bg-white border-b border-gray-200 z-50" data-astro-cid-3ef6ksr2> <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" data-astro-cid-3ef6ksr2> <div class="flex items-center gap-8" data-astro-cid-3ef6ksr2> <a href="/" class="text-2xl font-bold" data-astro-cid-3ef6ksr2>BookForge</a> <div class="hidden md:flex gap-6" data-astro-cid-3ef6ksr2> <a href="/" class="text-gray-600 hover:text-black" data-astro-cid-3ef6ksr2>Home</a> </div> </div> <div class="flex items-center gap-4" data-astro-cid-3ef6ksr2> <button id="langToggle" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition" data-astro-cid-3ef6ksr2> <span id="langText" data-astro-cid-3ef6ksr2>HE</span> </button> </div> </nav> </header> <script type="module">const a=document.getElementById("langToggle"),l=document.getElementById("langText");function o(){return localStorage.getItem("yuval-lang")||"he"}function c(e){localStorage.setItem("yuval-lang",e),l&&(l.textContent=e==="he"?"HE":"EN"),document.querySelectorAll("[data-he]").forEach(t=>{const n=t;n.style.display=e==="he"?"":"none"}),document.querySelectorAll("[data-en]").forEach(t=>{const n=t;n.style.display=e==="en"?"":"none"}),document.documentElement.dir=e==="he"?"rtl":"ltr",document.documentElement.lang=e}c(o());a?.addEventListener("click",()=>{const t=o()==="he"?"en":"he";c(t)});</script>  <div class="container" data-astro-cid-ouamjn2i>  <main class="max-w-4xl mx-auto px-4 py-8" data-astro-cid-z3kgy54x> <!-- Progress Bar --> <div class="mb-8" data-astro-cid-z3kgy54x> <div class="w-full bg-gray-200 h-1 rounded overflow-hidden" data-astro-cid-z3kgy54x> <div class="bg-black h-full" style="width: 50%" data-astro-cid-z3kgy54x></div> </div> <p class="text-sm text-gray-600 mt-2" data-astro-cid-z3kgy54x> <span data-he="פרק 2 מתוך 4" data-en="Chapter 2 of 4" data-astro-cid-z3kgy54x>
+Chapter 2 of 4 </span> </p> </div> <!-- Chapter Content --> <article class="prose prose-lg max-w-none mb-12" data-astro-cid-z3kgy54x> <h1 data-he="פרק 1: שינוי מודל המנטלי" data-en="פרק 1: שינוי מודל המנטלי" data-astro-cid-z3kgy54x>פרק 1: שינוי מודל המנטלי</h1> <div class="content-he" data-astro-cid-z3kgy54x># פרק 1: שינוי מודל המנטלי
+
+מעוזר שמגיב למערכת שמייצרת
+
+אתה משתמש ב-Claude Code. אתה נותן לו משימה, הוא מבצע, אתה בודק, נותן משימה נוספת. זה עובד. הקוד יוצא סביר. העבודה מתקדמת.
+
+אבל שים לב למה שקורה בפועל.
+
+אתה זה שמחזיק את כל הפרויקט בראש. אתה זה שיודע מה נעשה, מה נשאר, ומה הצעד הבא. הסוכן מבצע רק מה שאתה מבקש ממנו בכל רגע נתון. ברגע שתפסיק לתת פקודות, הכל עוצר.
+
+זה לא עבודה עם מערכת סוכנים. זה עבודה עם עוזר חכם מאוד שצריך הנחיה מתמדת.
+
+ההבדל בין השניים הוא לא טכני. זה הבדל בגישה. וההבדל הזה הוא מה שקובע אם תבנה תוכנה ברמה גבוהה לבד, או תישאר תלוי בעצמך בכל צעד.
+
+שלושה תרחישים השוואתיים
+
+כדי להבין את ההבדל בצורה קונקרטית, ניקח משימה אחת ונראה אותה בשלוש גישות שונות.
+
+המשימה: "בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים."
+
+גישה א: ליניארית
+
+אתה:   "כתוב קומפוננט React שמציג רשימת ספרים."
+
+Claude: כותב BookList.tsx
+
+אתה:   "עכשיו הוסף עיצוב."
+
+Claude: מוסיף CSS
+
+אתה:   "עכשיו הוסף pagination."
+
+Claude: מוסיף pagination
+
+אתה:   "עכשיו..."
+
+כל צעד תלוי בך. אתה ה-orchestrator. Claude הוא הידיים. ברגע שאתה עוצר, הכל עוצר.
+
+גישה ב: משימה אחת גדולה
+
+אתה: "בנה דף ראשי מלא לפלטפורמת Yuval עם רשימת ספרים, עיצוב מרשים, pagination, ותמיכה בעברית ואנגלית."
+
+Claude: כותב הכל בבת אחת
+
+נשמע יעיל. אבל מה שיוצא הוא קוד שמנסה לעשות הכל בקובץ אחד, בלי ארכיטקטורה, בלי עקביות עם שאר הפרויקט, ובלי שום ביקורת על מה שנוצר. כשמשהו לא עובד, קשה לדעת איפה הבעיה.
+
+גישה ג: מערכת סוכנים
+
+אתה:  "בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים.
+
+עבוד לפי .CLAUDE.md Explorer יסרוק את הקומפוננטים הקיימים לפני שמתחילים.
+
+UI Designer יגדיר את העיצוב. Builder יממש. Code Reviewer יבדוק. Quality Gate יאשר לפני שמסיימים."
+
+אתה נותן את המשימה פעם אחת. המערכת מחליטה איך לבצע. אתה מקבל תוצאה שעברה ביקורת עצמית לפני שהגיעה אליך.
+
+ההבדל אינו במה שנכתב. ההבדל הוא במי שמחזיק את האחריות לאורך הדרך.
+
+בגישה א ובגישה ב האחריות אצלך. בגישה ג האחריות אצל המערכת.
+
+תרגיל תכנון ארכיטקטוני
+
+לפני שכותבים שורת קוד אחת ב-BookForge, עצור וענה על שלוש שאלות.
+
+שאלה ראשונה: אילו החלטות אתה רוצה שהמערכת תקבל לבד?
+
+לדוגמה: איך לפרק פרק, איך לארגן קבצי MD, איך לתרגם תוכן, איך לבדוק איכות קוד.
+
+שאלה שנייה: אילו החלטות חייבות להישאר אצלך?
+
+לדוגמה: כיוון עיצובי כללי, אישור merge לפני שקוד עולה, החלטות על ארכיטקטורה שמשפיעה על כל הפרויקט.
+
+שאלה שלישית: איך המערכת תדע שעשתה עבודה טובה?
+
+לדוגמה: הקוד עובר בדיקות, הפלט תקין בעברית ובאנגלית, אין כפילויות בין קומפוננטים.
+
+כתוב את התשובות בקובץ הבא ב-repository:
+
+docs/architecture-thinking.md
+
+זה הקובץ הראשון שתכתוב בפרויקט. לא קוד. לא קומפוננט. החלטות.
+
+כי מערכת סוכנים טובה מתחילה בחשיבה, לא בפקודות.
+
+הקוד בפעולה
+
+הקוד המלא של פרק זה זמין ב: https://github.com/tomkedem/bookforge
+
+עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
+
+מה יש עכשיו ב-GitHub
+
+bookforge/
+
+├── README.md
+
+└── docs/
+
+└── architecture-thinking.md
+
+</div> <div class="content-en hidden" data-astro-cid-z3kgy54x># פרק 1: שינוי מודל המנטלי
+
+מעוזר שמגיב למערכת שמייצרת
+
+אתה משתמש ב-Claude Code. אתה נותן לו משימה, הוא מבצע, אתה בודק, נותן משימה נוספת. זה עובד. הקוד יוצא סביר. העבודה מתקדמת.
+
+אבל שים לב למה שקורה בפועל.
+
+אתה זה שמחזיק את כל הפרויקט בראש. אתה זה שיודע מה נעשה, מה נשאר, ומה הצעד הבא. הסוכן מבצע רק מה שאתה מבקש ממנו בכל רגע נתון. ברגע שתפסיק לתת פקודות, הכל עוצר.
+
+זה לא עבודה עם מערכת סוכנים. זה עבודה עם עוזר חכם מאוד שצריך הנחיה מתמדת.
+
+ההבדל בין השניים הוא לא טכני. זה הבדל בגישה. וההבדל הזה הוא מה שקובע אם תבנה תוכנה ברמה גבוהה לבד, או תישאר תלוי בעצמך בכל צעד.
+
+שלושה תרחישים השוואתיים
+
+כדי להבין את ההבדל בצורה קונקרטית, ניקח משימה אחת ונראה אותה בשלוש גישות שונות.
+
+המשימה: "בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים."
+
+גישה א: ליניארית
+
+אתה:   "כתוב קומפוננט React שמציג רשימת ספרים."
+
+Claude: כותב BookList.tsx
+
+אתה:   "עכשיו הוסף עיצוב."
+
+Claude: מוסיף CSS
+
+אתה:   "עכשיו הוסף pagination."
+
+Claude: מוסיף pagination
+
+אתה:   "עכשיו..."
+
+כל צעד תלוי בך. אתה ה-orchestrator. Claude הוא הידיים. ברגע שאתה עוצר, הכל עוצר.
+
+גישה ב: משימה אחת גדולה
+
+אתה: "בנה דף ראשי מלא לפלטפורמת Yuval עם רשימת ספרים, עיצוב מרשים, pagination, ותמיכה בעברית ואנגלית."
+
+Claude: כותב הכל בבת אחת
+
+נשמע יעיל. אבל מה שיוצא הוא קוד שמנסה לעשות הכל בקובץ אחד, בלי ארכיטקטורה, בלי עקביות עם שאר הפרויקט, ובלי שום ביקורת על מה שנוצר. כשמשהו לא עובד, קשה לדעת איפה הבעיה.
+
+גישה ג: מערכת סוכנים
+
+אתה:  "בנה דף ראשי לפלטפורמת Yuval שמציג רשימת ספרים.
+
+עבוד לפי .CLAUDE.md Explorer יסרוק את הקומפוננטים הקיימים לפני שמתחילים.
+
+UI Designer יגדיר את העיצוב. Builder יממש. Code Reviewer יבדוק. Quality Gate יאשר לפני שמסיימים."
+
+אתה נותן את המשימה פעם אחת. המערכת מחליטה איך לבצע. אתה מקבל תוצאה שעברה ביקורת עצמית לפני שהגיעה אליך.
+
+ההבדל אינו במה שנכתב. ההבדל הוא במי שמחזיק את האחריות לאורך הדרך.
+
+בגישה א ובגישה ב האחריות אצלך. בגישה ג האחריות אצל המערכת.
+
+תרגיל תכנון ארכיטקטוני
+
+לפני שכותבים שורת קוד אחת ב-BookForge, עצור וענה על שלוש שאלות.
+
+שאלה ראשונה: אילו החלטות אתה רוצה שהמערכת תקבל לבד?
+
+לדוגמה: איך לפרק פרק, איך לארגן קבצי MD, איך לתרגם תוכן, איך לבדוק איכות קוד.
+
+שאלה שנייה: אילו החלטות חייבות להישאר אצלך?
+
+לדוגמה: כיוון עיצובי כללי, אישור merge לפני שקוד עולה, החלטות על ארכיטקטורה שמשפיעה על כל הפרויקט.
+
+שאלה שלישית: איך המערכת תדע שעשתה עבודה טובה?
+
+לדוגמה: הקוד עובר בדיקות, הפלט תקין בעברית ובאנגלית, אין כפילויות בין קומפוננטים.
+
+כתוב את התשובות בקובץ הבא ב-repository:
+
+docs/architecture-thinking.md
+
+זה הקובץ הראשון שתכתוב בפרויקט. לא קוד. לא קומפוננט. החלטות.
+
+כי מערכת סוכנים טובה מתחילה בחשיבה, לא בפקודות.
+
+הקוד בפעולה
+
+הקוד המלא של פרק זה זמין ב: https://github.com/tomkedem/bookforge
+
+עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
+
+מה יש עכשיו ב-GitHub
+
+bookforge/
+
+├── README.md
+
+└── docs/
+
+└── architecture-thinking.md
+
+</div> </article> <!-- Navigation --> <div class="flex justify-between items-center border-t pt-8 mt-12" data-astro-cid-z3kgy54x> <a href="/book/sample-book/chapter-01/" class="px-6 py-3 border border-gray-300 rounded hover:bg-gray-100 transition" data-he="פרק קודם" data-en="Previous Chapter" data-astro-cid-z3kgy54x>
+Previous
+</a> <a href="/book/sample-book/" class="px-6 py-3 text-gray-600 hover:text-black transition" data-he="תוכן עניינים" data-en="Table of Contents" data-astro-cid-z3kgy54x>
+Contents
+</a> <a href="/book/sample-book/chapter-03/" class="px-6 py-3 border border-gray-300 rounded hover:bg-gray-100 transition" data-he="פרק הבא" data-en="Next Chapter" data-astro-cid-z3kgy54x>
+Next
+</a> </div> </main>  </div> </body></html> 

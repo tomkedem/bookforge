@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-ouamjn2i> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>פרק הכנה: פרויקט ההדגמה והסביבה</title><link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700&family=Heebo:wght@400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/_astro/_chapterNum_.CzEznPy_.css">
+<style>main[data-astro-cid-z3kgy54x]{direction:rtl}article[data-astro-cid-z3kgy54x] h1[data-astro-cid-z3kgy54x]{font-family:Frank Ruhl Libre,serif;font-size:2.5rem;font-weight:700;margin-bottom:2rem}article[data-astro-cid-z3kgy54x] p[data-astro-cid-z3kgy54x]{margin-bottom:1.5rem;line-height:1.8}
+</style></head> <body data-astro-cid-ouamjn2i> <header class="sticky top-0 bg-white border-b border-gray-200 z-50" data-astro-cid-3ef6ksr2> <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" data-astro-cid-3ef6ksr2> <div class="flex items-center gap-8" data-astro-cid-3ef6ksr2> <a href="/" class="text-2xl font-bold" data-astro-cid-3ef6ksr2>BookForge</a> <div class="hidden md:flex gap-6" data-astro-cid-3ef6ksr2> <a href="/" class="text-gray-600 hover:text-black" data-astro-cid-3ef6ksr2>Home</a> </div> </div> <div class="flex items-center gap-4" data-astro-cid-3ef6ksr2> <button id="langToggle" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition" data-astro-cid-3ef6ksr2> <span id="langText" data-astro-cid-3ef6ksr2>HE</span> </button> </div> </nav> </header> <script type="module">const a=document.getElementById("langToggle"),l=document.getElementById("langText");function o(){return localStorage.getItem("yuval-lang")||"he"}function c(e){localStorage.setItem("yuval-lang",e),l&&(l.textContent=e==="he"?"HE":"EN"),document.querySelectorAll("[data-he]").forEach(t=>{const n=t;n.style.display=e==="he"?"":"none"}),document.querySelectorAll("[data-en]").forEach(t=>{const n=t;n.style.display=e==="en"?"":"none"}),document.documentElement.dir=e==="he"?"rtl":"ltr",document.documentElement.lang=e}c(o());a?.addEventListener("click",()=>{const t=o()==="he"?"en":"he";c(t)});</script>  <div class="container" data-astro-cid-ouamjn2i>  <main class="max-w-4xl mx-auto px-4 py-8" data-astro-cid-z3kgy54x> <!-- Progress Bar --> <div class="mb-8" data-astro-cid-z3kgy54x> <div class="w-full bg-gray-200 h-1 rounded overflow-hidden" data-astro-cid-z3kgy54x> <div class="bg-black h-full" style="width: 25%" data-astro-cid-z3kgy54x></div> </div> <p class="text-sm text-gray-600 mt-2" data-astro-cid-z3kgy54x> <span data-he="פרק 1 מתוך 4" data-en="Chapter 1 of 4" data-astro-cid-z3kgy54x>
+Chapter 1 of 4 </span> </p> </div> <!-- Chapter Content --> <article class="prose prose-lg max-w-none mb-12" data-astro-cid-z3kgy54x> <h1 data-he="פרק הכנה: פרויקט ההדגמה והסביבה" data-en="פרק הכנה: פרויקט ההדגמה והסביבה" data-astro-cid-z3kgy54x>פרק הכנה: פרויקט ההדגמה והסביבה</h1> <div class="content-he" data-astro-cid-z3kgy54x># פרק הכנה: פרויקט ההדגמה והסביבה
+
+מה זה BookForge ו-Yuval ולמה
+
+הספר עוסק בבניית מערכות סוכנים. אבל בניגוד לרוב הספרים שעוסקים בנושא, לא נדון בתיאוריה. נבנה מוצר אמיתי.
+
+הפרויקט נקרא BookForge, וכל מה שיילמד בספר ייושם דרכו. BookForge הוא פרויקט פיתוח תוכנה שמדגים כיצד להשתמש ביכולות המתקדמות של Claude Code, ריבוי סוכנים, צוותי סוכנים, וביקורת עצמית, לבניית מוצר אמיתי. הוא מקבל ספר בעברית בפורמט Word או PDF, מפרק אותו לפרקים, מייצר לכל פרק קובץ MD נפרד, ומתרגם כל פרק לאנגלית אוטומטית. הפלט הסופי הוא שתי גרסאות מלאות של הספר, עברית ואנגלית, שמהן נבנית Yuval.
+
+Yuval היא פלטפורמת קריאה דיגיטלית. לא עוד אתר ספרים שנראה כמו כולם. פלטפורמה עם עיצוב שלא קיים כיום בשום מקום, שתומכת בעברית ובאנגלית מהיום הראשון, ומאפשרת לקרוא ספרים בכל מכשיר בצורה נוחה וחכמה.
+
+הטכנולוגיה: Astro כ-framework, Tailwind CSS לעיצוב רספונסיבי מלא, TypeScript לאורך כל הפרויקט.
+
+עיצוב: Mobile-first. הממשק מתוכנן קודם למסך קטן ואז מורחב למסך גדול. בטלפון, טקסט נקי שתופס את כל המסך. במחשב, עיצוב יוקרתי עם תפריטים צידיים.
+
+שלושת פיצ'רי הגרסה הראשונה: Reading Progress, הקורא ממשיך לקרוא בדיוק מאותו מקום בכל מכשיר. שיתוף ציטוט, סימון טקסט מייצר תמונה יפה לשיתוף. Mobile-first design, חווית קריאה מושלמת בכל מסך.
+
+הספר הראשון שיעלה ל-Yuval הוא AI Developer Fitness, שנכתב על ידי אותו מפתח שבנה את הפלטפורמה.
+
+שני הפרויקטים קשורים: BookForge הוא המנוע, Yuval הוא המוצר. ויחד הם מוכיחים את הנקודה המרכזית של הספר: עם תכנון נכון של מערכת סוכנים, מפתח אחד יכול לבנות מה שצוות שלם לא הצליח.
+
+מפת הסוכנים של BookForge
+
+הסבר:
+
+הדיאגרמה מציגה את מערכת הסוכנים המלאה שנבנה לאורך הספר. כל סוכן אחראי על תפקיד אחד בלבד. הסוכנים הירוקים מבצעים, הסוכנים הכתומים בודקים, ושער האיכות האדום הוא נקודת הכניסה האחרונה לפני שהפלט יוצא. הלולאה המקווקוות בתחתית מייצגת את הביקורת העצמית שרצה לאורך כל התהליך.
+
+הגדרת סביבה
+
+לפני שממשיכים, ודא שהדברים הבאים מותקנים:
+
+bash
+
+node --version      # 18  ומעלה
+
+git --version
+
+claude --version    # Claude Code v2.1.32 ומעלה
+
+python --version    # 3.8 ומעלה
+
+pip install python-docx
+
+התקנת Claude Code:
+
+bash
+
+npm install -g @anthropic-ai/claude-code
+
+claude login
+
+לאחר ההתקנה תראה את מסך הפתיחה של Claude Code עם פרטי החשבון שלך, הגרסה הנוכחית, והתיקייה שבה אתה עובד. זה אומר שהכל מוכן.
+
+הורדת הפרויקט
+
+כל הקוד של הספר זמין ב:  https://github.com/tomkedem/bookforge
+
+כדי להוריד אותו למחשב שלך:
+
+bash
+
+git clone https://github.com/tomkedem/bookforge.git
+
+cd bookforge
+
+מכאן אפשר לעקוב אחרי כל פרק, לראות את הקוד בפעולה, ולשאול שאלות ב-Issues.
+
+README.md
+
+ב-repository תמצא את הקובץ הבא:
+
+markdown
+
+# BookForge
+
+פרויקט פיתוח תוכנה שמדגים שימוש ביכולות המתקדמות
+
+של Claude Code לבניית מוצר אמיתי.
+
+מקבל ספר בפורמט Word או PDF ובונה ממנו את Yuval,
+
+פלטפורמת קריאה דיגיטלית ברמה עולמית.
+
+## הסוכנים במערכת
+
+## דרישות
+
+Node.js 18 ומעלה
+
+Claude Code v2.1.32 ומעלה
+
+Git
+
+## מבנה הפרויקט
+
+יתעדכן פרק אחר פרק לאורך הספר.
+
+זה כל מה שיש עכשיו. פרויקט ריק עם כיוון ברור. הסוכנים עוד לא נולדו.
+
+</div> <div class="content-en hidden" data-astro-cid-z3kgy54x># פרק הכנה: פרויקט ההדגמה והסביבה
+
+מה זה BookForge ו-Yuval ולמה
+
+הספר עוסק בבניית מערכות סוכנים. אבל בניגוד לרוב הספרים שעוסקים בנושא, לא נדון בתיאוריה. נבנה מוצר אמיתי.
+
+הפרויקט נקרא BookForge, וכל מה שיילמד בספר ייושם דרכו. BookForge הוא פרויקט פיתוח תוכנה שמדגים כיצד להשתמש ביכולות המתקדמות של Claude Code, ריבוי סוכנים, צוותי סוכנים, וביקורת עצמית, לבניית מוצר אמיתי. הוא מקבל ספר בעברית בפורמט Word או PDF, מפרק אותו לפרקים, מייצר לכל פרק קובץ MD נפרד, ומתרגם כל פרק לאנגלית אוטומטית. הפלט הסופי הוא שתי גרסאות מלאות של הספר, עברית ואנגלית, שמהן נבנית Yuval.
+
+Yuval היא פלטפורמת קריאה דיגיטלית. לא עוד אתר ספרים שנראה כמו כולם. פלטפורמה עם עיצוב שלא קיים כיום בשום מקום, שתומכת בעברית ובאנגלית מהיום הראשון, ומאפשרת לקרוא ספרים בכל מכשיר בצורה נוחה וחכמה.
+
+הטכנולוגיה: Astro כ-framework, Tailwind CSS לעיצוב רספונסיבי מלא, TypeScript לאורך כל הפרויקט.
+
+עיצוב: Mobile-first. הממשק מתוכנן קודם למסך קטן ואז מורחב למסך גדול. בטלפון, טקסט נקי שתופס את כל המסך. במחשב, עיצוב יוקרתי עם תפריטים צידיים.
+
+שלושת פיצ'רי הגרסה הראשונה: Reading Progress, הקורא ממשיך לקרוא בדיוק מאותו מקום בכל מכשיר. שיתוף ציטוט, סימון טקסט מייצר תמונה יפה לשיתוף. Mobile-first design, חווית קריאה מושלמת בכל מסך.
+
+הספר הראשון שיעלה ל-Yuval הוא AI Developer Fitness, שנכתב על ידי אותו מפתח שבנה את הפלטפורמה.
+
+שני הפרויקטים קשורים: BookForge הוא המנוע, Yuval הוא המוצר. ויחד הם מוכיחים את הנקודה המרכזית של הספר: עם תכנון נכון של מערכת סוכנים, מפתח אחד יכול לבנות מה שצוות שלם לא הצליח.
+
+מפת הסוכנים של BookForge
+
+הסבר:
+
+הדיאגרמה מציגה את מערכת הסוכנים המלאה שנבנה לאורך הספר. כל סוכן אחראי על תפקיד אחד בלבד. הסוכנים הירוקים מבצעים, הסוכנים הכתומים בודקים, ושער האיכות האדום הוא נקודת הכניסה האחרונה לפני שהפלט יוצא. הלולאה המקווקוות בתחתית מייצגת את הביקורת העצמית שרצה לאורך כל התהליך.
+
+הגדרת סביבה
+
+לפני שממשיכים, ודא שהדברים הבאים מותקנים:
+
+bash
+
+node --version      # 18  ומעלה
+
+git --version
+
+claude --version    # Claude Code v2.1.32 ומעלה
+
+python --version    # 3.8 ומעלה
+
+pip install python-docx
+
+התקנת Claude Code:
+
+bash
+
+npm install -g @anthropic-ai/claude-code
+
+claude login
+
+לאחר ההתקנה תראה את מסך הפתיחה של Claude Code עם פרטי החשבון שלך, הגרסה הנוכחית, והתיקייה שבה אתה עובד. זה אומר שהכל מוכן.
+
+הורדת הפרויקט
+
+כל הקוד של הספר זמין ב:  https://github.com/tomkedem/bookforge
+
+כדי להוריד אותו למחשב שלך:
+
+bash
+
+git clone https://github.com/tomkedem/bookforge.git
+
+cd bookforge
+
+מכאן אפשר לעקוב אחרי כל פרק, לראות את הקוד בפעולה, ולשאול שאלות ב-Issues.
+
+README.md
+
+ב-repository תמצא את הקובץ הבא:
+
+markdown
+
+# BookForge
+
+פרויקט פיתוח תוכנה שמדגים שימוש ביכולות המתקדמות
+
+של Claude Code לבניית מוצר אמיתי.
+
+מקבל ספר בפורמט Word או PDF ובונה ממנו את Yuval,
+
+פלטפורמת קריאה דיגיטלית ברמה עולמית.
+
+## הסוכנים במערכת
+
+## דרישות
+
+Node.js 18 ומעלה
+
+Claude Code v2.1.32 ומעלה
+
+Git
+
+## מבנה הפרויקט
+
+יתעדכן פרק אחר פרק לאורך הספר.
+
+זה כל מה שיש עכשיו. פרויקט ריק עם כיוון ברור. הסוכנים עוד לא נולדו.
+
+</div> </article> <!-- Navigation --> <div class="flex justify-between items-center border-t pt-8 mt-12" data-astro-cid-z3kgy54x> <div data-astro-cid-z3kgy54x></div> <a href="/book/sample-book/" class="px-6 py-3 text-gray-600 hover:text-black transition" data-he="תוכן עניינים" data-en="Table of Contents" data-astro-cid-z3kgy54x>
+Contents
+</a> <a href="/book/sample-book/chapter-02/" class="px-6 py-3 border border-gray-300 rounded hover:bg-gray-100 transition" data-he="פרק הבא" data-en="Next Chapter" data-astro-cid-z3kgy54x>
+Next
+</a> </div> </main>  </div> </body></html> 

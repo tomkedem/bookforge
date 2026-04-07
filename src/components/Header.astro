@@ -1,0 +1,73 @@
+---
+---
+
+<header class="sticky top-0 bg-white border-b border-gray-200 z-50">
+  <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <a href="/" class="text-2xl font-bold">BookForge</a>
+      <div class="hidden md:flex gap-6">
+        <a href="/" class="text-gray-600 hover:text-black">Home</a>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <button
+        id="langToggle"
+        class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition"
+      >
+        <span id="langText">HE</span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<script>
+  // Language toggle functionality
+  const langToggle = document.getElementById('langToggle');
+  const langText = document.getElementById('langText');
+
+  // Check for saved language preference
+  function getSavedLang(): string {
+    const saved = localStorage.getItem('yuval-lang') || 'he';
+    return saved;
+  }
+
+  // Apply language
+  function applyLanguage(lang: string): void {
+    localStorage.setItem('yuval-lang', lang);
+    if (langText) {
+      langText.textContent = lang === 'he' ? 'HE' : 'EN';
+    }
+
+    // Find all text elements and toggle visibility
+    document.querySelectorAll('[data-he]').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.display = lang === 'he' ? '' : 'none';
+    });
+
+    document.querySelectorAll('[data-en]').forEach((el) => {
+      const htmlEl = el as HTMLElement;
+      htmlEl.style.display = lang === 'en' ? '' : 'none';
+    });
+
+    // Set document direction
+    document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+  }
+
+  // Initialize
+  applyLanguage(getSavedLang());
+
+  // Toggle button handler
+  langToggle?.addEventListener('click', () => {
+    const current = getSavedLang();
+    const next = current === 'he' ? 'en' : 'he';
+    applyLanguage(next);
+  });
+</script>
+
+<style>
+  header {
+    font-family: 'Heebo', sans-serif;
+  }
+</style>

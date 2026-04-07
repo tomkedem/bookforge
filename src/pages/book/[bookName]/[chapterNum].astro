@@ -1,0 +1,140 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+export async function getStaticPaths() {
+  const outputDir = path.join(process.cwd(), 'output');
+  const books = fs.readdirSync(outputDir)
+    .filter(f => fs.statSync(path.join(outputDir, f)).isDirectory());
+
+  const paths = [];
+
+  for (const bookName of books) {
+    const bookDir = path.join(outputDir, bookName);
+    const structurePath = path.join(bookDir, 'structure.json');
+
+    if (!fs.existsSync(structurePath)) continue;
+
+    const structure = JSON.parse(fs.readFileSync(structurePath, 'utf-8'));
+
+    // Generate paths for each chapter
+    for (const ch of structure.chapters || []) {
+      const chNum = String(ch.number).padStart(2, '0');
+      paths.push({
+        params: { bookName, chapterNum: chNum },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { bookName, chapterNum } = Astro.params;
+const outputDir = path.join(process.cwd(), 'output');
+const bookDir = path.join(outputDir, bookName);
+const structurePath = path.join(bookDir, 'structure.json');
+
+if (!fs.existsSync(structurePath)) {
+  throw new Error(`Book ${bookName} not found`);
+}
+
+const structure = JSON.parse(fs.readFileSync(structurePath, 'utf-8'));
+const chapterIndex = parseInt(chapterNum) - 1;
+const chapter = structure.chapters?.[chapterIndex];
+
+if (!chapter) {
+  throw new Error(`Chapter ${chapterNum} not found`);
+}
+
+// Read chapter content (Hebrew)
+const chapterPath = path.join(bookDir, `chapter-${chapterNum}.he.md`);
+let content = '';
+
+if (fs.existsSync(chapterPath)) {
+  content = fs.readFileSync(chapterPath, 'utf-8');
+}
+
+// Calculate progress
+const totalChapters = structure.chapters?.length || 0;
+const progress = ((chapterIndex + 1) / totalChapters) * 100;
+---
+
+<MainLayout title={chapter.title}>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+      <div class="w-full bg-gray-200 h-1 rounded overflow-hidden">
+        <div class="bg-black h-full" style={`width: ${progress}%`}></div>
+      </div>
+      <p class="text-sm text-gray-600 mt-2">
+        <span data-he={`פרק ${chapterIndex + 1} מתוך ${totalChapters}`} data-en={`Chapter ${chapterIndex + 1} of ${totalChapters}`}>
+          Chapter {chapterIndex + 1} of {totalChapters}
+        </span>
+      </p>
+    </div>
+
+    <!-- Chapter Content -->
+    <article class="prose prose-lg max-w-none mb-12">
+      <h1 data-he={chapter.title} data-en={chapter.title}>{chapter.title}</h1>
+      <div class="content-he" set:html={content} />
+      <div class="content-en hidden" set:html={content} />
+    </article>
+
+    <!-- Navigation -->
+    <div class="flex justify-between items-center border-t pt-8 mt-12">
+      {chapterIndex > 0 ? (
+        <a
+          href={`/book/${bookName}/chapter-${String(chapterIndex).padStart(2, '0')}/`}
+          class="px-6 py-3 border border-gray-300 rounded hover:bg-gray-100 transition"
+          data-he="פרק קודם"
+          data-en="Previous Chapter"
+        >
+          Previous
+        </a>
+      ) : (
+        <div></div>
+      )}
+
+      <a
+        href={`/book/${bookName}/`}
+        class="px-6 py-3 text-gray-600 hover:text-black transition"
+        data-he="תוכן עניינים"
+        data-en="Table of Contents"
+      >
+        Contents
+      </a>
+
+      {chapterIndex < totalChapters - 1 ? (
+        <a
+          href={`/book/${bookName}/chapter-${String(chapterIndex + 2).padStart(2, '0')}/`}
+          class="px-6 py-3 border border-gray-300 rounded hover:bg-gray-100 transition"
+          data-he="פרק הבא"
+          data-en="Next Chapter"
+        >
+          Next
+        </a>
+      ) : (
+        <div></div>
+      )}
+    </div>
+  </main>
+</MainLayout>
+
+<style>
+  main {
+    direction: rtl;
+  }
+
+  article h1 {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+  }
+
+  article p {
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+  }
+</style>

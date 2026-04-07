@@ -1,0 +1,42 @@
+{
+  "book_name": "sample-book",
+  "typography": {
+    "headings": {
+      "font_family": "Frank Ruhl Libre",
+      "sizes": {
+        "h1": "2.5rem",
+        "h2": "2rem",
+        "h3": "1.5rem",
+        "h4": "1.25rem"
+      }
+    },
+    "body": {
+      "font_family": "Heebo",
+      "size": "1rem",
+      "line_height": "1.6"
+    }
+  },
+  "colors": {
+    "background": "#ffffff",
+    "text": "#000000",
+    "border": "#cccccc",
+    "hover": "#f0f0f0"
+  },
+  "layout": {
+    "max_width": "1200px",
+    "sidebar_width": "300px",
+    "header_height": "60px",
+    "footer_height": "100px"
+  },
+  "languages": [
+    "he",
+    "en"
+  ],
+  "rtl": true,
+  "breakpoints": {
+    "sm": "640px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px"
+  }
+}

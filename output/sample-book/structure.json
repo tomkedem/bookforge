@@ -1,0 +1,34 @@
+{
+  "book_title": "פרק הכנה: פרויקט ההדגמה והסביבה",
+  "language": "he",
+  "chapters": [
+    {
+      "number": 1,
+      "title": "פרק הכנה: פרויקט ההדגמה והסביבה",
+      "type": "content",
+      "has_images": false,
+      "word_count": 452
+    },
+    {
+      "number": 2,
+      "title": "פרק 1: שינוי מודל המנטלי",
+      "type": "content",
+      "has_images": false,
+      "word_count": 447
+    },
+    {
+      "number": 3,
+      "title": "פרק 2: CLAUDE.md כארכיטקטורה",
+      "type": "content",
+      "has_images": false,
+      "word_count": 867
+    },
+    {
+      "number": 4,
+      "title": "פרק 3: Subagents, חלוקת עבודה נכונה",
+      "type": "content",
+      "has_images": false,
+      "word_count": 1615
+    }
+  ]
+}

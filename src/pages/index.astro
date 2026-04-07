@@ -1,0 +1,62 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import BookCard from '../components/BookCard.astro';
+import fs from 'fs';
+import path from 'path';
+
+// Load available books
+const outputDir = path.join(process.cwd(), 'output');
+const books = fs.readdirSync(outputDir)
+  .filter(f => fs.statSync(path.join(outputDir, f)).isDirectory())
+  .map(bookName => {
+    const structurePath = path.join(outputDir, bookName, 'structure.json');
+    const structure = JSON.parse(fs.readFileSync(structurePath, 'utf-8'));
+    const coverPath = path.join(outputDir, bookName, 'assets', 'cover.png');
+    const hasCover = fs.existsSync(coverPath);
+
+    return {
+      name: bookName,
+      title: structure.book_title || bookName,
+      chapters: structure.chapters.length,
+      cover: hasCover ? `/output/${bookName}/assets/cover.png` : null
+    };
+  });
+
+const pageTitle = {
+  he: "הספרים שלנו",
+  en: "Our Books"
+};
+
+const description = {
+  he: "ספרים בעברית ובאנגלית",
+  en: "Books in Hebrew and English"
+};
+---
+
+<MainLayout>
+  <main class="max-w-6xl mx-auto px-4 py-12">
+    <h1 dir="auto" class="text-4xl font-bold mb-4 text-he">{pageTitle.he}</h1>
+    <h1 dir="auto" class="text-4xl font-bold mb-4 text-en hidden">{pageTitle.en}</h1>
+
+    <p dir="auto" class="text-lg text-gray-600 mb-8 text-he">{description.he}</p>
+    <p dir="auto" class="text-lg text-gray-600 mb-8 text-en hidden">{description.en}</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {books.map((book) => (
+        <BookCard book={book} />
+      ))}
+    </div>
+  </main>
+</MainLayout>
+
+<style>
+  .text-he {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .text-en {
+    direction: ltr;
+    text-align: left;
+  }
+</style>

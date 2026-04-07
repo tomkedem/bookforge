@@ -7,7 +7,15 @@
       "Bash(python -c \"import json,sys; v=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(v[-10:]\\)\\)\")",
       "Bash(npm install:*)",
       "Bash(npx astro:*)",
-      "Bash(python -c ':*)"
+      "Bash(python -c ':*)",
+      "Bash(python3)",
+      "Bash(pip install:*)",
+      "Bash(python3 -m pip install python-docx pypdf -q)",
+      "Bash(python3 -m pip list)",
+      "Bash(python3 -c \"from docx import Document; print\\('✓ docx imported successfully'\\)\")",
+      "Bash(python3 -c \"from docx import Document; print\\('OK: docx imported successfully'\\)\")",
+      "Bash(python3 -m pip install anthropic --force-reinstall -q)",
+      "Bash(npm run:*)"
     ]
   }
 }

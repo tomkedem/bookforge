@@ -1,0 +1,89 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import fs from 'fs';
+import path from 'path';
+
+interface Book {
+  name: string;
+  title: string;
+  chapters: Array<{ number: number; title: string }>;
+}
+
+// Generate static paths for all books
+export async function getStaticPaths() {
+  const outputDir = path.join(process.cwd(), 'output');
+  const books = fs.readdirSync(outputDir)
+    .filter(f => fs.statSync(path.join(outputDir, f)).isDirectory());
+
+  return books.map(bookName => ({
+    params: { bookName },
+  }));
+}
+
+const { bookName } = Astro.params;
+const outputDir = path.join(process.cwd(), 'output');
+const structurePath = path.join(outputDir, bookName, 'structure.json');
+
+if (!fs.existsSync(structurePath)) {
+  throw new Error(`Book ${bookName} not found`);
+}
+
+const structure = JSON.parse(fs.readFileSync(structurePath, 'utf-8'));
+const book: Book = {
+  name: bookName,
+  title: structure.book_title || bookName,
+  chapters: structure.chapters || [],
+};
+
+const coverPath = `/output/${bookName}/assets/cover.png`;
+---
+
+<MainLayout title={book.title}>
+  <main class="max-w-6xl mx-auto px-4 py-12">
+    <div class="mb-12">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-1">
+          <img src={coverPath} alt={book.title} class="w-full rounded shadow-lg" />
+        </div>
+        <div class="md:col-span-2">
+          <h1 class="text-4xl font-bold mb-4" data-he={book.title} data-en={book.title}>
+            {book.title}
+          </h1>
+          <p class="text-lg text-gray-600 mb-6" data-he="קריאה" data-en="Reading">
+            Reading
+          </p>
+          <div class="space-y-2">
+            <p data-he={`${book.chapters.length} פרקים`} data-en={`${book.chapters.length} Chapters`}>
+              {book.chapters.length} chapters
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-6" data-he="תוכן עניינים" data-en="Table of Contents">
+        Table of Contents
+      </h2>
+      <nav class="space-y-3">
+        {book.chapters.map((chapter) => (
+          <a
+            href={`/book/${bookName}/chapter-${String(chapter.number).padStart(2, '0')}/`}
+            class="block p-4 border border-gray-200 rounded hover:bg-gray-50 transition"
+            data-chapter={chapter.number}
+          >
+            <span class="font-semibold" data-he={chapter.title} data-en={chapter.title}>
+              {chapter.title}
+            </span>
+          </a>
+        ))}
+      </nav>
+    </div>
+  </main>
+</MainLayout>
+
+<style>
+  main {
+    direction: rtl;
+  }
+</style>
