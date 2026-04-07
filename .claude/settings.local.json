@@ -6,7 +6,8 @@
       "Bash(npm view:*)",
       "Bash(python -c \"import json,sys; v=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(v[-10:]\\)\\)\")",
       "Bash(npm install:*)",
-      "Bash(npx astro:*)"
+      "Bash(npx astro:*)",
+      "Bash(python -c ':*)"
     ]
   }
 }

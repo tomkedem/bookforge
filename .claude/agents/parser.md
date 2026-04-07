@@ -9,6 +9,7 @@ model: sonnet
 tools:
   - read
   - write
+  - bash
 ---
 
 לפני כל משימה: קרא tasks/lessons.md להימנע מטעויות קודמות.
@@ -19,11 +20,14 @@ tools:
 src/pipeline/parse.py
 
 דוגמה:
-from pipeline.parse import parse, to_markdown
+from pipeline.parse import parse, to_markdown, extract_images
 chapters = parse(ingested)
 md = to_markdown(chapters[0])
+image_map = extract_images("path/to/book.docx", "book-name")
 
 אל תכתוב קוד פירוק מחדש. הקוד כבר קיים ב-src/pipeline/parse.py.
+אל תכתוב קוד חילוץ תמונות מחדש. השתמש ב-extract_images().
+התמונה הראשונה תישמר אוטומטית כ-cover.png.
 
 לכל פרק צור קובץ MD נפרד בשם chapter-XX.he.md.
 
@@ -34,6 +38,13 @@ md = to_markdown(chapters[0])
 - טבלאות
 - ציטוטים
 תמונות: חלץ לתיקיית assets/chapter-XX/ והוסף הפניה בקובץ ה-MD.
+
+זיהוי עמוד שער ומבוא:
+הפונקציה parse() מזהה אוטומטית עמוד שער ומבוא לפי מילות מפתח.
+בדוק את ה-type של כל פרק:
+- type: "cover" - עמוד שער, אל תכלול כפרק רגיל
+- type: "intro" - מבוא, שמור כ-intro.he.md, הצג לפני פרק 01
+- type: "content" - פרק רגיל
 
 זיהוי עמוד שער:
 אם הפרק הראשון קצר מ-100 מילים או אין בו Heading 1,
