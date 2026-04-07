@@ -1,12 +1,103 @@
 ---
+/**
+ * src/pages/sample-book/index.astro
+ * Book index page for "AI Developer Fitness — Building with Claude Code".
+ * Lang resolved from ?lang=he|en query param (defaults to he).
+ */
 import Layout from '../../layouts/Layout.astro';
+
+type Lang = 'he' | 'en';
+
+const rawLang = Astro.url.searchParams.get('lang') ?? 'he';
+const lang: Lang = rawLang === 'en' ? 'en' : 'he';
+const isHe = lang === 'he';
+
+interface Chapter {
+  number: number;
+  slug: string;
+  title: string;
+  readMinutes: number;
+}
+
+const chapters: Chapter[] = isHe
+  ? [
+      { number: 0, slug: 'chapter-01', title: 'פרק הכנה: פרויקט ההדגמה והסביבה', readMinutes: 5 },
+      { number: 1, slug: 'chapter-02', title: 'פרק 1: שינוי מודל המנטלי', readMinutes: 7 },
+      { number: 2, slug: 'chapter-03', title: 'פרק 2: CLAUDE.md כארכיטקטורה', readMinutes: 10 },
+      { number: 3, slug: 'chapter-04', title: 'פרק 3: Subagents, חלוקת עבודה נכונה', readMinutes: 15 },
+    ]
+  : [
+      { number: 0, slug: 'chapter-01', title: 'Preparation Chapter: The Demo Project and Environment', readMinutes: 5 },
+      { number: 1, slug: 'chapter-02', title: 'Chapter 1: Shifting the Mental Model', readMinutes: 7 },
+      { number: 2, slug: 'chapter-03', title: 'Chapter 2: CLAUDE.md as Architecture', readMinutes: 10 },
+      { number: 3, slug: 'chapter-04', title: 'Chapter 3: Subagents — Proper Division of Work', readMinutes: 15 },
+    ];
+
+const bookTitle = isHe ? 'AI Developer Fitness' : 'AI Developer Fitness';
+const bookSubtitle = isHe
+  ? 'בניית מערכות סוכנים עם Claude Code'
+  : 'Building Agent Systems with Claude Code';
+const pageTitle = `${bookTitle} — BookForge`;
+const minutesLabel = isHe ? 'דקות קריאה' : 'min read';
+const chapterLabel = isHe ? 'פרק' : 'Chapter';
 ---
-<Layout title="sample-book" lang="he">
-  <h1>sample-book</h1>
-  <ul>
-  <li><a href="/sample-book/chapter-01">פרק הכנה: פרויקט ההדגמה והסביבה</a></li>
-  <li><a href="/sample-book/chapter-02">פרק 1: שינוי מודל המנטלי</a></li>
-  <li><a href="/sample-book/chapter-03">פרק 2: CLAUDE.md כארכיטקטורה</a></li>
-  <li><a href="/sample-book/chapter-04">פרק 3: Subagents, חלוקת עבודה נכונה</a></li>
-  </ul>
+
+<Layout title={pageTitle} lang={lang}>
+
+  <!-- Hero -->
+  <section class="mb-12 md:mb-16" aria-labelledby="book-title">
+    <p class="mb-4 font-['Heebo'] text-xs font-medium uppercase tracking-[0.14em] text-[#bbbbbb]">
+      BookForge
+    </p>
+    <h1
+      id="book-title"
+      class="font-['Frank_Ruhl_Libre'] text-4xl font-black leading-tight text-[#1a1a1a] md:text-6xl"
+    >
+      {bookTitle}
+    </h1>
+    <p class="mt-4 font-['Heebo'] text-lg font-light leading-relaxed text-[#888888]">
+      {bookSubtitle}
+    </p>
+    <div class="mt-8 h-px w-12 bg-[#e0ddd8]" aria-hidden="true"></div>
+  </section>
+
+  <!-- Chapter list -->
+  <section aria-label={isHe ? 'תוכן עניינים' : 'Table of Contents'}>
+    <ol class="space-y-px bg-[#e0ddd8]" role="list">
+      {chapters.map((ch) => (
+        <li class="bg-[#fafaf8]">
+          <a
+            href={`/sample-book/${ch.slug}?lang=${lang}`}
+            class="group flex items-center gap-5 p-6 transition-colors hover:bg-[#f5f3ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] md:p-8"
+            aria-label={`${chapterLabel} ${ch.number}: ${ch.title}`}
+          >
+            <!-- Chapter number -->
+            <span
+              class="w-8 shrink-0 font-['Heebo'] text-xs font-medium tracking-[0.12em] text-[#cccccc] md:w-10"
+              aria-hidden="true"
+            >
+              {String(ch.number).padStart(2, '0')}
+            </span>
+
+            <!-- Title -->
+            <span class="flex-1 font-['Frank_Ruhl_Libre'] text-lg font-bold text-[#1a1a1a] group-hover:text-[#1a1a1a] md:text-xl">
+              {ch.title}
+            </span>
+
+            <!-- Read time + arrow -->
+            <span class="flex shrink-0 items-center gap-3 font-['Heebo'] text-xs text-[#bbbbbb]">
+              <span>{ch.readMinutes} {minutesLabel}</span>
+              <span
+                class="translate-x-0 opacity-0 transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100"
+                aria-hidden="true"
+              >
+                {isHe ? '←' : '→'}
+              </span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
 </Layout>
