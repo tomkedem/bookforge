@@ -7,7 +7,11 @@ node_modules/
 # קבצי סביבה
 .env
 .env.local
+<<<<<<< Updated upstream
 
 # Python
 __pycache__/
 *.pyc
+=======
+.astro/
+>>>>>>> Stashed changes
