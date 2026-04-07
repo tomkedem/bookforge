@@ -111,13 +111,24 @@ hero section:
 - max-width: 960px, margin: 0 auto
 
 כרטיסיית ספר:
-- background: #ffffff
-- padding: 44px
-- מספר סידורי: 11px, letter-spacing 0.12em, color #ccc, margin-bottom 36px
+- רקע: צבע דומיננטי מתמונת השער בשקיפות 15% על רקע לבן
+  נגזר מ-extract_dominant_color() ב-src/pipeline/parse.py
+  אם אין תמונת שער: background #ffffff
+- thumbnail תמונת שער:
+  רוחב 100%, גובה 200px, object-fit: cover
+  אם אין תמונת שער: אל תציג placeholder
+- padding מתחת לתמונה: 32px 44px 44px
+- מספר סידורי: 11px, letter-spacing 0.12em, color #ccc, margin-bottom 20px
 - כותרת: Frank Ruhl Libre, 26px, weight 700, color #1a1a1a, line-height 1.3, margin-bottom 14px
 - תיאור: Heebo, 14px, weight 300, color #888, line-height 1.7, margin-bottom 36px
 - חץ: color #1a1a1a, opacity 0, transition 0.2s
-- hover: background #fafaf8, חץ מופיע
+- hover: opacity הכרטיסייה עולה ל-100%, חץ מופיע
+- transition: all 0.2s ease
+
+החוויה שהקורא צריך לחוש:
+"זה נראה כמו ספרייה של הוצאת ספרים אירופאית יוקרתית."
+כל ספר מציג את עצמו בכבוד עם תמונת השער שלו.
+הצבעים עדינים ונגזרים מתוכן הספר עצמו.
 
 ## דף פרטי ספר
 
@@ -240,6 +251,8 @@ hero:
 - אנימציות מסיחות
 - יותר משני צבעים בכל המערכת
 - כרטיסיות צבעוניות
+- כרטיסיות ריקות ללא תמונת שער כשתמונה קיימת
+- צבע רקע קבוע לכל הכרטיסיות, חייב להיות דינמי
 - טקסט מתחת ל-13px
 - CSS inline
 - border-radius על אלמנטים ראשיים (רק על toggle שפה)
