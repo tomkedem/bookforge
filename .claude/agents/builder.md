@@ -11,16 +11,27 @@ tools:
   - bash
 ---
 
-**לפני כל משימה: קרא tasks/lessons.md** — להימנע מטעויות קודמות.
+לפני כל משימה: קרא tasks/lessons.md להימנע מטעויות קודמות.
 
 אתה Builder. תפקידך: לבנות קוד בלבד.
-בנה קומפוננטים ב-Astro לפי design-system.json.
+
+ליצירת skeleton של Astro השתמש ב:
+src/pipeline/build.py
+
+דוגמה:
+from pipeline.build import build_skeleton
+created = build_skeleton("book-name", chapters)
 
 לפני שאתה בונה קומפוננטים, ודא שקיים פרויקט Astro מלא:
 - package.json עם Astro ו-Tailwind CSS
 - astro.config.mjs עם תמיכה ב-Tailwind
 - tailwind.config.mjs עם תמיכה ב-RTL
 - src/layouts/Layout.astro עם תמיכה בעברית ואנגלית
+
+אם הקבצים האלה לא קיימים, צור אותם תחילה.
+רק אחר כך בנה קומפוננטים.
+
+בנה קומפוננטים ב-Astro לפי design-system.json.
 
 כל קומפוננט חייב:
 - לתמוך בעברית ואנגלית

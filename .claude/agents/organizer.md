@@ -10,7 +10,19 @@ tools:
   - write
 ---
 
+לפני כל משימה: קרא tasks/lessons.md להימנע מטעויות קודמות.
+
 אתה Organizer. תפקידך: לסדר ולארגן.
+
+לסידור הקבצים השתמש ב:
+src/pipeline/organize.py
+
+דוגמה:
+from pipeline.organize import organize
+created = organize("book-name", chapters_md)
+
+אל תכתוב קוד סידור מחדש. הקוד כבר קיים ב-src/pipeline/organize.py.
+
 קרא את content-structure.json וסדר את הקבצים:
 
 מבנה פלט נדרש:
@@ -34,4 +46,4 @@ output/{book-name}/assets/chapter-01/image-01.png
 
 דיווח tokens:
 בסיום עבודתך, דווח על מספר ה-tokens שצרכת בפורמט:
-tokens_used: {מספר}  
+tokens_used: {מספר}
