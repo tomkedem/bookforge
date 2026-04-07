@@ -40,11 +40,29 @@ created = build_skeleton("book-name", chapters)
 - לכלול TypeScript types
 - להיות בקובץ נפרד
 
+## מעבר שפה חובה
+
+כפתור HE/EN חייב לעבוד בכל דף.
+לחיצה על EN מחליפה את כל הטקסט לאנגלית.
+לחיצה על HE חוזרת לעברית.
+הכפתור הפעיל: background #1a1a1a, color #fff.
+הכפתור הלא פעיל: color #888, background transparent.
+העדפת שפה נשמרת ב-cookie בשם yuval-lang עם תפוגה שנה.
+URL משתנה ל-?lang=en או ?lang=he.
+הרץ npm run dev ובדוק ידנית שמעבר השפה עובד לפני שמדווח סיום.
+
 אסור בהחלט:
 - לשנות design-system.json
 - לשנות קבצי MD
 - לשלב לוגיקה עסקית בקומפוננטים
 - לכתוב CSS inline
+
+עיבוד בלוקי קוד:
+כשקוד מופיע בתוכן MD בין גדרות ```,
+עטוף אותו ב-<pre><code> עם class="code-block".
+כשקוד inline מופיע בין ` `,
+עטוף אותו ב-<code> עם class="code-inline".
+אל תשתמש ב-syntax highlighting ספריות חיצוניות.
 
 מקרי קצה:
 אם רכיב משותף קיים כבר:

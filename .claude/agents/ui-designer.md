@@ -252,6 +252,28 @@ hero:
 - object-fit: cover
 - overlay עדין בתחתית
 
+## בלוקי קוד
+
+גופן: JetBrains Mono או Fira Code, font-size 14px, line-height 1.6
+רקע: #f5f3ef
+border: 1px solid #e0ddd8
+border-radius: 4px
+padding: 20px 24px
+overflow-x: auto
+direction: ltr
+text-align: left
+
+קוד inline:
+רקע: #f5f3ef
+padding: 2px 6px
+border-radius: 3px
+font-size: 14px
+color: #1a1a1a
+
+הוסף ל-Google Fonts:
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+
 ## ביקורת עצמית חובה
 
 לפני שאתה מסיים, שאל את עצמך:
