@@ -1,0 +1,131 @@
+---
+import type { Language } from '../types/index';
+import BaseLayout from './BaseLayout.astro';
+import { LANGUAGES } from '../utils/language';
+
+interface Props {
+  title: string;
+  language?: Language;
+  class?: string;
+}
+
+const { title, language = LANGUAGES.EN, class: className } = Astro.props;
+const isRtl = language === LANGUAGES.HE;
+---
+
+<BaseLayout
+  title={title}
+  language={language}
+  showHeader={true}
+  showProgress={true}
+  showLanguageToggle={true}
+>
+  <article
+    class:list={[
+      'mx-auto',
+      'max-w-reading',
+      'px-4',
+      'sm:px-6',
+      'lg:px-8',
+      'py-8',
+      'sm:py-12',
+      'lg:py-16',
+      isRtl && 'text-right',
+      className,
+    ]}
+  >
+    <!-- Chapter content -->
+    <div
+      class="prose prose-invert max-w-none space-y-6"
+      data-language={language}
+    >
+      <slot />
+    </div>
+
+    <!-- Custom prose styles for reading -->
+    <style>
+      :global(article h1) {
+        @apply font-heading font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight mt-12 mb-6 text-yuval-text;
+      }
+
+      :global(article h2) {
+        @apply font-heading font-bold text-3xl sm:text-4xl leading-snug mt-10 mb-4 text-yuval-text;
+      }
+
+      :global(article h3) {
+        @apply font-heading font-semibold text-2xl sm:text-3xl leading-snug mt-8 mb-3 text-yuval-text-secondary;
+      }
+
+      :global(article p) {
+        @apply text-lg sm:text-xl leading-loose text-yuval-text-secondary mb-6 font-light;
+      }
+
+      :global(article blockquote) {
+        @apply relative pl-6 py-4 my-8 text-xl leading-relaxed text-yuval-text-secondary border-l-4 border-yuval-text-tertiary bg-yuval-bg-secondary;
+      }
+
+      :global(article [dir="rtl"] blockquote) {
+        @apply pl-0 pr-6 border-l-0 border-r-4;
+      }
+
+      :global(article strong) {
+        @apply font-semibold text-yuval-text;
+      }
+
+      :global(article em) {
+        @apply italic;
+      }
+
+      :global(article ul,
+      article ol) {
+        @apply ml-6 space-y-2 my-6;
+      }
+
+      :global(article [dir="rtl"] ul,
+      article [dir="rtl"] ol) {
+        @apply ml-0 mr-6;
+      }
+
+      :global(article li) {
+        @apply text-lg leading-relaxed text-yuval-text-secondary font-light;
+      }
+
+      :global(article code) {
+        @apply font-mono text-sm bg-yuval-bg-secondary px-2 py-1 rounded text-yuval-text;
+      }
+
+      :global(article pre) {
+        @apply bg-yuval-bg-secondary p-4 rounded-lg overflow-x-auto my-6;
+      }
+
+      :global(article pre code) {
+        @apply bg-transparent px-0 py-0;
+      }
+
+      :global(article a) {
+        @apply text-yuval-text underline hover:text-yuval-text-secondary transition-colors duration-200;
+      }
+
+      :global(article img) {
+        @apply max-w-full h-auto rounded-lg my-8;
+      }
+
+      :global(article hr) {
+        @apply my-12 border-yuval-border;
+      }
+
+      :global(article table) {
+        @apply w-full border-collapse my-6;
+      }
+
+      :global(article td,
+      article th) {
+        @apply border border-yuval-border px-4 py-2 text-left;
+      }
+
+      :global(article th) {
+        @apply bg-yuval-bg-secondary font-semibold;
+      }
+    </style>
+  </article>
+</BaseLayout>

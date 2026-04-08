@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import type { Language } from '../../types/index';
+import { LANGUAGES } from '../../utils/language';
+
+interface Props {
+  language?: Language;
+}
+
+export async function getStaticPaths() {
+  return [
+    { params: { slug: 'bookforge' } },
+  ];
+}
+
+const { language = LANGUAGES.EN } = Astro.props;
+const { slug } = Astro.params;
+const isRtl = language === LANGUAGES.HE;
+
+// Mock book data - in reality, this would come from your data source
+const book = {
+  slug: 'bookforge',
+  title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
+  title_en: 'BookForge: Building Agent Systems with Claude Code',
+  description_he: 'ספר מעשי על בניית מערכות סוכנים משוכללות',
+  description_en: 'A practical guide to building sophisticated agent systems',
+  coverImage: '/covers/bookforge.jpg',
+  dominantColor: '#1a1a1a',
+  chapters: [
+    {
+      id: 0,
+      title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
+      title_en: 'Prep Chapter: The Demo Project and Environment',
+      sections: 6,
+      has_images: true,
+      word_count: 1100,
+      topics: [
+        'BookForge Overview',
+        'Yuval Platform',
+        'Agent System Architecture',
+      ],
+    },
+    {
+      id: 1,
+      title_he: 'פרק 1: שינוי מודל המנטלי',
+      title_en: 'Chapter 1: Changing the Mental Model',
+      sections: 4,
+      has_images: false,
+      word_count: 1050,
+      topics: ['Helper vs Agent System', 'Comparative Scenarios'],
+    },
+    {
+      id: 2,
+      title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
+      title_en: 'Chapter 2: CLAUDE.md as Architecture',
+      sections: 5,
+      has_images: false,
+      word_count: 1200,
+      topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
+    },
+    {
+      id: 3,
+      title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
+      title_en: 'Chapter 3: Subagents, Proper Work Division',
+      sections: 6,
+      has_images: true,
+      word_count: 3600,
+      topics: ['Single Agent Limitations', 'Subagent Architecture'],
+    },
+  ],
+};
+
+const title = language === LANGUAGES.HE ? book.title_he : book.title_en;
+const description =
+  language === LANGUAGES.HE ? book.description_he : book.description_en;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  language={language}
+>
+  <div
+    class:list={[
+      'min-h-screen',
+      'bg-yuval-bg',
+      'py-12',
+      'sm:py-16',
+      'lg:py-20',
+      'px-4',
+      'sm:px-6',
+      'lg:px-8',
+    ]}
+  >
+    <div class="max-w-4xl mx-auto">
+      <!-- Book Header -->
+      <div
+        class:list={[
+          'grid',
+          'grid-cols-1',
+          'md:grid-cols-3',
+          'gap-8',
+          'mb-12',
+          'items-start',
+        ]}
+      >
+        <!-- Cover Image -->
+        <div class="md:col-span-1">
+          <img
+            src={book.coverImage}
+            alt={title}
+            class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary"
+          />
+        </div>
+
+        <!-- Book Info -->
+        <div class:list={['md:col-span-2', isRtl && 'text-right']}>
+          <h1
+            class="font-heading font-bold text-4xl sm:text-5xl leading-tight mb-4 text-yuval-text"
+          >
+            {title}
+          </h1>
+
+          <p class="text-lg text-yuval-text-secondary leading-relaxed mb-6">
+            {description}
+          </p>
+
+          <div class="space-y-2 mb-6">
+            <p class="text-sm text-yuval-text-tertiary">
+              {language === LANGUAGES.HE
+                ? `${book.chapters.length} פרקים`
+                : `${book.chapters.length} chapters`}
+            </p>
+            <p class="text-sm text-yuval-text-tertiary">
+              {language === LANGUAGES.HE
+                ? `${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} מילים`
+                : `${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} words`}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapters List -->
+      <div class="border-t border-yuval-border pt-12">
+        <h2
+          class="font-heading font-bold text-2xl mb-6 text-yuval-text"
+        >
+          {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
+        </h2>
+
+        <div class="space-y-3">
+          {
+            book.chapters.map((chapter) => {
+              const chapterTitle =
+                language === LANGUAGES.HE
+                  ? chapter.title_he
+                  : chapter.title_en;
+              return (
+                <a
+                  href={`/read/${slug}/${chapter.id}`}
+                  class:list={[
+                    'block',
+                    'p-4',
+                    'rounded-lg',
+                    'border',
+                    'border-yuval-border',
+                    'hover:bg-yuval-bg-secondary',
+                    'hover:border-yuval-border-secondary',
+                    'transition-all',
+                    'duration-200',
+                    'focus:outline-none',
+                    'focus:ring-2',
+                    'focus:ring-offset-2',
+                    'focus:ring-yuval-text',
+                  ]}
+                >
+                  <div
+                    class:list={[
+                      'flex',
+                      'items-center',
+                      'justify-between',
+                      'gap-4',
+                      isRtl && 'flex-row-reverse',
+                    ]}
+                  >
+                    <div class:list={[isRtl && 'text-right']}>
+                      <h3 class="font-heading font-semibold text-lg text-yuval-text">
+                        {chapterTitle}
+                      </h3>
+                      <p class="text-sm text-yuval-text-tertiary mt-1">
+                        {chapter.sections > 1
+                          ? `${chapter.sections} sections`
+                          : '1 section'}{' '}
+                        • {chapter.word_count} words
+                      </p>
+                    </div>
+                    <svg
+                      class="w-5 h-5 text-yuval-text-tertiary flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width={2}
+                        d={isRtl ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
+                      />
+                    </svg>
+                  </div>
+                </a>
+              );
+            })
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

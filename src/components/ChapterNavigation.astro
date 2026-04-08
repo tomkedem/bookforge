@@ -1,0 +1,161 @@
+---
+import type { Language, Chapter } from '../types/index';
+
+interface Props {
+  currentChapterId: number;
+  chapters: Chapter[];
+  bookSlug: string;
+  language?: Language;
+  class?: string;
+}
+
+const {
+  currentChapterId,
+  chapters,
+  bookSlug,
+  language = 'en',
+  class: className,
+} = Astro.props;
+
+const currentChapter = chapters.find((ch) => ch.id === currentChapterId);
+const previousChapter = chapters.find((ch) => ch.id === currentChapterId - 1);
+const nextChapter = chapters.find((ch) => ch.id === currentChapterId + 1);
+
+const getPreviousUrl = () =>
+  previousChapter ? `/read/${bookSlug}/${previousChapter.id}` : '';
+const getNextUrl = () =>
+  nextChapter ? `/read/${bookSlug}/${nextChapter.id}` : '';
+
+const isRtl = language === 'he';
+---
+
+<nav
+  class:list={[
+    'flex',
+    isRtl ? 'flex-row-reverse' : 'flex-row',
+    'items-center',
+    'justify-between',
+    'gap-4',
+    'py-6',
+    'border-t',
+    'border-yuval-border-secondary',
+    'mt-12',
+    className,
+  ]}
+  aria-label={language === 'he' ? 'ניווט פרקים' : 'Chapter navigation'}
+>
+  {
+    previousChapter && (
+      <a
+        href={getPreviousUrl()}
+        class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
+        data-he="הפרק הקודם"
+        data-en="Previous Chapter"
+      >
+        {isRtl ? (
+          <>
+            <span>{previousChapter.title_he}</span>
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </>
+        ) : (
+          <>
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span>{previousChapter.title_en}</span>
+          </>
+        )}
+      </a>
+    )
+  }
+
+  {
+    currentChapter && (
+      <div class="flex flex-col items-center gap-1">
+        <span
+          class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide"
+          data-he={`פרק ${currentChapter.id + 1} מתוך ${chapters.length}`}
+          data-en={`Chapter ${currentChapter.id + 1} of ${chapters.length}`}
+        >
+          Chapter {currentChapter.id + 1} of {chapters.length}
+        </span>
+        <h2
+          class="text-center font-heading font-bold text-lg text-yuval-text"
+          data-he={currentChapter.title_he}
+          data-en={currentChapter.title_en}
+        >
+          {language === 'he' ? currentChapter.title_he : currentChapter.title_en}
+        </h2>
+      </div>
+    )
+  }
+
+  {
+    nextChapter && (
+      <a
+        href={getNextUrl()}
+        class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
+        data-he="הפרק הבא"
+        data-en="Next Chapter"
+      >
+        {isRtl ? (
+          <>
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span>{nextChapter.title_he}</span>
+          </>
+        ) : (
+          <>
+            <span>{nextChapter.title_en}</span>
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </>
+        )}
+      </a>
+    )
+  }
+</nav>

@@ -1,0 +1,134 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BookCard from '../components/BookCard.astro';
+import type { Language } from '../types/index';
+import { LANGUAGES } from '../utils/language';
+
+interface Props {
+  language?: Language;
+}
+
+const { language = LANGUAGES.EN } = Astro.props;
+const isRtl = language === LANGUAGES.HE;
+
+// In a real app, this would come from your data source
+const booksData: Array<{
+  slug: string;
+  title_he: string;
+  title_en: string;
+  description_he: string;
+  description_en: string;
+  coverImage: string;
+  dominantColor: string;
+}> = [
+  {
+    slug: 'bookforge',
+    title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
+    title_en: 'BookForge: Building Agent Systems with Claude Code',
+    description_he:
+      'ספר מעשי על בניית מערכות סוכנים משוכללות באמצעות Claude Code ופיתוח תוכנה מודרני.',
+    description_en:
+      'A practical guide to building sophisticated agent systems with Claude Code and modern software development.',
+    coverImage: '/covers/bookforge.jpg',
+    dominantColor: '#1a1a1a',
+  },
+  // Add more books as needed
+];
+
+const books = booksData.map((book) => ({
+  ...book,
+  title: language === LANGUAGES.HE ? book.title_he : book.title_en,
+  description:
+    language === LANGUAGES.HE
+      ? book.description_he
+      : book.description_en,
+}));
+---
+
+<BaseLayout
+  title={language === LANGUAGES.HE ? 'ספרים' : 'Books'}
+  description={
+    language === LANGUAGES.HE
+      ? 'הרשימה המלאה של ספרים ב-Yuval'
+      : 'Complete list of books on Yuval'
+  }
+  language={language}
+>
+  <div
+    class:list={[
+      'min-h-screen',
+      'bg-yuval-bg',
+      'px-4',
+      'sm:px-6',
+      'lg:px-8',
+      'py-12',
+      'sm:py-16',
+      'lg:py-20',
+    ]}
+  >
+    <!-- Hero Section -->
+    <div
+      class:list={[
+        'max-w-4xl',
+        'mx-auto',
+        'mb-16',
+        'text-center',
+        isRtl && 'text-right',
+      ]}
+    >
+      <h1
+        class="font-heading font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight mb-4 text-yuval-text"
+        data-he="ספרים"
+        data-en="Books"
+      >
+        {language === LANGUAGES.HE ? 'ספרים' : 'Books'}
+      </h1>
+      <p
+        class="text-lg sm:text-xl text-yuval-text-secondary font-light leading-relaxed"
+        data-he="התחקות של ידע מעמיק ויישום מעשי"
+        data-en="Explorations of deep knowledge and practical application"
+      >
+        {language === LANGUAGES.HE
+          ? 'התחקות של ידע מעמיק ויישום מעשי'
+          : 'Explorations of deep knowledge and practical application'}
+      </p>
+    </div>
+
+    <!-- Books Grid -->
+    <div
+      class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+    >
+      {
+        books.map((book) => (
+          <BookCard
+            slug={book.slug}
+            title={book.title}
+            description={book.description}
+            coverImage={book.coverImage}
+            dominantColor={book.dominantColor}
+            language={language}
+          />
+        ))
+      }
+    </div>
+
+    <!-- Empty State -->
+    {
+      books.length === 0 && (
+        <div
+          class={`max-w-md mx-auto py-12 text-center ${isRtl ? 'text-right' : ''}`}
+        >
+          <p
+            class="text-lg text-yuval-text-secondary"
+            data-he="אין ספרים זמינים כרגע"
+            data-en="No books available yet"
+          >
+            {language === LANGUAGES.HE
+              ? 'אין ספרים זמינים כרגע'
+              : 'No books available yet'}
+          </p>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

@@ -1,0 +1,51 @@
+import type { ReadingProgress } from '../types/index';
+import { getStorageKey } from './language';
+
+export class ReadingProgressManager {
+  private static readonly PREFIX = 'reading_progress_';
+
+  static getKey(bookId: string, chapterId: number): string {
+    return getStorageKey(`${this.PREFIX}${bookId}_ch${chapterId}`);
+  }
+
+  static saveProgress(bookId: string, chapterId: number, scrollPosition: number): void {
+    if (typeof window === 'undefined') return;
+
+    const progress: ReadingProgress = {
+      bookId,
+      chapterId,
+      scrollPosition,
+      lastUpdated: Date.now(),
+    };
+
+    localStorage.setItem(this.getKey(bookId, chapterId), JSON.stringify(progress));
+  }
+
+  static getProgress(bookId: string, chapterId: number): ReadingProgress | null {
+    if (typeof window === 'undefined') return null;
+
+    const stored = localStorage.getItem(this.getKey(bookId, chapterId));
+    if (!stored) return null;
+
+    try {
+      return JSON.parse(stored) as ReadingProgress;
+    } catch {
+      return null;
+    }
+  }
+
+  static clearProgress(bookId: string, chapterId: number): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(this.getKey(bookId, chapterId));
+  }
+
+  static getScrollPercentage(scrollPosition: number, contentHeight: number): number {
+    if (contentHeight === 0) return 0;
+    return Math.min(100, (scrollPosition / contentHeight) * 100);
+  }
+
+  static restoreScroll(bookId: string, chapterId: number): number {
+    const progress = this.getProgress(bookId, chapterId);
+    return progress?.scrollPosition ?? 0;
+  }
+}

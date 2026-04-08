@@ -1,0 +1,114 @@
+---
+import type { Language } from '../types/index';
+import Header from '../components/Header.astro';
+import ReadingProgress from '../components/ReadingProgress.astro';
+import { LANGUAGES } from '../utils/language';
+
+interface Props {
+  title: string;
+  description?: string;
+  language?: Language;
+  showHeader?: boolean;
+  showProgress?: boolean;
+  showLanguageToggle?: boolean;
+  class?: string;
+}
+
+const {
+  title,
+  description = 'Yuval - A digital reading platform',
+  language = LANGUAGES.EN,
+  showHeader = true,
+  showProgress = false,
+  showLanguageToggle = true,
+  class: className,
+} = Astro.props;
+
+const isRtl = language === LANGUAGES.HE;
+---
+
+<!doctype html>
+<html lang={language} dir={isRtl ? 'rtl' : 'ltr'}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} | Yuval</title>
+
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@100;300;400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Yuval",
+        "url": "https://yuval.example.com"
+      }
+    </script>
+  </head>
+
+  <body
+    class:list={[
+      'bg-yuval-bg',
+      'text-yuval-text',
+      'font-body',
+      'antialiased',
+      className,
+    ]}
+  >
+    {showProgress && <ReadingProgress language={language} />}
+
+    {showHeader && (
+      <Header
+        language={language}
+        showLanguageToggle={showLanguageToggle}
+      />
+    )}
+
+    <main class="w-full">
+      <slot />
+    </main>
+
+    <script>
+      // Initialize language preference on page load
+      import {
+        getLanguageFromStorage,
+        setLanguageToStorage,
+        isValidLanguage,
+      } from '../utils/language';
+
+      const storedLang = getLanguageFromStorage();
+      if (isValidLanguage(storedLang)) {
+        document.documentElement.lang = storedLang;
+        document.documentElement.dir = storedLang === 'he' ? 'rtl' : 'ltr';
+      }
+
+      // Listen for language changes
+      window.addEventListener(
+        'language-changed',
+        (e: Event) => {
+          const event = e as CustomEvent;
+          const lang = event.detail.language;
+          setLanguageToStorage(lang);
+          document.documentElement.lang = lang;
+          document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+        }
+      );
+    </script>
+  </body>
+</html>

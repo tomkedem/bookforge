@@ -1,0 +1,88 @@
+---
+import type { Language } from '../types/index';
+
+interface Props {
+  slug: string;
+  title: string;
+  description: string;
+  coverImage: string;
+  dominantColor?: string;
+  language?: Language;
+  class?: string;
+}
+
+const {
+  slug,
+  title,
+  description,
+  coverImage,
+  dominantColor = '#1a1a1a',
+  language = 'en',
+  class: className,
+} = Astro.props;
+
+const bookUrl = `/books/${slug}`;
+---
+
+<article
+  class:list={[
+    'group',
+    'relative',
+    'overflow-hidden',
+    'rounded-lg',
+    'transition-all',
+    'duration-300',
+    'hover:shadow-xl',
+    'bg-yuval-bg-secondary',
+    'border',
+    'border-yuval-border',
+    className,
+  ]}
+>
+  <!-- Thumbnail container with dominant color overlay -->
+  <div
+    class="relative h-48 overflow-hidden bg-cover bg-center"
+    style={`background-image: url('${coverImage}'); background-color: ${dominantColor};`}
+  >
+    <!-- Dominant color overlay -->
+    <div
+      class="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-20"
+      style={`background-color: ${dominantColor};`}
+    />
+
+    <!-- Focus overlay for accessibility -->
+    <div
+      class="absolute inset-0 opacity-0 transition-opacity duration-200 group-focus-within:opacity-10"
+      style="background-color: rgba(0, 0, 0, 1);"
+    />
+  </div>
+
+  <!-- Content -->
+  <div class="p-6 space-y-3">
+    <h3
+      class="font-heading font-bold text-2xl leading-tight text-yuval-text group-hover:text-yuval-text-secondary transition-colors duration-200"
+      data-he={title}
+      data-en={title}
+    >
+      {title}
+    </h3>
+
+    <p
+      class="text-sm text-yuval-text-secondary leading-relaxed line-clamp-3"
+      data-he={description}
+      data-en={description}
+    >
+      {description}
+    </p>
+
+    <!-- Read button -->
+    <a
+      href={bookUrl}
+      class="inline-block mt-4 px-4 py-2 font-body font-medium text-sm rounded-md bg-yuval-text text-yuval-bg hover:bg-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
+      data-he="קרא עכשיו"
+      data-en="Read Now"
+    >
+      Read Now
+    </a>
+  </div>
+</article>

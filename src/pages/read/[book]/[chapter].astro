@@ -1,0 +1,306 @@
+---
+import ReadingLayout from '../../../layouts/ReadingLayout.astro';
+import ChapterNavigation from '../../../components/ChapterNavigation.astro';
+import type { Language, Chapter } from '../../../types/index';
+import { LANGUAGES, getLanguageFromStorage } from '../../../utils/language';
+
+interface Props {
+  language?: Language;
+}
+
+export async function getStaticPaths() {
+  // Generate paths for all chapters in sample-book
+  const chapters = [0, 1, 2, 3]; // Based on sample-book content structure
+  const books = ['bookforge', 'sample-book'];
+
+  return chapters.flatMap(chap =>
+    books.map(book => ({
+      params: { book, chapter: String(chap) }
+    }))
+  );
+}
+
+const { book, chapter: chapterIdStr } = Astro.params;
+const chapterId = parseInt(chapterIdStr || '0', 10);
+
+// Chapter metadata
+const mockChapters: Chapter[] = [
+  {
+    id: 0,
+    title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
+    title_en: 'Setup Chapter: The Demo Project and Environment',
+    sections: 6,
+    has_images: true,
+    word_count: 1100,
+    topics: ['BookForge Overview', 'Yuval Platform', 'Agent System Architecture'],
+  },
+  {
+    id: 1,
+    title_he: 'פרק 1: שינוי מודל המנטלי',
+    title_en: 'Chapter 1: Changing Your Mental Model',
+    sections: 4,
+    has_images: false,
+    word_count: 1050,
+    topics: ['Helper vs Agent System', 'Comparative Scenarios'],
+  },
+  {
+    id: 2,
+    title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
+    title_en: 'Chapter 2: CLAUDE.md as Architecture',
+    sections: 5,
+    has_images: false,
+    word_count: 1200,
+    topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
+  },
+  {
+    id: 3,
+    title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
+    title_en: 'Chapter 3: Subagents, Proper Division of Labor',
+    sections: 6,
+    has_images: true,
+    word_count: 3600,
+    topics: ['Single Agent Limitations', 'Subagent Architecture'],
+  },
+];
+
+const currentChapter = mockChapters.find((ch) => ch.id === chapterId);
+if (!currentChapter) {
+  return new Response('Chapter not found', { status: 404 });
+}
+
+// Load chapter content from markdown files
+let chapterContent = '';
+let chapterTitle = '';
+
+try {
+  const langCode = Astro.url.searchParams.get('lang') || 'en';
+  const validLang = (langCode === 'he' ? LANGUAGES.HE : LANGUAGES.EN) as Language;
+
+  chapterTitle = validLang === LANGUAGES.HE
+    ? currentChapter.title_he
+    : currentChapter.title_en;
+
+  const filename = `chapter-${String(chapterId).padStart(2, '0')}.${validLang}.md`;
+
+  // Try to fetch from output folder (in development)
+  // In production, these would be pre-rendered or loaded from API
+  const contentUrl = `/output/sample-book/${filename}`;
+
+  try {
+    const response = await fetch(contentUrl);
+    if (response.ok) {
+      chapterContent = await response.text();
+    } else {
+      chapterContent = `<!-- Chapter content (${filename}) not found in static build -->
+<p>Chapter ${chapterId} content would load here in production.</p>`;
+    }
+  } catch (e) {
+    chapterContent = `<!-- Error loading chapter ${filename} -->
+<p>Chapter ${chapterId} content would load here in production.</p>`;
+  }
+} catch (error) {
+  console.error('Error loading chapter:', error);
+  chapterContent = `<p>Error loading chapter content</p>`;
+  chapterTitle = currentChapter.title_en;
+}
+---
+
+<ReadingLayout
+  title={chapterTitle}
+  language={LANGUAGES.EN}
+>
+  <!-- Bilingual content container with data attributes for client-side switching -->
+  <div id="chapter-container" data-chapter-id={chapterId} data-book={book}>
+    <!-- Hebrew version -->
+    <div data-he class="hidden" dir="rtl" style="text-align: right">
+      <h1>{currentChapter.title_he}</h1>
+      <div class="chapter-metadata">
+        <span class="word-count">{currentChapter.word_count} words</span>
+        <span class="reading-time">{Math.ceil(currentChapter.word_count / 200)} min read</span>
+      </div>
+    </div>
+
+    <!-- English version (default) -->
+    <div data-en class="visible" dir="ltr" style="text-align: left">
+      <h1>{currentChapter.title_en}</h1>
+      <div class="chapter-metadata">
+        <span class="word-count">{currentChapter.word_count} words</span>
+        <span class="reading-time">{Math.ceil(currentChapter.word_count / 200)} min read</span>
+      </div>
+    </div>
+
+    <!-- Common content area -->
+    <div class="chapter-content">
+      {chapterContent && <Fragment set:html={chapterContent} />}
+    </div>
+
+    <!-- Chapter navigation -->
+    <ChapterNavigation
+      currentChapterId={chapterId}
+      chapters={mockChapters}
+      bookSlug={book || 'bookforge'}
+      language={LANGUAGES.EN}
+    />
+  </div>
+</ReadingLayout>
+
+<style>
+  .hidden {
+    display: none !important;
+  }
+
+  .visible {
+    display: block;
+  }
+
+  .chapter-metadata {
+    color: #888;
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #f0ede8;
+    padding-bottom: 1rem;
+  }
+
+  .chapter-metadata span {
+    margin-right: 1.5rem;
+  }
+
+  [dir="rtl"] .chapter-metadata span {
+    margin-right: 0;
+    margin-left: 1.5rem;
+  }
+</style>
+
+<script>
+  import { ReadingProgressManager } from '../../../utils/reading-progress';
+  import { LANGUAGES, getLanguageFromStorage, setLanguageToStorage, isValidLanguage } from '../../../utils/language';
+
+  /**
+   * Initialize language switching from URL and localStorage
+   * Handles client-side content switching with data-he/data-en attributes
+   */
+  function initLanguageSwitcher(controller: AbortController) {
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentLanguage = urlParams.get('lang');
+
+    if (!currentLanguage || !isValidLanguage(currentLanguage)) {
+      currentLanguage = getLanguageFromStorage() || LANGUAGES.EN;
+    }
+
+    // Save to localStorage
+    setLanguageToStorage(currentLanguage as any);
+
+    // Switch content visibility
+    switchLanguage(currentLanguage as any);
+
+    // Listen for language change events from LanguageToggle component
+    const switchHandler = (e: CustomEvent) => {
+      const newLang = e.detail?.language;
+      if (newLang && isValidLanguage(newLang)) {
+        switchLanguage(newLang);
+        setLanguageToStorage(newLang);
+
+        // Update URL without reload
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('lang', newLang);
+        window.history.replaceState({}, '', newUrl);
+      }
+    };
+
+    window.addEventListener('language-changed', switchHandler as EventListener, { signal: controller.signal });
+  }
+
+  /**
+   * Switch content between Hebrew and English using data attributes
+   */
+  function switchLanguage(lang: string) {
+    const heContent = document.querySelector('[data-he]');
+    const enContent = document.querySelector('[data-en]');
+
+    if (heContent && enContent) {
+      if (lang === 'he') {
+        heContent.classList.remove('hidden');
+        heContent.classList.add('visible');
+        enContent.classList.add('hidden');
+        enContent.classList.remove('visible');
+        document.documentElement.lang = 'he';
+        document.documentElement.dir = 'rtl';
+      } else {
+        enContent.classList.remove('hidden');
+        enContent.classList.add('visible');
+        heContent.classList.add('hidden');
+        heContent.classList.remove('visible');
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+      }
+    }
+  }
+
+  /**
+   * Initialize reading progress tracking with proper cleanup
+   */
+  function initReadingProgress(controller: AbortController) {
+    const pathname = window.location.pathname;
+    const parts = pathname.split('/').filter(Boolean);
+    const bookId = parts[1] || 'unknown';
+    const chapterId = parseInt(parts[2] || '0', 10);
+
+    // Save progress on scroll with debounce
+    let scrollTimeout: NodeJS.Timeout;
+    const scrollHandler = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        ReadingProgressManager.saveProgress(bookId, chapterId, window.scrollY);
+      }, 500);
+    };
+
+    window.addEventListener('scroll', scrollHandler, { passive: true, signal: controller.signal });
+
+    // Restore scroll position on page load
+    const progress = ReadingProgressManager.getProgress(bookId, chapterId);
+    if (progress && progress.scrollPosition > 0) {
+      // Use setTimeout to ensure DOM is fully rendered
+      setTimeout(() => {
+        window.scrollTo(0, progress.scrollPosition);
+      }, 100);
+    }
+
+    // Return cleanup function
+    return () => clearTimeout(scrollTimeout);
+  }
+
+  /**
+   * Main initialization with proper AbortController cleanup
+   */
+  function initializeReadingPage() {
+    // Create AbortController for cleanup on page transition
+    const controller = new AbortController();
+
+    // Setup language switching (will cleanup on abort)
+    initLanguageSwitcher(controller);
+
+    // Setup reading progress (will cleanup on abort)
+    const progressCleanup = initReadingProgress(controller);
+
+    // Listen for page transition to cleanup
+    const beforeUnmountHandler = () => {
+      progressCleanup();
+      controller.abort();
+    };
+
+    document.addEventListener('astro:before-unmount', beforeUnmountHandler);
+
+    // Also cleanup on page unload
+    window.addEventListener('unload', beforeUnmountHandler);
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeReadingPage);
+  } else {
+    initializeReadingPage();
+  }
+
+  // Re-initialize on Astro navigation
+  document.addEventListener('astro:after-swap', initializeReadingPage);
+</script>

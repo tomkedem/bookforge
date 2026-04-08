@@ -1,0 +1,159 @@
+---
+import type { Language } from '../types/index';
+import { LANGUAGES, getLanguageLabel, getOppositeLanguage } from '../utils/language';
+
+interface Props {
+  currentLanguage?: Language;
+  class?: string;
+}
+
+const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
+const oppositeLanguage = getOppositeLanguage(currentLanguage);
+---
+
+<div
+  class:list={[
+    'inline-flex',
+    'items-center',
+    'gap-1',
+    'p-1',
+    'rounded-full',
+    'bg-yuval-bg-secondary',
+    'border',
+    'border-yuval-border',
+    className,
+  ]}
+  role="radiogroup"
+  aria-label="Language Selection"
+>
+  <button
+    type="button"
+    class:list={[
+      'px-3',
+      'py-1.5',
+      'rounded-full',
+      'transition-all',
+      'duration-200',
+      'font-body',
+      'text-sm',
+      'font-medium',
+      currentLanguage === LANGUAGES.HE && 'bg-yuval-text text-yuval-bg',
+      currentLanguage !== LANGUAGES.HE &&
+        'text-yuval-text hover:bg-yuval-bg-secondary',
+    ]}
+    data-language="he"
+    aria-pressed={currentLanguage === LANGUAGES.HE}
+    aria-label="Switch to Hebrew"
+    data-he="עברית"
+    data-en="Hebrew"
+  >
+    עברית
+  </button>
+
+  <button
+    type="button"
+    class:list={[
+      'px-3',
+      'py-1.5',
+      'rounded-full',
+      'transition-all',
+      'duration-200',
+      'font-body',
+      'text-sm',
+      'font-medium',
+      currentLanguage === LANGUAGES.EN && 'bg-yuval-text text-yuval-bg',
+      currentLanguage !== LANGUAGES.EN &&
+        'text-yuval-text hover:bg-yuval-bg-secondary',
+    ]}
+    data-language="en"
+    aria-pressed={currentLanguage === LANGUAGES.EN}
+    aria-label="Switch to English"
+    data-he="אנגלית"
+    data-en="English"
+  >
+    English
+  </button>
+</div>
+
+<script>
+  import { LANGUAGES, setLanguageToStorage, isValidLanguage } from '../utils/language';
+  import type { Language } from '../types/index';
+
+  /**
+   * Initialize language toggle with proper event listener cleanup
+   * Returns cleanup function for AbortController
+   */
+  function initLanguageToggle(controller: AbortController) {
+    const buttons = document.querySelectorAll(
+      '[role="radiogroup"] button[data-language]'
+    );
+
+    const clickHandler = (e: Event) => {
+      const target = e.currentTarget as HTMLButtonElement;
+      const lang = target.dataset.language;
+
+      if (lang && isValidLanguage(lang)) {
+        setLanguageToStorage(lang);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === LANGUAGES.HE ? 'rtl' : 'ltr';
+
+        // Update aria-pressed state
+        buttons.forEach((btn) => {
+          const btnLang = (btn as HTMLButtonElement).dataset.language;
+          (btn as HTMLButtonElement).setAttribute(
+            'aria-pressed',
+            btnLang === lang ? 'true' : 'false'
+          );
+        });
+
+        // Dispatch custom event for other components (like reading page)
+        window.dispatchEvent(
+          new CustomEvent('language-changed', {
+            detail: { language: lang as Language }
+          })
+        );
+      }
+    };
+
+    // Add click listeners with AbortController signal for cleanup
+    buttons.forEach((button) => {
+      button.addEventListener('click', clickHandler, { signal: controller.signal });
+      // Set initial aria-pressed state
+      const btnLang = (button as HTMLButtonElement).dataset.language;
+      (button as HTMLButtonElement).setAttribute(
+        'aria-pressed',
+        btnLang === LANGUAGES.EN ? 'true' : 'false'
+      );
+    });
+  }
+
+  /**
+   * Main initialization with AbortController for cleanup
+   */
+  function initializeLanguageToggle() {
+    const controller = new AbortController();
+
+    // Initialize the toggle
+    initLanguageToggle(controller);
+
+    // Cleanup on page unmount
+    const unloadHandler = () => {
+      controller.abort();
+    };
+
+    document.addEventListener('astro:before-unmount', unloadHandler);
+
+    // Also listen for page unload
+    window.addEventListener('unload', unloadHandler);
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeLanguageToggle);
+  } else {
+    initializeLanguageToggle();
+  }
+
+  // Re-initialize on Astro navigation
+  document.addEventListener('astro:after-swap', initializeLanguageToggle);
+</script>

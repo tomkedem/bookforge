@@ -1,0 +1,1 @@
+import{a,i as o,s as g}from"./language.C3u1PX3S.js";const n=a();o(n)&&(document.documentElement.lang=n,document.documentElement.dir=n==="he"?"rtl":"ltr");window.addEventListener("language-changed",t=>{const e=t.detail.language;g(e),document.documentElement.lang=e,document.documentElement.dir=e==="he"?"rtl":"ltr"});

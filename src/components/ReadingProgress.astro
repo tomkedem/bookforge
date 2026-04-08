@@ -1,0 +1,101 @@
+---
+import type { Language } from '../types/index';
+
+interface Props {
+  scrollPercentage?: number;
+  language?: Language;
+  class?: string;
+}
+
+const { scrollPercentage = 0, language = 'en', class: className } = Astro.props;
+
+const ariaLabel =
+  language === 'he' ? `התקדמות קריאה: ${Math.round(scrollPercentage)}%` : `Reading progress: ${Math.round(scrollPercentage)}%`;
+---
+
+<div
+  class:list={[
+    'fixed',
+    'top-0',
+    'left-0',
+    'right-0',
+    'h-1',
+    'z-40',
+    'bg-yuval-border',
+    className,
+  ]}
+  role="progressbar"
+  aria-label={ariaLabel}
+  aria-valuenow={Math.round(scrollPercentage)}
+  aria-valuemin={0}
+  aria-valuemax={100}
+>
+  <div
+    class="h-full bg-yuval-text transition-all duration-300"
+    style={`width: ${scrollPercentage}%`}
+  />
+</div>
+
+<script>
+  /**
+   * Update reading progress bar based on scroll position
+   * Returns cleanup function for AbortController
+   */
+  function initializeProgress(controller: AbortController) {
+    const progressBar = document.querySelector('[role="progressbar"]') as HTMLElement | null;
+    if (!progressBar) return;
+
+    function updateProgressValue() {
+      const contentHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrolledHeight = window.scrollY;
+      const percentage = contentHeight > 0 ? (scrolledHeight / contentHeight) * 100 : 0;
+
+      const progressFill = progressBar?.querySelector('div') as HTMLElement | null;
+      if (progressFill) {
+        progressFill.style.width = `${Math.min(100, percentage)}%`;
+      }
+
+      // Update aria-valuenow dynamically for screen readers
+      if (progressBar) {
+        progressBar.setAttribute('aria-valuenow', Math.round(percentage).toString());
+      }
+    }
+
+    // Add scroll listener with AbortController for cleanup
+    window.addEventListener('scroll', updateProgressValue, {
+      passive: true,
+      signal: controller.signal
+    });
+
+    // Initial update
+    updateProgressValue();
+  }
+
+  /**
+   * Main initialization with AbortController for cleanup
+   */
+  function setupProgressTracking() {
+    const controller = new AbortController();
+
+    // Initialize progress tracking
+    initializeProgress(controller);
+
+    // Cleanup on page unmount
+    const unloadHandler = () => {
+      controller.abort();
+    };
+
+    document.addEventListener('astro:before-unmount', unloadHandler);
+    window.addEventListener('unload', unloadHandler);
+  }
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupProgressTracking);
+  } else {
+    setupProgressTracking();
+  }
+
+  // Re-initialize on Astro navigation
+  document.addEventListener('astro:after-swap', setupProgressTracking);
+</script>
