@@ -2,7 +2,9 @@
 import ReadingLayout from '../../../layouts/ReadingLayout.astro';
 import ChapterNavigation from '../../../components/ChapterNavigation.astro';
 import type { Language, Chapter } from '../../../types/index';
-import { LANGUAGES, getLanguageFromStorage } from '../../../utils/language';
+import { LANGUAGES } from '../../../utils/language';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 interface Props {
   language?: Language;
@@ -10,7 +12,8 @@ interface Props {
 
 export async function getStaticPaths() {
   // Generate paths for all chapters in sample-book
-  const chapters = [0, 1, 2, 3]; // Based on sample-book content structure
+  // Files exist as: chapter-01.md through chapter-04.md
+  const chapters = [1, 2, 3, 4];
   const books = ['bookforge', 'sample-book'];
 
   return chapters.flatMap(chap =>
@@ -23,10 +26,10 @@ export async function getStaticPaths() {
 const { book, chapter: chapterIdStr } = Astro.params;
 const chapterId = parseInt(chapterIdStr || '0', 10);
 
-// Chapter metadata
+// Chapter metadata (must match chapter files: chapter-01.md through chapter-04.md)
 const mockChapters: Chapter[] = [
   {
-    id: 0,
+    id: 1,
     title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
     title_en: 'Setup Chapter: The Demo Project and Environment',
     sections: 6,
@@ -35,7 +38,7 @@ const mockChapters: Chapter[] = [
     topics: ['BookForge Overview', 'Yuval Platform', 'Agent System Architecture'],
   },
   {
-    id: 1,
+    id: 2,
     title_he: 'פרק 1: שינוי מודל המנטלי',
     title_en: 'Chapter 1: Changing Your Mental Model',
     sections: 4,
@@ -44,7 +47,7 @@ const mockChapters: Chapter[] = [
     topics: ['Helper vs Agent System', 'Comparative Scenarios'],
   },
   {
-    id: 2,
+    id: 3,
     title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
     title_en: 'Chapter 2: CLAUDE.md as Architecture',
     sections: 5,
@@ -53,7 +56,7 @@ const mockChapters: Chapter[] = [
     topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
   },
   {
-    id: 3,
+    id: 4,
     title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
     title_en: 'Chapter 3: Subagents, Proper Division of Labor',
     sections: 6,
@@ -68,40 +71,43 @@ if (!currentChapter) {
   return new Response('Chapter not found', { status: 404 });
 }
 
-// Load chapter content from markdown files
+// Determine language - use URL param as override, default to English
+const urlLang = Astro.url.searchParams.get('lang');
+const validLang = (urlLang === 'he' ? LANGUAGES.HE : LANGUAGES.EN) as Language;
+
+const chapterTitle = validLang === LANGUAGES.HE
+  ? currentChapter.title_he
+  : currentChapter.title_en;
+
+// Load chapter content at BUILD TIME using readFileSync
 let chapterContent = '';
-let chapterTitle = '';
+let coverImage = '';
 
 try {
-  const langCode = Astro.url.searchParams.get('lang') || 'en';
-  const validLang = (langCode === 'he' ? LANGUAGES.HE : LANGUAGES.EN) as Language;
-
-  chapterTitle = validLang === LANGUAGES.HE
-    ? currentChapter.title_he
-    : currentChapter.title_en;
-
   const filename = `chapter-${String(chapterId).padStart(2, '0')}.${validLang}.md`;
-
-  // Try to fetch from output folder (in development)
-  // In production, these would be pre-rendered or loaded from API
-  const contentUrl = `/output/sample-book/${filename}`;
+  const filepath = resolve('output/sample-book', filename);
 
   try {
-    const response = await fetch(contentUrl);
-    if (response.ok) {
-      chapterContent = await response.text();
-    } else {
-      chapterContent = `<!-- Chapter content (${filename}) not found in static build -->
-<p>Chapter ${chapterId} content would load here in production.</p>`;
-    }
+    chapterContent = readFileSync(filepath, 'utf-8');
   } catch (e) {
-    chapterContent = `<!-- Error loading chapter ${filename} -->
-<p>Chapter ${chapterId} content would load here in production.</p>`;
+    console.warn(`Warning: Chapter file not found: ${filepath}`);
+    chapterContent = `<div class="prose prose-lg">
+      <h2>Chapter ${chapterId}: ${chapterTitle}</h2>
+      <p><em>Content loading message: This chapter content was not found during build time.</em></p>
+      <p>Make sure the file exists at: <code>${filename}</code></p>
+    </div>`;
+  }
+
+  // Load cover image path for book detail pages
+  if (book === 'sample-book') {
+    coverImage = '/output/sample-book/assets/cover.png';
+  } else {
+    coverImage = '/covers/bookforge.jpg';
   }
 } catch (error) {
-  console.error('Error loading chapter:', error);
-  chapterContent = `<p>Error loading chapter content</p>`;
-  chapterTitle = currentChapter.title_en;
+  console.error('Error in frontmatter:', error);
+  chapterContent = '<p>Error loading chapter content</p>';
+  coverImage = '/covers/default.jpg';
 }
 ---
 

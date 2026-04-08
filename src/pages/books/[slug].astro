@@ -10,6 +10,7 @@ interface Props {
 export async function getStaticPaths() {
   return [
     { params: { slug: 'bookforge' } },
+    { params: { slug: 'sample-book' } },
   ];
 }
 
@@ -17,20 +18,37 @@ const { language = LANGUAGES.EN } = Astro.props;
 const { slug } = Astro.params;
 const isRtl = language === LANGUAGES.HE;
 
-// Mock book data - in reality, this would come from your data source
-const book = {
-  slug: 'bookforge',
-  title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
-  title_en: 'BookForge: Building Agent Systems with Claude Code',
-  description_he: 'ספר מעשי על בניית מערכות סוכנים משוכללות',
-  description_en: 'A practical guide to building sophisticated agent systems',
-  coverImage: '/covers/bookforge.jpg',
-  dominantColor: '#1a1a1a',
+// Book data for different books
+const books: Record<string, any> = {
+  'bookforge': {
+    slug: 'bookforge',
+    title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
+    title_en: 'BookForge: Building Agent Systems with Claude Code',
+    description_he: 'ספר מעשי על בניית מערכות סוכנים משוכללות',
+    description_en: 'A practical guide to building sophisticated agent systems',
+    coverImage: '/covers/bookforge.jpg',
+    dominantColor: '#1a1a1a',
+  },
+  'sample-book': {
+    slug: 'sample-book',
+    title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
+    title_en: 'BookForge: Building Agent Systems with Claude Code',
+    description_he: 'ספר מעשי על בניית מערכות סוכנים משוכללות באמצעות Claude Code',
+    description_en: 'A practical guide to building sophisticated agent systems with Claude Code',
+    coverImage: '/output/sample-book/assets/cover.png',
+    dominantColor: '#1a1a1a',
+  }
+};
+
+const book = books[slug || 'bookforge'] || books['bookforge'];
+
+// Add chapters data to the book
+Object.assign(book, {
   chapters: [
     {
-      id: 0,
+      id: 1,
       title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
-      title_en: 'Prep Chapter: The Demo Project and Environment',
+      title_en: 'Setup Chapter: The Demo Project and Environment',
       sections: 6,
       has_images: true,
       word_count: 1100,
@@ -41,16 +59,16 @@ const book = {
       ],
     },
     {
-      id: 1,
+      id: 2,
       title_he: 'פרק 1: שינוי מודל המנטלי',
-      title_en: 'Chapter 1: Changing the Mental Model',
+      title_en: 'Chapter 1: Changing Your Mental Model',
       sections: 4,
       has_images: false,
       word_count: 1050,
       topics: ['Helper vs Agent System', 'Comparative Scenarios'],
     },
     {
-      id: 2,
+      id: 3,
       title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
       title_en: 'Chapter 2: CLAUDE.md as Architecture',
       sections: 5,
@@ -59,16 +77,16 @@ const book = {
       topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
     },
     {
-      id: 3,
+      id: 4,
       title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
-      title_en: 'Chapter 3: Subagents, Proper Work Division',
+      title_en: 'Chapter 3: Subagents, Proper Division of Labor',
       sections: 6,
       has_images: true,
       word_count: 3600,
       topics: ['Single Agent Limitations', 'Subagent Architecture'],
     },
   ],
-};
+});
 
 const title = language === LANGUAGES.HE ? book.title_he : book.title_en;
 const description =
