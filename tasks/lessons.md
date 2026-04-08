@@ -27,3 +27,22 @@ Translator לא צריך לקרוא ל-API ישירות.
 ### 2026-04-07
 parse.py חילץ תמונה אקראית לפי סדר relations ולא תמונת השער.
 צריך לחלץ לפי מיקום בדף, לא לפי סדר ה-relations.
+
+### 2026-04-08
+Builder צריך להטמיע טעינת chapter content מ-markdown files בדף קריאה.
+הדף /read/[book]/[chapter] לא צריך להיות stub. צריך עומס בפועלי של chapter-XX.he.md או chapter-XX.en.md
+בהתאם לשפה (מ-localStorage או ?lang= parameter).
+
+### 2026-04-08
+Event listeners בקומפוננטים צריכים cleanup על page transition.
+אחרת addEventListener calls מתצברים בזיכרון (memory leak).
+פתרון: AbortController או removeEventListener ב-astro:before-unmount hook.
+
+### 2026-04-08
+Language/RTL logic חוזר בכל קומפוננט (7+ מיקומים).
+צריך extract לreusable utility function כדי לחזור מ-code duplication.
+זה קריטי למיתחזוקה.
+
+### 2026-04-08
+Builder צריך להוסיף data-he ו-data-en attributes לכל elements שבהם text.
+זה נחוץ לmultilingual content switching בצד הלקוח.
