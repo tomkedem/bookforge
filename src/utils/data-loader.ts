@@ -31,7 +31,7 @@ export class DataLoader {
           'ספר מעשי על בניית מערכות סוכנים משוכללות באמצעות Claude Code',
         description_en:
           'A practical guide to building sophisticated agent systems with Claude Code',
-        coverImage: '/covers/bookforge.jpg',
+        coverImage: '/covers/cover.png',
         dominantColor: '#1a1a1a',
       },
     ];

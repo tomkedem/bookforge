@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 import type { Language } from '../types/index';
 import { LANGUAGES } from '../utils/language';
+import { discoverAllBooks } from '../utils/book-discovery';
 
 interface Props {
   language?: Language;
@@ -11,38 +12,7 @@ interface Props {
 const { language = LANGUAGES.EN } = Astro.props;
 const isRtl = language === LANGUAGES.HE;
 
-// In a real app, this would come from your data source
-const booksData: Array<{
-  slug: string;
-  title_he: string;
-  title_en: string;
-  description_he: string;
-  description_en: string;
-  coverImage: string;
-  dominantColor: string;
-}> = [
-  {
-    slug: 'bookforge',
-    title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
-    title_en: 'BookForge: Building Agent Systems with Claude Code',
-    description_he:
-      'ספר מעשי על בניית מערכות סוכנים משוכללות באמצעות Claude Code ופיתוח תוכנה מודרני.',
-    description_en:
-      'A practical guide to building sophisticated agent systems with Claude Code and modern software development.',
-    coverImage: '/covers/bookforge.jpg',
-    dominantColor: '#1a1a1a',
-  },
-  // Add more books as needed
-];
-
-const books = booksData.map((book) => ({
-  ...book,
-  title: language === LANGUAGES.HE ? book.title_he : book.title_en,
-  description:
-    language === LANGUAGES.HE
-      ? book.description_he
-      : book.description_en,
-}));
+const books = discoverAllBooks();
 ---
 
 <BaseLayout
@@ -77,7 +47,7 @@ const books = booksData.map((book) => ({
       ]}
     >
       <h1
-        class="font-heading font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight mb-4 text-yuval-text"
+        class="font-heading font-bold text-3xl sm:text-4xl lg:text-6xl leading-tight mb-3 sm:mb-4 text-yuval-text"
         data-he="ספרים"
         data-en="Books"
       >
@@ -102,11 +72,12 @@ const books = booksData.map((book) => ({
         books.map((book) => (
           <BookCard
             slug={book.slug}
-            title={book.title}
-            description={book.description}
+            title_he={book.title_he}
+            title_en={book.title_en}
+            description_he={book.description_he}
+            description_en={book.description_en}
             coverImage={book.coverImage}
             dominantColor={book.dominantColor}
-            language={language}
           />
         ))
       }
@@ -132,3 +103,27 @@ const books = booksData.map((book) => ({
     }
   </div>
 </BaseLayout>
+
+<style>
+  :global(.card-float) {
+    /* קרן אור עדינה מלמעלה */
+    border-top: 1px solid rgba(255, 255, 255, 0.9);
+    /* צל מרובד: קרוב+עמוק+פרימה – יוצר אשליית ציפה תמידית */
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 8px rgba(0, 0, 0, 0.06),
+      0 12px 24px rgba(0, 0, 0, 0.08),
+      0 24px 40px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  :global(.card-float:hover) {
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.05),
+      0 8px 16px rgba(0, 0, 0, 0.09),
+      0 20px 40px rgba(0, 0, 0, 0.12),
+      0 36px 56px rgba(0, 0, 0, 0.07);
+    transform: translateY(-6px);
+  }
+</style>

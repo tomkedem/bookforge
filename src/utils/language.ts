@@ -107,34 +107,30 @@ export const setLanguageToStorage = (lang: Language): void => {
 };
 
 /**
- * Apply language to page by toggling data-he/data-en attributes
- * Centralized content switching logic
+ * Apply language to page using data-he/data-en attributes.
+ * - Elements with BOTH attributes: swap textContent to the selected language.
+ * - Elements with ONLY one attribute: show/hide accordingly.
  */
 export const applyLanguageToPage = (lang: Language): void => {
-  const heElements = document.querySelectorAll('[data-he]');
-  const enElements = document.querySelectorAll('[data-en]');
+  // Swap text for bilingual elements
+  document.querySelectorAll('[data-he][data-en]').forEach(el => {
+    const heText = el.getAttribute('data-he');
+    const enText = el.getAttribute('data-en');
+    if (heText !== null && enText !== null) {
+      el.textContent = lang === LANGUAGES.HE ? heText : enText;
+    }
+  });
 
-  if (lang === LANGUAGES.HE) {
-    heElements.forEach(el => {
-      el.classList.remove('hidden');
-      el.classList.add('visible');
-    });
-    enElements.forEach(el => {
-      el.classList.add('hidden');
-      el.classList.remove('visible');
-    });
-  } else {
-    enElements.forEach(el => {
-      el.classList.remove('hidden');
-      el.classList.add('visible');
-    });
-    heElements.forEach(el => {
-      el.classList.add('hidden');
-      el.classList.remove('visible');
-    });
-  }
+  // Show/hide Hebrew-only elements
+  document.querySelectorAll('[data-he]:not([data-en])').forEach(el => {
+    (el as HTMLElement).classList.toggle('hidden', lang !== LANGUAGES.HE);
+  });
 
-  // Update document
+  // Show/hide English-only elements
+  document.querySelectorAll('[data-en]:not([data-he])').forEach(el => {
+    (el as HTMLElement).classList.toggle('hidden', lang !== LANGUAGES.EN);
+  });
+
   setLanguageToStorage(lang);
 };
 

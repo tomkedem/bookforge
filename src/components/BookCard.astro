@@ -1,23 +1,23 @@
 ---
-import type { Language } from '../types/index';
-
 interface Props {
   slug: string;
-  title: string;
-  description: string;
+  title_he: string;
+  title_en: string;
+  description_he: string;
+  description_en: string;
   coverImage: string;
   dominantColor?: string;
-  language?: Language;
   class?: string;
 }
 
 const {
   slug,
-  title,
-  description,
+  title_he,
+  title_en,
+  description_he,
+  description_en,
   coverImage,
   dominantColor = '#1a1a1a',
-  language = 'en',
   class: className,
 } = Astro.props;
 
@@ -29,20 +29,16 @@ const bookUrl = `/books/${slug}`;
     'group',
     'relative',
     'overflow-hidden',
-    'rounded-lg',
-    'transition-all',
-    'duration-300',
-    'hover:shadow-xl',
-    'bg-yuval-bg-secondary',
-    'border',
-    'border-yuval-border',
+    'rounded-2xl',
+    'bg-white',
+    'card-float',
     className,
   ]}
 >
   <!-- Thumbnail container with dominant color overlay -->
   <div
-    class="relative h-48 overflow-hidden bg-cover bg-center"
-    style={`background-image: url('${coverImage}'); background-color: ${dominantColor};`}
+    class="relative h-48 overflow-hidden bg-contain bg-center bg-no-repeat"
+    style={`background-image: url('${coverImage}'); background-color: #ffffff;`}
   >
     <!-- Dominant color overlay -->
     <div
@@ -58,27 +54,28 @@ const bookUrl = `/books/${slug}`;
   </div>
 
   <!-- Content -->
-  <div class="p-6 space-y-3">
+  <div class="p-4 sm:p-6 space-y-2 sm:space-y-3">
     <h3
-      class="font-heading font-bold text-2xl leading-tight text-yuval-text group-hover:text-yuval-text-secondary transition-colors duration-200"
-      data-he={title}
-      data-en={title}
+      class="font-heading font-bold text-lg sm:text-2xl leading-tight text-yuval-text group-hover:text-yuval-text-secondary transition-colors duration-200"
+      data-he={title_he}
+      data-en={title_en}
     >
-      {title}
+      {title_en}
     </h3>
 
     <p
       class="text-sm text-yuval-text-secondary leading-relaxed line-clamp-3"
-      data-he={description}
-      data-en={description}
+      data-he={description_he}
+      data-en={description_en}
     >
-      {description}
+      {description_en}
     </p>
 
     <!-- Read button -->
     <a
       href={bookUrl}
-      class="inline-block mt-4 px-4 py-2 font-body font-medium text-sm rounded-md bg-yuval-text text-yuval-bg hover:bg-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
+      class="inline-block mt-4 px-4 py-2 font-body font-medium text-sm rounded-md bg-yuval-text text-yuval-bg hover:bg-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text book-card-link"
+      data-base-url={bookUrl}
       data-he="קרא עכשיו"
       data-en="Read Now"
     >
@@ -86,3 +83,15 @@ const bookUrl = `/books/${slug}`;
     </a>
   </div>
 </article>
+
+<script>
+  function updateBookCardLinks() {
+    const lang = localStorage.getItem('yuval_language') || 'en';
+    document.querySelectorAll<HTMLAnchorElement>('.book-card-link').forEach(link => {
+      const base = link.dataset.baseUrl || link.getAttribute('href') || '';
+      link.href = lang === 'he' ? `${base}?lang=he` : base;
+    });
+  }
+  updateBookCardLinks();
+  window.addEventListener('language-changed', updateBookCardLinks);
+</script>

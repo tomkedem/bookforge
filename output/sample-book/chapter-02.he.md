@@ -76,7 +76,9 @@ UI Designer יגדיר את העיצוב. Builder יממש. Code Reviewer יבד
 
 כתוב את התשובות בקובץ הבא ב-repository:
 
+```
 docs/architecture-thinking.md
+```
 
 זה הקובץ הראשון שתכתוב בפרויקט. לא קוד. לא קומפוננט. החלטות.
 
@@ -89,11 +91,9 @@ docs/architecture-thinking.md
 עיין בשינויים, הרץ, ושאל שאלות ישירות ב-Issues.
 
 מה יש עכשיו ב-GitHub
-
+```markdown
 bookforge/
-
 ├── README.md
-
 └── docs/
-
 └── architecture-thinking.md
+```

@@ -90,23 +90,25 @@ const isRtl = language === LANGUAGES.HE;
         getLanguageFromStorage,
         setLanguageToStorage,
         isValidLanguage,
+        applyLanguageToPage,
       } from '../utils/language';
 
       const storedLang = getLanguageFromStorage();
       if (isValidLanguage(storedLang)) {
         document.documentElement.lang = storedLang;
         document.documentElement.dir = storedLang === 'he' ? 'rtl' : 'ltr';
+        applyLanguageToPage(storedLang);
       }
 
-      // Listen for language changes
+      // Listen for language changes and update page content
       window.addEventListener(
         'language-changed',
         (e: Event) => {
           const event = e as CustomEvent;
           const lang = event.detail.language;
-          setLanguageToStorage(lang);
           document.documentElement.lang = lang;
           document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+          applyLanguageToPage(lang);
         }
       );
     </script>

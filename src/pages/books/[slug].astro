@@ -2,91 +2,35 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import type { Language } from '../../types/index';
 import { LANGUAGES } from '../../utils/language';
+import { discoverAllBooks } from '../../utils/book-discovery';
 
 interface Props {
   language?: Language;
 }
 
 export async function getStaticPaths() {
-  return [
-    { params: { slug: 'bookforge' } },
-    { params: { slug: 'sample-book' } },
-  ];
+  const books = discoverAllBooks();
+  return books.map(book => ({
+    params: { slug: book.slug },
+    props: { bookData: book }
+  }));
 }
 
 const { language = LANGUAGES.EN } = Astro.props;
 const { slug } = Astro.params;
+const { bookData } = Astro.props as any;
 const isRtl = language === LANGUAGES.HE;
 
-// Book data for different books
-const books: Record<string, any> = {
-  'bookforge': {
-    slug: 'bookforge',
-    title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
-    title_en: 'BookForge: Building Agent Systems with Claude Code',
-    description_he: 'ספר מעשי על בניית מערכות סוכנים משוכללות',
-    description_en: 'A practical guide to building sophisticated agent systems',
-    coverImage: '/covers/bookforge.jpg',
-    dominantColor: '#1a1a1a',
-  },
-  'sample-book': {
-    slug: 'sample-book',
-    title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
-    title_en: 'BookForge: Building Agent Systems with Claude Code',
-    description_he: 'ספר מעשי על בניית מערכות סוכנים משוכללות באמצעות Claude Code',
-    description_en: 'A practical guide to building sophisticated agent systems with Claude Code',
-    coverImage: '/output/sample-book/assets/cover.png',
-    dominantColor: '#1a1a1a',
-  }
+const book = {
+  slug: bookData.slug,
+  title_he: bookData.title_he,
+  title_en: bookData.title_en,
+  description_he: bookData.description_he,
+  description_en: bookData.description_en,
+  coverImage: bookData.coverImage,
+  dominantColor: bookData.dominantColor,
+  chapters: bookData.chapters,
 };
-
-const book = books[slug || 'bookforge'] || books['bookforge'];
-
-// Add chapters data to the book
-Object.assign(book, {
-  chapters: [
-    {
-      id: 1,
-      title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
-      title_en: 'Setup Chapter: The Demo Project and Environment',
-      sections: 6,
-      has_images: true,
-      word_count: 1100,
-      topics: [
-        'BookForge Overview',
-        'Yuval Platform',
-        'Agent System Architecture',
-      ],
-    },
-    {
-      id: 2,
-      title_he: 'פרק 1: שינוי מודל המנטלי',
-      title_en: 'Chapter 1: Changing Your Mental Model',
-      sections: 4,
-      has_images: false,
-      word_count: 1050,
-      topics: ['Helper vs Agent System', 'Comparative Scenarios'],
-    },
-    {
-      id: 3,
-      title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
-      title_en: 'Chapter 2: CLAUDE.md as Architecture',
-      sections: 5,
-      has_images: false,
-      word_count: 1200,
-      topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
-    },
-    {
-      id: 4,
-      title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
-      title_en: 'Chapter 3: Subagents, Proper Division of Labor',
-      sections: 6,
-      has_images: true,
-      word_count: 3600,
-      topics: ['Single Agent Limitations', 'Subagent Architecture'],
-    },
-  ],
-});
 
 const title = language === LANGUAGES.HE ? book.title_he : book.title_en;
 const description =
@@ -127,32 +71,39 @@ const description =
           <img
             src={book.coverImage}
             alt={title}
-            class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary"
+            class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary object-contain"
           />
         </div>
 
         <!-- Book Info -->
         <div class:list={['md:col-span-2', isRtl && 'text-right']}>
           <h1
-            class="font-heading font-bold text-4xl sm:text-5xl leading-tight mb-4 text-yuval-text"
+            class="font-heading font-bold text-2xl sm:text-4xl lg:text-5xl leading-tight mb-3 sm:mb-4 text-yuval-text"
+            data-he={book.title_he}
+            data-en={book.title_en}
           >
-            {title}
+            {book.title_en}
           </h1>
 
-          <p class="text-lg text-yuval-text-secondary leading-relaxed mb-6">
-            {description}
+          <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed mb-4 sm:mb-6"
+            data-he={book.description_he}
+            data-en={book.description_en}
+          >
+            {book.description_en}
           </p>
 
           <div class="space-y-2 mb-6">
-            <p class="text-sm text-yuval-text-tertiary">
-              {language === LANGUAGES.HE
-                ? `${book.chapters.length} פרקים`
-                : `${book.chapters.length} chapters`}
+            <p class="text-sm text-yuval-text-tertiary"
+              data-he={`${book.chapters.length} פרקים`}
+              data-en={`${book.chapters.length} chapters`}
+            >
+              {book.chapters.length} chapters
             </p>
-            <p class="text-sm text-yuval-text-tertiary">
-              {language === LANGUAGES.HE
-                ? `${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} מילים`
-                : `${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} words`}
+            <p class="text-sm text-yuval-text-tertiary"
+              data-he={`${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} מילים`}
+              data-en={`${book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} words`}
+            >
+              {book.chapters.reduce((sum, ch) => sum + ch.word_count, 0)} words
             </p>
           </div>
         </div>
@@ -162,8 +113,10 @@ const description =
       <div class="border-t border-yuval-border pt-12">
         <h2
           class="font-heading font-bold text-2xl mb-6 text-yuval-text"
+          data-he="פרקים"
+          data-en="Chapters"
         >
-          {language === LANGUAGES.HE ? 'פרקים' : 'Chapters'}
+          Chapters
         </h2>
 
         <div class="space-y-3">
@@ -177,6 +130,8 @@ const description =
                 <a
                   href={`/read/${slug}/${chapter.id}`}
                   class:list={[
+                    'chapter-link',
+                    `chapter-link-${chapter.id}`,
                     'block',
                     'p-4',
                     'rounded-lg',
@@ -202,14 +157,18 @@ const description =
                     ]}
                   >
                     <div class:list={[isRtl && 'text-right']}>
-                      <h3 class="font-heading font-semibold text-lg text-yuval-text">
-                        {chapterTitle}
+                      <h3
+                        class="font-heading font-semibold text-base sm:text-lg text-yuval-text line-clamp-2"
+                        data-he={chapter.title_he}
+                        data-en={chapter.title_en}
+                      >
+                        {chapter.title_en}
                       </h3>
-                      <p class="text-sm text-yuval-text-tertiary mt-1">
-                        {chapter.sections > 1
-                          ? `${chapter.sections} sections`
-                          : '1 section'}{' '}
-                        • {chapter.word_count} words
+                      <p class="text-sm text-yuval-text-tertiary mt-1"
+                        data-he={`${chapter.sections > 1 ? `${chapter.sections} סעיפים` : 'סעיף אחד'} • ${chapter.word_count} מילים`}
+                        data-en={`${chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • ${chapter.word_count} words`}
+                      >
+                        {chapter.sections > 1 ? `${chapter.sections} sections` : '1 section'} • {chapter.word_count} words
                       </p>
                     </div>
                     <svg
@@ -235,3 +194,17 @@ const description =
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  // Update chapter links with current language param
+  function updateChapterLinks() {
+    const lang = localStorage.getItem('yuval_language') || 'en';
+    document.querySelectorAll<HTMLAnchorElement>('.chapter-link').forEach(link => {
+      const href = link.getAttribute('href') || '';
+      const base = href.split('?')[0];
+      link.href = lang === 'he' ? `${base}?lang=he` : base;
+    });
+  }
+  updateChapterLinks();
+  window.addEventListener('language-changed', updateChapterLinks);
+</script>

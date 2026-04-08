@@ -7,8 +7,8 @@ export default {
     extend: {
       colors: {
         yuval: {
-          bg: '#ffffff',
-          'bg-secondary': '#fafaf8',
+          bg: '#f5f0e8',
+          'bg-secondary': '#ede8df',
           text: '#1a1a1a',
           'text-secondary': '#666666',
           'text-tertiary': '#888888',

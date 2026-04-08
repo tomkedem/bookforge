@@ -27,13 +27,14 @@ const isRtl = language === LANGUAGES.HE;
       'px-4',
       'sm:px-6',
       'lg:px-8',
-      'py-8',
-      'sm:py-12',
-      'lg:py-16',
+      'py-2',
+      'sm:py-4',
+      'lg:py-6',
+      'lg:ml-[320px]',
+      'lg:mr-[320px]',
       isRtl && 'text-right',
       className,
     ]}
-    style="margin-left: 260px; margin-right: 260px;"
   >
     <!-- Chapter content -->
     <div
@@ -45,24 +46,112 @@ const isRtl = language === LANGUAGES.HE;
 
     <!-- Custom prose styles for reading -->
     <style>
+      /* ── Syntax highlighting (highlight.js GitHub Dark theme) ── */
+      :global(.hljs) {
+        color: #c9d1d9;
+        background: #0d1117;
+      }
+      :global(.hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword,
+              .hljs-template-tag, .hljs-template-variable, .hljs-type,
+              .hljs-variable.language_) { color: #ff7b72; }
+      :global(.hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__,
+              .hljs-title.function_) { color: #d2a8ff; }
+      :global(.hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta,
+              .hljs-number, .hljs-operator, .hljs-selector-attr,
+              .hljs-selector-class, .hljs-selector-id, .hljs-variable) { color: #79c0ff; }
+      :global(.hljs-meta .hljs-string, .hljs-regexp, .hljs-string) { color: #a5d6ff; }
+      :global(.hljs-built_in, .hljs-symbol) { color: #ffa657; }
+      :global(.hljs-comment, .hljs-code, .hljs-formula) { color: #8b949e; }
+      :global(.hljs-name, .hljs-quote, .hljs-selector-pseudo,
+              .hljs-selector-tag) { color: #7ee787; }
+      :global(.hljs-subst) { color: #c9d1d9; }
+      :global(.hljs-section) { color: #1f6feb; font-weight: bold; }
+      :global(.hljs-bullet) { color: #f2cc60; }
+      :global(.hljs-emphasis) { color: #c9d1d9; font-style: italic; }
+      :global(.hljs-strong) { color: #c9d1d9; font-weight: bold; }
+      :global(.hljs-addition) { color: #aff5b4; background-color: #033a16; }
+      :global(.hljs-deletion) { color: #ffdcd7; background-color: #67060c; }
+
+      /* Code always LTR regardless of page language */
+      :global(article pre),
+      :global(article code) {
+        direction: ltr !important;
+        text-align: left !important;
+        unicode-bidi: isolate;
+      }
+
+      /* Code block wrapper */
+      :global(article pre) {
+        position: relative;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 0;
+        overflow: hidden;
+        margin: 1.75rem 0;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      }
+
+      /* Language badge */
+      :global(article pre[data-lang]::before) {
+        content: attr(data-lang);
+        display: block;
+        background: #161b22;
+        border-bottom: 1px solid #30363d;
+        padding: 6px 16px;
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #8b949e;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      :global(article pre code.hljs) {
+        display: block;
+        padding: 12px;
+        overflow-x: auto;
+        font-size: 0.75rem;
+        line-height: 1.6;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: transparent;
+      }
+
+      @media (min-width: 640px) {
+        :global(article pre code.hljs) {
+          padding: 20px;
+          font-size: 0.85rem;
+          line-height: 1.7;
+        }
+      }
+
+      /* Inline code */
+      :global(article :not(pre) > code) {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.85em;
+        background: rgba(110, 118, 129, 0.15);
+        border: 1px solid rgba(110, 118, 129, 0.25);
+        border-radius: 4px;
+        padding: 0.15em 0.45em;
+        color: #e6edf3;
+      }
       :global(article h1) {
-        @apply font-heading font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight mt-12 mb-6 text-yuval-text;
+        @apply font-heading font-bold text-2xl sm:text-4xl lg:text-5xl leading-tight mt-8 sm:mt-12 mb-4 sm:mb-6 text-yuval-text;
       }
 
       :global(article h2) {
-        @apply font-heading font-bold text-3xl sm:text-4xl leading-snug mt-10 mb-4 text-yuval-text;
+        @apply font-heading font-bold text-xl sm:text-3xl lg:text-4xl leading-snug mt-8 sm:mt-10 mb-3 sm:mb-4 text-yuval-text;
       }
 
       :global(article h3) {
-        @apply font-heading font-semibold text-2xl sm:text-3xl leading-snug mt-8 mb-3 text-yuval-text-secondary;
+        @apply font-heading font-semibold text-lg sm:text-2xl lg:text-3xl leading-snug mt-6 sm:mt-8 mb-2 sm:mb-3 text-yuval-text-secondary;
       }
 
       :global(article p) {
-        @apply text-lg sm:text-xl leading-loose text-yuval-text-secondary mb-6 font-light;
+        @apply text-base sm:text-lg lg:text-xl leading-relaxed sm:leading-loose text-yuval-text-secondary mb-4 sm:mb-6 font-light;
       }
 
       :global(article blockquote) {
-        @apply relative pl-6 py-4 my-8 text-xl leading-relaxed text-yuval-text-secondary border-l-4 border-yuval-text-tertiary bg-yuval-bg-secondary;
+        @apply relative pl-4 sm:pl-6 py-3 sm:py-4 my-6 sm:my-8 text-base sm:text-xl leading-relaxed text-yuval-text-secondary border-l-4 border-yuval-text-tertiary bg-yuval-bg-secondary;
       }
 
       :global(article [dir="rtl"] blockquote) {
@@ -88,19 +177,7 @@ const isRtl = language === LANGUAGES.HE;
       }
 
       :global(article li) {
-        @apply text-lg leading-relaxed text-yuval-text-secondary font-light;
-      }
-
-      :global(article code) {
-        @apply font-mono text-sm bg-gray-200 px-2 py-1 rounded text-gray-900;
-      }
-
-      :global(article pre) {
-        @apply bg-gray-900 border-2 border-gray-700 p-4 rounded-lg overflow-x-auto my-6 shadow-lg;
-      }
-
-      :global(article pre code) {
-        @apply bg-transparent px-0 py-0 text-gray-100 text-sm;
+        @apply text-base sm:text-lg leading-relaxed text-yuval-text-secondary font-light;
       }
 
       :global(article a) {

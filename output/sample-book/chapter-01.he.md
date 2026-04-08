@@ -28,25 +28,20 @@ Yuval היא פלטפורמת קריאה דיגיטלית. לא עוד אתר ס
 
 לפני שממשיכים, ודא שהדברים הבאים מותקנים:
 
-bash
-
+```bash
 node --version      # 18  ומעלה
-
 git --version
-
 claude --version    # Claude Code v2.1.32 ומעלה
-
 python --version    # 3.8 ומעלה
-
 pip install python-docx
+```
 
 התקנת Claude Code:
 
-bash
-
+```bash
 npm install -g @anthropic-ai/claude-code
-
 claude login
+```
 
 לאחר ההתקנה תראה את מסך הפתיחה של Claude Code עם פרטי החשבון שלך, הגרסה הנוכחית, והתיקייה שבה אתה עובד. זה אומר שהכל מוכן.
 
@@ -56,11 +51,10 @@ claude login
 
 כדי להוריד אותו למחשב שלך:
 
-bash
-
+```bash
 git clone https://github.com/tomkedem/bookforge.git
-
 cd bookforge
+```
 
 מכאן אפשר לעקוב אחרי כל פרק, לראות את הקוד בפעולה, ולשאול שאלות ב-Issues.
 
@@ -68,16 +62,13 @@ cd bookforge
 
 ב-repository תמצא את הקובץ הבא:
 
-markdown
-
+```markdown
 # BookForge
 
 פרויקט פיתוח תוכנה שמדגים שימוש ביכולות המתקדמות
-
 של Claude Code לבניית מוצר אמיתי.
 
 מקבל ספר בפורמט Word או PDF ובונה ממנו את Yuval,
-
 פלטפורמת קריאה דיגיטלית ברמה עולמית.
 
 ## הסוכנים במערכת
@@ -85,13 +76,12 @@ markdown
 ## דרישות
 
 Node.js 18 ומעלה
-
 Claude Code v2.1.32 ומעלה
-
 Git
 
 ## מבנה הפרויקט
 
 יתעדכן פרק אחר פרק לאורך הספר.
+```
 
 זה כל מה שיש עכשיו. פרויקט ריק עם כיוון ברור. הסוכנים עוד לא נולדו.

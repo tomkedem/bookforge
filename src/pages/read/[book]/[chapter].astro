@@ -2,73 +2,34 @@
 import ReadingLayout from '../../../layouts/ReadingLayout.astro';
 import ChapterNavigation from '../../../components/ChapterNavigation.astro';
 import ChapterSidebars from '../../../components/ChapterSidebars.astro';
+import ChapterMeta from '../../../components/ChapterMeta.astro';
 import type { Language, Chapter } from '../../../types/index';
 import { LANGUAGES } from '../../../utils/language';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { marked } from 'marked';
+import { marked } from '../../../utils/markdown';
+import { discoverAllBooks } from '../../../utils/book-discovery';
 
 interface Props {
   language?: Language;
 }
 
 export async function getStaticPaths() {
-  // Generate paths for all chapters in sample-book
-  // Files exist as: chapter-01.md through chapter-04.md
-  const chapters = [1, 2, 3, 4];
-  const books = ['bookforge', 'sample-book'];
-
-  return chapters.flatMap(chap =>
-    books.map(book => ({
-      params: { book, chapter: String(chap) }
+  const books = discoverAllBooks();
+  return books.flatMap(book =>
+    book.chapters.map(ch => ({
+      params: { book: book.slug, chapter: String(ch.id) },
+      props: { bookData: book }
     }))
   );
 }
 
 const { book, chapter: chapterIdStr } = Astro.params;
+const { bookData } = Astro.props as any;
 const chapterId = parseInt(chapterIdStr || '0', 10);
 
-// Chapter metadata (must match chapter files: chapter-01.md through chapter-04.md)
-const mockChapters: Chapter[] = [
-  {
-    id: 1,
-    title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
-    title_en: 'Setup Chapter: The Demo Project and Environment',
-    sections: 6,
-    has_images: true,
-    word_count: 1100,
-    topics: ['BookForge Overview', 'Yuval Platform', 'Agent System Architecture'],
-  },
-  {
-    id: 2,
-    title_he: 'פרק 1: שינוי מודל המנטלי',
-    title_en: 'Chapter 1: Changing Your Mental Model',
-    sections: 4,
-    has_images: false,
-    word_count: 1050,
-    topics: ['Helper vs Agent System', 'Comparative Scenarios'],
-  },
-  {
-    id: 3,
-    title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
-    title_en: 'Chapter 2: CLAUDE.md as Architecture',
-    sections: 5,
-    has_images: false,
-    word_count: 1200,
-    topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
-  },
-  {
-    id: 4,
-    title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
-    title_en: 'Chapter 3: Subagents, Proper Division of Labor',
-    sections: 6,
-    has_images: true,
-    word_count: 3600,
-    topics: ['Single Agent Limitations', 'Subagent Architecture'],
-  },
-];
-
-const currentChapter = mockChapters.find((ch) => ch.id === chapterId);
+const allChapters: Chapter[] = bookData?.chapters ?? [];
+const currentChapter = allChapters.find((ch: Chapter) => ch.id === chapterId);
 if (!currentChapter) {
   return new Response('Chapter not found', { status: 404 });
 }
@@ -76,12 +37,10 @@ if (!currentChapter) {
 // Load BOTH language versions at BUILD TIME for client-side switching
 let chapterContentHe = '';
 let chapterContentEn = '';
-let coverImage = '';
 
 try {
-  // Load Hebrew version
   const filenameHe = `chapter-${String(chapterId).padStart(2, '0')}.he.md`;
-  const filepathHe = resolve('output/sample-book', filenameHe);
+  const filepathHe = resolve(`output/${book}`, filenameHe);
 
   try {
     const mdContentHe = readFileSync(filepathHe, 'utf-8');
@@ -92,9 +51,8 @@ try {
       <p><em>קובץ זה לא נמצא בזמן הבנייה</em></p>`;
   }
 
-  // Load English version
   const filenameEn = `chapter-${String(chapterId).padStart(2, '0')}.en.md`;
-  const filepathEn = resolve('output/sample-book', filenameEn);
+  const filepathEn = resolve(`output/${book}`, filenameEn);
 
   try {
     const mdContentEn = readFileSync(filepathEn, 'utf-8');
@@ -104,19 +62,19 @@ try {
     chapterContentEn = `<h2>${currentChapter.title_en}</h2>
       <p><em>This chapter file was not found during build time</em></p>`;
   }
-
-  // Load cover image path for book detail pages
-  if (book === 'sample-book') {
-    coverImage = '/output/sample-book/assets/cover.png';
-  } else {
-    coverImage = '/covers/bookforge.jpg';
-  }
 } catch (error) {
   console.error('Error in frontmatter:', error);
   chapterContentHe = '<p>Error loading Hebrew content</p>';
   chapterContentEn = '<p>Error loading English content</p>';
-  coverImage = '/covers/default.jpg';
 }
+
+// Strip the first <h1> from rendered HTML so we can render the title separately above ChapterMeta
+function stripFirstH1(html: string): string {
+  return html.replace(/<h1[^>]*>.*?<\/h1>\s*/s, '');
+}
+
+chapterContentHe = stripFirstH1(chapterContentHe);
+chapterContentEn = stripFirstH1(chapterContentEn);
 ---
 
 <ReadingLayout
@@ -125,32 +83,51 @@ try {
 >
   <!-- Chapter Sidebars: TOC on right, Outline on left -->
   <ChapterSidebars
-    chapters={mockChapters}
+    chapters={allChapters}
     currentChapterId={chapterId}
     language={LANGUAGES.EN}
   />
 
-  <!-- Bilingual content container with data attributes for client-side switching -->
-  <div id="chapter-container" data-chapter-id={chapterId} data-book={book}>
-    <!-- Hebrew version -->
-    <div data-he class="hidden" dir="rtl" style="text-align: right">
-      <h1>{currentChapter.title_he}</h1>
-      <div class="chapter-metadata">
-        <span class="word-count">{currentChapter.word_count} words</span>
-        <span class="reading-time">{Math.ceil(currentChapter.word_count / 200)} min read</span>
+  <!-- Sticky chapter header: title + meta + progress — shrinks on scroll -->
+  <div id="chapter-header" class="chapter-header">
+    <div data-lang="he" class="hidden header-lang" dir="rtl" style="text-align: right">
+      <h1 class="chapter-title">{currentChapter.title_he}</h1>
+      <div class="header-meta-row">
+        <ChapterMeta
+          wordCount={currentChapter.word_count}
+          readingTimeMinutes={Math.ceil(currentChapter.word_count / 200)}
+          sections={currentChapter.sections}
+          language="he"
+        />
+        <span class="progress-badge" id="progress-badge-he">0%</span>
       </div>
+    </div>
+    <div data-lang="en" class="visible header-lang" dir="ltr" style="text-align: left">
+      <h1 class="chapter-title">{currentChapter.title_en}</h1>
+      <div class="header-meta-row">
+        <ChapterMeta
+          wordCount={currentChapter.word_count}
+          readingTimeMinutes={Math.ceil(currentChapter.word_count / 200)}
+          sections={currentChapter.sections}
+          language="en"
+        />
+        <span class="progress-badge" id="progress-badge-en">0%</span>
+      </div>
+    </div>
+    <div class="header-progress-line">
+      <div class="header-progress-fill" id="header-progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Chapter content -->
+  <div id="chapter-container" data-chapter-id={chapterId} data-book={book}>
+    <div data-lang="he" class="hidden" dir="rtl" style="text-align: right">
       <div class="chapter-content prose prose-lg">
         {chapterContentHe && <Fragment set:html={chapterContentHe} />}
       </div>
     </div>
 
-    <!-- English version (default) -->
-    <div data-en class="visible" dir="ltr" style="text-align: left">
-      <h1>{currentChapter.title_en}</h1>
-      <div class="chapter-metadata">
-        <span class="word-count">{currentChapter.word_count} words</span>
-        <span class="reading-time">{Math.ceil(currentChapter.word_count / 200)} min read</span>
-      </div>
+    <div data-lang="en" class="visible" dir="ltr" style="text-align: left">
       <div class="chapter-content prose prose-lg">
         {chapterContentEn && <Fragment set:html={chapterContentEn} />}
       </div>
@@ -159,7 +136,7 @@ try {
     <!-- Chapter navigation -->
     <ChapterNavigation
       currentChapterId={chapterId}
-      chapters={mockChapters}
+      chapters={allChapters}
       bookSlug={book || 'bookforge'}
       language={LANGUAGES.EN}
     />
@@ -174,22 +151,107 @@ try {
   .visible {
     display: block;
   }
+</style>
 
-  .chapter-metadata {
-    color: #888;
+<style>
+  .chapter-header {
+    position: sticky;
+    top: 64px;
+    z-index: 35;
+    background: #f5f0e8;
+    padding: 0.75rem 0 0;
+    transition: padding 0.15s ease;
+  }
+
+  .chapter-header.scrolled {
+    padding-top: 0.375rem;
+    padding-bottom: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .chapter-title {
+    font-family: var(--font-heading, serif);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    line-height: 1.2;
+    color: #3d3229;
+    margin: 0 0 0.5rem;
+    transition: font-size 0.2s ease, margin 0.2s ease;
+  }
+
+  .chapter-header.scrolled .chapter-title {
+    font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .header-meta-row :global(.chapter-meta) {
+    margin-bottom: 0;
+    flex: 1;
+  }
+
+  .chapter-header.scrolled .header-meta-row :global(.chapter-meta) {
+    font-size: 0.6875rem;
+    padding: 0.375rem 0.75rem;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .progress-badge {
     font-size: 0.875rem;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid #f0ede8;
-    padding-bottom: 1rem;
+    font-weight: 700;
+    color: #9a8c7c;
+    font-variant-numeric: tabular-nums;
+    min-width: 2.75rem;
+    text-align: center;
+    flex-shrink: 0;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
-  .chapter-metadata span {
-    margin-right: 1.5rem;
+  .chapter-header.scrolled .progress-badge {
+    opacity: 1;
+    transform: scale(1);
   }
 
-  [dir="rtl"] .chapter-metadata span {
-    margin-right: 0;
-    margin-left: 1.5rem;
+  .header-progress-line {
+    height: 2px;
+    background: rgba(154, 140, 124, 0.12);
+    margin-top: 0.5rem;
+    border-radius: 1px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .chapter-header.scrolled .header-progress-line {
+    opacity: 1;
+    margin-top: 0.25rem;
+  }
+
+  .header-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #9a8c7c;
+    transition: width 0.1s linear;
+    border-radius: 1px;
+  }
+
+  .header-lang.hidden { display: none !important; }
+  .header-lang.visible { display: block; }
+
+  @media (max-width: 639px) {
+    .chapter-header.scrolled .header-meta-row :global(.chapter-meta) {
+      font-size: 0.625rem;
+    }
   }
 </style>
 
@@ -237,28 +299,48 @@ try {
    * Searches specifically in chapter-container to avoid other data-he/data-en elements
    */
   function switchLanguage(lang: string) {
+    // Switch in chapter-container
     const container = document.getElementById('chapter-container');
-    if (!container) return;
+    if (container) {
+      const heContent = container.querySelector(':scope > [data-lang="he"]');
+      const enContent = container.querySelector(':scope > [data-lang="en"]');
 
-    // Find chapter content divs (direct children with data-he/data-en)
-    const heContent = container.querySelector(':scope > [data-he]');
-    const enContent = container.querySelector(':scope > [data-en]');
+      if (heContent && enContent) {
+        if (lang === 'he') {
+          heContent.classList.remove('hidden');
+          heContent.classList.add('visible');
+          enContent.classList.add('hidden');
+          enContent.classList.remove('visible');
+          document.documentElement.lang = 'he';
+          document.documentElement.dir = 'rtl';
+        } else {
+          enContent.classList.remove('hidden');
+          enContent.classList.add('visible');
+          heContent.classList.add('hidden');
+          heContent.classList.remove('visible');
+          document.documentElement.lang = 'en';
+          document.documentElement.dir = 'ltr';
+        }
+      }
+    }
 
-    if (heContent && enContent) {
-      if (lang === 'he') {
-        heContent.classList.remove('hidden');
-        heContent.classList.add('visible');
-        enContent.classList.add('hidden');
-        enContent.classList.remove('visible');
-        document.documentElement.lang = 'he';
-        document.documentElement.dir = 'rtl';
-      } else {
-        enContent.classList.remove('hidden');
-        enContent.classList.add('visible');
-        heContent.classList.add('hidden');
-        heContent.classList.remove('visible');
-        document.documentElement.lang = 'en';
-        document.documentElement.dir = 'ltr';
+    // Also switch in chapter-header
+    const header = document.getElementById('chapter-header');
+    if (header) {
+      const heLang = header.querySelector(':scope > [data-lang="he"]');
+      const enLang = header.querySelector(':scope > [data-lang="en"]');
+      if (heLang && enLang) {
+        if (lang === 'he') {
+          heLang.classList.remove('hidden');
+          heLang.classList.add('visible');
+          enLang.classList.add('hidden');
+          enLang.classList.remove('visible');
+        } else {
+          enLang.classList.remove('hidden');
+          enLang.classList.add('visible');
+          heLang.classList.add('hidden');
+          heLang.classList.remove('visible');
+        }
       }
     }
   }
@@ -283,10 +365,12 @@ try {
 
     window.addEventListener('scroll', scrollHandler, { passive: true, signal: controller.signal });
 
-    // Restore scroll position on page load
+    // Restore scroll position only if user got here via browser back/forward,
+    // not via a fresh navigation (e.g. TOC click)
+    const navType = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming)?.type;
+    const isBackForward = navType === 'back_forward';
     const progress = ReadingProgressManager.getProgress(bookId, chapterId);
-    if (progress && progress.scrollPosition > 0) {
-      // Use setTimeout to ensure DOM is fully rendered
+    if (isBackForward && progress && progress.scrollPosition > 0) {
       setTimeout(() => {
         window.scrollTo(0, progress.scrollPosition);
       }, 100);
@@ -294,6 +378,42 @@ try {
 
     // Return cleanup function
     return () => clearTimeout(scrollTimeout);
+  }
+
+  /**
+   * Sticky header scroll handler — shrinks title, shows progress %
+   */
+  function initStickyHeader(controller: AbortController) {
+    const header = document.getElementById('chapter-header');
+    if (!header) return;
+
+    const progressFill = document.getElementById('header-progress-fill');
+    const progressHe = document.getElementById('progress-badge-he');
+    const progressEn = document.getElementById('progress-badge-en');
+
+    const SCROLL_THRESHOLD = 80;
+
+    function onScroll() {
+      const scrollY = window.scrollY;
+
+      if (scrollY > SCROLL_THRESHOLD) {
+        header!.classList.add('scrolled');
+      } else {
+        header!.classList.remove('scrolled');
+      }
+
+      const contentHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = contentHeight > 0 ? Math.round((scrollY / contentHeight) * 100) : 0;
+      const clamped = Math.min(100, Math.max(0, pct));
+      const text = `${clamped}%`;
+
+      if (progressHe) progressHe.textContent = text;
+      if (progressEn) progressEn.textContent = text;
+      if (progressFill) progressFill.style.width = `${clamped}%`;
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true, signal: controller.signal });
+    onScroll();
   }
 
   /**
@@ -308,6 +428,9 @@ try {
 
     // Setup reading progress (will cleanup on abort)
     const progressCleanup = initReadingProgress(controller);
+
+    // Setup sticky header scroll behavior
+    initStickyHeader(controller);
 
     // Listen for page transition to cleanup
     const beforeUnmountHandler = () => {

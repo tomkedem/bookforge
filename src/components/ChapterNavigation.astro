@@ -32,14 +32,18 @@ const isRtl = language === 'he';
 <nav
   class:list={[
     'flex',
-    isRtl ? 'flex-row-reverse' : 'flex-row',
+    'flex-col',
+    'sm:flex-row',
+    isRtl ? 'sm:flex-row-reverse' : 'sm:flex-row',
     'items-center',
     'justify-between',
-    'gap-4',
+    'gap-3',
+    'sm:gap-4',
     'py-6',
     'border-t',
     'border-yuval-border-secondary',
-    'mt-12',
+    'mt-8',
+    'sm:mt-12',
     className,
   ]}
   aria-label={language === 'he' ? 'ניווט פרקים' : 'Chapter navigation'}
@@ -48,13 +52,12 @@ const isRtl = language === 'he';
     previousChapter && (
       <a
         href={getPreviousUrl()}
-        class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
-        data-he="הפרק הקודם"
-        data-en="Previous Chapter"
+        class="chapter-nav-link inline-flex items-center gap-2 px-3 py-2 sm:px-4 font-body text-xs sm:text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text max-w-[45%] sm:max-w-none"
+        data-base-url={getPreviousUrl()}
       >
         {isRtl ? (
           <>
-            <span>{previousChapter.title_he}</span>
+            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en}>{previousChapter.title_he}</span>
             <svg
               class="w-4 h-4"
               fill="none"
@@ -84,7 +87,7 @@ const isRtl = language === 'he';
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span>{previousChapter.title_en}</span>
+            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en}>{previousChapter.title_en}</span>
           </>
         )}
       </a>
@@ -93,7 +96,7 @@ const isRtl = language === 'he';
 
   {
     currentChapter && (
-      <div class="flex flex-col items-center gap-1">
+      <div class="hidden sm:flex flex-col items-center gap-1">
         <span
           class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide"
           data-he={`פרק ${currentChapter.id + 1} מתוך ${chapters.length}`}
@@ -116,9 +119,8 @@ const isRtl = language === 'he';
     nextChapter && (
       <a
         href={getNextUrl()}
-        class="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text"
-        data-he="הפרק הבא"
-        data-en="Next Chapter"
+        class="chapter-nav-link inline-flex items-center gap-2 px-3 py-2 sm:px-4 font-body text-xs sm:text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-text max-w-[45%] sm:max-w-none"
+        data-base-url={getNextUrl()}
       >
         {isRtl ? (
           <>
@@ -135,11 +137,11 @@ const isRtl = language === 'he';
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span>{nextChapter.title_he}</span>
+            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en}>{nextChapter.title_he}</span>
           </>
         ) : (
           <>
-            <span>{nextChapter.title_en}</span>
+            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en}>{nextChapter.title_en}</span>
             <svg
               class="w-4 h-4"
               fill="none"
@@ -159,3 +161,18 @@ const isRtl = language === 'he';
     )
   }
 </nav>
+
+<script>
+  function updateNavLinks() {
+    const lang = new URLSearchParams(window.location.search).get('lang')
+      || localStorage.getItem('yuval_language') || 'en';
+    document.querySelectorAll<HTMLAnchorElement>('.chapter-nav-link').forEach(link => {
+      const base = link.dataset.baseUrl || '';
+      if (!base) return;
+      link.href = lang === 'he' ? `${base}?lang=he` : base;
+    });
+  }
+
+  updateNavLinks();
+  window.addEventListener('language-changed', updateNavLinks);
+</script>

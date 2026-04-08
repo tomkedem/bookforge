@@ -1,0 +1,92 @@
+---
+import type { Language } from '../types/index';
+
+interface Props {
+  wordCount: number;
+  readingTimeMinutes: number;
+  sections: number;
+  language: Language;
+}
+
+const { wordCount, readingTimeMinutes, sections, language } = Astro.props;
+const isHe = language === 'he';
+
+const labels = {
+  words: isHe ? 'מילים' : 'words',
+  readTime: isHe ? 'דקות קריאה' : 'min read',
+  sections: isHe ? 'סעיפים' : 'sections',
+};
+
+const formattedCount = wordCount.toLocaleString(isHe ? 'he-IL' : 'en-US');
+---
+
+<div class="chapter-meta" data-dir={isHe ? 'rtl' : 'ltr'}>
+  <span class="meta-item">
+    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    </svg>
+    {readingTimeMinutes} {labels.readTime}
+  </span>
+
+  <span class="meta-dot" aria-hidden="true">·</span>
+
+  <span class="meta-item">
+    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+    </svg>
+    {formattedCount} {labels.words}
+  </span>
+
+  <span class="meta-dot" aria-hidden="true">·</span>
+
+  <span class="meta-item">
+    <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M4 6h16M4 12h16M4 18h7"/>
+    </svg>
+    {sections} {labels.sections}
+  </span>
+</div>
+
+<style>
+  .chapter-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    color: #9a8c7c;
+    font-size: 0.8125rem;
+    margin-bottom: 2rem;
+    padding: 0.625rem 1rem;
+    background: rgba(154, 140, 124, 0.06);
+    border-radius: 8px;
+    border: 1px solid rgba(154, 140, 124, 0.12);
+  }
+
+  .chapter-meta[data-dir="rtl"] {
+    direction: rtl;
+  }
+
+  .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .meta-icon {
+    width: 0.9375rem;
+    height: 0.9375rem;
+    flex-shrink: 0;
+    opacity: 0.65;
+  }
+
+  .meta-dot {
+    color: rgba(154, 140, 124, 0.35);
+    font-size: 1.1rem;
+    line-height: 1;
+    user-select: none;
+  }
+</style>

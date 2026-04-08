@@ -58,6 +58,23 @@ Features:
 
 Navigation between chapters with previous/next buttons and chapter info.
 
+### ChapterMeta.astro
+
+Reusable chapter metadata bar displayed below the chapter title. Shows word count, estimated reading time, and number of sections with matching icons. Fully bilingual — Hebrew labels in Hebrew mode, English labels in English mode.
+
+Props:
+- wordCount: number - Total word count of the chapter
+- readingTimeMinutes: number - Estimated reading time in minutes
+- sections: number - Number of sections in the chapter
+- language: Language - Current language ('he' or 'en')
+
+Features:
+- Inline SVG icons for each metric (book, clock, list)
+- RTL-aware layout (row-reverse for Hebrew)
+- Responsive wrapping on small screens
+- Consistent styling via self-contained scoped CSS
+- Accessible (aria-hidden on decorative icons)
+
 ### Header.astro
 
 Sticky header with logo and language toggle.
