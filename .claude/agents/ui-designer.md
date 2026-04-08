@@ -302,6 +302,24 @@ color: #1a1a1a
 
 צור design-system.json עם כל ההגדרות הנ"ל.
 כולל: colors, typography, spacing, components, mobile, rules.
+
+הקובץ חייב לכלול סעיף ספציפי לכרטיסיות:
+
+"book_card": {
+  "thumbnail": {
+    "width": "100%",
+    "height": "200px",
+    "object_fit": "cover"
+  },
+  "background": "dominant_color_15_percent",
+  "padding": "32px 44px 44px",
+  "number": "11px, letter-spacing 0.12em, color #ccc",
+  "title": "Frank Ruhl Libre, 26px, weight 700, color #1a1a1a",
+  "description": "Heebo, 14px, weight 300, color #888",
+  "arrow": "color #1a1a1a, opacity 0 default, opacity 1 on hover",
+  "hover": "arrow visible, transition all 0.2s ease"
+}
+
 הקובץ הזה הוא החוק. Builder לא יכול לסטות ממנו.
 
 אסור בהחלט:

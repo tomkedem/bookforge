@@ -128,6 +128,11 @@ src/pipeline/build.py     יצירת skeleton של Astro
 הקריטריונים ב-docs/acceptance-criteria.md ידנית.
 אין לאשר בלי שכל קריטריון עבר.
 
+## Playwright MCP
+
+Quality Gate משתמש ב-Playwright לצילום screenshots.
+התקן אם חסר: npx playwright install chromium
+
 ## גבולות
 
 - אל תגע בoutput/ ללא אישור מפורש
