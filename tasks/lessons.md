@@ -47,7 +47,30 @@ Language/RTL logic חוזר בכל קומפוננט (7+ מיקומים).
 Builder צריך להוסיף data-he ו-data-en attributes לכל elements שבהם text.
 זה נחוץ לmultilingual content switching בצד הלקוח.
 
-### 2026-04-08
+### 2025-01-28
+image positioning ב-Word דורש XML parsing.
+python-docx לא מספקת מיפוי ישיר של תמונה לפסקה.
+פתרון: parse את run._element.xml לזהות image relationships ולמפות למקום המדויק בטקסט.
+בלי זה, תמונות יושבות בסוף הקובץ.
+
+### 2025-01-28
+design-system.json חייב להיות complete כמו sample-book.
+UI Designer לפעמים יוצר JSON חלקי ללא spacing/components/breakpoints/rtl.
+Error Handler צריך לוודא שכל השדות הבסיסיים קיימים ולהשלים אם חסרים.
+קומפוננטים מתבססים על ההגדרות האלה.
+
+### 2025-01-28
+data-loader.ts לא צריך hardcoded slugs.
+הוא צריך לקרוא ל-discoverAllBooks() של book-discovery.ts.
+ספרים חדשים צריכים להתגלות אוטומטית ללא שינוי קוד.
+זה DRY - book-discovery הוא מקור האמת היחיד.
+
+### 2025-01-28
+translation pipeline יעילה עם batch reads.
+במקום לקרוא פרק אחד בכל פעם, קרא 4 פרקים בכל batch ותרגם במקביל.
+זה חוסך round-trips ומאיץ משמעותית (29 פרקים תורגמו ב-~10 דקות).
+
+### 2025-01-28
 AbortController חיוני לניקוי event listeners בAstro SPA.
 בכל component שמוסיף event listener, צריך:
 1. `const controller = new AbortController()`

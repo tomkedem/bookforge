@@ -17,7 +17,7 @@ def parse(ingested: dict) -> list[dict]:
     chapters = []
     current = None
 
-    for para in paragraphs:
+    for idx, para in enumerate(paragraphs):
         style = para["style"]
         text = para["text"]
 
@@ -36,7 +36,8 @@ def parse(ingested: dict) -> list[dict]:
         elif current:
             current["content"].append({
                 "text": text,
-                "style": style
+                "style": style,
+                "para_index": idx  # Track paragraph position for image mapping
             })
 
     if current:
@@ -62,13 +63,16 @@ def _classify_chapter(title: str, index: int) -> str:
 
 def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -> dict:
     """
-    Extracts images from a Word document.
+    Extracts images from a Word document and maps them to paragraph positions.
     First image goes to assets/cover.png.
     Chapter images go to assets/.
-    Returns a dict mapping image index to file path.
+    Returns a dict with:
+      - 'files': mapping rel_id to file path
+      - 'positions': list of (paragraph_index, rel_id, filename)
     """
     try:
         from docx import Document
+        from docx.oxml import parse_xml
     except ImportError:
         raise ImportError("pip install python-docx")
 
@@ -76,9 +80,12 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     assets_dir = Path(output_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    image_map = {}
+    image_files = {}
+    image_positions = []
+    image_counter = 0
 
-    for i, rel in enumerate(doc.part.rels.values()):
+    # Extract all images and map rel_id to files
+    for rel_id, rel in doc.part.rels.items():
         if "image" not in rel.reltype:
             continue
 
@@ -89,29 +96,69 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
             if ext == "jpeg":
                 ext = "jpg"
 
-            if i == 0:
+            if image_counter == 0:
                 cover_path = assets_dir / "cover.png"
                 with open(cover_path, "wb") as f:
                     f.write(img_data)
-                image_map[i] = str(cover_path)
+                image_files[rel_id] = str(cover_path)
             else:
-                img_path = assets_dir / f"image-{str(i).zfill(2)}.{ext}"
+                img_path = assets_dir / f"image-{str(image_counter).zfill(2)}.{ext}"
                 with open(img_path, "wb") as f:
                     f.write(img_data)
-                image_map[i] = str(img_path)
+                image_files[rel_id] = str(img_path)
 
+            image_counter += 1
         except Exception:
             continue
 
-    return image_map
+    # Map images to paragraph positions
+    for para_idx, para in enumerate(doc.paragraphs):
+        # Check for inline shapes (drawings/pictures)
+        for run in para.runs:
+            # Look for embedded images in run XML
+            run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
+            if '<w:drawing' in run_xml or '<w:pict' in run_xml:
+                # Extract relationship IDs from the XML
+                for rel_id in image_files.keys():
+                    if rel_id in run_xml:
+                        filename = Path(image_files[rel_id]).name
+                        image_positions.append((para_idx, rel_id, filename))
+                        break
+
+    return {
+        'files': image_files,
+        'positions': image_positions
+    }
 
 
-def to_markdown(chapter: dict) -> str:
+def to_markdown(chapter: dict, image_positions: list = None) -> str:
+    """
+    Convert chapter to Markdown with embedded images at correct positions.
+    
+    Args:
+        chapter: Chapter dict with title and content blocks
+        image_positions: List of (para_index, rel_id, filename) tuples
+    """
     lines = [f"# {chapter['title']}", ""]
+    
+    # Build a map of para_index to image filenames for quick lookup
+    image_map = {}
+    if image_positions:
+        for para_idx, rel_id, filename in image_positions:
+            if para_idx not in image_map:
+                image_map[para_idx] = []
+            image_map[para_idx].append(filename)
 
     for item in chapter["content"]:
         style = item["style"]
         text = item["text"]
+        para_idx = item.get("para_index")
+        
+        # Insert images that appear at this paragraph position
+        if para_idx is not None and para_idx in image_map:
+            for img_filename in image_map[para_idx]:
+                lines.append(f"![{img_filename}](../assets/{img_filename})")
+                lines.append("")
 
         if "Heading 2" in style:
             lines.append(f"## {text}")
