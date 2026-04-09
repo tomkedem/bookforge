@@ -84,12 +84,19 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     assets_dir = Path(output_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 1: Find first Heading 1 position
+    # Step 1: Find first TWO Heading 1 positions
+    # (to handle cases like "פתיחה" + cover image + "Chapter 1")
     first_heading_idx = None
+    second_heading_idx = None
+    heading_count = 0
     for idx, para in enumerate(doc.paragraphs):
         if para.style and "Heading 1" in para.style.name:
-            first_heading_idx = idx
-            break
+            heading_count += 1
+            if heading_count == 1:
+                first_heading_idx = idx
+            elif heading_count == 2:
+                second_heading_idx = idx
+                break
     
     # Step 2: Build rel_id to image data mapping
     image_data = {}
@@ -106,8 +113,25 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
         except Exception:
             continue
 
-    # Step 3: Map images to paragraph positions
+    # Step 3: Check for images in SDT elements (before paragraphs - cover page)
+    # These appear at position -1 (before first paragraph)
     image_positions_temp = []  # (para_idx, rel_id)
+    
+    body = doc.element.body
+    for element in body:
+        tag_name = element.tag.split('}')[-1] if '}' in element.tag else element.tag
+        if tag_name == 'sdt':  # Structured Document Tag (cover page)
+            # Search for images in this SDT
+            blips = element.xpath('.//a:blip', namespaces={
+                'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'
+            })
+            for blip in blips:
+                embed_id = blip.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
+                if embed_id and embed_id in image_data:
+                    # Position -1 means before first paragraph
+                    image_positions_temp.append((-1, embed_id))
+    
+    # Step 4: Map images in paragraphs
     for para_idx, para in enumerate(doc.paragraphs):
         for run in para.runs:
             run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
@@ -117,25 +141,38 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
                         image_positions_temp.append((para_idx, rel_id))
                         break
 
-    # Step 4: Sort by paragraph position
+    # Step 5: Sort by paragraph position
     image_positions_temp.sort(key=lambda x: x[0])
 
-    # Step 5: Determine if we have a cover image
+    # Step 6: Determine if we have a cover image
+    # Priority: Images at position -1 (SDT/cover page) > Early paragraph images
     has_cover = False
     cover_rel_id = None
     
-    if first_heading_idx is not None and len(image_positions_temp) > 0:
-        # Check if first image appears BEFORE first heading
+    if len(image_positions_temp) > 0:
         first_img_idx = image_positions_temp[0][0]
-        if first_img_idx < first_heading_idx:
+        
+        # Position -1 means SDT (cover page) - always use as cover
+        if first_img_idx == -1:
+            # If multiple images at -1, use the LAST one (user deleted first)
+            sdt_images = [img for img in image_positions_temp if img[0] == -1]
+            if len(sdt_images) > 1:
+                cover_rel_id = sdt_images[-1][1]  # Last image in SDT
+                print(f"[OK] Cover image found: SDT image (cover page), using last of {len(sdt_images)} images")
+            else:
+                cover_rel_id = image_positions_temp[0][1]
+                print(f"[OK] Cover image found: SDT image (cover page)")
+            has_cover = True
+        # If first image appears within first 15 paragraphs, it's the cover
+        elif first_img_idx < 15:
             has_cover = True
             cover_rel_id = image_positions_temp[0][1]
-            print(f"✓ Cover image found at paragraph {first_img_idx} (before Heading 1 at {first_heading_idx})")
+            print(f"[OK] Cover image found: first image at paragraph {first_img_idx}")
         else:
-            print(f"⚠ No cover image: First image at para {first_img_idx}, but Heading 1 at {first_heading_idx}")
+            print(f"[WARN] No cover: First image at para {first_img_idx} (too late in document)")
             print(f"  All images will be numbered sequentially (no cover.png)")
     
-    # Step 6: Save images
+    # Step 7: Save images
     image_files = {}
     image_positions = []
     image_counter = 1  # Start from 1 for chapter images
