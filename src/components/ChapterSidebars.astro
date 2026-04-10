@@ -120,7 +120,6 @@ const isRtl = language === LANGUAGES.HE;
                 chapter.id === currentChapterId && 'toc-link-active',
               ]}
               aria-current={chapter.id === currentChapterId ? 'page' : undefined}
-              data-astro-reload
             >
               <span class="toc-number">
                 {String(chapter.id).padStart(2, '0')}
@@ -549,25 +548,23 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   /**
-   * TOC navigation — handles language parameter and does full page reload.
+   * TOC navigation — handles language parameter.
+   * Sidebars are now outside <main>, so View Transitions don't affect them.
    */
   function initTocNavigation() {
     const tocNav = document.querySelector('.toc-list');
     if (!tocNav || (tocNav as HTMLElement).dataset.navInit === 'true') return;
     (tocNav as HTMLElement).dataset.navInit = 'true';
 
+    // Just update href with correct language - let Astro handle navigation
     tocNav.addEventListener('click', (e) => {
       const target = (e.target as HTMLElement).closest('a.toc-link') as HTMLAnchorElement | null;
       if (!target) return;
       
-      e.preventDefault();
-      
       const base = target.getAttribute('href')?.split('?')[0] || '';
       const lang = getCurrentLang();
-      const url = lang === 'he' ? `${base}?lang=he` : base;
-      
-      // Full page reload — bypasses View Transitions
-      window.location.href = url;
+      target.href = lang === 'he' ? `${base}?lang=he` : base;
+      // Let the native click proceed - Astro's ClientRouter handles it
     });
   }
 

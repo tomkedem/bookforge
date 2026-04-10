@@ -86,6 +86,15 @@ chapterContentEn = stripFirstH1(chapterContentEn);
   title={currentChapter.title_en}
   language={LANGUAGES.EN}
 >
+  <!-- Chapter Sidebars: Moved to body level via slot to avoid View Transitions jump -->
+  <ChapterSidebars
+    slot="sidebars"
+    chapters={allChapters}
+    currentChapterId={chapterId}
+    bookSlug={book || ''}
+    language={LANGUAGES.EN}
+  />
+
   <!-- Breadcrumbs -->
   <Breadcrumbs
     items={[
@@ -94,14 +103,6 @@ chapterContentEn = stripFirstH1(chapterContentEn);
       { label_he: currentChapter.title_he, label_en: currentChapter.title_en },
     ]}
     class="mb-4"
-  />
-
-  <!-- Chapter Sidebars: TOC on right, Outline on left -->
-  <ChapterSidebars
-    chapters={allChapters}
-    currentChapterId={chapterId}
-    bookSlug={book || ''}
-    language={LANGUAGES.EN}
   />
 
   <!-- Sticky chapter header: title + meta + progress — shrinks on scroll -->

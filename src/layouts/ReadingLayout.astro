@@ -20,6 +20,9 @@ const isRtl = language === LANGUAGES.HE;
   showProgress={true}
   showLanguageToggle={true}
 >
+  <!-- Sidebars passed through to body level -->
+  <slot name="sidebars" slot="sidebars" />
+
   <article
     class:list={[
       'reading-article',
