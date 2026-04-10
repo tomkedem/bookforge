@@ -722,6 +722,9 @@ const isRtl = language === LANGUAGES.HE;
     });
   }
 
+  // Expose for keyboard navigation and other modules
+  (window as any).yuvalLoadChapter = loadChapterContent;
+
   /**
    * TOC navigation — uses fetch to load content without page navigation.
    */

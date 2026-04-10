@@ -1,6 +1,9 @@
 import { initLanguageSwitcher } from './language-switcher';
 import { initProgressTracker } from './progress-tracker';
 import { initStickyHeader } from './sticky-header';
+import { initKeyboardNav } from './keyboard-nav';
+import { initHighlighter } from './highlighter';
+import { initReadingHints } from './reading-hints';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -12,6 +15,9 @@ function initializeReadingPage() {
   initLanguageSwitcher(controller);
   const progressCleanup = initProgressTracker(controller);
   initStickyHeader(controller);
+  initKeyboardNav(controller.signal);
+  initHighlighter(controller.signal);
+  initReadingHints();
 
   const cleanup = () => {
     progressCleanup();
