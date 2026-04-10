@@ -115,6 +115,124 @@
 }
 
 /* ═══════════════════════════════════════════════════════
+   SEPIA THEME — Warm paper-like appearance
+   ═══════════════════════════════════════════════════════ */
+.sepia {
+  /* ── Page backgrounds ── */
+  --yuval-bg: #f4ecd8;
+  --yuval-bg-secondary: #ebe3ce;
+  --yuval-surface: #faf6eb;
+  --yuval-header-bg: rgba(250, 246, 235, 0.95);
+  --yuval-reading-bg: #faf6eb;
+
+  /* ── Text ── */
+  --yuval-text: #3d3227;
+  --yuval-text-secondary: #5c4e3d;
+  --yuval-text-tertiary: #7a6b56;
+  --yuval-text-muted: #9a8b73;
+
+  /* ── Borders ── */
+  --yuval-border: #e8ddc8;
+  --yuval-border-secondary: #d4c5a9;
+
+  /* ── Links ── */
+  --yuval-link: #8b4513;
+  --yuval-link-hover: #a0522d;
+
+  /* ── Buttons & bold accents ── */
+  --yuval-accent: #8b4513;
+  --yuval-accent-hover: #6b3410;
+  --yuval-accent-text: #faf6eb;
+
+  /* ── Highlight ── */
+  --yuval-highlight: #8b4513;
+
+  /* ── Toggle switch ── */
+  --yuval-toggle-track: #d4c5a9;
+  --yuval-moon-icon: #9a8b73;
+
+  /* ── TOC / Sidebar ── */
+  --yuval-toc-item-border: #e8ddc8;
+  --yuval-toc-number: #b0a08a;
+  --yuval-toc-active: #8b4513;
+
+  /* ── Chapter meta ── */
+  --yuval-meta-text: #7a6b56;
+  --yuval-meta-bg: rgba(139, 69, 19, 0.06);
+  --yuval-meta-border: rgba(139, 69, 19, 0.12);
+  --yuval-meta-dot: rgba(139, 69, 19, 0.35);
+
+  /* ── Chapter header ── */
+  --yuval-chapter-title: #3d3227;
+  --yuval-progress-badge: #7a6b56;
+  --yuval-progress-line: rgba(139, 69, 19, 0.12);
+  --yuval-progress-fill: #8b4513;
+
+  /* ── Blockquote ── */
+  --yuval-blockquote-border: #8b4513;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FOCUS MODE — Immersive distraction-free reading
+   ═══════════════════════════════════════════════════════ */
+body.focus-mode .toc-sidebar,
+body.focus-mode .outline-sidebar,
+body.focus-mode header,
+body.focus-mode .reading-progress-bar,
+body.focus-mode .back-to-top-button,
+body.focus-mode .reading-controls {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease !important;
+}
+
+body.focus-mode .reading-article {
+  max-width: 800px !important;
+  margin: 0 auto !important;
+  padding-top: 3rem !important;
+}
+
+body.focus-mode article p,
+body.focus-mode article li {
+  font-size: 1.25rem !important;
+  line-height: 1.9 !important;
+}
+
+body.focus-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.08) 100%);
+  z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY CONTROLS — CSS Variables
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --reading-font-size: 1.125rem;
+  --reading-line-height: 1.8;
+  --reading-content-width: 720px;
+  --reading-font-family: 'Frank Ruhl Libre', serif;
+}
+
+.reading-article .chapter-content {
+  font-size: var(--reading-font-size);
+  line-height: var(--reading-line-height);
+  max-width: var(--reading-content-width);
+  margin: 0 auto;
+  font-family: var(--reading-font-family);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHAPTER TRANSITIONS — Instant swap, no animation
+   ═══════════════════════════════════════════════════════ */
+.reading-article {
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════════════
    GLOBAL TRANSITIONS & ANIMATIONS
    ═══════════════════════════════════════════════════════ */
 

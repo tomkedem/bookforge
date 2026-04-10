@@ -599,28 +599,37 @@ const isRtl = language === LANGUAGES.HE;
 
   /**
    * Load chapter content via fetch without full page navigation.
-   * This keeps the sidebar in place with no flickering.
+   * INSTANT swap - no animation, no scroll visible.
    */
   async function loadChapterContent(url: string): Promise<void> {
     try {
-      // Show loading state (optional)
       const container = document.getElementById('chapter-container');
       const header = document.getElementById('chapter-header');
+      const article = document.querySelector('.reading-article');
       
+      if (!container) {
+        window.location.href = url;
+        return;
+      }
+
       // Fetch the new page
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch chapter');
       
       const html = await response.text();
-      
-      // Parse the HTML
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       
-      // Extract the new chapter content and header
       const newContainer = doc.getElementById('chapter-container');
       const newHeader = doc.getElementById('chapter-header');
       
+      // STEP 1: Hide everything instantly
+      if (article) (article as HTMLElement).style.visibility = 'hidden';
+      
+      // STEP 2: Scroll to top INSTANTLY (now invisible)
+      window.scrollTo(0, 0);
+      
+      // STEP 3: Swap content
       if (newContainer && container) {
         container.innerHTML = newContainer.innerHTML;
         container.dataset.chapterId = newContainer.dataset.chapterId || '';
@@ -631,25 +640,22 @@ const isRtl = language === LANGUAGES.HE;
         header.innerHTML = newHeader.innerHTML;
       }
       
-      // Update the URL without full navigation
-      history.pushState({}, '', url);
-      
-      // Update active chapter highlighting
-      updateActiveChapter();
-      
-      // Rebuild the chapter outline
-      buildChapterOutline();
-      
-      // Apply language visibility
+      // STEP 4: Apply language
       const lang = getCurrentLang();
       applyLanguageVisibility(lang);
       
-      // Scroll to top of content
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      // STEP 5: Update URL and state
+      history.pushState({}, '', url);
+      updateActiveChapter();
+      buildChapterOutline();
+      
+      // STEP 6: Show everything instantly
+      if (article) (article as HTMLElement).style.visibility = 'visible';
       
     } catch (error) {
       console.error('Error loading chapter:', error);
-      // Fallback to full navigation
+      const article = document.querySelector('.reading-article');
+      if (article) (article as HTMLElement).style.visibility = 'visible';
       window.location.href = url;
     }
   }

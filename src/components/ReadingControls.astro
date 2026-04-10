@@ -1,0 +1,607 @@
+---
+// src/components/ReadingControls.astro
+// Reading experience controls: Focus Mode, Typography Panel, Theme Switcher
+---
+
+<div id="reading-controls" class="reading-controls">
+  <!-- Focus Mode Toggle -->
+  <button
+    id="focus-mode-btn"
+    class="control-btn"
+    title="Focus Mode (F)"
+    aria-label="Toggle focus mode"
+  >
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  </button>
+
+  <!-- Typography Panel Toggle -->
+  <button
+    id="typography-btn"
+    class="control-btn"
+    title="Typography (T)"
+    aria-label="Open typography panel"
+  >
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M4 6h16M4 12h8m-8 6h16" />
+    </svg>
+  </button>
+
+  <!-- Theme Switcher -->
+  <button
+    id="theme-cycle-btn"
+    class="control-btn"
+    title="Theme (light/sepia/dark)"
+    aria-label="Cycle theme"
+  >
+    <svg class="theme-icon theme-icon-light w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+    <svg class="theme-icon theme-icon-dark w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+    </svg>
+    <svg class="theme-icon theme-icon-sepia w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+  </button>
+</div>
+
+<!-- Typography Panel -->
+<div id="typography-panel" class="typography-panel hidden">
+  <div class="panel-header">
+    <h3 data-he="טיפוגרפיה" data-en="Typography">Typography</h3>
+    <button id="close-typography" class="close-btn" aria-label="Close">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="panel-content">
+    <!-- Font Size -->
+    <div class="control-group">
+      <label data-he="גודל גופן" data-en="Font Size">Font Size</label>
+      <div class="size-controls">
+        <button id="font-decrease" class="size-btn">A-</button>
+        <span id="font-size-display">18px</span>
+        <button id="font-increase" class="size-btn">A+</button>
+      </div>
+    </div>
+
+    <!-- Line Height -->
+    <div class="control-group">
+      <label data-he="גובה שורה" data-en="Line Height">Line Height</label>
+      <div class="slider-row">
+        <input type="range" id="line-height-slider" min="1.4" max="2.4" step="0.1" value="1.8" />
+        <span id="line-height-display">1.8</span>
+      </div>
+    </div>
+
+    <!-- Content Width -->
+    <div class="control-group">
+      <label data-he="רוחב תוכן" data-en="Content Width">Content Width</label>
+      <div class="width-options">
+        <button class="width-btn" data-width="600" data-he="צר" data-en="Narrow">Narrow</button>
+        <button class="width-btn active" data-width="720" data-he="בינוני" data-en="Medium">Medium</button>
+        <button class="width-btn" data-width="900" data-he="רחב" data-en="Wide">Wide</button>
+      </div>
+    </div>
+
+    <!-- Font Family -->
+    <div class="control-group">
+      <label data-he="משפחת גופן" data-en="Font Family">Font Family</label>
+      <select id="font-family-select">
+        <option value="'Frank Ruhl Libre', serif">Frank Ruhl (Serif)</option>
+        <option value="'Heebo', sans-serif">Heebo (Sans)</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="system-ui, sans-serif">System</option>
+      </select>
+    </div>
+
+    <!-- Reset -->
+    <button id="reset-typography" class="reset-btn" data-he="איפוס לברירת מחדל" data-en="Reset to Defaults">Reset to Defaults</button>
+  </div>
+</div>
+
+<!-- Focus Mode Indicator -->
+<div id="focus-indicator" class="focus-indicator hidden">
+  <span data-he="מצב מרוכז" data-en="Focus Mode">Focus Mode</span>
+  <kbd>F</kbd>
+  <span data-he="ליציאה" data-en="to exit">to exit</span>
+</div>
+
+<style>
+  .reading-controls {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Desktop: position to the left of the right sidebar */
+  @media (min-width: 1024px) {
+    .reading-controls {
+      right: 340px; /* 320px sidebar + 20px gap */
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .reading-controls {
+      bottom: 90px;
+    }
+  }
+
+  .control-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--yuval-surface);
+    border: 1px solid var(--yuval-border);
+    color: var(--yuval-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .control-btn:hover {
+    background: var(--yuval-bg-secondary);
+    color: var(--yuval-text);
+    transform: scale(1.05);
+  }
+
+  .control-btn.active {
+    background: var(--yuval-accent);
+    color: var(--yuval-accent-text);
+    border-color: var(--yuval-accent);
+  }
+
+  /* Theme icons - show only current theme */
+  .theme-icon { display: none; }
+  .theme-icon-light { display: block; }
+  :global(.dark) .theme-icon-light { display: none; }
+  :global(.dark) .theme-icon-dark { display: block; }
+  :global(.sepia) .theme-icon-light { display: none; }
+  :global(.sepia) .theme-icon-sepia { display: block; }
+
+  /* Typography Panel */
+  .typography-panel {
+    position: fixed;
+    bottom: 100px;
+    right: 80px;
+    width: 280px;
+    background: var(--yuval-surface);
+    border: 1px solid var(--yuval-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    z-index: 50;
+    overflow: hidden;
+  }
+
+  /* Desktop: position to the left of the right sidebar */
+  @media (min-width: 1024px) {
+    .typography-panel {
+      right: 396px; /* 340px controls position + 56px for buttons */
+    }
+  }
+
+  .typography-panel.hidden {
+    display: none;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--yuval-border);
+    background: var(--yuval-bg-secondary);
+  }
+
+  .panel-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--yuval-text);
+    margin: 0;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--yuval-text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+
+  .close-btn:hover {
+    color: var(--yuval-text);
+  }
+
+  .panel-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .control-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--yuval-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .size-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .size-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--yuval-border);
+    background: var(--yuval-bg-secondary);
+    color: var(--yuval-text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .size-btn:hover {
+    background: var(--yuval-accent);
+    color: var(--yuval-accent-text);
+    border-color: var(--yuval-accent);
+  }
+
+  #font-size-display,
+  #line-height-display {
+    font-size: 14px;
+    color: var(--yuval-text);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--yuval-accent);
+  }
+
+  .width-options {
+    display: flex;
+    gap: 8px;
+  }
+
+  .width-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--yuval-border);
+    background: var(--yuval-bg-secondary);
+    color: var(--yuval-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .width-btn:hover,
+  .width-btn.active {
+    background: var(--yuval-accent);
+    color: var(--yuval-accent-text);
+    border-color: var(--yuval-accent);
+  }
+
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--yuval-border);
+    background: var(--yuval-bg-secondary);
+    color: var(--yuval-text);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .reset-btn {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--yuval-border);
+    background: transparent;
+    color: var(--yuval-text-tertiary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--yuval-text-tertiary);
+    color: var(--yuval-text);
+  }
+
+  /* Focus Indicator */
+  .focus-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    z-index: 10000;
+    animation: fadeInDown 0.3s ease;
+  }
+
+  .focus-indicator.hidden {
+    display: none;
+  }
+
+  .focus-indicator kbd {
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+</style>
+
+<script>
+  // ═══════════════════════════════════════════════════════
+  // READING CONTROLS — Focus Mode, Typography, Themes
+  // ═══════════════════════════════════════════════════════
+
+  let focusModeEnabled = false;
+  let typographyPanelOpen = false;
+
+  // Theme order: light → sepia → dark → light
+  const themes = ['light', 'sepia', 'dark'];
+
+  function getCurrentTheme(): string {
+    if (document.documentElement.classList.contains('dark')) return 'dark';
+    if (document.documentElement.classList.contains('sepia')) return 'sepia';
+    return 'light';
+  }
+
+  function setTheme(theme: string) {
+    document.documentElement.classList.remove('dark', 'sepia');
+    if (theme !== 'light') {
+      document.documentElement.classList.add(theme);
+    }
+    localStorage.setItem('yuval-theme', theme);
+  }
+
+  function cycleTheme() {
+    const current = getCurrentTheme();
+    const currentIndex = themes.indexOf(current);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    setTheme(nextTheme);
+  }
+
+  // ─── Focus Mode ───
+  function toggleFocusMode() {
+    focusModeEnabled = !focusModeEnabled;
+    document.body.classList.toggle('focus-mode', focusModeEnabled);
+    document.getElementById('focus-mode-btn')?.classList.toggle('active', focusModeEnabled);
+    
+    const indicator = document.getElementById('focus-indicator');
+    if (indicator) {
+      indicator.classList.toggle('hidden', !focusModeEnabled);
+      if (focusModeEnabled) {
+        // Auto-hide indicator after 3 seconds
+        setTimeout(() => {
+          indicator.classList.add('hidden');
+        }, 3000);
+      }
+    }
+  }
+
+  // ─── Typography Panel ───
+  function toggleTypographyPanel() {
+    typographyPanelOpen = !typographyPanelOpen;
+    const panel = document.getElementById('typography-panel');
+    const btn = document.getElementById('typography-btn');
+    panel?.classList.toggle('hidden', !typographyPanelOpen);
+    btn?.classList.toggle('active', typographyPanelOpen);
+  }
+
+  // ─── Typography Controls ───
+  const defaultTypography = {
+    fontSize: 18,
+    lineHeight: 1.8,
+    contentWidth: 720,
+    fontFamily: "'Frank Ruhl Libre', serif"
+  };
+
+  function loadTypographySettings() {
+    const saved = localStorage.getItem('yuval-typography');
+    return saved ? JSON.parse(saved) : { ...defaultTypography };
+  }
+
+  function saveTypographySettings(settings: typeof defaultTypography) {
+    localStorage.setItem('yuval-typography', JSON.stringify(settings));
+  }
+
+  function applyTypography(settings: typeof defaultTypography) {
+    document.documentElement.style.setProperty('--reading-font-size', `${settings.fontSize}px`);
+    document.documentElement.style.setProperty('--reading-line-height', String(settings.lineHeight));
+    document.documentElement.style.setProperty('--reading-content-width', `${settings.contentWidth}px`);
+    document.documentElement.style.setProperty('--reading-font-family', settings.fontFamily);
+    
+    // Update UI
+    const fontDisplay = document.getElementById('font-size-display');
+    const lineDisplay = document.getElementById('line-height-display');
+    const lineSlider = document.getElementById('line-height-slider') as HTMLInputElement;
+    const fontSelect = document.getElementById('font-family-select') as HTMLSelectElement;
+    
+    if (fontDisplay) fontDisplay.textContent = `${settings.fontSize}px`;
+    if (lineDisplay) lineDisplay.textContent = settings.lineHeight.toFixed(1);
+    if (lineSlider) lineSlider.value = String(settings.lineHeight);
+    if (fontSelect) fontSelect.value = settings.fontFamily;
+    
+    // Update width buttons
+    document.querySelectorAll('.width-btn').forEach(btn => {
+      const width = parseInt((btn as HTMLElement).dataset.width || '720');
+      btn.classList.toggle('active', width === settings.contentWidth);
+    });
+  }
+
+  function initTypographyControls() {
+    const settings = loadTypographySettings();
+    applyTypography(settings);
+
+    // Font size controls
+    document.getElementById('font-decrease')?.addEventListener('click', () => {
+      const s = loadTypographySettings();
+      s.fontSize = Math.max(14, s.fontSize - 2);
+      saveTypographySettings(s);
+      applyTypography(s);
+    });
+
+    document.getElementById('font-increase')?.addEventListener('click', () => {
+      const s = loadTypographySettings();
+      s.fontSize = Math.min(28, s.fontSize + 2);
+      saveTypographySettings(s);
+      applyTypography(s);
+    });
+
+    // Line height slider
+    document.getElementById('line-height-slider')?.addEventListener('input', (e) => {
+      const s = loadTypographySettings();
+      s.lineHeight = parseFloat((e.target as HTMLInputElement).value);
+      saveTypographySettings(s);
+      applyTypography(s);
+    });
+
+    // Width buttons
+    document.querySelectorAll('.width-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const s = loadTypographySettings();
+        s.contentWidth = parseInt((btn as HTMLElement).dataset.width || '720');
+        saveTypographySettings(s);
+        applyTypography(s);
+      });
+    });
+
+    // Font family select
+    document.getElementById('font-family-select')?.addEventListener('change', (e) => {
+      const s = loadTypographySettings();
+      s.fontFamily = (e.target as HTMLSelectElement).value;
+      saveTypographySettings(s);
+      applyTypography(s);
+    });
+
+    // Reset button
+    document.getElementById('reset-typography')?.addEventListener('click', () => {
+      saveTypographySettings(defaultTypography);
+      applyTypography(defaultTypography);
+    });
+
+    // Close button
+    document.getElementById('close-typography')?.addEventListener('click', () => {
+      toggleTypographyPanel();
+    });
+  }
+
+  // ─── Keyboard Shortcuts ───
+  function handleKeyboard(e: KeyboardEvent) {
+    // Don't trigger if typing in input
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+    
+    if (e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      toggleFocusMode();
+    }
+    
+    if (e.key.toLowerCase() === 't') {
+      e.preventDefault();
+      toggleTypographyPanel();
+    }
+    
+    if (e.key === 'Escape') {
+      if (focusModeEnabled) {
+        toggleFocusMode();
+      }
+      if (typographyPanelOpen) {
+        toggleTypographyPanel();
+      }
+    }
+  }
+
+  // ─── Initialize ───
+  function initReadingControls() {
+    // Theme button
+    document.getElementById('theme-cycle-btn')?.addEventListener('click', cycleTheme);
+    
+    // Focus mode button
+    document.getElementById('focus-mode-btn')?.addEventListener('click', toggleFocusMode);
+    
+    // Typography button
+    document.getElementById('typography-btn')?.addEventListener('click', toggleTypographyPanel);
+    
+    // Initialize typography
+    initTypographyControls();
+    
+    // Keyboard shortcuts
+    document.removeEventListener('keydown', handleKeyboard);
+    document.addEventListener('keydown', handleKeyboard);
+    
+    // Load saved theme (in case it was sepia)
+    const savedTheme = localStorage.getItem('yuval-theme');
+    if (savedTheme === 'sepia') {
+      document.documentElement.classList.add('sepia');
+    }
+  }
+
+  // Run on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReadingControls);
+  } else {
+    initReadingControls();
+  }
+
+  // Re-init on Astro navigation
+  document.addEventListener('astro:after-swap', initReadingControls);
+</script>

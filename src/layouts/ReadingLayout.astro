@@ -1,6 +1,7 @@
 ---
 import type { Language } from '../types/index';
 import BaseLayout from './BaseLayout.astro';
+import ReadingControls from '../components/ReadingControls.astro';
 import { LANGUAGES } from '../utils/language';
 
 interface Props {
@@ -264,6 +265,9 @@ const isRtl = language === LANGUAGES.HE;
       }
     </style>
   </article>
+
+  <!-- Reading Controls (Focus, Typography, Theme) -->
+  <ReadingControls />
 
   <script>
     // Inject copy buttons into all code blocks
