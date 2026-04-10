@@ -1,0 +1,163 @@
+"""
+Full pipeline: Word/PDF → chapters → images → markdown → output.
+
+Usage:
+    python -m pipeline.build <docx_path> <book_name> [--title-he "..."] [--title-en "..."]
+
+Example:
+    python -m pipeline.build "D:\\Books\\MyBook.docx" my-book --title-he "הספר שלי" --title-en "My Book"
+
+Run from the project root (bookforge/src/).
+"""
+
+import argparse
+import re
+import shutil
+import sys
+from pathlib import Path
+
+# Ensure src/ is on the path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pipeline.ingest import ingest
+from pipeline.parse import parse, extract_images, to_markdown
+from pipeline.organize import organize
+
+
+def sync_images_to_english(book_dir: Path):
+    """
+    Copy correct image references from Hebrew chapters to English chapters.
+    English files keep their translated text but get the same images
+    at the same positions as the Hebrew source.
+    """
+    img_pattern = re.compile(r'(<img [^>]+/>|!\[[^\]]*\]\([^)]+\))')
+
+    for he_path in sorted(book_dir.glob("chapter-*.he.md")):
+        en_path = he_path.with_name(he_path.name.replace(".he.md", ".en.md"))
+        if not en_path.exists():
+            continue
+
+        he_content = he_path.read_text(encoding="utf-8")
+        en_content = en_path.read_text(encoding="utf-8")
+
+        he_images = img_pattern.findall(he_content)
+        en_images = img_pattern.findall(en_content)
+
+        if he_images == en_images:
+            continue  # Already in sync
+
+        # Remove old images from English
+        en_clean = en_content
+        for old_img in en_images:
+            en_clean = en_clean.replace(old_img + "\n\n", "")
+            en_clean = en_clean.replace(old_img + "\n", "")
+            en_clean = en_clean.replace(old_img, "")
+
+        # Insert correct images after title line
+        if he_images:
+            lines = en_clean.split("\n")
+            insert_idx = 2  # After "# Title" and blank line
+            for img in reversed(he_images):
+                lines.insert(insert_idx, "")
+                lines.insert(insert_idx, img)
+            en_clean = "\n".join(lines)
+
+        en_path.write_text(en_clean, encoding="utf-8")
+        print(f"  [SYNC] {en_path.name}: {len(en_images)} → {len(he_images)} images")
+
+
+def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
+    """Copy book assets to public/ for Astro static serving."""
+    src = Path(output_dir) / book_slug / "assets"
+    dst = Path("public") / book_slug / "assets"
+
+    if not src.exists():
+        return
+
+    dst.mkdir(parents=True, exist_ok=True)
+    count = 0
+    for f in src.iterdir():
+        if f.is_file():
+            shutil.copy2(f, dst / f.name)
+            count += 1
+    print(f"  [OK] Copied {count} assets → public/{book_slug}/assets/")
+
+
+def run_pipeline(docx_path: str, book_name: str,
+                 title_he: str = "", title_en: str = "",
+                 output_dir: str = "output"):
+    """Run the full book processing pipeline."""
+
+    print(f"{'=' * 60}")
+    print(f"BookForge Pipeline: {book_name}")
+    print(f"{'=' * 60}")
+
+    # Step 1: Ingest
+    print("\n[1/6] Ingest...")
+    ingested = ingest(docx_path)
+    print(f"  Paragraphs: {ingested['total']}")
+
+    # Step 2: Parse chapters
+    print("\n[2/6] Parse chapters...")
+    chapters = parse(ingested)
+    print(f"  Chapters: {len(chapters)}")
+
+    # Step 3: Extract images
+    print("\n[3/6] Extract images...")
+    images = extract_images(docx_path, book_name, output_dir)
+    non_cover = [p for p in images["positions"] if p[0] >= 0]
+    print(f"  Images: {len(non_cover)} chapter + {'1 cover' if images['has_cover'] else 'no cover'}")
+
+    # Step 4: Generate markdown with images
+    print("\n[4/6] Generate markdown...")
+    chapters_md = []
+    total_images = 0
+    for i, ch in enumerate(chapters):
+        next_idx = chapters[i + 1].get("heading_doc_index") if i + 1 < len(chapters) else None
+        md = to_markdown(ch, images["positions"], next_heading_idx=next_idx)
+        chapters_md.append({"number": ch["number"], "content": md})
+        img_count = md.count("<img ") + md.count("![")
+        total_images += img_count
+    print(f"  {total_images} images placed across {len(chapters_md)} chapters")
+
+    # Step 5: Organize output (cleans stale files + generates content-structure.json)
+    print("\n[5/6] Organize output...")
+    created = organize(book_name, chapters_md, output_dir,
+                       book_title_he=title_he, book_title_en=title_en)
+    print(f"  Hebrew files: {len(created)}")
+
+    # Step 6: Sync images to English + copy assets to public/
+    print("\n[6/6] Sync & finalize...")
+    book_dir = Path(output_dir) / book_name
+    sync_images_to_english(book_dir)
+    copy_assets_to_public(book_name, output_dir)
+
+    print(f"\n{'=' * 60}")
+    print(f"Done! {len(chapters)} chapters, {total_images} images")
+    print(f"Output: {book_dir}")
+    print(f"{'=' * 60}")
+
+    return {
+        "chapters": len(chapters),
+        "images": total_images,
+        "has_cover": images["has_cover"],
+        "output_dir": str(book_dir),
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="BookForge: Word/PDF → Chapters pipeline")
+    parser.add_argument("docx_path", help="Path to Word (.docx) or PDF file")
+    parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
+    parser.add_argument("--title-he", default="", help="Hebrew title")
+    parser.add_argument("--title-en", default="", help="English title")
+    parser.add_argument("--output-dir", default="output", help="Output directory")
+    args = parser.parse_args()
+
+    run_pipeline(args.docx_path, args.book_name,
+                 title_he=args.title_he, title_en=args.title_en,
+                 output_dir=args.output_dir)
+
+
+if __name__ == "__main__":
+    main()
