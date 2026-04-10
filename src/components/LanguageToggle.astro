@@ -1,6 +1,6 @@
 ---
 import type { Language } from '../types/index';
-import { LANGUAGES, getLanguageLabel, getOppositeLanguage } from '../utils/language';
+import { LANGUAGES, SUPPORTED_LANGUAGES } from '../utils/language';
 
 interface Props {
   currentLanguage?: Language;
@@ -8,7 +8,6 @@ interface Props {
 }
 
 const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
-const oppositeLanguage = getOppositeLanguage(currentLanguage);
 ---
 
 <div
@@ -26,67 +25,37 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
   role="radiogroup"
   aria-label="Language Selection"
 >
-  <button
-    type="button"
-    class:list={[
-      'px-3',
-      'py-1.5',
-      'rounded-full',
-      'transition-all',
-      'duration-200',
-      'font-body',
-      'text-sm',
-      'font-medium',
-      currentLanguage === LANGUAGES.HE && 'bg-yuval-text text-yuval-bg',
-      currentLanguage !== LANGUAGES.HE &&
-        'text-yuval-text hover:bg-yuval-border',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight focus-visible:ring-offset-1',
-    ]}
-    data-language="he"
-    aria-pressed={currentLanguage === LANGUAGES.HE}
-    aria-label="Switch to Hebrew"
-    data-he="עברית"
-    data-en="Hebrew"
-  >
-    עברית
-  </button>
-
-  <button
-    type="button"
-    class:list={[
-      'px-3',
-      'py-1.5',
-      'rounded-full',
-      'transition-all',
-      'duration-200',
-      'font-body',
-      'text-sm',
-      'font-medium',
-      currentLanguage === LANGUAGES.EN && 'bg-yuval-text text-yuval-bg',
-      currentLanguage !== LANGUAGES.EN &&
-        'text-yuval-text hover:bg-yuval-border',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight focus-visible:ring-offset-1',
-    ]}
-    data-language="en"
-    aria-pressed={currentLanguage === LANGUAGES.EN}
-    aria-label="Switch to English"
-    data-he="אנגלית"
-    data-en="English"
-  >
-    English
-  </button>
+  {SUPPORTED_LANGUAGES.map(lang => (
+    <button
+      type="button"
+      class:list={[
+        'px-3',
+        'py-1.5',
+        'rounded-full',
+        'transition-all',
+        'duration-200',
+        'font-body',
+        'text-sm',
+        'font-medium',
+        currentLanguage === lang.code && 'bg-yuval-text text-yuval-bg',
+        currentLanguage !== lang.code && 'text-yuval-text hover:bg-yuval-border',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight focus-visible:ring-offset-1',
+      ]}
+      data-language={lang.code}
+      aria-pressed={currentLanguage === lang.code}
+      aria-label={`Switch to ${lang.labelEn}`}
+    >
+      {lang.label}
+    </button>
+  ))}
 </div>
 
 <script>
-  import { LANGUAGES, setLanguageToStorage, isValidLanguage } from '../utils/language';
+  import { LANGUAGES, SUPPORTED_LANGUAGES, setLanguageToStorage, isValidLanguage } from '../utils/language';
   import type { Language } from '../types/index';
 
-  /**
-   * Initialize language toggle with proper event listener cleanup
-   * Returns cleanup function for AbortController
-   */
   function initLanguageToggle(controller: AbortController) {
-    const buttons = document.querySelectorAll(
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
       '[role="radiogroup"] button[data-language]'
     );
 
@@ -96,8 +65,9 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
 
       if (lang && isValidLanguage(lang)) {
         setLanguageToStorage(lang);
+        const meta = SUPPORTED_LANGUAGES.find(l => l.code === lang);
         document.documentElement.lang = lang;
-        document.documentElement.dir = lang === LANGUAGES.HE ? 'rtl' : 'ltr';
+        document.documentElement.dir = meta?.dir ?? 'ltr';
 
         // Update aria-pressed state
         buttons.forEach((btn) => {
@@ -108,7 +78,7 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
           );
         });
 
-        // Dispatch custom event for other components (like reading page)
+        // Dispatch custom event for other components
         window.dispatchEvent(
           new CustomEvent('language-changed', {
             detail: { language: lang as Language }
@@ -117,10 +87,8 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
       }
     };
 
-    // Add click listeners with AbortController signal for cleanup
     buttons.forEach((button) => {
       button.addEventListener('click', clickHandler, { signal: controller.signal });
-      // Set initial aria-pressed state
       const btnLang = (button as HTMLButtonElement).dataset.language;
       (button as HTMLButtonElement).setAttribute(
         'aria-pressed',
@@ -129,33 +97,19 @@ const oppositeLanguage = getOppositeLanguage(currentLanguage);
     });
   }
 
-  /**
-   * Main initialization with AbortController for cleanup
-   */
   function initializeLanguageToggle() {
     const controller = new AbortController();
-
-    // Initialize the toggle
     initLanguageToggle(controller);
-
-    // Cleanup on page unmount
-    const unloadHandler = () => {
-      controller.abort();
-    };
-
+    const unloadHandler = () => controller.abort();
     document.addEventListener('astro:before-unmount', unloadHandler);
-
-    // Also listen for page unload
     window.addEventListener('unload', unloadHandler);
   }
 
-  // Initialize on page load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeLanguageToggle);
   } else {
     initializeLanguageToggle();
   }
 
-  // Re-initialize on Astro navigation
   document.addEventListener('astro:after-swap', initializeLanguageToggle);
 </script>

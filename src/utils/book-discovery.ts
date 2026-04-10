@@ -19,8 +19,11 @@ export interface DiscoveredBook {
   slug: string;
   title_he: string;
   title_en: string;
+  title_es: string;
   description_he: string;
   description_en: string;
+  description_es: string;
+  category: string;
   coverImage: string;
   dominantColor: string;
   chapters: Chapter[];
@@ -30,6 +33,11 @@ interface ContentStructure {
   book: {
     title_he: string;
     title_en: string;
+    title_es?: string;
+    description_he?: string;
+    description_en?: string;
+    description_es?: string;
+    category?: string;
     chapters: Array<{
       id: number;
       title_he: string;
@@ -156,18 +164,25 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
 function loadBookMeta(bookDir: string, slug: string): {
   title_he: string;
   title_en: string;
+  title_es: string;
   description_he: string;
   description_en: string;
+  description_es: string;
+  category: string;
 } {
   const jsonPath = join(bookDir, 'content-structure.json');
   if (existsSync(jsonPath)) {
     try {
       const data: ContentStructure = JSON.parse(readFileSync(jsonPath, 'utf-8'));
+      const title_en = data.book.title_en || slug;
       return {
         title_he: data.book.title_he || slug,
-        title_en: data.book.title_en || slug,
-        description_he: '',
-        description_en: '',
+        title_en,
+        title_es: data.book.title_es || title_en,
+        description_he: data.book.description_he || '',
+        description_en: data.book.description_en || '',
+        description_es: data.book.description_es || data.book.description_en || '',
+        category: data.book.category || 'General',
       };
     } catch { /* fall through */ }
   }
@@ -177,8 +192,11 @@ function loadBookMeta(bookDir: string, slug: string): {
   return {
     title_he: formatted,
     title_en: formatted,
+    title_es: formatted,
     description_he: '',
     description_en: '',
+    description_es: '',
+    category: 'General',
   };
 }
 
@@ -209,7 +227,13 @@ export function discoverBook(slug: string): DiscoveredBook | null {
 
   return {
     slug,
-    ...meta,
+    title_he: meta.title_he,
+    title_en: meta.title_en,
+    title_es: meta.title_es,
+    description_he: meta.description_he,
+    description_en: meta.description_en,
+    description_es: meta.description_es,
+    category: meta.category,
     coverImage,
     dominantColor: '#1a1a1a',
     chapters,

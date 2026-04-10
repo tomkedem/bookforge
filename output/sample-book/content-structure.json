@@ -2,6 +2,9 @@
   "book": {
     "title_he": "BookForge: בניית מערכות סוכנים עם Claude Code",
     "title_en": "BookForge: Building Agent Systems with Claude Code",
+    "description_he": "מדריך מעשי לבניית מערכות סוכנים מתקדמות עם Claude Code. מהתכנון הארכיטקטוני ועד הפלטפורמה המוגמרת.",
+    "description_en": "A practical guide to building advanced agent systems with Claude Code. From architectural planning to a finished platform.",
+    "category": "Technology",
     "chapters": [
       {
         "id": 0,

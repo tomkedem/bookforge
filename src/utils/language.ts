@@ -1,46 +1,59 @@
-import type { Language, LanguageContext, LanguageName } from '../types/index';
+import type { Language, LanguageContext, LanguageMeta, LanguageName } from '../types/index';
 
 export const LANGUAGES = {
   HE: 'he' as const,
   EN: 'en' as const,
+  ES: 'es' as const,
 } as const;
+
+/**
+ * Master list of supported languages.
+ * To add a new language: append one entry here — nothing else changes.
+ */
+export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
+  { code: 'he', label: 'עברית',   labelEn: 'Hebrew',  dir: 'rtl' },
+  { code: 'en', label: 'English', labelEn: 'English', dir: 'ltr' },
+  { code: 'es', label: 'Español', labelEn: 'Español', dir: 'ltr' },
+];
 
 export const DEFAULT_LANGUAGE: Language = LANGUAGES.EN;
 const LANG_STORAGE_KEY = 'yuval_language';
 const LANG_COOKIE_NAME = 'yuval-lang';
 
+const VALID_CODES = new Set<string>(SUPPORTED_LANGUAGES.map(l => l.code));
+
 /**
- * Get language context with direction and alignment
- * Used throughout the app for RTL/LTR handling
+ * Get the metadata object for a language code
  */
-export const getLanguageContext = (lang: Language): LanguageContext => {
-  return {
-    current: lang,
-    direction: lang === LANGUAGES.HE ? 'rtl' : 'ltr',
-    textAlign: lang === LANGUAGES.HE ? 'right' : 'left',
-    label: lang === LANGUAGES.HE ? 'Hebrew' : 'English',
-  };
+export const getLanguageMeta = (lang: Language): LanguageMeta => {
+  return SUPPORTED_LANGUAGES.find(l => l.code === lang) ?? SUPPORTED_LANGUAGES[1];
 };
 
 /**
- * Get the opposite language (HE <-> EN)
+ * Get language context with direction and alignment
  */
-export const getOppositeLanguage = (lang: Language): Language => {
-  return lang === LANGUAGES.HE ? LANGUAGES.EN : LANGUAGES.HE;
+export const getLanguageContext = (lang: Language): LanguageContext => {
+  const meta = getLanguageMeta(lang);
+  return {
+    current: lang,
+    direction: meta.dir,
+    textAlign: meta.dir === 'rtl' ? 'right' : 'left',
+    label: meta.labelEn,
+  };
 };
 
 /**
  * Get human-readable language label
  */
 export const getLanguageLabel = (lang: Language): LanguageName => {
-  return lang === LANGUAGES.HE ? 'Hebrew' : 'English';
+  return getLanguageMeta(lang).labelEn;
 };
 
 /**
- * Validate that a value is a valid Language type
+ * Validate that a value is a supported Language code
  */
 export const isValidLanguage = (lang: unknown): lang is Language => {
-  return lang === LANGUAGES.HE || lang === LANGUAGES.EN;
+  return typeof lang === 'string' && VALID_CODES.has(lang);
 };
 
 /**
@@ -107,28 +120,33 @@ export const setLanguageToStorage = (lang: Language): void => {
 };
 
 /**
- * Apply language to page using data-he/data-en attributes.
- * - Elements with BOTH attributes: swap textContent to the selected language.
- * - Elements with ONLY one attribute: show/hide accordingly.
+ * Apply language to page using data-{lang} attributes.
+ * - Elements that have the attribute for the selected lang: set textContent.
+ * - Falls back to data-en, then data-he for missing translations.
+ * - Elements with ONLY one lang attribute: show/hide accordingly.
  */
 export const applyLanguageToPage = (lang: Language): void => {
-  // Swap text for bilingual elements
-  document.querySelectorAll('[data-he][data-en]').forEach(el => {
-    const heText = el.getAttribute('data-he');
-    const enText = el.getAttribute('data-en');
-    if (heText !== null && enText !== null) {
-      el.textContent = lang === LANGUAGES.HE ? heText : enText;
+  const allLangCodes = SUPPORTED_LANGUAGES.map(l => l.code);
+
+  // Elements that have data attributes for multiple languages: swap text
+  document.querySelectorAll('[data-he], [data-en], [data-es]').forEach(el => {
+    const values: Partial<Record<Language, string | null>> = {};
+    allLangCodes.forEach(code => {
+      values[code] = el.getAttribute(`data-${code}`);
+    });
+
+    const hasMultiple = allLangCodes.filter(code => values[code] !== null).length > 1;
+    if (hasMultiple) {
+      // Pick best available translation with fallback chain: selected → en → he
+      const text = values[lang] ?? values['en'] ?? values['he'] ?? null;
+      if (text !== null) el.textContent = text;
+    } else {
+      // Single-lang element: show only for its language
+      const ownLang = allLangCodes.find(code => values[code] !== null);
+      if (ownLang) {
+        (el as HTMLElement).classList.toggle('hidden', ownLang !== lang);
+      }
     }
-  });
-
-  // Show/hide Hebrew-only elements
-  document.querySelectorAll('[data-he]:not([data-en])').forEach(el => {
-    (el as HTMLElement).classList.toggle('hidden', lang !== LANGUAGES.HE);
-  });
-
-  // Show/hide English-only elements
-  document.querySelectorAll('[data-en]:not([data-he])').forEach(el => {
-    (el as HTMLElement).classList.toggle('hidden', lang !== LANGUAGES.EN);
   });
 
   setLanguageToStorage(lang);

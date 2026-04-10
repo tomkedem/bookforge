@@ -1,30 +1,31 @@
-import { LANGUAGES, getLanguageFromStorage, setLanguageToStorage, isValidLanguage } from '../utils/language';
+import { LANGUAGES, SUPPORTED_LANGUAGES, getLanguageFromStorage, setLanguageToStorage, isValidLanguage } from '../utils/language';
 import type { Language } from '../types/index';
 
 /**
- * Switch content between Hebrew and English using data-lang attributes.
- * Targets chapter-container and chapter-header specifically.
+ * Switch content to the selected language using data-lang attributes.
+ * Shows only the matching [data-lang] block; hides all others.
+ * Works for any number of languages — driven by SUPPORTED_LANGUAGES.
  */
 function switchLanguage(lang: string) {
   const targets = ['chapter-container', 'chapter-header'];
+  const langCodes = SUPPORTED_LANGUAGES.map(l => l.code);
 
   for (const id of targets) {
     const el = document.getElementById(id);
     if (!el) continue;
 
-    const he = el.querySelector(':scope > [data-lang="he"]');
-    const en = el.querySelector(':scope > [data-lang="en"]');
-    if (!he || !en) continue;
-
-    const isHe = lang === 'he';
-    he.classList.toggle('hidden', !isHe);
-    he.classList.toggle('visible', isHe);
-    en.classList.toggle('hidden', isHe);
-    en.classList.toggle('visible', !isHe);
+    for (const code of langCodes) {
+      const block = el.querySelector<HTMLElement>(`:scope > [data-lang="${code}"]`);
+      if (!block) continue;
+      const isActive = code === lang;
+      block.classList.toggle('hidden', !isActive);
+      block.classList.toggle('visible', isActive);
+    }
   }
 
+  const meta = SUPPORTED_LANGUAGES.find(l => l.code === lang);
   document.documentElement.lang = lang;
-  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+  document.documentElement.dir = meta?.dir ?? 'ltr';
 }
 
 /**

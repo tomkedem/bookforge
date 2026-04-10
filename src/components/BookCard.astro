@@ -3,10 +3,13 @@ interface Props {
   slug: string;
   title_he: string;
   title_en: string;
+  title_es?: string;
   description_he: string;
   description_en: string;
+  description_es?: string;
   coverImage: string;
   dominantColor?: string;
+  category?: string;
   class?: string;
 }
 
@@ -14,10 +17,13 @@ const {
   slug,
   title_he,
   title_en,
+  title_es,
   description_he,
   description_en,
+  description_es,
   coverImage,
   dominantColor = '#1a1a1a',
+  category = 'General',
   class: className,
 } = Astro.props;
 
@@ -34,6 +40,7 @@ const bookUrl = `/books/${slug}`;
     'card-float',
     className,
   ]}
+  data-book-category={category}
 >
   <!-- Thumbnail container with dominant color overlay -->
   <div
@@ -59,6 +66,7 @@ const bookUrl = `/books/${slug}`;
       class="font-heading font-bold text-lg sm:text-2xl leading-tight text-yuval-text group-hover:text-yuval-text-secondary transition-colors duration-200"
       data-he={title_he}
       data-en={title_en}
+      data-es={title_es || title_en}
     >
       {title_en}
     </h3>
@@ -67,6 +75,7 @@ const bookUrl = `/books/${slug}`;
       class="text-sm text-yuval-text-secondary leading-relaxed line-clamp-3"
       data-he={description_he}
       data-en={description_en}
+      data-es={description_es || description_en}
     >
       {description_en}
     </p>
@@ -78,6 +87,7 @@ const bookUrl = `/books/${slug}`;
       data-base-url={bookUrl}
       data-he="קרא עכשיו"
       data-en="Read Now"
+      data-es="Leer ahora"
     >
       Read Now
     </a>

@@ -13,6 +13,7 @@ const { language = LANGUAGES.EN } = Astro.props;
 const isRtl = language === LANGUAGES.HE;
 
 const books = discoverAllBooks();
+const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filter(Boolean))).sort()];
 ---
 
 <BaseLayout
@@ -64,9 +65,31 @@ const books = discoverAllBooks();
       </p>
     </div>
 
+    <!-- Category Filter -->
+    {categories.length > 1 && (
+      <div class="max-w-7xl mx-auto mb-10 flex flex-wrap gap-2 justify-center" id="category-filters">
+        {categories.map(cat => (
+          <button
+            type="button"
+            class:list={[
+              'category-filter-btn',
+              'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
+              'border border-yuval-border text-yuval-text-secondary',
+              'hover:bg-yuval-surface hover:text-yuval-text',
+            ]}
+            data-category={cat}
+            data-active={cat === 'All' ? 'true' : 'false'}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+    )}
+
     <!-- Books Grid -->
     <div
       class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+      id="books-grid"
     >
       {
         books.map((book) => (
@@ -78,6 +101,7 @@ const books = discoverAllBooks();
             description_en={book.description_en}
             coverImage={book.coverImage}
             dominantColor={book.dominantColor}
+            category={book.category}
           />
         ))
       }
@@ -114,6 +138,47 @@ const books = discoverAllBooks();
     }
   </div>
 </BaseLayout>
+
+<script>
+  function initCategoryFilter() {
+    const btns = document.querySelectorAll<HTMLButtonElement>('.category-filter-btn');
+    const cards = document.querySelectorAll<HTMLElement>('[data-book-category]');
+
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const selected = btn.dataset.category || 'All';
+
+        // Update button styles
+        btns.forEach(b => {
+          const isActive = b.dataset.category === selected;
+          b.dataset.active = isActive ? 'true' : 'false';
+          b.classList.toggle('bg-yuval-text', isActive);
+          b.classList.toggle('text-yuval-bg', isActive);
+          b.classList.toggle('border-yuval-text', isActive);
+          b.classList.toggle('text-yuval-text-secondary', !isActive);
+          b.classList.toggle('border-yuval-border', !isActive);
+        });
+
+        // Show/hide cards
+        cards.forEach(card => {
+          const cat = card.dataset.bookCategory || '';
+          card.style.display = (selected === 'All' || cat === selected) ? '' : 'none';
+        });
+      });
+    });
+
+    // Set initial active style for "All"
+    btns.forEach(b => {
+      if (b.dataset.category === 'All') {
+        b.classList.add('bg-yuval-text', 'text-yuval-bg', 'border-yuval-text');
+        b.classList.remove('text-yuval-text-secondary', 'border-yuval-border');
+      }
+    });
+  }
+
+  initCategoryFilter();
+  document.addEventListener('astro:after-swap', initCategoryFilter);
+</script>
 
 <style>
   :global(.card-float) {

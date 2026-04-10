@@ -35,51 +35,41 @@ if (!currentChapter) {
   return new Response('Chapter not found', { status: 404 });
 }
 
-// Load BOTH language versions at BUILD TIME for client-side switching
-let chapterContentHe = '';
-let chapterContentEn = '';
-
-try {
-  const filenameHe = `chapter-${String(chapterId).padStart(2, '0')}.he.md`;
-  const filepathHe = resolve(`output/${book}`, filenameHe);
-
-  try {
-    const mdContentHe = readFileSync(filepathHe, 'utf-8');
-    chapterContentHe = await marked(mdContentHe);
-    // Fix relative image paths to absolute paths
-    chapterContentHe = chapterContentHe.replaceAll('src="../assets/', `src="/${book}/assets/`);
-  } catch (e) {
-    console.warn(`Warning: Hebrew chapter file not found: ${filepathHe}`);
-    chapterContentHe = `<h2>${currentChapter.title_he}</h2>
-      <p><em>קובץ זה לא נמצא בזמן הבנייה</em></p>`;
-  }
-
-  const filenameEn = `chapter-${String(chapterId).padStart(2, '0')}.en.md`;
-  const filepathEn = resolve(`output/${book}`, filenameEn);
-
-  try {
-    const mdContentEn = readFileSync(filepathEn, 'utf-8');
-    chapterContentEn = await marked(mdContentEn);
-    // Fix relative image paths to absolute paths
-    chapterContentEn = chapterContentEn.replaceAll('src="../assets/', `src="/${book}/assets/`);
-  } catch (e) {
-    console.warn(`Warning: English chapter file not found: ${filepathEn}`);
-    chapterContentEn = `<h2>${currentChapter.title_en}</h2>
-      <p><em>This chapter file was not found during build time</em></p>`;
-  }
-} catch (error) {
-  console.error('Error in frontmatter:', error);
-  chapterContentHe = '<p>Error loading Hebrew content</p>';
-  chapterContentEn = '<p>Error loading English content</p>';
-}
-
-// Strip the first <h1> from rendered HTML so we can render the title separately above ChapterMeta
+// Load ALL language versions at BUILD TIME for client-side switching
 function stripFirstH1(html: string): string {
   return html.replace(/<h1[^>]*>.*?<\/h1>\s*/s, '');
 }
 
-chapterContentHe = stripFirstH1(chapterContentHe);
-chapterContentEn = stripFirstH1(chapterContentEn);
+async function loadChapterContent(langCode: string, fallbackTitle: string, fallbackMsg: string): Promise<string> {
+  const filename = `chapter-${String(chapterId).padStart(2, '0')}.${langCode}.md`;
+  const filepath = resolve(`output/${book}`, filename);
+  try {
+    const md = readFileSync(filepath, 'utf-8');
+    let html = await marked(md);
+    html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
+    return stripFirstH1(html);
+  } catch {
+    console.warn(`Warning: ${langCode} chapter file not found: ${filepath}`);
+    return `<h2>${fallbackTitle}</h2><p><em>${fallbackMsg}</em></p>`;
+  }
+}
+
+let chapterContentHe = '';
+let chapterContentEn = '';
+let chapterContentEs = '';
+
+try {
+  [chapterContentHe, chapterContentEn, chapterContentEs] = await Promise.all([
+    loadChapterContent('he', currentChapter.title_he, 'קובץ זה לא נמצא בזמן הבנייה'),
+    loadChapterContent('en', currentChapter.title_en, 'This chapter file was not found during build time'),
+    loadChapterContent('es', currentChapter.title_es || currentChapter.title_en, 'Este capítulo no fue encontrado durante la compilación'),
+  ]);
+} catch (error) {
+  console.error('Error loading chapter content:', error);
+  chapterContentHe = '<p>Error loading Hebrew content</p>';
+  chapterContentEn = '<p>Error loading English content</p>';
+  chapterContentEs = '<p>Error al cargar el contenido en español</p>';
+}
 ---
 
 <ReadingLayout
@@ -131,6 +121,18 @@ chapterContentEn = stripFirstH1(chapterContentEn);
         <span class="progress-badge" id="progress-badge-en">0%</span>
       </div>
     </div>
+    <div data-lang="es" class="hidden header-lang" dir="ltr" style="text-align: left">
+      <h1 class="chapter-title">{currentChapter.title_es || currentChapter.title_en}</h1>
+      <div class="header-meta-row">
+        <ChapterMeta
+          wordCount={currentChapter.word_count}
+          readingTimeMinutes={Math.ceil(currentChapter.word_count / 200)}
+          sections={currentChapter.sections}
+          language="en"
+        />
+        <span class="progress-badge" id="progress-badge-es">0%</span>
+      </div>
+    </div>
     <div class="header-progress-line">
       <div class="header-progress-fill" id="header-progress-fill"></div>
     </div>
@@ -147,6 +149,12 @@ chapterContentEn = stripFirstH1(chapterContentEn);
     <div data-lang="en" class="visible" dir="ltr" style="text-align: left">
       <div class="chapter-content prose prose-lg">
         {chapterContentEn && <Fragment set:html={chapterContentEn} />}
+      </div>
+    </div>
+
+    <div data-lang="es" class="hidden" dir="ltr" style="text-align: left">
+      <div class="chapter-content prose prose-lg">
+        {chapterContentEs && <Fragment set:html={chapterContentEs} />}
       </div>
     </div>
 

@@ -168,6 +168,7 @@ export interface Chapter {
   id: number;
   title_he: string;
   title_en: string;
+  title_es?: string;
   sections: number;
   has_images: boolean;
   word_count: number;
@@ -175,8 +176,15 @@ export interface Chapter {
 }
 
 // Application Types
-export type Language = 'he' | 'en';
-export type LanguageName = 'Hebrew' | 'English';
+export type Language = 'he' | 'en' | 'es';
+export type LanguageName = 'Hebrew' | 'English' | 'Español';
+
+export interface LanguageMeta {
+  code: Language;
+  label: string;         // native label, e.g. "עברית", "English", "Español"
+  labelEn: LanguageName; // English name
+  dir: 'rtl' | 'ltr';
+}
 
 export interface LanguageContext {
   current: Language;

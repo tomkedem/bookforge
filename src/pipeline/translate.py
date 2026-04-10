@@ -1,52 +1,67 @@
 """
-Translation step: invokes the Translator subagent to translate
-Hebrew chapter files to English.
+Translation step: translates Hebrew chapter files to all target languages.
+
+Supported target languages (extensible — add to TARGET_LANGUAGES to support more):
+  en  → English
+  es  → Spanish
+
+Each chapter-XX.he.md → chapter-XX.{lang}.md for every configured target language.
 
 Supports batch mode: groups all pending chapters into a single prompt
 so the Translator agent processes them sequentially without pausing.
-
-Each chapter-XX.he.md → chapter-XX.en.md via the Translator agent,
-which translates inline (not via external API) while preserving
-all Markdown structure and image references.
 """
 
 from pathlib import Path
 
 
-def get_chapters_to_translate(book_dir: str) -> list[dict]:
+# ── Configuration ─────────────────────────────────────────────────────────────
+# To add a new language: append one entry here.
+TARGET_LANGUAGES = [
+    {"code": "en", "name": "English",  "native": "English"},
+    {"code": "es", "name": "Spanish",  "native": "Español"},
+]
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def get_chapters_to_translate(book_dir: str, lang_code: str = None) -> list[dict]:
     """
-    Find Hebrew chapters that need translation.
-    Returns list of {he_path, en_path, number} for chapters
-    where the English file is missing or older than Hebrew.
+    Find Hebrew chapters that need translation for a given target language.
+    If lang_code is None, returns pending chapters for ALL target languages.
+
+    Returns list of {he_path, target_path, number, lang_code, lang_name}.
     """
     book_path = Path(book_dir)
     to_translate = []
 
-    for he_file in sorted(book_path.glob("chapter-*.he.md")):
-        en_file = he_file.with_name(he_file.name.replace(".he.md", ".en.md"))
-        num = he_file.name.replace("chapter-", "").replace(".he.md", "")
+    langs = [l for l in TARGET_LANGUAGES if l["code"] == lang_code] if lang_code else TARGET_LANGUAGES
 
-        needs_translation = False
-        if not en_file.exists():
-            needs_translation = True
-        elif en_file.stat().st_mtime < he_file.stat().st_mtime:
-            needs_translation = True
+    for lang in langs:
+        for he_file in sorted(book_path.glob("chapter-*.he.md")):
+            target_file = he_file.with_name(he_file.name.replace(".he.md", f".{lang['code']}.md"))
+            num = he_file.name.replace("chapter-", "").replace(".he.md", "")
 
-        if needs_translation:
-            to_translate.append({
-                "number": num,
-                "he_path": str(he_file),
-                "en_path": str(en_file),
-            })
+            needs_translation = (
+                not target_file.exists()
+                or target_file.stat().st_mtime < he_file.stat().st_mtime
+            )
+
+            if needs_translation:
+                to_translate.append({
+                    "number": num,
+                    "he_path": str(he_file),
+                    "target_path": str(target_file),
+                    "lang_code": lang["code"],
+                    "lang_name": lang["name"],
+                })
 
     return to_translate
 
 
-def build_translation_prompt(he_path: str, en_path: str) -> str:
-    """Build the prompt for the Translator agent (single chapter)."""
+def build_translation_prompt(he_path: str, target_path: str, lang_name: str) -> str:
+    """Build the prompt for the Translator agent (single chapter, single language)."""
     he_content = Path(he_path).read_text(encoding="utf-8")
 
-    return f"""תרגם את הקובץ הבא מעברית לאנגלית.
+    return f"""תרגם את הקובץ הבא מעברית ל-{lang_name}.
 
 כללים:
 - שמור על אותו מבנה Markdown בדיוק (כותרות, רשימות, טבלאות)
@@ -56,30 +71,35 @@ def build_translation_prompt(he_path: str, en_path: str) -> str:
 - אל תוסיף ואל תקצר תוכן
 
 קובץ מקור: {he_path}
-קובץ יעד: {en_path}
+קובץ יעד: {target_path}
 
 תוכן לתרגום:
 
 {he_content}
 
-כתוב את התרגום לקובץ {en_path}."""
+כתוב את התרגום לקובץ {target_path}."""
 
 
 def build_batch_prompt(chapters: list[dict]) -> str:
     """
     Build a single batch prompt for the Translator agent.
-    All pending chapters are listed so the agent processes them
-    sequentially without pausing between files.
+    All pending chapters (across all languages) are listed so the agent
+    processes them sequentially without pausing between files.
     """
     if not chapters:
         return ""
 
     file_list = "\n".join(
-        f"  {i+1}. {ch['he_path']} → {ch['en_path']}"
+        f"  {i+1}. [{ch['lang_name']}] {ch['he_path']} → {ch['target_path']}"
         for i, ch in enumerate(chapters)
     )
 
-    return f"""מצב Batch: תרגם {len(chapters)} פרקים מעברית לאנגלית.
+    lang_summary = ", ".join(
+        f"{l['name']} (.{l['code']}.md)"
+        for l in TARGET_LANGUAGES
+    )
+
+    return f"""מצב Batch: תרגם {len(chapters)} פרקים מעברית לשפות היעד ({lang_summary}).
 
 כללים (חלים על כל הקבצים):
 - שמור על אותו מבנה Markdown בדיוק (כותרות, רשימות, טבלאות)
@@ -93,8 +113,8 @@ def build_batch_prompt(chapters: list[dict]) -> str:
 
 הוראות עבודה:
 1. קרא כל קובץ .he.md מהרשימה
-2. תרגם אותו לאנגלית
-3. כתוב את התוצאה לקובץ .en.md המקביל
+2. תרגם אותו לשפה המצוינת
+3. כתוב את התוצאה לקובץ היעד המקביל
 4. עבור מיד לקובץ הבא — אל תחכה לאישור בין קבצים
 
 בסיום כל הקבצים, דווח:
