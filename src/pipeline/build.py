@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.ingest import ingest
 from pipeline.parse import parse, extract_images, to_markdown
 from pipeline.organize import organize
-from pipeline.translate import get_chapters_to_translate, build_translation_prompt
+from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt
 
 
 def sync_images_to_english(book_dir: Path):
@@ -135,17 +135,16 @@ def run_pipeline(docx_path: str, book_name: str,
     # Step 6: Translate (identify chapters needing translation)
     book_dir = Path(output_dir) / book_name
     pending_translations = []
+    batch_prompt = ""
     if skip_translate:
         print("\n[6/7] Translate... SKIPPED (--skip-translate)")
     else:
         print("\n[6/7] Translate...")
         pending_translations = get_chapters_to_translate(str(book_dir))
         if pending_translations:
-            print(f"  {len(pending_translations)} chapters need translation:")
-            for t in pending_translations:
-                print(f"    chapter-{t['number']}: {t['he_path']} → {t['en_path']}")
-            print("  >> Use Translator agent to translate these chapters.")
-            print("  >> Prompts ready via: build_translation_prompt(he_path, en_path)")
+            batch_prompt = build_batch_prompt(pending_translations)
+            print(f"  {len(pending_translations)} chapters need translation")
+            print("  >> Batch prompt ready for Translator agent")
         else:
             print("  All chapters already translated (EN files up to date)")
 
@@ -167,6 +166,7 @@ def run_pipeline(docx_path: str, book_name: str,
         "has_cover": images["has_cover"],
         "output_dir": str(book_dir),
         "pending_translations": pending_translations,
+        "batch_prompt": batch_prompt,
     }
 
 
