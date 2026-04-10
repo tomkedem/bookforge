@@ -13,9 +13,9 @@
 
   /* ── Text ── */
   --yuval-text: #1a1a1a;
-  --yuval-text-secondary: #666666;
-  --yuval-text-tertiary: #888888;
-  --yuval-text-muted: #bbbbbb;
+  --yuval-text-secondary: #555555;        /* improved contrast on #f5f0e8 bg */
+  --yuval-text-tertiary: #777777;
+  --yuval-text-muted: #999999;
 
   /* ── Borders ── */
   --yuval-border: #f0ede8;
@@ -76,8 +76,8 @@
   --yuval-border-secondary: #3a3a4e;
 
   /* ── Links ── */
-  --yuval-link: #a78bfa;                  /* purple-400 */
-  --yuval-link-hover: #c084fc;            /* purple-300 */
+  --yuval-link: #7c3aed;                  /* purple-600, WCAG AA on dark bg */
+  --yuval-link-hover: #a78bfa;            /* purple-400 */
 
   /* ── Buttons & bold accents ── */
   --yuval-accent: #9333ea;                /* purple-600 */
