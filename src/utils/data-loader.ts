@@ -1,13 +1,14 @@
 import type { Book, Chapter } from '../types/index';
+import { discoverAllBooks, discoverBook } from './book-discovery';
 
 /**
  * DataLoader - Utility for loading book and chapter data
- * In production, this would fetch from an API or database
+ * Uses book-discovery for automatic detection of all books in output/
  */
 
 export class DataLoader {
   /**
-   * Load all books
+   * Load all books - auto-discovers from output/ folder
    * @returns Promise<Book[]>
    */
   static async loadBooks(): Promise<
@@ -21,24 +22,22 @@ export class DataLoader {
       dominantColor: string;
     }>
   > {
-    // In a real app, fetch from API
-    return [
-      {
-        slug: 'bookforge',
-        title_he: 'BookForge: בניית מערכות סוכנים עם Claude Code',
-        title_en: 'BookForge: Building Agent Systems with Claude Code',
-        description_he:
-          'ספר מעשי על בניית מערכות סוכנים משוכללות באמצעות Claude Code',
-        description_en:
-          'A practical guide to building sophisticated agent systems with Claude Code',
-        coverImage: '/covers/cover.png',
-        dominantColor: '#1a1a1a',
-      },
-    ];
+    // Use book-discovery to auto-detect all books
+    const discovered = discoverAllBooks();
+    
+    return discovered.map(book => ({
+      slug: book.slug,
+      title_he: book.title_he,
+      title_en: book.title_en,
+      description_he: book.description_he,
+      description_en: book.description_en,
+      coverImage: book.coverImage,
+      dominantColor: book.dominantColor,
+    }));
   }
 
   /**
-   * Load book by slug
+   * Load book by slug - auto-discovers from output/ folder
    */
   static async loadBook(
     slug: string
@@ -55,68 +54,30 @@ export class DataLoader {
       }
     | null
   > {
-    const books = await this.loadBooks();
-    const book = books.find((b) => b.slug === slug);
-
-    if (!book) return null;
+    // Use book-discovery to auto-detect the book
+    const discovered = discoverBook(slug);
+    
+    if (!discovered) return null;
 
     return {
-      ...book,
-      chapters: await this.loadChapters(slug),
+      slug: discovered.slug,
+      title_he: discovered.title_he,
+      title_en: discovered.title_en,
+      description_he: discovered.description_he,
+      description_en: discovered.description_en,
+      coverImage: discovered.coverImage,
+      dominantColor: discovered.dominantColor,
+      chapters: discovered.chapters,
     };
   }
 
   /**
-   * Load chapters for a book
+   * Load chapters for a book - delegates to loadBook
+   * @deprecated Use loadBook instead, which includes chapters
    */
   static async loadChapters(bookSlug: string): Promise<Chapter[]> {
-    // Mock data - in real app, load from markdown files or API
-    if (bookSlug === 'bookforge') {
-      return [
-        {
-          id: 0,
-          title_he: 'פרק הכנה: פרויקט ההדגמה והסביבה',
-          title_en: 'Prep Chapter: The Demo Project and Environment',
-          sections: 6,
-          has_images: true,
-          word_count: 1100,
-          topics: [
-            'BookForge Overview',
-            'Yuval Platform',
-            'Agent System Architecture',
-          ],
-        },
-        {
-          id: 1,
-          title_he: 'פרק 1: שינוי מודל המנטלי',
-          title_en: 'Chapter 1: Changing the Mental Model',
-          sections: 4,
-          has_images: false,
-          word_count: 1050,
-          topics: ['Helper vs Agent System', 'Comparative Scenarios'],
-        },
-        {
-          id: 2,
-          title_he: 'פרק 2: CLAUDE.md כארכיטקטורה',
-          title_en: 'Chapter 2: CLAUDE.md as Architecture',
-          sections: 5,
-          has_images: false,
-          word_count: 1200,
-          topics: ['CLAUDE.md as Constitution', 'Local Configuration'],
-        },
-        {
-          id: 3,
-          title_he: 'פרק 3: Subagents, חלוקת עבודה נכונה',
-          title_en: 'Chapter 3: Subagents, Proper Work Division',
-          sections: 6,
-          has_images: true,
-          word_count: 3600,
-          topics: ['Single Agent Limitations', 'Subagent Architecture'],
-        },
-      ];
-    }
-
-    return [];
+    const book = await this.loadBook(bookSlug);
+    return book?.chapters || [];
   }
 
   /**

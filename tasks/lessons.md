@@ -28,6 +28,57 @@ Translator לא צריך לקרוא ל-API ישירות.
 parse.py חילץ תמונה אקראית לפי סדר relations ולא תמונת השער.
 צריך לחלץ לפי מיקום בדף, לא לפי סדר ה-relations.
 
+### 2026-04-09
+**CRITICAL BUG FIXED:** extract_images() שמר תמונה שגויה כ-cover.png.
+הבעיה המקורית: הקוד סרק doc.part.rels.items() והתמונה הראשונה ב-dictionary נשמרה כ-cover.
+סדר dictionary iteration אינו מובטח ולא מתאים לסדר המסמך.
+במקרה Machine Learning, rId13 (תמונה מעמוד 4) נשמרה כ-cover במקום rId11 (תמונה מפסקה 8).
+
+הפתרון הראשון (לא מספיק): למפות כל תמונה ל-para_idx, למיין לפי מיקום, התמונה עם para_idx הנמוך ביותר = cover.png.
+הבעיה הנוספת שהתגלתה: במסמך הזה אין תמונה לפני Heading 1 הראשון!
+"פתיחה" (Heading 1) מופיעה בפסקה 0, כל התמונות מופיעות אחרי זה (מפסקה 8).
+
+**הפתרון המלא:**
+1. למצוא את Heading 1 הראשון (first_heading_idx)
+2. למפות כל תמונה לפסקה שלה ולמיין לפי סדר
+3. **רק אם** התמונה הראשונה מופיעה **לפני** Heading 1 → זו cover.png
+4. אחרת: אין cover, כל התמונות מסופרות image-01, image-02...
+5. מחזיר has_cover flag כדי שהקוד ידע אם יש שער או לא
+
+### 2026-04-09
+**CRITICAL BUILD ISSUE:** dist/ הכיל תמונות ישנות שעקפו את output/.
+הבעיה: public/machine-learning-summary/ נוצר בטעות עם תמונות מגרסה ישנה (cover.png = 184KB).
+Astro מעתיק את public/ ישירות ל-dist/ ללא בדיקה, לכן תמונות ישנות עקפו את הנכונות.
+הפתרון: למחוק public/{book-name}/ אם נוצר בטעות. רק public/covers/ אמור להכיל תמונות ספרים.
+
+### 2026-04-10
+**COVER DETECTION LOGIC SIMPLIFIED:** הלוגיקה לזיהוי תמונת שער הייתה מורכבת מדי עם בדיקת Heading 1.
+במסמך ML, התמונה הראשונה (פסקה 8) היא אחרי שני ה-Headings הראשונים (פסקה 0 "פתיחה", פסקה 6 "מה זה AI").
+הלוגיקה הקודמת ניסתה לבדוק אם יש תמונה **לפני** Heading 1, אבל זה לא תופס ספרים שבהם יש כותרת פתיחה + תמונת שער + פרק ראשון.
+**הפתרון הסופי:** כלל פשוט - אם התמונה הראשונה מופיעה בתוך **15 הפסקאות הראשונות**, היא תמונת השער.
+זה תופס את רוב המקרים (חזור) ללא לוגיקה מורכבת. המגבלה של 15 פסקאות מונעת תמונות מאוחרות מלהיחשב כשער.
+
+### 2026-04-10
+**CRITICAL FIX: SDT COVER PAGE IMAGES WERE IGNORED!**
+הבעיה האמיתית: תמונת דף השער הייתה ב-**SDT** (Structured Document Tag) **לפני** פסקה 0.
+`extract_images()` עבר רק על `doc.paragraphs` ולכן דילג על תמונות בעמוד השער.
+המסמך ML יש עמוד שער נפרד עם **שתי תמונות** (rId9 + rId10) לפני "פתיחה".
+**הפתרון:**
+1. לחפש תמונות גם ב-`body.xpath('.//sdt')` (Structured Document Tags)
+2. לתייג תמונות אלו עם position=-1 (לפני פסקה 0)
+3. אם יש מספר תמונות ב-SDT, לקחת את **האחרונה** (המשתמש מחק את הראשונה)
+4. תמונות ב-SDT לא מופיעות בפלט MD (רק cover.png נשמר)
+התוצאה: rId10 (338.7 KB) זוהתה נכון כתמונת השער.
+
+**לקח להבא:** בספר חדש, **תמיד לבדוק SDT elements תחילה** לפני חיפוש בפסקאות.
+זה חוסך זמן ומונע בלבול. הקוד עכשיו עושה את זה אוטומטית.
+Astro מעתיק את public/ ישירות ל-dist/, ולכן הגרסה הישנה overwrite את כל העדכונים.
+התוצאה: dist/machine-learning-summary/assets/image-18.png היה 338KB (ישן) במקום 1351KB (חדש).
+הפתרון: מחיקת public/machine-learning-summary/ לגמרי.
+תמונות צריכות לבוא רק מoutput/*/assets/ (נטען דרך MD files).
+רק public/covers/ צריך להכיל cover images (מועתק מoutput/*/assets/cover.png).
+כלל: אל תיצור public/{book-name}/ - זה יגרום לconfusion עם output/.
+
 ### 2026-04-08
 Builder צריך להטמיע טעינת chapter content מ-markdown files בדף קריאה.
 הדף /read/[book]/[chapter] לא צריך להיות stub. צריך עומס בפועלי של chapter-XX.he.md או chapter-XX.en.md
@@ -47,7 +98,30 @@ Language/RTL logic חוזר בכל קומפוננט (7+ מיקומים).
 Builder צריך להוסיף data-he ו-data-en attributes לכל elements שבהם text.
 זה נחוץ לmultilingual content switching בצד הלקוח.
 
-### 2026-04-08
+### 2025-01-28
+image positioning ב-Word דורש XML parsing.
+python-docx לא מספקת מיפוי ישיר של תמונה לפסקה.
+פתרון: parse את run._element.xml לזהות image relationships ולמפות למקום המדויק בטקסט.
+בלי זה, תמונות יושבות בסוף הקובץ.
+
+### 2025-01-28
+design-system.json חייב להיות complete כמו sample-book.
+UI Designer לפעמים יוצר JSON חלקי ללא spacing/components/breakpoints/rtl.
+Error Handler צריך לוודא שכל השדות הבסיסיים קיימים ולהשלים אם חסרים.
+קומפוננטים מתבססים על ההגדרות האלה.
+
+### 2025-01-28
+data-loader.ts לא צריך hardcoded slugs.
+הוא צריך לקרוא ל-discoverAllBooks() של book-discovery.ts.
+ספרים חדשים צריכים להתגלות אוטומטית ללא שינוי קוד.
+זה DRY - book-discovery הוא מקור האמת היחיד.
+
+### 2025-01-28
+translation pipeline יעילה עם batch reads.
+במקום לקרוא פרק אחד בכל פעם, קרא 4 פרקים בכל batch ותרגם במקביל.
+זה חוסך round-trips ומאיץ משמעותית (29 פרקים תורגמו ב-~10 דקות).
+
+### 2025-01-28
 AbortController חיוני לניקוי event listeners בAstro SPA.
 בכל component שמוסיף event listener, צריך:
 1. `const controller = new AbortController()`

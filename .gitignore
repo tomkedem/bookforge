@@ -1,17 +1,54 @@
-# קבצים אישיים שלא עולים ל-GitHub
+# --- קבצים אישיים והגדרות מקומיות ---
 CLAUDE.local.md
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
 
-# תלויות
+# --- קבצי מערכת הפעלה (חשוב מאוד למניעת לכלוך) ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- ניהול תלויות וסביבה ---
 node_modules/
-
-# קבצי סביבה
 .env
 .env.local
-<<<<<<< Updated upstream
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Python
+# --- Python & AI (חיוני עבורך) ---
 __pycache__/
 *.pyc
-=======
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.ipynb_checkpoints/
+
+# --- Astro Specifics ---
 .astro/
->>>>>>> Stashed changes
+dist/
+.vercel/
+.netlify/
+
+# --- תוצרים גנרטיביים ---
+# (מה שציינת לגבי אינטגרציית Astro)
+public/*/assets/
+
+# --- Logs & Performance ---
+logs
+*.log
+npm-debug.log*
+.eslintcache
