@@ -614,6 +614,31 @@ function injectStyles(): void {
       transition: background 0.15s;
     }
     #qc-close-btn:hover { background: rgba(0,0,0,0.15); }
+
+    .qc-share-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+    }
+    .qc-share-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      background: var(--yuval-bg-secondary, #f3f4f6);
+      border: 1px solid var(--yuval-border, #e5e7eb);
+      border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      color: var(--yuval-text-secondary, #555);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .qc-share-btn:hover {
+      background: var(--yuval-surface, #fff);
+      border-color: var(--yuval-text, #1a1a1a);
+      color: var(--yuval-text, #1a1a1a);
+    }
+    :is(.dark) .qc-share-btn {
+      background: #2a2a2a; border-color: rgba(255,255,255,0.1); color: #aaa;
+    }
+    :is(.dark) .qc-share-btn:hover { border-color: #aaa; color: #eee; }
   `;
   document.head.appendChild(style);
 }
@@ -706,6 +731,19 @@ function openQuoteCard(markEl: HTMLElement): void {
           `).join('')}
         </div>
         <button id="qc-download-btn" type="button">⬇ Download PNG</button>
+        <div class="qc-share-row">
+          <button class="qc-share-btn" id="qc-share-whatsapp" type="button" title="Share on WhatsApp">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.09.547 4.048 1.503 5.742L0 24l6.406-1.476A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.66-.5-5.19-1.372l-.37-.22-3.803.876.906-3.701-.242-.382A9.947 9.947 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+            WhatsApp
+          </button>
+          <button class="qc-share-btn" id="qc-share-twitter" type="button" title="Share on X/Twitter">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            X / Twitter
+          </button>
+          <button class="qc-share-btn" id="qc-share-copy" type="button" title="Copy link">
+            📋 Copy text
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -733,6 +771,23 @@ function openQuoteCard(markEl: HTMLElement): void {
     btn.classList.add('active');
     const card = overlay.querySelector<HTMLElement>('#qc-card')!;
     card.innerHTML = buildCardHTML(PALETTES[idx]);
+  });
+
+  // Share buttons
+  const shareText = `"${text}" — ${title}`;
+  overlay.querySelector('#qc-share-whatsapp')!.addEventListener('click', () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
+  });
+  overlay.querySelector('#qc-share-twitter')!.addEventListener('click', () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
+  });
+  overlay.querySelector('#qc-share-copy')!.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      const btn = overlay.querySelector<HTMLButtonElement>('#qc-share-copy')!;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Copy text'; }, 2000);
+    } catch { /* fallback */ }
   });
 
   // Download via Canvas

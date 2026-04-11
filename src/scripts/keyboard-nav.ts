@@ -3,8 +3,12 @@
  *
  * Shortcuts:
  *   ← / →     Previous / next chapter (respects RTL)
- *   F          Toggle immersive reading mode
- *   Escape     Exit immersive mode
+ *   F          Toggle immersive (focus) reading mode
+ *   H          Open highlights panel
+ *   S          Open reading stats
+ *   B          Open bookmarks panel
+ *   /          Open search
+ *   Escape     Exit immersive mode / close open panels
  */
 
 const TOAST_DURATION = 1800; // ms
@@ -119,6 +123,27 @@ export function initKeyboardNav(signal: AbortSignal) {
       case 'F': {
         const isImmersive = document.body.classList.toggle('reading-immersive');
         showToast(isImmersive ? '⬛  Focus mode' : '⬜  Normal mode');
+        break;
+      }
+
+      case 'h':
+      case 'H': {
+        const hlBtn = document.getElementById('hl-panel-fab-btn');
+        if (hlBtn) { hlBtn.click(); showToast('💡  Highlights'); }
+        break;
+      }
+
+      case 's':
+      case 'S': {
+        const statsBtn = document.getElementById('stats-fab-btn');
+        if (statsBtn) { statsBtn.click(); showToast('📊  Stats'); }
+        break;
+      }
+
+      case 'b':
+      case 'B': {
+        const bmBtn = document.getElementById('bm-fab-btn');
+        if (bmBtn) { bmBtn.click(); showToast('🔖  Bookmarks'); }
         break;
       }
 
