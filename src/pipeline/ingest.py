@@ -21,6 +21,136 @@ MONOSPACE_FONTS = {
     'fira code', 'jetbrains mono', 'inconsolata', 'roboto mono'
 }
 
+# Language detection patterns for code blocks
+import re
+
+LANGUAGE_PATTERNS = {
+    'python': [
+        r'\bdef\s+\w+\s*\(',           # def function_name(
+        r'\bclass\s+\w+[:\(]',          # class ClassName: or class ClassName(
+        r'\bimport\s+\w+',              # import module
+        r'\bfrom\s+\w+\s+import',       # from module import
+        r'\bprint\s*\(',                # print(
+        r'\bif\s+__name__\s*==',        # if __name__ ==
+        r'\bself\.',                    # self.
+        r'\bfor\s+\w+\s+in\s+',         # for x in
+        r'\blen\s*\(',                  # len(
+        r'\brange\s*\(',                # range(
+        r'\breturn\s+',                 # return
+        r'^\s*#\s*[^\!]',               # Python comment (not shebang)
+    ],
+    'bash': [
+        r'^#!/bin/(ba)?sh',             # shebang
+        r'\$\{?\w+\}?',                 # $VAR or ${VAR}
+        r'\becho\s+',                   # echo
+        r'\bcd\s+',                     # cd
+        r'\bls\b',                      # ls
+        r'\bmkdir\s+',                  # mkdir
+        r'\brm\s+',                     # rm
+        r'\bcp\s+',                     # cp
+        r'\bmv\s+',                     # mv
+        r'\bcat\s+',                    # cat
+        r'\bgrep\s+',                   # grep
+        r'\bawk\s+',                    # awk
+        r'\bsed\s+',                    # sed
+        r'\bcurl\s+',                   # curl
+        r'\bwget\s+',                   # wget
+        r'\bsudo\s+',                   # sudo
+        r'\bapt(-get)?\s+',             # apt/apt-get
+        r'\bnpm\s+',                    # npm
+        r'\bpip\s+',                    # pip
+        r'\bgit\s+',                    # git
+        r'\bdocker\s+',                 # docker
+        r'^\s*\|\s*',                   # pipe at start
+        r'\s+\|\s+',                    # pipe
+        r'\s+&&\s+',                    # && operator
+    ],
+    'javascript': [
+        r'\bconst\s+\w+\s*=',           # const x =
+        r'\blet\s+\w+\s*=',             # let x =
+        r'\bvar\s+\w+\s*=',             # var x =
+        r'\bfunction\s+\w+\s*\(',       # function name(
+        r'=>\s*[{\(]?',                 # arrow function
+        r'\bconsole\.(log|error|warn)', # console.log
+        r'\brequire\s*\(',              # require(
+        r'\bexport\s+(default\s+)?',    # export
+        r'\basync\s+function',          # async function
+        r'\bawait\s+',                  # await
+        r'\.then\s*\(',                 # Promise .then(
+        r'\.forEach\s*\(',              # .forEach(
+        r'\.map\s*\(',                  # .map(
+    ],
+    'typescript': [
+        r':\s*(string|number|boolean|void|any)\b',  # type annotations
+        r'\binterface\s+\w+',           # interface
+        r'\btype\s+\w+\s*=',            # type alias
+        r'<\w+>',                       # generics
+        r'\bas\s+\w+',                  # type assertion
+    ],
+    'json': [
+        r'^\s*\{[\s\n]*"',              # starts with {"
+        r'^\s*\[[\s\n]*[\{\[]',         # starts with [ or [{
+    ],
+    'sql': [
+        r'\bSELECT\b',                  # SELECT
+        r'\bFROM\b',                    # FROM
+        r'\bWHERE\b',                   # WHERE
+        r'\bINSERT\s+INTO\b',           # INSERT INTO
+        r'\bUPDATE\b',                  # UPDATE
+        r'\bDELETE\s+FROM\b',           # DELETE FROM
+        r'\bCREATE\s+TABLE\b',          # CREATE TABLE
+    ],
+    'html': [
+        r'<(!DOCTYPE|html|head|body|div|span|p|a|img)',  # HTML tags
+        r'</\w+>',                      # closing tags
+    ],
+    'css': [
+        r'\{\s*[\w-]+\s*:',             # { property:
+        r'\.[a-zA-Z][\w-]*\s*\{',       # .class {
+        r'#[a-zA-Z][\w-]*\s*\{',        # #id {
+    ],
+}
+
+
+def _detect_code_language(text: str) -> str:
+    """
+    Detect the programming language of a code block based on content patterns.
+    Returns the detected language or empty string if unknown.
+    """
+    if not text or not text.strip():
+        return ''
+    
+    scores = {}
+    
+    for lang, patterns in LANGUAGE_PATTERNS.items():
+        score = 0
+        for pattern in patterns:
+            try:
+                matches = re.findall(pattern, text, re.MULTILINE | re.IGNORECASE)
+                score += len(matches)
+            except:
+                pass
+        if score > 0:
+            scores[lang] = score
+    
+    if not scores:
+        return ''
+    
+    # TypeScript should override JavaScript if both match
+    if 'typescript' in scores and 'javascript' in scores:
+        if scores['typescript'] >= 2:  # Need strong TS signals
+            return 'typescript'
+        return 'javascript'
+    
+    # Return language with highest score
+    best_lang = max(scores, key=scores.get)
+    
+    # Require minimum score for confidence
+    if scores[best_lang] >= 1:
+        return best_lang
+    
+    return ''
+
 
 def ingest(file_path: str) -> dict:
     path = Path(file_path)
@@ -213,9 +343,11 @@ def _apply_format(fmt: str, text: str) -> str:
     elif fmt == "italic":
         return f"*{text}*"
     elif fmt == "code":
-        # Use backticks for inline code
-        if '\n' in text:
-            return f"```\n{text}\n```"
+        # Use backticks for code blocks with language detection
+        if '\n' in text or len(text) > 60:
+            # Multi-line or long code - use fenced code block
+            lang = _detect_code_language(text)
+            return f"```{lang}\n{text}\n```"
         return f"`{text}`"
     elif fmt == "underline":
         return f"<u>{text}</u>"

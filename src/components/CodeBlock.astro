@@ -1,0 +1,284 @@
+---
+/**
+ * CodeBlock - Syntax highlighted code display component
+ * Modern terminal-style interface for displaying code snippets
+ * Features:
+ * - Syntax highlighting via language detection
+ * - Copy to clipboard
+ * - Language badge
+ * - Terminal style for bash/shell commands
+ * - LTR alignment for all code
+ */
+
+interface Props {
+  code: string;
+  language?: string;
+  title?: string;
+  showLineNumbers?: boolean;
+}
+
+const { 
+  code, 
+  language = 'text', 
+  title = '',
+  showLineNumbers = false
+} = Astro.props;
+
+const lineCount = code.split('\n').length;
+const isTerminal = ['bash', 'sh', 'shell', 'zsh', 'powershell', 'cmd', 'terminal'].includes(language.toLowerCase());
+const isPython = ['python', 'py'].includes(language.toLowerCase());
+---
+
+<div class={`code-block ${isTerminal ? 'terminal-style' : ''}`} dir="ltr">
+  <!-- Header -->
+  <div class="block-header">
+    <div class="header-left">
+      {isTerminal ? (
+        <div class="terminal-controls">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+      ) : (
+        <span class="language-badge">{language}</span>
+      )}
+      {title && <span class="file-name">{title}</span>}
+    </div>
+    <div class="header-right">
+      <button class="btn-copy" title="העתק קוד">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span class="copy-text">העתק</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Code Content -->
+  <div class="code-content">
+    {showLineNumbers && (
+      <div class="line-numbers" aria-hidden="true">
+        {Array.from({ length: lineCount }, (_, i) => (
+          <span class="line-num">{i + 1}</span>
+        ))}
+      </div>
+    )}
+    <pre class="code-pre"><code class={`language-${language}`} data-code={code}>{isTerminal && <span class="prompt">$ </span>}{code}</code></pre>
+  </div>
+</div>
+
+<style>
+  .code-block {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #181825;
+    --bg-tertiary: #11111b;
+    --border-color: #313244;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-muted: #6c7086;
+    --accent-green: #a6e3a1;
+    --accent-blue: #89b4fa;
+    --accent-purple: #cba6f7;
+    --accent-yellow: #f9e2af;
+    --accent-red: #f38ba8;
+    
+    margin: 1.5rem 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  }
+
+  /* Terminal style variant */
+  .code-block.terminal-style {
+    background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+    border-color: #444;
+  }
+
+  .code-block.terminal-style .code-pre {
+    background: transparent;
+  }
+
+  .code-block.terminal-style .prompt {
+    color: var(--accent-green);
+    user-select: none;
+  }
+
+  /* Header */
+  .block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .terminal-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+
+  .language-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    background: var(--accent-purple);
+    color: var(--bg-tertiary);
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .file-name {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .btn-copy {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-family: inherit;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-copy:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .btn-copy.copied {
+    color: var(--accent-green);
+  }
+
+  .btn-copy.copied .copy-text::after {
+    content: ' ✓';
+  }
+
+  /* Code content */
+  .code-content {
+    display: flex;
+    max-height: 500px;
+    overflow: auto;
+  }
+
+  .line-numbers {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    background: var(--bg-tertiary);
+    border-right: 1px solid var(--border-color);
+    user-select: none;
+    min-width: 3rem;
+    text-align: right;
+  }
+
+  .line-num {
+    padding: 0 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .code-pre {
+    flex: 1;
+    margin: 0;
+    padding: 1rem;
+    background: var(--bg-primary);
+    overflow-x: auto;
+  }
+
+  .code-pre code {
+    display: block;
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre;
+    tab-size: 4;
+  }
+
+  /* Syntax highlighting classes (basic) */
+  .code-pre code .keyword { color: var(--accent-purple); }
+  .code-pre code .string { color: var(--accent-green); }
+  .code-pre code .comment { color: var(--text-muted); font-style: italic; }
+  .code-pre code .number { color: var(--accent-yellow); }
+  .code-pre code .function { color: var(--accent-blue); }
+  .code-pre code .operator { color: var(--accent-red); }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .code-pre code {
+      font-size: 0.8rem;
+    }
+
+    .copy-text {
+      display: none;
+    }
+
+    .line-numbers {
+      min-width: 2.5rem;
+    }
+
+    .line-num {
+      padding: 0 0.5rem;
+      font-size: 0.7rem;
+    }
+  }
+</style>
+
+<script>
+  function initCodeBlocks() {
+    document.querySelectorAll<HTMLElement>('.code-block').forEach(block => {
+      const copyBtn = block.querySelector<HTMLButtonElement>('.btn-copy');
+      const codeEl = block.querySelector<HTMLElement>('code');
+      
+      if (!copyBtn || !codeEl) return;
+      
+      copyBtn.addEventListener('click', () => {
+        const code = codeEl.dataset.code || codeEl.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          copyBtn.classList.add('copied');
+          setTimeout(() => copyBtn.classList.remove('copied'), 2000);
+        });
+      });
+    });
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCodeBlocks);
+  } else {
+    initCodeBlocks();
+  }
+</script>
