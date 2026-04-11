@@ -90,7 +90,7 @@ def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
 
 
 def run_pipeline(docx_path: str, book_name: str,
-                 title_he: str = "", title_en: str = "",
+                 title_he: str = "", title_en: str = "", title_es: str = "",
                  output_dir: str = "output", skip_translate: bool = False):
     """Run the full book processing pipeline."""
 
@@ -129,7 +129,8 @@ def run_pipeline(docx_path: str, book_name: str,
     # Step 5: Organize output (cleans stale files + generates content-structure.json)
     print("\n[5/7] Organize output...")
     created = organize(book_name, chapters_md, output_dir,
-                       book_title_he=title_he, book_title_en=title_en)
+                       book_title_he=title_he, book_title_en=title_en,
+                       book_title_es=title_es)
     print(f"  Hebrew files: {len(created)}")
 
     # Step 6: Translate (identify chapters needing translation)
@@ -176,6 +177,7 @@ def main():
     parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
     parser.add_argument("--title-he", default="", help="Hebrew title")
     parser.add_argument("--title-en", default="", help="English title")
+    parser.add_argument("--title-es", default="", help="Spanish title")
     parser.add_argument("--output-dir", default="output", help="Output directory")
     parser.add_argument("--skip-translate", action="store_true",
                         help="Skip translation step (re-parse only)")
@@ -183,7 +185,8 @@ def main():
 
     run_pipeline(args.docx_path, args.book_name,
                  title_he=args.title_he, title_en=args.title_en,
-                 output_dir=args.output_dir, skip_translate=args.skip_translate)
+                 title_es=args.title_es, output_dir=args.output_dir,
+                 skip_translate=args.skip_translate)
 
 
 if __name__ == "__main__":
