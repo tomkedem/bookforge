@@ -1,12 +1,15 @@
 ---
 /**
  * CodeRunner - Interactive Python code execution component
- * Uses Pyodide (Python in WebAssembly) for browser-based execution
+ * Modern IDE-style interface with Pyodide (Python in WebAssembly)
  * Features:
- * - Lazy loading of Pyodide (only when user clicks "Run")
- * - Service Worker caching for faster subsequent loads
- * - Mobile device detection with graceful fallback
- * - Syntax highlighting with Prism
+ * - VS Code inspired dark theme
+ * - Line numbers
+ * - Syntax highlighting
+ * - Editable code with auto-indent
+ * - Add custom code blocks
+ * - Copy, reset, clear output
+ * - Mobile optimized with fallback
  */
 
 interface Props {
@@ -14,289 +17,645 @@ interface Props {
   language?: string;
   title?: string;
   editable?: boolean;
+  showLineNumbers?: boolean;
 }
 
-const { code, language = 'python', title = '', editable = true } = Astro.props;
+const { 
+  code, 
+  language = 'python', 
+  title = '', 
+  editable = true,
+  showLineNumbers = true 
+} = Astro.props;
+
 const uniqueId = Math.random().toString(36).substring(2, 9);
+const lineCount = code.split('\n').length;
 ---
 
-<div class="code-runner" data-id={uniqueId} dir="ltr">
-  {title && <div class="code-title">{title}</div>}
-  
-  <div class="code-container">
-    <div class="code-header">
-      <span class="language-badge">{language}</span>
-      <div class="code-actions">
-        <button class="btn-copy" title="העתק קוד" aria-label="Copy code">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-        </button>
-        <button class="btn-reset" title="אפס קוד" aria-label="Reset code">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-            <path d="M3 3v5h5"></path>
-          </svg>
-        </button>
+<div class="code-runner-wrapper" data-id={uniqueId} dir="ltr">
+  <!-- Header Bar -->
+  <div class="runner-header">
+    <div class="header-left">
+      <div class="window-controls">
+        <span class="control red"></span>
+        <span class="control yellow"></span>
+        <span class="control green"></span>
       </div>
+      {title && <span class="file-name">{title}</span>}
     </div>
-    
-    {editable ? (
-      <textarea 
-        class="code-editor" 
-        spellcheck="false"
-        data-original={code}
-      >{code}</textarea>
-    ) : (
-      <pre class="code-display"><code class={`language-${language}`}>{code}</code></pre>
+    <div class="header-right">
+      <span class="language-tag">{language}</span>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="tool-btn btn-run" data-language={language} title="הרץ קוד (Ctrl+Enter)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>הרץ</span>
+      </button>
+      <div class="toolbar-divider"></div>
+      <button class="tool-btn btn-add-code" title="הוסף בלוק קוד">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>הוסף קוד</span>
+      </button>
+    </div>
+    <div class="toolbar-right">
+      <button class="tool-btn icon-only btn-copy" title="העתק קוד">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+      <button class="tool-btn icon-only btn-reset" title="אפס לקוד מקורי">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+      </button>
+      <button class="tool-btn icon-only btn-fullscreen" title="מסך מלא">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Code Editor Area -->
+  <div class="editor-container">
+    {showLineNumbers && (
+      <div class="line-numbers" aria-hidden="true">
+        {Array.from({ length: lineCount }, (_, i) => (
+          <span class="line-num">{i + 1}</span>
+        ))}
+      </div>
     )}
+    <div class="code-area">
+      {editable ? (
+        <textarea 
+          class="code-editor" 
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          data-original={code}
+          wrap="off"
+        >{code}</textarea>
+      ) : (
+        <pre class="code-display"><code class={`language-${language}`}>{code}</code></pre>
+      )}
+      <pre class="code-highlight" aria-hidden="true"><code></code></pre>
+    </div>
   </div>
-  
-  <div class="run-section">
-    <button class="btn-run" data-language={language}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-      </svg>
-      <span class="btn-text">הרץ קוד</span>
-    </button>
-    <div class="run-status"></div>
-  </div>
-  
-  <div class="output-container" hidden>
-    <div class="output-header">
-      <span>פלט:</span>
-      <button class="btn-clear-output" title="נקה פלט">
+
+  <!-- Add Code Panel (hidden by default) -->
+  <div class="add-code-panel" hidden>
+    <div class="panel-header">
+      <span>הוסף קוד משלך:</span>
+      <button class="btn-close-panel">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
     </div>
-    <pre class="output"></pre>
+    <textarea class="additional-code" placeholder="# כתוב כאן קוד נוסף..." spellcheck="false"></textarea>
+    <div class="panel-actions">
+      <button class="btn-append">הוסף בסוף</button>
+      <button class="btn-prepend">הוסף בהתחלה</button>
+      <button class="btn-replace">החלף הכל</button>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-item run-status"></span>
+    </div>
+    <div class="status-right">
+      <span class="status-item line-info">שורות: <span class="line-count">{lineCount}</span></span>
+      <span class="status-item char-info">תווים: <span class="char-count">{code.length}</span></span>
+    </div>
+  </div>
+
+  <!-- Output Panel -->
+  <div class="output-panel" hidden>
+    <div class="output-header">
+      <div class="output-tabs">
+        <button class="output-tab active" data-tab="output">פלט</button>
+        <button class="output-tab" data-tab="console">Console</button>
+      </div>
+      <button class="btn-clear-output" title="נקה פלט">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="output-content">
+      <pre class="output-text"></pre>
+    </div>
+    <div class="output-footer">
+      <span class="execution-time"></span>
+    </div>
   </div>
 </div>
 
 <style>
-  .code-runner {
+  .code-runner-wrapper {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #181825;
+    --bg-tertiary: #11111b;
+    --bg-hover: #313244;
+    --border-color: #313244;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-muted: #6c7086;
+    --accent-green: #a6e3a1;
+    --accent-blue: #89b4fa;
+    --accent-red: #f38ba8;
+    --accent-yellow: #f9e2af;
+    --accent-purple: #cba6f7;
+    
     margin: 1.5rem 0;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
-    background: #1e1e1e;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   }
-  
-  .code-title {
-    padding: 0.5rem 1rem;
-    background: #2d2d2d;
-    color: #9ca3af;
-    font-size: 0.875rem;
-    border-bottom: 1px solid #3d3d3d;
+
+  .code-runner-wrapper.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    margin: 0;
+    border-radius: 0;
   }
-  
-  .code-container {
+
+  /* Header */
+  .runner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.625rem 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .window-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  .control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .control.red { background: #ff5f57; }
+  .control.yellow { background: #febc2e; }
+  .control.green { background: #28c840; }
+
+  .file-name {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .language-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    background: var(--accent-purple);
+    color: var(--bg-tertiary);
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+    margin: 0 0.5rem;
+  }
+
+  .tool-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .tool-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .tool-btn.icon-only {
+    padding: 0.375rem;
+  }
+
+  .tool-btn.btn-run {
+    background: linear-gradient(135deg, var(--accent-green), #73deb1);
+    color: var(--bg-tertiary);
+    font-weight: 600;
+  }
+
+  .tool-btn.btn-run:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .tool-btn.btn-run:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .tool-btn.btn-run.loading svg {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Editor */
+  .editor-container {
+    display: flex;
+    max-height: 400px;
+    overflow: auto;
+  }
+
+  .code-runner-wrapper.fullscreen .editor-container {
+    max-height: calc(100vh - 300px);
+  }
+
+  .line-numbers {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    background: var(--bg-tertiary);
+    border-right: 1px solid var(--border-color);
+    user-select: none;
+    min-width: 3rem;
+    text-align: right;
+  }
+
+  .line-num {
+    padding: 0 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .code-area {
+    flex: 1;
     position: relative;
+    overflow: auto;
   }
-  
-  .code-header {
+
+  .code-editor {
+    width: 100%;
+    min-height: 150px;
+    padding: 1rem;
+    margin: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    border: none;
+    resize: none;
+    overflow: auto;
+    tab-size: 4;
+    white-space: pre;
+  }
+
+  .code-editor:focus {
+    outline: none;
+  }
+
+  .code-editor::selection {
+    background: rgba(137, 180, 250, 0.3);
+  }
+
+  /* Add Code Panel */
+  .add-code-panel {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    animation: slideDown 0.2s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    background: #2d2d2d;
-    border-bottom: 1px solid #3d3d3d;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
   }
-  
-  .language-badge {
-    font-size: 0.75rem;
-    color: #10b981;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-  
-  .code-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .code-actions button {
+
+  .btn-close-panel {
     background: transparent;
     border: none;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 4px;
-    transition: color 0.2s, background 0.2s;
   }
-  
-  .code-actions button:hover {
-    color: #e5e7eb;
-    background: #3d3d3d;
+
+  .btn-close-panel:hover {
+    color: var(--accent-red);
+    background: var(--bg-hover);
   }
-  
-  .code-editor,
-  .code-display {
+
+  .additional-code {
     width: 100%;
-    min-height: 120px;
-    max-height: 400px;
-    padding: 1rem;
-    margin: 0;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
-    font-size: 0.875rem;
-    line-height: 1.6;
+    min-height: 80px;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     border: none;
-    resize: vertical;
-    overflow: auto;
-    tab-size: 2;
-  }
-  
-  .code-editor:focus {
-    outline: none;
-    box-shadow: inset 0 0 0 2px #3b82f6;
-  }
-  
-  .code-display code {
     font-family: inherit;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    resize: vertical;
   }
-  
-  .run-section {
+
+  .additional-code:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--accent-blue);
+  }
+
+  .additional-code::placeholder {
+    color: var(--text-muted);
+  }
+
+  .panel-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .panel-actions button {
+    padding: 0.375rem 0.75rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .panel-actions button:hover {
+    background: var(--accent-blue);
+    color: var(--bg-tertiary);
+    border-color: var(--accent-blue);
+  }
+
+  /* Status Bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.375rem 1rem;
+    background: var(--accent-blue);
+    color: var(--bg-tertiary);
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+
+  .status-left,
+  .status-right {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem 1rem;
-    background: #252525;
-    border-top: 1px solid #3d3d3d;
   }
-  
-  .btn-run {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
+
+  .run-status.success { color: var(--bg-tertiary); }
+  .run-status.error { color: var(--accent-red); font-weight: 600; }
+  .run-status.loading::after {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-left: 6px;
+    border: 2px solid var(--bg-tertiary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
-  
-  .btn-run:hover {
-    background: #059669;
+
+  /* Output Panel */
+  .output-panel {
+    border-top: 1px solid var(--border-color);
+    animation: slideUp 0.2s ease;
   }
-  
-  .btn-run:active {
-    transform: scale(0.98);
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
-  
-  .btn-run:disabled {
-    background: #4b5563;
-    cursor: not-allowed;
-  }
-  
-  .btn-run.loading .btn-text::after {
-    content: '...';
-    animation: dots 1s infinite;
-  }
-  
-  @keyframes dots {
-    0%, 20% { content: '.'; }
-    40% { content: '..'; }
-    60%, 100% { content: '...'; }
-  }
-  
-  .run-status {
-    font-size: 0.75rem;
-    color: #9ca3af;
-  }
-  
-  .run-status.error {
-    color: #ef4444;
-  }
-  
-  .run-status.success {
-    color: #10b981;
-  }
-  
-  .output-container {
-    border-top: 1px solid #3d3d3d;
-  }
-  
+
   .output-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 1rem;
-    background: #1a1a2e;
-    color: #9ca3af;
-    font-size: 0.75rem;
+    padding: 0 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
   }
-  
+
+  .output-tabs {
+    display: flex;
+  }
+
+  .output-tab {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .output-tab:hover {
+    color: var(--text-secondary);
+  }
+
+  .output-tab.active {
+    color: var(--accent-green);
+    border-bottom-color: var(--accent-green);
+  }
+
   .btn-clear-output {
     background: transparent;
     border: none;
-    color: #6b7280;
+    color: var(--text-muted);
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 0.375rem;
     border-radius: 4px;
   }
-  
+
   .btn-clear-output:hover {
-    color: #ef4444;
+    color: var(--accent-red);
+    background: var(--bg-hover);
   }
-  
-  .output {
+
+  .output-content {
+    max-height: 200px;
+    overflow: auto;
+    background: var(--bg-secondary);
+  }
+
+  .output-text {
     margin: 0;
     padding: 1rem;
-    background: #0d0d1a;
-    color: #e5e7eb;
-    font-family: 'Fira Code', 'Consolas', monospace;
     font-size: 0.8rem;
     line-height: 1.5;
-    max-height: 300px;
-    overflow: auto;
+    color: var(--text-primary);
     white-space: pre-wrap;
     word-break: break-word;
   }
-  
-  .output .error {
-    color: #ef4444;
+
+  .output-text .error {
+    color: var(--accent-red);
   }
-  
-  .output .warning {
-    color: #f59e0b;
+
+  .output-text .success {
+    color: var(--accent-green);
   }
-  
-  /* Mobile optimizations */
+
+  .output-footer {
+    padding: 0.25rem 1rem;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-color);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  /* Copy feedback */
+  .copy-feedback {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-green);
+    color: var(--bg-tertiary);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 10000;
+    animation: fadeInOut 1.5s ease forwards;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Mobile */
   @media (max-width: 640px) {
-    .code-editor,
-    .code-display {
+    .code-editor {
       font-size: 0.8rem;
-      min-height: 100px;
+      min-height: 120px;
     }
-    
-    .btn-run {
-      padding: 0.4rem 0.75rem;
-      font-size: 0.8rem;
+
+    .tool-btn span:not(.sr-only) {
+      display: none;
     }
-    
-    .run-section {
+
+    .tool-btn.btn-run span {
+      display: inline;
+    }
+
+    .toolbar {
       flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .status-bar {
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    .line-numbers {
+      min-width: 2.5rem;
+    }
+
+    .line-num {
+      padding: 0 0.5rem;
+      font-size: 0.7rem;
     }
   }
-  
-  /* Low-end device warning */
+
+  /* Mobile warning */
   .mobile-warning {
-    padding: 0.75rem 1rem;
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--accent-yellow), #f5c638);
+    color: var(--bg-tertiary);
+    font-size: 0.75rem;
     text-align: center;
-    border-top: 1px solid #3d3d3d;
   }
 </style>
 
@@ -314,25 +673,18 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
   
   const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/';
   
-  // Check if device can handle Pyodide
   function canRunPyodide(): boolean {
-    // Check memory (if available)
     if ('deviceMemory' in navigator) {
       const memory = (navigator as any).deviceMemory;
       if (memory && memory < 2) return false;
     }
-    
-    // Check WebAssembly support
     if (typeof WebAssembly === 'undefined') return false;
-    
     return true;
   }
   
-  // Load Pyodide lazily
   async function loadPyodide(): Promise<PyodideInterface> {
     if (pyodide) return pyodide;
     if (pyodideLoading) {
-      // Wait for existing load
       while (!pyodideReady) {
         await new Promise(r => setTimeout(r, 100));
       }
@@ -342,7 +694,6 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
     pyodideLoading = true;
     
     try {
-      // Load Pyodide script
       if (!(window as any).loadPyodide) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement('script');
@@ -353,12 +704,10 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
         });
       }
       
-      // Initialize Pyodide
       pyodide = await (window as any).loadPyodide({
         indexURL: PYODIDE_CDN
       });
       
-      // Redirect stdout/stderr
       await pyodide.runPython(`
 import sys
 from io import StringIO
@@ -389,18 +738,14 @@ sys.stderr = _output_capture.stderr
     }
   }
   
-  // Run Python code
-  async function runPythonCode(code: string): Promise<{ output: string; error: string | null }> {
+  async function runPythonCode(code: string): Promise<{ output: string; error: string | null; time: number }> {
+    const startTime = performance.now();
     const py = await loadPyodide();
     
-    // Clear previous output
     await py.runPython('_output_capture.clear()');
     
     try {
-      // Execute the code
       const result = await py.runPython(code);
-      
-      // Get captured output
       const [stdout, stderr] = py.globals.get('_output_capture').get_output().toJs();
       
       let output = stdout || '';
@@ -408,33 +753,70 @@ sys.stderr = _output_capture.stderr
         output += (output ? '\n' : '') + String(result);
       }
       
+      const endTime = performance.now();
+      
       return { 
         output: output || '(אין פלט)', 
-        error: stderr || null 
+        error: stderr || null,
+        time: endTime - startTime
       };
       
     } catch (error: any) {
+      const endTime = performance.now();
       return { 
         output: '', 
-        error: error.message || String(error)
+        error: error.message || String(error),
+        time: endTime - startTime
       };
     }
   }
+
+  function showCopyFeedback() {
+    const feedback = document.createElement('div');
+    feedback.className = 'copy-feedback';
+    feedback.textContent = '✓ הקוד הועתק!';
+    document.body.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 1500);
+  }
+
+  function updateLineNumbers(editor: HTMLTextAreaElement, lineNumbersEl: HTMLElement | null) {
+    if (!lineNumbersEl) return;
+    const lines = editor.value.split('\n').length;
+    lineNumbersEl.innerHTML = Array.from({ length: lines }, (_, i) => 
+      `<span class="line-num">${i + 1}</span>`
+    ).join('');
+  }
+
+  function updateStats(editor: HTMLTextAreaElement, wrapper: HTMLElement) {
+    const lineCount = wrapper.querySelector('.line-count');
+    const charCount = wrapper.querySelector('.char-count');
+    if (lineCount) lineCount.textContent = String(editor.value.split('\n').length);
+    if (charCount) charCount.textContent = String(editor.value.length);
+  }
   
-  // Initialize all code runners
   function initCodeRunners() {
-    document.querySelectorAll<HTMLElement>('.code-runner').forEach(runner => {
-      const runBtn = runner.querySelector<HTMLButtonElement>('.btn-run');
-      const copyBtn = runner.querySelector<HTMLButtonElement>('.btn-copy');
-      const resetBtn = runner.querySelector<HTMLButtonElement>('.btn-reset');
-      const clearOutputBtn = runner.querySelector<HTMLButtonElement>('.btn-clear-output');
-      const codeEditor = runner.querySelector<HTMLTextAreaElement>('.code-editor');
-      const codeDisplay = runner.querySelector<HTMLPreElement>('.code-display code');
-      const outputContainer = runner.querySelector<HTMLElement>('.output-container');
-      const output = runner.querySelector<HTMLPreElement>('.output');
-      const status = runner.querySelector<HTMLElement>('.run-status');
+    document.querySelectorAll<HTMLElement>('.code-runner-wrapper').forEach(wrapper => {
+      const runBtn = wrapper.querySelector<HTMLButtonElement>('.btn-run');
+      const copyBtn = wrapper.querySelector<HTMLButtonElement>('.btn-copy');
+      const resetBtn = wrapper.querySelector<HTMLButtonElement>('.btn-reset');
+      const fullscreenBtn = wrapper.querySelector<HTMLButtonElement>('.btn-fullscreen');
+      const addCodeBtn = wrapper.querySelector<HTMLButtonElement>('.btn-add-code');
+      const clearOutputBtn = wrapper.querySelector<HTMLButtonElement>('.btn-clear-output');
+      const codeEditor = wrapper.querySelector<HTMLTextAreaElement>('.code-editor');
+      const lineNumbersEl = wrapper.querySelector<HTMLElement>('.line-numbers');
+      const outputPanel = wrapper.querySelector<HTMLElement>('.output-panel');
+      const outputText = wrapper.querySelector<HTMLPreElement>('.output-text');
+      const status = wrapper.querySelector<HTMLElement>('.run-status');
+      const execTime = wrapper.querySelector<HTMLElement>('.execution-time');
+      const addCodePanel = wrapper.querySelector<HTMLElement>('.add-code-panel');
+      const additionalCode = wrapper.querySelector<HTMLTextAreaElement>('.additional-code');
+      const closePanelBtn = wrapper.querySelector<HTMLButtonElement>('.btn-close-panel');
+      const appendBtn = wrapper.querySelector<HTMLButtonElement>('.btn-append');
+      const prependBtn = wrapper.querySelector<HTMLButtonElement>('.btn-prepend');
+      const replaceBtn = wrapper.querySelector<HTMLButtonElement>('.btn-replace');
+      const outputTabs = wrapper.querySelectorAll<HTMLButtonElement>('.output-tab');
       
-      if (!runBtn) return;
+      if (!runBtn || !codeEditor) return;
       
       const language = runBtn.dataset.language || 'python';
       
@@ -442,11 +824,42 @@ sys.stderr = _output_capture.stderr
       if (!canRunPyodide()) {
         const warning = document.createElement('div');
         warning.className = 'mobile-warning';
-        warning.textContent = 'המכשיר שלך עלול להתקשות להריץ קוד. מומלץ להשתמש במחשב.';
-        runner.querySelector('.run-section')?.prepend(warning);
+        warning.textContent = '⚠️ המכשיר עלול להתקשות להריץ קוד. מומלץ להשתמש במחשב.';
+        wrapper.querySelector('.toolbar')?.after(warning);
       }
+
+      // Editor updates
+      codeEditor.addEventListener('input', () => {
+        updateLineNumbers(codeEditor, lineNumbersEl);
+        updateStats(codeEditor, wrapper);
+      });
+
+      // Handle tab key
+      codeEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = codeEditor.selectionStart;
+          const end = codeEditor.selectionEnd;
+          codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
+          codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+          updateLineNumbers(codeEditor, lineNumbersEl);
+        }
+        
+        // Ctrl+Enter to run
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          runBtn.click();
+        }
+      });
+
+      // Sync scroll for line numbers
+      codeEditor.addEventListener('scroll', () => {
+        if (lineNumbersEl) {
+          lineNumbersEl.scrollTop = codeEditor.scrollTop;
+        }
+      });
       
-      // Run button click
+      // Run button
       runBtn.addEventListener('click', async () => {
         if (language !== 'python') {
           if (status) {
@@ -456,7 +869,7 @@ sys.stderr = _output_capture.stderr
           return;
         }
         
-        const code = codeEditor?.value || codeDisplay?.textContent || '';
+        const code = codeEditor.value;
         
         if (!code.trim()) {
           if (status) {
@@ -471,27 +884,31 @@ sys.stderr = _output_capture.stderr
         
         if (status) {
           status.textContent = pyodideReady ? 'מריץ...' : 'טוען Python...';
-          status.className = 'run-status';
+          status.className = 'run-status loading';
         }
         
         try {
           const result = await runPythonCode(code);
           
-          if (outputContainer && output) {
-            outputContainer.hidden = false;
+          if (outputPanel && outputText) {
+            outputPanel.hidden = false;
             
             if (result.error) {
-              output.innerHTML = `<span class="error">${escapeHtml(result.error)}</span>`;
+              outputText.innerHTML = `<span class="error">${escapeHtml(result.error)}</span>`;
               if (status) {
-                status.textContent = 'שגיאה בהרצה';
+                status.textContent = '✗ שגיאה';
                 status.className = 'run-status error';
               }
             } else {
-              output.textContent = result.output;
+              outputText.innerHTML = `<span class="success">${escapeHtml(result.output)}</span>`;
               if (status) {
-                status.textContent = 'הרצה הושלמה ✓';
+                status.textContent = '✓ הושלם';
                 status.className = 'run-status success';
               }
+            }
+
+            if (execTime) {
+              execTime.textContent = `זמן: ${result.time.toFixed(0)}ms`;
             }
           }
           
@@ -508,43 +925,105 @@ sys.stderr = _output_capture.stderr
       
       // Copy button
       copyBtn?.addEventListener('click', () => {
-        const code = codeEditor?.value || codeDisplay?.textContent || '';
-        navigator.clipboard.writeText(code).then(() => {
-          const originalTitle = copyBtn.title;
-          copyBtn.title = 'הועתק!';
-          setTimeout(() => copyBtn.title = originalTitle, 2000);
+        navigator.clipboard.writeText(codeEditor.value).then(() => {
+          showCopyFeedback();
         });
       });
       
       // Reset button
       resetBtn?.addEventListener('click', () => {
-        if (codeEditor) {
-          codeEditor.value = codeEditor.dataset.original || '';
+        codeEditor.value = codeEditor.dataset.original || '';
+        updateLineNumbers(codeEditor, lineNumbersEl);
+        updateStats(codeEditor, wrapper);
+      });
+
+      // Fullscreen
+      fullscreenBtn?.addEventListener('click', () => {
+        wrapper.classList.toggle('fullscreen');
+        if (wrapper.classList.contains('fullscreen')) {
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
+      });
+
+      // Add code panel
+      addCodeBtn?.addEventListener('click', () => {
+        if (addCodePanel) {
+          addCodePanel.hidden = !addCodePanel.hidden;
+        }
+      });
+
+      closePanelBtn?.addEventListener('click', () => {
+        if (addCodePanel) addCodePanel.hidden = true;
+      });
+
+      appendBtn?.addEventListener('click', () => {
+        if (additionalCode && codeEditor) {
+          codeEditor.value = codeEditor.value + '\n' + additionalCode.value;
+          additionalCode.value = '';
+          addCodePanel!.hidden = true;
+          updateLineNumbers(codeEditor, lineNumbersEl);
+          updateStats(codeEditor, wrapper);
+        }
+      });
+
+      prependBtn?.addEventListener('click', () => {
+        if (additionalCode && codeEditor) {
+          codeEditor.value = additionalCode.value + '\n' + codeEditor.value;
+          additionalCode.value = '';
+          addCodePanel!.hidden = true;
+          updateLineNumbers(codeEditor, lineNumbersEl);
+          updateStats(codeEditor, wrapper);
+        }
+      });
+
+      replaceBtn?.addEventListener('click', () => {
+        if (additionalCode && codeEditor) {
+          codeEditor.value = additionalCode.value;
+          additionalCode.value = '';
+          addCodePanel!.hidden = true;
+          updateLineNumbers(codeEditor, lineNumbersEl);
+          updateStats(codeEditor, wrapper);
         }
       });
       
-      // Clear output button
+      // Clear output
       clearOutputBtn?.addEventListener('click', () => {
-        if (outputContainer && output) {
-          outputContainer.hidden = true;
-          output.textContent = '';
+        if (outputPanel && outputText) {
+          outputPanel.hidden = true;
+          outputText.textContent = '';
         }
         if (status) {
           status.textContent = '';
           status.className = 'run-status';
         }
       });
+
+      // Output tabs
+      outputTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          outputTabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+        });
+      });
+
+      // ESC to exit fullscreen
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && wrapper.classList.contains('fullscreen')) {
+          wrapper.classList.remove('fullscreen');
+          document.body.style.overflow = '';
+        }
+      });
     });
   }
   
-  // Escape HTML for safe output
   function escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
   
-  // Initialize on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initCodeRunners);
   } else {
