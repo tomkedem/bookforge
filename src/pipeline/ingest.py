@@ -339,6 +339,64 @@ def _get_paragraph_spacing(para) -> bool:
         return False
 
 
+def _get_paragraph_alignment(para) -> str:
+    """
+    Get paragraph alignment from Word properties.
+    Returns: 'left', 'right', 'center', 'justify', or None for default.
+    
+    Word stores alignment in <w:jc w:val="..."/> inside <w:pPr>.
+    Values: left, right, center, both (justify), start, end
+    """
+    try:
+        p_pr = para._element.find(f'{W_NS}pPr')
+        if p_pr is None:
+            return None
+        
+        jc = p_pr.find(f'{W_NS}jc')
+        if jc is None:
+            return None
+        
+        val = jc.get(f'{W_NS}val')
+        
+        # Map Word alignment values to CSS
+        alignment_map = {
+            'left': 'left',
+            'right': 'right',
+            'center': 'center',
+            'both': 'justify',
+            'start': 'left',   # LTR start = left
+            'end': 'right',    # LTR end = right
+        }
+        
+        return alignment_map.get(val)
+    except Exception:
+        return None
+
+
+def _apply_alignment_wrapper(text: str, alignment: str) -> str:
+    """
+    Wrap text with alignment HTML if needed.
+    For left-aligned text in RTL context, adds dir="ltr" div.
+    """
+    if not alignment:
+        return text
+    
+    # Left alignment in Hebrew doc - wrap with LTR container
+    if alignment == 'left':
+        return f'<div dir="ltr" style="text-align: left">\n\n{text}\n\n</div>'
+    
+    # Center alignment
+    if alignment == 'center':
+        return f'<div style="text-align: center">\n\n{text}\n\n</div>'
+    
+    # Justify - usually default, no wrapper needed
+    if alignment == 'justify':
+        return text
+    
+    # Right is default for Hebrew, no wrapper needed
+    return text
+
+
 def _ingest_docx(path: Path) -> dict:
     doc = Document(path)
     paragraphs = []
@@ -414,10 +472,16 @@ def _ingest_docx(path: Path) -> dict:
                 indent = "  " * indent_level  # 2 spaces per level
                 text = f"{indent}{num_prefix} {text}"
             
+            # Get and apply alignment (for left-aligned English in Hebrew docs)
+            alignment = _get_paragraph_alignment(para)
+            if alignment and alignment != 'right':  # Not default RTL alignment
+                text = _apply_alignment_wrapper(text, alignment)
+            
             paragraphs.append({
                 "text": text,
                 "style": para.style.name,
-                "doc_para_index": doc_idx
+                "doc_para_index": doc_idx,
+                "alignment": alignment
             })
             
             doc_idx += 1
