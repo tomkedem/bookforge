@@ -79,28 +79,38 @@ def _format_runs(para) -> str:
 def _clean_markdown_asterisks(text: str) -> str:
     """
     Clean up malformed markdown asterisks from Word formatting artifacts.
-    - Remove empty bold/italic markers: ****text**** → **text**
-    - Fix consecutive markers: **word1****word2** → **word1 word2** (shouldn't happen after grouping)
-    - Remove asterisks from headings (they're already bold by structure)
+    This is the FIRST cleanup pass - parse.py has a final cleanup for any remaining issues.
+    
+    Patterns fixed:
+    - **** (4+ asterisks) → **
+    - **text****more** → **text more**
+    - ** ** (space between markers) → space
+    - Orphaned ** at start/end
+    - Hebrew prefix letters: ה**text** → **הtext**
     """
     import re
     
-    # Remove empty bold markers (adjacent **** with nothing between)
+    # Remove 4+ consecutive asterisks → **
     text = re.sub(r'\*{4,}', '**', text)
     
-    # Fix patterns like **text**** or ****text**
-    text = re.sub(r'\*\*\*\*+', '**', text)
+    # Fix patterns like **text****more** (adjacent bold without space)
+    text = re.sub(r'\*\*([^*]+)\*\*\*\*([^*]+)\*\*', r'**\1 \2**', text)
     
     # Fix space between bold markers: ** ** → just space
     text = re.sub(r'\*\*\s+\*\*', ' ', text)
     
-    # Clean leading/trailing ** that got orphaned
+    # Clean leading/trailing orphaned **
     text = re.sub(r'^\*\*\s*\*\*', '', text)
     text = re.sub(r'\*\*\s*\*\*$', '', text)
     
-    # If entire text is wrapped in **, keep it clean
-    # Pattern: **...**...**...** with multiple segments → merge
-    # But don't break intentional bold
+    # Fix Hebrew prefix letters before bold: ה**text** → **הtext**
+    text = re.sub(r'([הבלמכווש])\*\*([^*]+)\*\*', r'**\1\2**', text)
+    
+    # Fix **text**.**  → **text**.
+    text = re.sub(r'\*\*\.\*\*', '.', text)
+    
+    # Fix **:** → :
+    text = re.sub(r'\*\*:\*\*', ':', text)
     
     return text.strip()
 

@@ -26,6 +26,66 @@ def _clean_heading(text: str) -> str:
     return cleaned.strip()
 
 
+def _clean_markdown_final(text: str) -> str:
+    """
+    Final comprehensive cleanup of markdown artifacts from Word formatting.
+    This is the LAST line of defense - catches all edge cases.
+    
+    Patterns fixed:
+    - **text****:** → **text:**
+    - **:** or **: ** → :
+    - **, ** between bold → , 
+    - ** ** (spaced asterisks) → space
+    - **** (4+ asterisks) → **
+    - ה**text** → **הtext** (Hebrew prefix letters)
+    - **text**.**  → **text**.
+    - Fragmented bold: **a** **b** → **a b** (when adjacent)
+    - "**text**" patterns in sentences
+    """
+    import re
+    
+    # 1. Fix consecutive asterisks (4 or more) → **
+    text = re.sub(r'\*{4,}', '**', text)
+    
+    # 2. Fix **:** pattern → :
+    text = re.sub(r'\*\*:\*\*', ':', text)
+    text = re.sub(r'\*\*:\s*\*\*', ': ', text)
+    
+    # 3. Fix trailing **. → .
+    text = re.sub(r'\*\*\.$', '.', text, flags=re.MULTILINE)
+    text = re.sub(r'\*\*\.\*\*', '.', text)
+    
+    # 4. Fix **, ** pattern (comma between bold markers)
+    text = re.sub(r'\*\*,\s*\*\*', ', ', text)
+    
+    # 5. Fix ** ** pattern (space between markers)
+    text = re.sub(r'\*\*\s+\*\*', ' ', text)
+    
+    # 6. Fix Hebrew prefix letters before bold: ה**text** → **הtext**
+    # Common prefixes: ה, ב, ל, מ, כ, ו, ש
+    text = re.sub(r'([הבלמכוש])\*\*([^*]+)\*\*', r'**\1\2**', text)
+    
+    # 7. Fix bold fragments: **text** **more** → **text more** (when no punctuation between)
+    # This handles patterns like לפרק **נכון**, **לקרוא נכון** → should be cleaned
+    text = re.sub(r'\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*', r'**\1 \2**', text)
+    
+    # 8. Fix orphaned asterisks at line start/end (lonely ** on their own line)
+    text = re.sub(r'^\s*\*\*\s*$', '', text, flags=re.MULTILINE)
+    
+    # 9. Fix label patterns: text**:** → **text:**
+    text = re.sub(r'^(\s*)([^\s*][^*\n]{2,})\*\*:', r'\1**\2:', text, flags=re.MULTILINE)
+    
+    # 10. Fix fragmented bold with quotes: "**text**" → "text"
+    text = re.sub(r'"\*\*([^*"]+)\*\*"', r'"\1"', text)
+    text = re.sub(r'"\*\*([^*"]+)\*\*', r'"\1', text)
+    text = re.sub(r'\*\*([^*"]+)\*\*"', r'\1"', text)
+    
+    # 11. Clean multiple spaces
+    text = re.sub(r' {2,}', ' ', text)
+    
+    return text
+
+
 def parse(ingested: dict) -> list[dict]:
     paragraphs = ingested["paragraphs"]
     chapters = []
@@ -339,4 +399,8 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         lines.append("")
         img_cursor += 1
 
-    return "\n".join(lines)
+    # Final cleanup: catch any remaining Word formatting artifacts
+    result = "\n".join(lines)
+    result = _clean_markdown_final(result)
+    
+    return result
