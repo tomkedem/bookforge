@@ -31,59 +31,89 @@ def _clean_markdown_final(text: str) -> str:
     Final comprehensive cleanup of markdown artifacts from Word formatting.
     This is the LAST line of defense - catches all edge cases.
     
+    IMPORTANT: This function must NOT break intentional bold formatting.
+    It only fixes malformed patterns from Word conversion.
+    
     Patterns fixed:
-    - **text****:** → **text:**
-    - **:** or **: ** → :
-    - **, ** between bold → , 
-    - ** ** (spaced asterisks) → space
     - **** (4+ asterisks) → **
+    - **:** or **: ** → :
+    - **, ** between bold markers → ,
+    - ** ** (spaced asterisks) → space
     - ה**text** → **הtext** (Hebrew prefix letters)
-    - **text**.**  → **text**.
-    - Fragmented bold: **a** **b** → **a b** (when adjacent)
-    - "**text**" patterns in sentences
+    - **text**.** → **text**.
+    - line ending with . ** label → line ending with . **label**
+    - Unbalanced ** on a line (odd count) → balanced
     """
     import re
     
-    # 1. Fix consecutive asterisks (4 or more) → **
-    text = re.sub(r'\*{4,}', '**', text)
+    # Process line by line to handle unbalanced ** properly
+    lines = text.split('\n')
+    cleaned_lines = []
     
-    # 2. Fix **:** pattern → :
-    text = re.sub(r'\*\*:\*\*', ':', text)
-    text = re.sub(r'\*\*:\s*\*\*', ': ', text)
+    for line in lines:
+        # Count ** pairs
+        asterisk_count = line.count('**')
+        
+        # 1. Fix consecutive asterisks (4 or more) → **
+        line = re.sub(r'\*{4,}', '**', line)
+        
+        # 2. Fix **:** pattern → :
+        line = re.sub(r'\*\*:\*\*', ':', line)
+        line = re.sub(r'\*\*:\s*\*\*', ': ', line)
+        
+        # 3. Fix trailing **.** or **. → .
+        line = re.sub(r'\*\*\.\*\*', '.', line)
+        line = re.sub(r'\*\*\.$', '.', line)
+        
+        # 4. Fix **, ** pattern (comma between bold markers)
+        line = re.sub(r'\*\*,\s*\*\*', ', ', line)
+        
+        # 5. Fix ** ** pattern (space between markers)
+        line = re.sub(r'\*\*\s+\*\*', ' ', line)
+        
+        # 6. Fix Hebrew prefix letters before bold: ה**text** → **הtext**
+        line = re.sub(r'([הבלמכוש])\*\*([^*]+)\*\*', r'**\1\2**', line)
+        
+        # 7. Fix sentence ending with ". **label" → ". **label**"
+        # Pattern: text ends with . then space then ** then text without closing **
+        match = re.search(r'\.\s+\*\*([^*]+)$', line)
+        if match and line.count('**') % 2 != 0:
+            # Odd number of ** means unbalanced - add closing
+            line = line + '**'
+        
+        # 8. Fix bullet points with misplaced **: "- text:** label**" → "- **text: label**"
+        line = re.sub(r'^(- )([^*]+):\*\*\s*([^*]+)\*\*$', r'\1**\2: \3**', line)
+        
+        # 9. Fix pattern: "- תת-בעיה 1:** האלגוריתם**" → "- **תת-בעיה 1: האלגוריתם**"
+        line = re.sub(r'^(- )([^*:]+):\*\*\s*([^*]+)\*\*', r'\1**\2: \3**', line)
+        
+        # 10. Fix label patterns at line start: " text**:" → " **text:**"
+        line = re.sub(r'^(\s*)([^\s*][^*\n]{2,})\*\*:', r'\1**\2:**', line)
+        
+        # 11. Fix standalone ** on its own line (no content)
+        if re.match(r'^\s*\*\*\s*$', line):
+            line = ''
+        
+        # 12. Fix quotes: "**text**" → "text"
+        line = re.sub(r'"\*\*([^*"]+)\*\*"', r'"\1"', line)
+        
+        # 13. Recount and handle remaining unbalanced **
+        final_count = line.count('**')
+        if final_count % 2 != 0 and final_count > 0:
+            # Still unbalanced - check if it's an unclosed bold at end
+            if re.search(r'\*\*[^*]+$', line) and not re.search(r'[^*]\*\*$', line):
+                # Has opening ** but no closing - add it
+                line = line + '**'
+            elif re.search(r'^\s*\*\*\s*$', line):
+                # Just ** alone - remove it
+                line = ''
+        
+        # 14. Clean multiple spaces
+        line = re.sub(r' {2,}', ' ', line)
+        
+        cleaned_lines.append(line)
     
-    # 3. Fix trailing **. → .
-    text = re.sub(r'\*\*\.$', '.', text, flags=re.MULTILINE)
-    text = re.sub(r'\*\*\.\*\*', '.', text)
-    
-    # 4. Fix **, ** pattern (comma between bold markers)
-    text = re.sub(r'\*\*,\s*\*\*', ', ', text)
-    
-    # 5. Fix ** ** pattern (space between markers)
-    text = re.sub(r'\*\*\s+\*\*', ' ', text)
-    
-    # 6. Fix Hebrew prefix letters before bold: ה**text** → **הtext**
-    # Common prefixes: ה, ב, ל, מ, כ, ו, ש
-    text = re.sub(r'([הבלמכוש])\*\*([^*]+)\*\*', r'**\1\2**', text)
-    
-    # 7. Fix bold fragments: **text** **more** → **text more** (when no punctuation between)
-    # This handles patterns like לפרק **נכון**, **לקרוא נכון** → should be cleaned
-    text = re.sub(r'\*\*([^*]+)\*\*\s+\*\*([^*]+)\*\*', r'**\1 \2**', text)
-    
-    # 8. Fix orphaned asterisks at line start/end (lonely ** on their own line)
-    text = re.sub(r'^\s*\*\*\s*$', '', text, flags=re.MULTILINE)
-    
-    # 9. Fix label patterns: text**:** → **text:**
-    text = re.sub(r'^(\s*)([^\s*][^*\n]{2,})\*\*:', r'\1**\2:', text, flags=re.MULTILINE)
-    
-    # 10. Fix fragmented bold with quotes: "**text**" → "text"
-    text = re.sub(r'"\*\*([^*"]+)\*\*"', r'"\1"', text)
-    text = re.sub(r'"\*\*([^*"]+)\*\*', r'"\1', text)
-    text = re.sub(r'\*\*([^*"]+)\*\*"', r'\1"', text)
-    
-    # 11. Clean multiple spaces
-    text = re.sub(r' {2,}', ' ', text)
-    
-    return text
+    return '\n'.join(cleaned_lines)
 
 
 def parse(ingested: dict) -> list[dict]:
