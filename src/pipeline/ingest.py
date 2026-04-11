@@ -260,7 +260,8 @@ def _get_paragraph_numbering(para, counters: dict, formats: dict) -> str:
         lvl_text = fmt_info['lvlText']
         
         if num_fmt == 'bullet':
-            return "-"  # Convert bullets to markdown list marker
+            # Return the actual bullet character from lvlText
+            return _get_bullet_char(lvl_text)
         elif num_fmt == 'decimal':
             formatted = str(current_num)
         elif num_fmt == 'lowerLetter':
@@ -285,6 +286,87 @@ def _get_paragraph_numbering(para, counters: dict, formats: dict) -> str:
     
     except Exception:
         return ""
+
+
+def _get_bullet_char(lvl_text: str) -> str:
+    """
+    Extract and normalize bullet character from Word's lvlText.
+    Word uses special font characters that need to be mapped to Unicode.
+    
+    Common Word bullet characters:
+    - Symbol font: char 183 (·), 167 (§), 216 (Ø)
+    - Wingdings: various special characters
+    - Unicode: •, ○, ■, □, ◆, ◇, ►, ➢, ➤, ✓, ✗
+    """
+    if not lvl_text:
+        return "•"  # Default bullet
+    
+    # Map Word's special bullet characters to Unicode
+    bullet_map = {
+        # Symbol font bullets
+        '\uf0b7': '•',  # Bullet (Symbol font)
+        '\uf0a7': '§',  # Section (Symbol font)
+        '\uf076': '◆',  # Diamond (Wingdings)
+        '\uf0d8': '►',  # Triangle (Wingdings)
+        '\uf0fc': '✓',  # Checkmark (Wingdings)
+        '\uf06f': '○',  # Circle (Wingdings)
+        '\uf06e': '■',  # Square (Wingdings)
+        '\uf0a8': '➢',  # Arrow (Wingdings)
+        # Common Unicode bullets
+        '•': '•',
+        '○': '○',
+        '●': '●',
+        '■': '■',
+        '□': '□',
+        '◆': '◆',
+        '◇': '◇',
+        '►': '►',
+        '▶': '▶',
+        '➢': '➢',
+        '➤': '➤',
+        '→': '→',
+        '✓': '✓',
+        '✗': '✗',
+        '★': '★',
+        '☆': '☆',
+        '-': '-',
+        '–': '–',  # En dash
+        '—': '—',  # Em dash
+    }
+    
+    # Check if lvlText is in our map
+    if lvl_text in bullet_map:
+        return bullet_map[lvl_text]
+    
+    # Check each character (lvlText might have multiple chars)
+    for char in lvl_text:
+        if char in bullet_map:
+            return bullet_map[char]
+        # Check for private use area (Word symbol fonts)
+        if '\uf000' <= char <= '\uf0ff':
+            # Try to map common Wingdings/Symbol chars
+            code = ord(char)
+            if code == 0xf0b7:  # Bullet
+                return '•'
+            elif code == 0xf06f:  # Circle
+                return '○'
+            elif code == 0xf06e:  # Square
+                return '■'
+            elif code == 0xf076:  # Diamond
+                return '◆'
+            elif code == 0xf0d8:  # Triangle
+                return '►'
+            elif code == 0xf0fc:  # Checkmark
+                return '✓'
+            else:
+                return '•'  # Default for unknown symbol font chars
+    
+    # If it contains actual printable bullet-like character, use it
+    if len(lvl_text) == 1 and ord(lvl_text) > 127:
+        return lvl_text
+    
+    # Default to standard bullet
+    return '•'
 
 
 def _to_roman(num: int) -> str:

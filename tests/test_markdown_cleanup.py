@@ -9,7 +9,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from pipeline.ingest import _clean_markdown_asterisks, _to_roman, _to_hebrew_letter
+from pipeline.ingest import _clean_markdown_asterisks, _to_roman, _to_hebrew_letter, _get_bullet_char
 from pipeline.parse import _clean_markdown_final, _clean_heading
 
 
@@ -163,6 +163,44 @@ class TestNumberingHelpers:
     
     def test_hebrew_letter_100(self):
         assert _to_hebrew_letter(100) == "ק"
+
+
+class TestBulletCharExtraction:
+    """Tests for bullet character extraction in ingest.py."""
+    
+    def test_standard_bullet(self):
+        assert _get_bullet_char('•') == '•'
+    
+    def test_empty_returns_default(self):
+        assert _get_bullet_char('') == '•'
+    
+    def test_dash_preserved(self):
+        assert _get_bullet_char('-') == '-'
+    
+    def test_circle_bullet(self):
+        assert _get_bullet_char('○') == '○'
+    
+    def test_square_bullet(self):
+        assert _get_bullet_char('■') == '■'
+    
+    def test_diamond_bullet(self):
+        assert _get_bullet_char('◆') == '◆'
+    
+    def test_arrow_bullet(self):
+        assert _get_bullet_char('➢') == '➢'
+    
+    def test_checkmark_bullet(self):
+        assert _get_bullet_char('✓') == '✓'
+    
+    def test_word_symbol_font_bullet(self):
+        # Word's Symbol font bullet (private use area)
+        assert _get_bullet_char('\uf0b7') == '•'
+    
+    def test_word_wingdings_circle(self):
+        assert _get_bullet_char('\uf06f') == '○'
+    
+    def test_word_wingdings_square(self):
+        assert _get_bullet_char('\uf06e') == '■'
 
 
 # Run tests with pytest
