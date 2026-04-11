@@ -114,11 +114,17 @@ def _format_runs(para, hyperlinks: dict = None) -> str:
     return result if result else para.text.strip()
 
 
+# Default font size threshold (in half-points, Word standard is 24 = 12pt)
+DEFAULT_FONT_SIZE = 24  # 12pt
+LARGE_FONT_THRESHOLD = 32  # 16pt - larger text
+SMALL_FONT_THRESHOLD = 18  # 9pt - smaller text
+
+
 def _get_run_format(run) -> str:
     """
     Determine the formatting type of a run.
     Returns a format string: plain, bold, italic, bold_italic, code, 
-    underline, superscript, subscript, or combinations.
+    underline, superscript, subscript, large, small, or combinations.
     """
     formats = []
     
@@ -134,6 +140,24 @@ def _get_run_format(run) -> str:
     is_bold = bool(run.bold)
     is_italic = bool(run.italic)
     is_underline = bool(run.underline)
+    
+    # Check font size
+    font_size = None
+    try:
+        if run.font.size:  # Size in EMUs, need to convert
+            font_size = run.font.size.pt * 2  # Convert to half-points
+        else:
+            # Try to get from XML directly
+            rPr = run._element.find(f'{W_NS}rPr')
+            if rPr is not None:
+                sz = rPr.find(f'{W_NS}sz')
+                if sz is not None:
+                    font_size = int(sz.get(f'{W_NS}val', DEFAULT_FONT_SIZE))
+    except:
+        pass
+    
+    is_large = font_size and font_size >= LARGE_FONT_THRESHOLD
+    is_small = font_size and font_size <= SMALL_FONT_THRESHOLD
     
     # Check superscript/subscript via XML
     is_superscript = False
@@ -157,21 +181,33 @@ def _get_run_format(run) -> str:
     if is_subscript:
         return "subscript"
     if is_bold and is_italic:
+        if is_large:
+            return "bold_italic_large"
         return "bold_italic"
     if is_bold:
+        if is_large:
+            return "bold_large"
         return "bold"
     if is_italic:
         return "italic"
     if is_underline:
         return "underline"
+    if is_large:
+        return "large"
+    if is_small:
+        return "small"
     
     return "plain"
 
 
 def _apply_format(fmt: str, text: str) -> str:
     """Apply markdown formatting to text based on format type."""
-    if fmt == "bold_italic":
+    if fmt == "bold_italic_large":
+        return f"<big>***{text}***</big>"
+    elif fmt == "bold_italic":
         return f"***{text}***"
+    elif fmt == "bold_large":
+        return f"<big>**{text}**</big>"
     elif fmt == "bold":
         return f"**{text}**"
     elif fmt == "italic":
@@ -187,6 +223,10 @@ def _apply_format(fmt: str, text: str) -> str:
         return f"<sup>{text}</sup>"
     elif fmt == "subscript":
         return f"<sub>{text}</sub>"
+    elif fmt == "large":
+        return f"<big>{text}</big>"
+    elif fmt == "small":
+        return f"<small>{text}</small>"
     else:
         return text
 
