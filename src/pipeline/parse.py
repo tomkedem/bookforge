@@ -126,6 +126,18 @@ def parse(ingested: dict) -> list[dict]:
         text = para["text"]
         # Use original document index for image mapping (aligned with extract_images)
         doc_idx = para.get("doc_para_index", idx)
+        
+        # Handle spacing paragraphs (empty lines for visual separation)
+        if style == "Spacing":
+            if current:
+                blank_count = para.get("blank_lines", 1)
+                for _ in range(blank_count):
+                    current["content"].append({
+                        "text": "",
+                        "style": "Spacing",
+                        "para_index": doc_idx
+                    })
+            continue
 
         if "Heading 1" in style:
             if current:
@@ -407,7 +419,12 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             lines.append("")
             img_cursor += 1
 
-        if "Heading 2" in style:
+        if style == "Spacing":
+            # Spacing paragraph - represents blank line from Word
+            # Don't add extra blank line since this IS the blank line
+            lines.append("")
+            continue
+        elif "Heading 2" in style:
             lines.append(f"## {text}")
         elif "Heading 3" in style:
             lines.append(f"### {text}")

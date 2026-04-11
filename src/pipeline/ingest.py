@@ -31,6 +31,7 @@ def _format_runs(para) -> str:
     """
     Convert paragraph runs to Markdown-formatted text.
     Preserves bold (**text**), italic (*text*), and bold+italic (***text***).
+    Preserves soft line breaks (Shift+Enter) as newlines.
     Consecutive runs with the same formatting are merged before wrapping.
     """
     if not para.runs:
@@ -40,7 +41,22 @@ def _format_runs(para) -> str:
     groups = []  # [(formatting_type, text), ...]
     
     for run in para.runs:
-        text = run.text
+        # Check for line breaks within the run (soft returns / Shift+Enter)
+        # In Word XML these are <w:br/> elements
+        run_xml = run._element
+        text_parts = []
+        
+        for child in run_xml:
+            tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+            if tag == 't':  # Text element
+                text_parts.append(child.text or '')
+            elif tag == 'br':  # Line break element
+                text_parts.append('\n')
+            elif tag == 'tab':  # Tab element
+                text_parts.append('\t')
+        
+        text = ''.join(text_parts) if text_parts else run.text or ''
+        
         if not text:
             continue
         
@@ -121,6 +137,49 @@ def _clean_markdown_asterisks(text: str) -> str:
     return text.strip()
 
 
+def _get_paragraph_spacing(para) -> bool:
+    """
+    Check if paragraph has significant spacing before it.
+    Returns True if there's explicit space-before in Word paragraph properties.
+    
+    Word stores spacing in twips (1/20 of a point, 1440 twips = 1 inch).
+    We consider spacing > 240 twips (12pt, roughly one line) as significant.
+    """
+    try:
+        p_pr = para._element.find(f'{W_NS}pPr')
+        if p_pr is None:
+            return False
+        
+        spacing = p_pr.find(f'{W_NS}spacing')
+        if spacing is None:
+            return False
+        
+        # Check space before (w:before attribute)
+        before = spacing.get(f'{W_NS}before')
+        if before:
+            try:
+                # 240 twips = 12pt = roughly one line height
+                if int(before) > 240:
+                    return True
+            except ValueError:
+                pass
+        
+        # Check line spacing (w:line with w:lineRule="exact" or "atLeast")
+        line = spacing.get(f'{W_NS}line')
+        line_rule = spacing.get(f'{W_NS}lineRule')
+        if line and line_rule in ('exact', 'atLeast'):
+            try:
+                # Large line spacing indicates intentional spacing
+                if int(line) > 480:  # > 24pt
+                    return True
+            except ValueError:
+                pass
+        
+        return False
+    except Exception:
+        return False
+
+
 def _ingest_docx(path: Path) -> dict:
     doc = Document(path)
     paragraphs = []
@@ -129,22 +188,48 @@ def _ingest_docx(path: Path) -> dict:
     numbering_counters = {}
     # Cache numbering definitions from document
     numbering_formats = _extract_numbering_formats(doc)
+    
+    # Track consecutive empty paragraphs
+    empty_count = 0
 
     for doc_idx, para in enumerate(doc.paragraphs):
-        if para.text.strip():
-            # Check if paragraph has numbering
-            num_prefix = _get_paragraph_numbering(para, numbering_counters, numbering_formats)
-            text = _format_runs(para)
-            
-            # Prepend numbering if present
-            if num_prefix:
-                text = f"{num_prefix} {text}"
-            
-            paragraphs.append({
-                "text": text,
-                "style": para.style.name,
-                "doc_para_index": doc_idx
-            })
+        text_content = para.text.strip()
+        
+        if not text_content:
+            # Empty paragraph - track for spacing
+            empty_count += 1
+            continue
+        
+        # Get paragraph spacing from Word properties
+        spacing_before = _get_paragraph_spacing(para)
+        
+        # Add blank lines for spacing (empty paragraphs or explicit spacing)
+        if empty_count > 0 or spacing_before:
+            # Use the greater of: empty paragraph count or spacing indicator
+            blank_lines = max(empty_count, 1 if spacing_before else 0)
+            if blank_lines > 0 and paragraphs:  # Don't add before first paragraph
+                paragraphs.append({
+                    "text": "",
+                    "style": "Spacing",
+                    "doc_para_index": doc_idx,
+                    "blank_lines": blank_lines
+                })
+        
+        empty_count = 0  # Reset counter
+        
+        # Check if paragraph has numbering
+        num_prefix = _get_paragraph_numbering(para, numbering_counters, numbering_formats)
+        text = _format_runs(para)
+        
+        # Prepend numbering if present
+        if num_prefix:
+            text = f"{num_prefix} {text}"
+        
+        paragraphs.append({
+            "text": text,
+            "style": para.style.name,
+            "doc_para_index": doc_idx
+        })
 
     return {
         "file": path.name,
