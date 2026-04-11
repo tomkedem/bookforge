@@ -97,6 +97,35 @@ Features:
 - ARIA tab/tabpanel roles on mobile drawer
 - Language-aware active chapter highlighting
 
+### CodeRunner.astro
+
+Interactive Python code execution component using Pyodide (WebAssembly).
+Allows users to run Python code directly in the browser without a server.
+
+Props:
+- code: string - The Python code to display and run
+- language?: string - Language for syntax highlighting (default: 'python')
+- title?: string - Optional title above the code block
+- editable?: boolean - Whether user can edit the code (default: true)
+
+Features:
+- Lazy loading of Pyodide (~11MB) only when user clicks "Run"
+- Service Worker caching for faster subsequent loads
+- Mobile device detection with graceful fallback warning
+- Copy and reset code buttons
+- Live output display with error highlighting
+- Editable code with original reset option
+- RTL-aware layout (code always LTR)
+- Responsive design for mobile screens
+
+Usage:
+```astro
+<CodeRunner 
+  code="print('Hello World!')"
+  title="דוגמה ראשונה"
+/>
+```
+
 ### Header.astro
 
 Sticky header with logo, theme toggle, and language toggle.

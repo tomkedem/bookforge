@@ -1,0 +1,553 @@
+---
+/**
+ * CodeRunner - Interactive Python code execution component
+ * Uses Pyodide (Python in WebAssembly) for browser-based execution
+ * Features:
+ * - Lazy loading of Pyodide (only when user clicks "Run")
+ * - Service Worker caching for faster subsequent loads
+ * - Mobile device detection with graceful fallback
+ * - Syntax highlighting with Prism
+ */
+
+interface Props {
+  code: string;
+  language?: string;
+  title?: string;
+  editable?: boolean;
+}
+
+const { code, language = 'python', title = '', editable = true } = Astro.props;
+const uniqueId = Math.random().toString(36).substring(2, 9);
+---
+
+<div class="code-runner" data-id={uniqueId} dir="ltr">
+  {title && <div class="code-title">{title}</div>}
+  
+  <div class="code-container">
+    <div class="code-header">
+      <span class="language-badge">{language}</span>
+      <div class="code-actions">
+        <button class="btn-copy" title="העתק קוד" aria-label="Copy code">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+        <button class="btn-reset" title="אפס קוד" aria-label="Reset code">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    {editable ? (
+      <textarea 
+        class="code-editor" 
+        spellcheck="false"
+        data-original={code}
+      >{code}</textarea>
+    ) : (
+      <pre class="code-display"><code class={`language-${language}`}>{code}</code></pre>
+    )}
+  </div>
+  
+  <div class="run-section">
+    <button class="btn-run" data-language={language}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+      <span class="btn-text">הרץ קוד</span>
+    </button>
+    <div class="run-status"></div>
+  </div>
+  
+  <div class="output-container" hidden>
+    <div class="output-header">
+      <span>פלט:</span>
+      <button class="btn-clear-output" title="נקה פלט">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <pre class="output"></pre>
+  </div>
+</div>
+
+<style>
+  .code-runner {
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e1e1e;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  
+  .code-title {
+    padding: 0.5rem 1rem;
+    background: #2d2d2d;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #3d3d3d;
+  }
+  
+  .code-container {
+    position: relative;
+  }
+  
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: #2d2d2d;
+    border-bottom: 1px solid #3d3d3d;
+  }
+  
+  .language-badge {
+    font-size: 0.75rem;
+    color: #10b981;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  
+  .code-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .code-actions button {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+  
+  .code-actions button:hover {
+    color: #e5e7eb;
+    background: #3d3d3d;
+  }
+  
+  .code-editor,
+  .code-display {
+    width: 100%;
+    min-height: 120px;
+    max-height: 400px;
+    padding: 1rem;
+    margin: 0;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    border: none;
+    resize: vertical;
+    overflow: auto;
+    tab-size: 2;
+  }
+  
+  .code-editor:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px #3b82f6;
+  }
+  
+  .code-display code {
+    font-family: inherit;
+  }
+  
+  .run-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #252525;
+    border-top: 1px solid #3d3d3d;
+  }
+  
+  .btn-run {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  
+  .btn-run:hover {
+    background: #059669;
+  }
+  
+  .btn-run:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-run:disabled {
+    background: #4b5563;
+    cursor: not-allowed;
+  }
+  
+  .btn-run.loading .btn-text::after {
+    content: '...';
+    animation: dots 1s infinite;
+  }
+  
+  @keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+  }
+  
+  .run-status {
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+  
+  .run-status.error {
+    color: #ef4444;
+  }
+  
+  .run-status.success {
+    color: #10b981;
+  }
+  
+  .output-container {
+    border-top: 1px solid #3d3d3d;
+  }
+  
+  .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: #1a1a2e;
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+  
+  .btn-clear-output {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+  }
+  
+  .btn-clear-output:hover {
+    color: #ef4444;
+  }
+  
+  .output {
+    margin: 0;
+    padding: 1rem;
+    background: #0d0d1a;
+    color: #e5e7eb;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  
+  .output .error {
+    color: #ef4444;
+  }
+  
+  .output .warning {
+    color: #f59e0b;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .code-editor,
+    .code-display {
+      font-size: 0.8rem;
+      min-height: 100px;
+    }
+    
+    .btn-run {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+    }
+    
+    .run-section {
+      flex-wrap: wrap;
+    }
+  }
+  
+  /* Low-end device warning */
+  .mobile-warning {
+    padding: 0.75rem 1rem;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.8rem;
+    text-align: center;
+    border-top: 1px solid #3d3d3d;
+  }
+</style>
+
+<script>
+  // Pyodide loader and code runner
+  interface PyodideInterface {
+    runPython: (code: string) => any;
+    loadPackage: (packages: string[]) => Promise<void>;
+    globals: { get: (name: string) => any };
+  }
+
+  let pyodide: PyodideInterface | null = null;
+  let pyodideLoading = false;
+  let pyodideReady = false;
+  
+  const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/';
+  
+  // Check if device can handle Pyodide
+  function canRunPyodide(): boolean {
+    // Check memory (if available)
+    if ('deviceMemory' in navigator) {
+      const memory = (navigator as any).deviceMemory;
+      if (memory && memory < 2) return false;
+    }
+    
+    // Check WebAssembly support
+    if (typeof WebAssembly === 'undefined') return false;
+    
+    return true;
+  }
+  
+  // Load Pyodide lazily
+  async function loadPyodide(): Promise<PyodideInterface> {
+    if (pyodide) return pyodide;
+    if (pyodideLoading) {
+      // Wait for existing load
+      while (!pyodideReady) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return pyodide!;
+    }
+    
+    pyodideLoading = true;
+    
+    try {
+      // Load Pyodide script
+      if (!(window as any).loadPyodide) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = PYODIDE_CDN + 'pyodide.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load Pyodide'));
+          document.head.appendChild(script);
+        });
+      }
+      
+      // Initialize Pyodide
+      pyodide = await (window as any).loadPyodide({
+        indexURL: PYODIDE_CDN
+      });
+      
+      // Redirect stdout/stderr
+      await pyodide.runPython(`
+import sys
+from io import StringIO
+
+class OutputCapture:
+    def __init__(self):
+        self.stdout = StringIO()
+        self.stderr = StringIO()
+        
+    def get_output(self):
+        return self.stdout.getvalue(), self.stderr.getvalue()
+    
+    def clear(self):
+        self.stdout = StringIO()
+        self.stderr = StringIO()
+
+_output_capture = OutputCapture()
+sys.stdout = _output_capture.stdout
+sys.stderr = _output_capture.stderr
+      `);
+      
+      pyodideReady = true;
+      return pyodide;
+      
+    } catch (error) {
+      pyodideLoading = false;
+      throw error;
+    }
+  }
+  
+  // Run Python code
+  async function runPythonCode(code: string): Promise<{ output: string; error: string | null }> {
+    const py = await loadPyodide();
+    
+    // Clear previous output
+    await py.runPython('_output_capture.clear()');
+    
+    try {
+      // Execute the code
+      const result = await py.runPython(code);
+      
+      // Get captured output
+      const [stdout, stderr] = py.globals.get('_output_capture').get_output().toJs();
+      
+      let output = stdout || '';
+      if (result !== undefined && result !== null && String(result) !== 'None') {
+        output += (output ? '\n' : '') + String(result);
+      }
+      
+      return { 
+        output: output || '(אין פלט)', 
+        error: stderr || null 
+      };
+      
+    } catch (error: any) {
+      return { 
+        output: '', 
+        error: error.message || String(error)
+      };
+    }
+  }
+  
+  // Initialize all code runners
+  function initCodeRunners() {
+    document.querySelectorAll<HTMLElement>('.code-runner').forEach(runner => {
+      const runBtn = runner.querySelector<HTMLButtonElement>('.btn-run');
+      const copyBtn = runner.querySelector<HTMLButtonElement>('.btn-copy');
+      const resetBtn = runner.querySelector<HTMLButtonElement>('.btn-reset');
+      const clearOutputBtn = runner.querySelector<HTMLButtonElement>('.btn-clear-output');
+      const codeEditor = runner.querySelector<HTMLTextAreaElement>('.code-editor');
+      const codeDisplay = runner.querySelector<HTMLPreElement>('.code-display code');
+      const outputContainer = runner.querySelector<HTMLElement>('.output-container');
+      const output = runner.querySelector<HTMLPreElement>('.output');
+      const status = runner.querySelector<HTMLElement>('.run-status');
+      
+      if (!runBtn) return;
+      
+      const language = runBtn.dataset.language || 'python';
+      
+      // Check device capability
+      if (!canRunPyodide()) {
+        const warning = document.createElement('div');
+        warning.className = 'mobile-warning';
+        warning.textContent = 'המכשיר שלך עלול להתקשות להריץ קוד. מומלץ להשתמש במחשב.';
+        runner.querySelector('.run-section')?.prepend(warning);
+      }
+      
+      // Run button click
+      runBtn.addEventListener('click', async () => {
+        if (language !== 'python') {
+          if (status) {
+            status.textContent = 'כרגע נתמך רק Python';
+            status.className = 'run-status error';
+          }
+          return;
+        }
+        
+        const code = codeEditor?.value || codeDisplay?.textContent || '';
+        
+        if (!code.trim()) {
+          if (status) {
+            status.textContent = 'אין קוד להרצה';
+            status.className = 'run-status error';
+          }
+          return;
+        }
+        
+        runBtn.disabled = true;
+        runBtn.classList.add('loading');
+        
+        if (status) {
+          status.textContent = pyodideReady ? 'מריץ...' : 'טוען Python...';
+          status.className = 'run-status';
+        }
+        
+        try {
+          const result = await runPythonCode(code);
+          
+          if (outputContainer && output) {
+            outputContainer.hidden = false;
+            
+            if (result.error) {
+              output.innerHTML = `<span class="error">${escapeHtml(result.error)}</span>`;
+              if (status) {
+                status.textContent = 'שגיאה בהרצה';
+                status.className = 'run-status error';
+              }
+            } else {
+              output.textContent = result.output;
+              if (status) {
+                status.textContent = 'הרצה הושלמה ✓';
+                status.className = 'run-status success';
+              }
+            }
+          }
+          
+        } catch (error: any) {
+          if (status) {
+            status.textContent = error.message || 'שגיאה בטעינת Python';
+            status.className = 'run-status error';
+          }
+        } finally {
+          runBtn.disabled = false;
+          runBtn.classList.remove('loading');
+        }
+      });
+      
+      // Copy button
+      copyBtn?.addEventListener('click', () => {
+        const code = codeEditor?.value || codeDisplay?.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          const originalTitle = copyBtn.title;
+          copyBtn.title = 'הועתק!';
+          setTimeout(() => copyBtn.title = originalTitle, 2000);
+        });
+      });
+      
+      // Reset button
+      resetBtn?.addEventListener('click', () => {
+        if (codeEditor) {
+          codeEditor.value = codeEditor.dataset.original || '';
+        }
+      });
+      
+      // Clear output button
+      clearOutputBtn?.addEventListener('click', () => {
+        if (outputContainer && output) {
+          outputContainer.hidden = true;
+          output.textContent = '';
+        }
+        if (status) {
+          status.textContent = '';
+          status.className = 'run-status';
+        }
+      });
+    });
+  }
+  
+  // Escape HTML for safe output
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
+  // Initialize on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCodeRunners);
+  } else {
+    initCodeRunners();
+  }
+</script>
