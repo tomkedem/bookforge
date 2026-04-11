@@ -193,6 +193,7 @@ function showShortcutsPanel(): void {
     { key: 'H',       desc_he: 'פאנל הדגשות',              desc_en: 'Highlights panel' },
     { key: 'B',       desc_he: 'סימניות',                  desc_en: 'Bookmarks' },
     { key: 'S',       desc_he: 'סטטיסטיקות קריאה',         desc_en: 'Reading stats' },
+    { key: 'R',       desc_he: 'חזרה על הדגשות',           desc_en: 'Highlight replay' },
     { key: '?',       desc_he: 'קיצורי מקלדת',             desc_en: 'Keyboard shortcuts' },
     { key: 'Esc',     desc_he: 'סגור / יציאה ממצב',        desc_en: 'Close / exit mode' },
   ];

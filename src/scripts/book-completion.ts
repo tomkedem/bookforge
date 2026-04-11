@@ -437,6 +437,7 @@ function show(): void {
       </div>
 
       <div class="bc-actions">
+        <button id="bc-replay-btn" class="bc-btn" style="background:var(--yuval-bg-secondary,#f3f4f6);color:var(--yuval-text-secondary,#555);border:1px solid var(--yuval-border,#e5e7eb)">🔁 ${getLang() === 'he' ? 'חזרה על הדגשות' : getLang() === 'es' ? 'Repasar resaltados' : 'Replay highlights'}</button>
         <button id="bc-share-btn" class="bc-btn">${labels.share}</button>
         <a id="bc-library-btn" class="bc-btn" href="/">${labels.library}</a>
       </div>
@@ -461,6 +462,15 @@ function show(): void {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.addEventListener('keydown', function onKey(e) {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+  });
+
+  // Replay highlights
+  document.getElementById('bc-replay-btn')?.addEventListener('click', () => {
+    close();
+    setTimeout(() => {
+      const replayFn = (window as any).yuvalOpenHighlightReplay as (() => void) | undefined;
+      replayFn?.();
+    }, 350);
   });
 
   // Share

@@ -12,6 +12,9 @@ import { initBookmarks } from './bookmarks';
 import { initSwipeNav } from './swipe-nav';
 import { initReadingGoals } from './reading-goals';
 import { initBookCompletion } from './book-completion';
+import { initFocusParagraph } from './focus-paragraph';
+import { initAmbientColor } from './ambient-color';
+import { initHighlightReplay } from './highlight-replay';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -34,6 +37,9 @@ function initializeReadingPage() {
   initSwipeNav(controller.signal);
   initReadingGoals(controller.signal);
   initBookCompletion();
+  initFocusParagraph();
+  initAmbientColor();
+  initHighlightReplay();
 
   const cleanup = () => {
     progressCleanup();
