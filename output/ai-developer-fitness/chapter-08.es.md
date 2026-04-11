@@ -1,4 +1,4 @@
-# **Capítulo 7: IA como Socio Profesional, No como Reemplazo del Juicio Profesional**
+# Capítulo 7: IA como Socio Profesional, No como Reemplazo del Juicio Profesional
 
 Hasta ahora aprendimos a proteger el sistema: identificar código ingenuo, criticar soluciones que parecen demasiado buenas, formular prompts cuidadosos y tomar decisiones sin entregar el veredicto a la máquina. Ahora llega la etapa más importante: tu rutina diaria de trabajo.
 
@@ -10,7 +10,7 @@ El propósito de este capítulo es definir un patrón de trabajo maduro con IA. 
 
 Cuando el Agent escribe rápido, la capacidad del ingeniero se mide no solo en lo que produce con su ayuda, sino también en lo que elige mantener bajo control humano.
 
-## **Cuándo Es Correcto (y Necesario) Usar IA**
+## Cuándo Es Correcto (y Necesario) Usar IA
 
 Para trabajar correctamente con un Agent, no basta con saber de qué cuidarse. También necesitas saber dónde es correcto usarlo sin dudarlo. Hay áreas en desarrollo donde escribir manualmente desde cero no es profesionalismo, sino desperdicio de tiempo valioso.
 
@@ -48,7 +48,7 @@ Usa IA para ahorrar escritura, repetitividad y mapeo inicial.
 
 No la uses para eludir entendimiento, toma de decisiones o responsabilidad.
 
-## **Cuándo No Es Correcto Dejar que el Agent Lidere**
+## Cuándo No Es Correcto Dejar que el Agent Lidere
 
 Así como hay tareas donde trabajar sin Agent es desperdicio de tiempo, también hay áreas donde entregar el liderazgo a la máquina es un error profesional. Estos no son los lugares donde solo se requiere escritura, sino los lugares donde se requieren entendimiento, discernimiento y juicio.
 

@@ -1,4 +1,4 @@
-# **Capítulo 5: Ingeniería de Diálogo Defensivo - Deteniendo el Fallo en la Etapa del Prompt**
+# Capítulo 5: Ingeniería de Diálogo Defensivo - Deteniendo el Fallo en la Etapa del Prompt
 
 En los capítulos anteriores, aprendimos a identificar decisiones débiles, ejecutar flujos en nuestra cabeza, y criticar código que se ve demasiado convincente. Pero si toda nuestra defensa comienza solo después de que el Agente ya ha escrito el código, estamos respondiendo demasiado tarde.
 
@@ -10,7 +10,7 @@ Este es el corazón de la ingeniería de diálogo defensivo: la capacidad de for
 
 Cuando un Agente produce código rápido, la capacidad de ingeniería del programador se mide no solo por lo que identifica en retrospectiva, sino también por lo que sabe prevenir de antemano.
 
-## **Por Qué Ya No Puedes Trabajar con un Prompt Vacío**
+## Por Qué Ya No Puedes Trabajar con un Prompt Vacío
 
 Uno de los errores más comunes al trabajar con Agentes es formular una solicitud que define solo el resultado deseado, pero no las condiciones del sistema en las que se supone que el código debe operar. Tal solicitud puede llamarse un prompt vacío: un prompt que solicita funcionalidad, pero no proporciona contexto, restricciones o límites.
 
@@ -27,7 +27,7 @@ Por lo tanto, un prompt vacío no es solo un prompt corto. Es un prompt que tran
 
 La transición profesional más importante al trabajar con Agentes es la transición de un prompt que solicita un resultado, a un prompt que define condiciones. No solo qué construir, sino también en qué entorno, bajo qué restricciones, y de qué maneras no se permite resolver el problema.
 
-## **Inyectando Contexto de Infraestructura**
+## Inyectando Contexto de Infraestructura
 
 Antes de presentar al Agente el problema de negocio o lógico, necesitas definirle la realidad en la que el código va a operar. No es suficiente solicitar funcionalidad. También debes proporcionar condiciones del entorno: si es un sistema distribuido, si el servicio corre en varias instancias paralelas, dónde se almacena el Estado, y qué componentes centrales dictan las reglas del juego.
 
@@ -39,7 +39,7 @@ Por defecto, un modelo de lenguaje tiende a asumir un entorno demasiado simple: 
 
 Por lo tanto, inyectar contexto de infraestructura no es una bonita adición al prompt. Es una parte esencial del requisito. De hecho, es un párrafo de apertura fijo que define para el Agente las reglas de física del entorno de producción.
 
-## **Forzando Escenarios de Fallo**
+## Forzando Escenarios de Fallo
 
 Los Agentes tienden hacia un optimismo peligroso. Por defecto, escriben código adecuado para el camino feliz: un estado donde la red está disponible, la base de datos responde inmediatamente, y los servicios externos operan sin fallo. En un sistema real, esta es una suposición peligrosa.
 
@@ -55,7 +55,7 @@ Implementa un timeout duro de 3 segundos para la solicitud.
 Agrega hasta 3 reintentos con retraso creciente entre intentos.
 Si la operación falla después de todos los intentos, debe realizarse una operación de compensación para prevenir inconsistencia de datos.
 
-## **Estableciendo Muros y Límites**
+## Estableciendo Muros y Límites
 
 Los Agentes tienden a elegir el camino más corto al resultado. Desde su perspectiva, si puedes acceder a datos directamente, saltarte una capa de servicio, o dividir una operación compleja en varias operaciones de escritura separadas, esa es una elección razonable. Localmente, a veces incluso parece elegante. Sistémicamente, esta puede ser exactamente la manera en que la arquitectura comienza a agrietarse.
 
@@ -68,7 +68,7 @@ Para obtener datos de estudiantes, solo debe usarse la API interna del servicio 
 **Restricciones de Datos:**
 La operación requiere actualizar varios registros juntos. Está prohibido realizar estas actualizaciones como unidades separadas. Todas las operaciones de escritura deben envolverse en una sola Transaction. Si una operación falla, debe realizarse un Rollback completo.
 
-## **La Plantilla del Prompt Ingenieril: La Caja de Herramientas del Desarrollador**
+## La Plantilla del Prompt Ingenieril: La Caja de Herramientas del Desarrollador
 
 Una buena plantilla para un prompt de ingeniería se construye de cuatro partes:
 

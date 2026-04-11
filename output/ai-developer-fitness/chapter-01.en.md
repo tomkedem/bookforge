@@ -1,6 +1,4 @@
-# **Introduction**
-
-**The Silent Trap of Automation**
+# Introduction The Silent Trap of Automation
 
 Agents have changed not only the speed of writing but also the programmer's way of working. Tasks that previously required manual decomposition, careful writing, and gradual testing can now turn into complete output within seconds that looks clean, organized, and convincing.
 
@@ -14,6 +12,4 @@ This book is not against artificial intelligence agents. On the contrary. These 
 
 The purpose of this book is not to teach how to extract more code from the model. Its purpose is to help you remain strong programmers facing a fast machine: to decompose correctly, to read correctly, to test correctly, and to exercise professional judgment even when the machine sounds confident in itself.
 
-**To decompose correctly, to read correctly, to test correctly,**
-
-**and to exercise professional judgment even when the machine sounds confident in itself.**
+**To decompose correctly, to read correctly, to test correctly, and to exercise professional judgment even when the machine sounds confident in itself.**

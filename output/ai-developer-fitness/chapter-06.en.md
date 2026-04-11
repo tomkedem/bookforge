@@ -1,4 +1,4 @@
-# **Chapter 5: Defensive Dialogue Engineering - Stopping Failure at the Prompt Stage**
+# Chapter 5: Defensive Dialogue Engineering - Stopping Failure at the Prompt Stage
 
 In the previous chapters, we learned to identify weak decisions, run flows in our heads, and critique code that looks too convincing. But if all our defense starts only after the Agent has already written the code, we're responding too late.
 
@@ -10,7 +10,7 @@ This is the heart of defensive dialogue engineering: the ability to formulate a 
 
 When an Agent produces code fast, the programmer's engineering ability is measured not only by what they identify in hindsight, but also by what they know to prevent in advance.
 
-## **Why You Can No Longer Work with an Empty Prompt**
+## Why You Can No Longer Work with an Empty Prompt
 
 One of the most common mistakes in working with Agents is formulating a request that defines only the desired result, but not the system conditions in which the code is supposed to operate. Such a request can be called an empty prompt: a prompt that requests functionality, but doesn't provide context, constraints, or boundaries.
 
@@ -27,7 +27,7 @@ Therefore, an empty prompt isn't just a short prompt. It's a prompt that transfe
 
 The most important professional transition in working with Agents is the transition from a prompt that requests a result, to a prompt that defines conditions. Not just what to build, but also in what environment, under what constraints, and in what ways it's not allowed to solve the problem.
 
-## **Injecting Infrastructure Context**
+## Injecting Infrastructure Context
 
 Before presenting the Agent with the business or logical problem, you need to define for it the reality in which the code is about to operate. It's not enough to request functionality. You must also provide environment conditions: whether it's a distributed system, whether the service runs in several parallel instances, where State is stored, and what central components dictate the rules of the game.
 
@@ -39,7 +39,7 @@ By default, a language model tends to assume an environment that's too simple: a
 
 Therefore, injecting infrastructure context is not a nice addition to the prompt. It's an essential part of the requirement. In fact, it's a fixed opening paragraph that defines for the Agent the physics rules of the production environment.
 
-## **Forcing Failure Scenarios**
+## Forcing Failure Scenarios
 
 Agents tend toward dangerous optimism. By default, they write code suited to the happy path: a state where the network is available, the database responds immediately, and external services operate without failure. In a real system, this is a dangerous assumption.
 
@@ -57,7 +57,7 @@ If the operation fails after all attempts, a compensation operation must be perf
 
 This phrasing fundamentally changes the nature of the output. It prevents the Agent from settling for the optimistic flow, and forces it to build a solution that takes into account the less comfortable sides of reality.
 
-## **Setting Walls and Boundaries**
+## Setting Walls and Boundaries
 
 Agents tend to choose the shortest path to the result. From their perspective, if you can access data directly, bypass a service layer, or break a complex operation into several separate write operations, that's a reasonable choice. Locally, sometimes it even looks elegant. Systemically, this may be exactly the way the architecture starts to crack.
 
@@ -74,7 +74,7 @@ The operation requires updating several records together. It's forbidden to perf
 
 Once such boundaries are set within the prompt, the dynamic changes. Instead of waiting to see which contract the Agent violated this time, we build in advance a closed path that prevents it from choosing dangerous shortcuts.
 
-## **The Engineered Prompt Template: The Developer's Toolbox**
+## The Engineered Prompt Template: The Developer's Toolbox
 
 Until now we talked about principles: injecting context, forcing failure scenarios, and setting walls and boundaries. Now we need to turn all these into a fixed work tool. Without a clear template, even an experienced developer will find themselves forgetting an important constraint, omitting an infrastructure detail, or asking the Agent for a solution that's too good at the local level and too bad at the system level.
 

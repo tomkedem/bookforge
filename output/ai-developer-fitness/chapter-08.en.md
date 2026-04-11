@@ -1,4 +1,4 @@
-# **Chapter 7: AI as a Professional Partner, Not a Replacement for Professional Judgment**
+# Chapter 7: AI as a Professional Partner, Not a Replacement for Professional Judgment
 
 Up until now, we learned to protect the system: to identify naive code, critique solutions that seem too good, formulate careful prompts, and make decisions without handing over the verdict to the machine. Now comes the most important stage: your daily work routine.
 
@@ -10,7 +10,7 @@ The purpose of this chapter is to define a mature work pattern with AI. We'll ex
 
 When the Agent writes fast, the engineer's capability is measured not only in what they produce with its help, but also in what they choose to keep under human control.
 
-## **When It's Right (and Necessary) to Use AI**
+## When It's Right (and Necessary) to Use AI
 
 To work correctly with an Agent, it's not enough to know what to beware of. You also need to know where it's right to use it without hesitation. There are areas in development where writing manually from scratch isn't professionalism, but a waste of precious time.
 
@@ -48,7 +48,7 @@ Use AI to save typing, repetitiveness, and initial mapping.
 
 Don't use it to bypass understanding, decision-making, or responsibility.
 
-## **When It's Not Right to Let the Agent Lead**
+## When It's Not Right to Let the Agent Lead
 
 Just as there are tasks where working without an Agent is a waste of time, there are also areas where handing over leadership to the machine is a professional mistake. These aren't the places where only writing is required, but the places where understanding, discernment, and judgment are required.
 

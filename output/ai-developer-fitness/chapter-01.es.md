@@ -1,6 +1,4 @@
-# **Introducción**
-
-**La Trampa Silenciosa de la Automatización**
+# Introducción La Trampa Silenciosa de la Automatización
 
 Los Agentes han cambiado no solo la velocidad de escritura, sino también la forma de trabajo del programador. Tareas que antes requerían descomposición manual, escritura cuidadosa y pruebas graduales, ahora pueden convertirse en segundos en una salida completa que parece limpia, ordenada y convincente.
 
@@ -14,6 +12,4 @@ Este libro no está en contra de los agentes de inteligencia artificial. Al cont
 
 El propósito de este libro no es enseñar cómo extraer más código del modelo. Su propósito es ayudarte a seguir siendo un programador fuerte frente a una máquina rápida: descomponer correctamente, leer correctamente, probar correctamente y ejercer juicio profesional incluso cuando la máquina suena segura de sí misma.
 
-**Descomponer correctamente, leer correctamente, probar correctamente,**
-
-**y ejercer juicio profesional incluso cuando la máquina suena segura de sí misma.**
+**Descomponer correctamente, leer correctamente, probar correctamente, y ejercer juicio profesional incluso cuando la máquina suena segura de sí misma.**

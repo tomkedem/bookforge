@@ -1,4 +1,4 @@
-# **Chapter 4: The Elegant Lie of AI Solutions**
+# Chapter 4: The Elegant Lie of AI Solutions
 
 In the previous chapters, we learned to break down requirements, read code as reading decisions, and run flows in our heads to identify breaking points before execution. Now we move to an equally critical daily stage: critiquing code written for us.
 
@@ -8,7 +8,7 @@ This is exactly where the programmer's engineering ability is tested. An Agent c
 
 This is the elegant lie of AI solutions: not code that looks wrong, but code that looks too right. In this chapter, we'll learn to identify this illusion, critique it systematically, and apply a fixed Checklist that brings criticism back from aesthetics to engineering.
 
-## **Why Convincing Solutions Sometimes Are the Most Dangerous**
+## Why Convincing Solutions Sometimes Are the Most Dangerous
 
 Agents were trained on millions of open-source repositories. They excel at producing clean data structures, adding concise comments, and using impressive professional terminology. The real danger lies in the gap between the code's aesthetics and its architectural correctness.
 
@@ -34,7 +34,7 @@ Does the code look correct, or just look professional
 
 The most dangerous code is not the one that crashes immediately. It's the one that passes code review too easily.
 
-## **Agent Over-Generalizations**
+## Agent Over-Generalizations
 
 Agents operate from statistical patterns. They don't start from your system, but from the most probable pattern they've seen before for a problem that sounds similar. This gives them impressive speed, but also creates a deep weakness: a tendency to over-generalize.
 
@@ -82,7 +82,7 @@ Would we choose the same solution if we wrote it ourselves with full knowledge o
 
 The dangerous mistake is not thinking the Agent is always wrong. The dangerous mistake is thinking the most reasonable solution is also the most correct solution.
 
-## **False Confidence and Too-Elegant Explanation**
+## False Confidence and Too-Elegant Explanation
 
 An Agent doesn't just provide implementation. Often it also provides explanation. It describes why it chose a certain path, highlights advantages, uses professional jargon, and creates the impression of a solution that has already undergone deep engineering analysis. This is an especially dangerous moment, because the developer is no longer examining just the code, but is also influenced by the confidence with which it's presented.
 
@@ -128,7 +128,7 @@ Is the explanation convincing because the solution is good, or because it's well
 
 The danger is not just incorrect code. The danger is incorrect code that comes with an explanation that lulls skepticism to sleep.
 
-## **Missing Edge Cases: The Trap of the Happy Path**
+## Missing Edge Cases: The Trap of the Happy Path
 
 Agents tend to write the most direct and clean path to completing the task. They assume valid input will arrive on time, external services will respond normally, and every step in the flow will complete successfully. Therefore, by default, they tend to build code that's well-suited to the happy path, but almost doesn't deal with what happens outside it.
 

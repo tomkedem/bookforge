@@ -1,4 +1,4 @@
-# **Chapter 3: Mental Debugging for a System Where Parts Were Written Automatically**
+# Chapter 3: Mental Debugging for a System Where Parts Were Written Automatically
 
 In the previous chapters, we learned to break down requirements and read code as reading decisions. Now we must ask a more difficult question: what will happen when this code starts running.
 
@@ -8,7 +8,7 @@ Code that looks correct within a file still hasn't proven itself. The real test 
 
 **When an Agent writes fast, the programmer's responsibility is not to type more, but to think better.**
 
-## **Logical Tracking of Execution Flow**
+## Logical Tracking of Execution Flow
 
 When we read code, it's easy to understand each line separately and feel that everything is fine. Fetch, calculate, save. Everything is clear, everything is organized. But a system is not a collection of isolated lines. It's a sequence of actions that occur in time.
 
@@ -42,7 +42,7 @@ What will happen if the value read is no longer current at the moment of writing
 
 In simple systems, this gap may not cause visible damage. In real systems, it's one of the most common sources of lost updates, data corruption, and bugs that are very hard to reproduce.
 
-## **Identifying Parallel States**
+## Identifying Parallel States
 
 If in the previous section we examined what happens within a single flow over time, here a different question arises: what happens when two different flows operate at the same time on the same data.
 
@@ -86,7 +86,7 @@ What will prevent both from performing a double or contradictory update
 
 In a small system, this may look like an edge case. In a real system, it's one of the most common sources of duplications, inconsistency, and incorrect data.
 
-## **Identifying Logical Blocks**
+## Identifying Logical Blocks
 
 There are cases where the problem is not an incorrect calculation, but a state where different processes prevent each other from progressing. Each of them holds a certain resource and waits for another resource already taken by another process.
 
@@ -128,7 +128,7 @@ Here again the difference between code that looks locally correct and a system o
 
 A logical block doesn't always appear as a clear error message. Sometimes it will simply look like a request that doesn't end, a screen that doesn't progress, or a system that seems frozen without explaining why.
 
-## **Identifying Uncontrolled State Multiplication**
+## Identifying Uncontrolled State Multiplication
 
 Not every failure stems from timing, resource competition, or blocking. Sometimes the problem is quieter: the system allows too many states, and some of them were never supposed to exist.
 

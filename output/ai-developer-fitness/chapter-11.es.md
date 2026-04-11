@@ -1,4 +1,4 @@
-# **El Proyecto Final: Lomda Engineering Journey**
+# El Proyecto Final: Lomda Engineering Journey
 
 Hemos llegado a la línea de meta del libro. El proyecto ante ustedes no es una prueba teórica ni un ejercicio académico. Esta es una simulación de un día de trabajo real de un desarrollador de software.
 
@@ -24,7 +24,7 @@ Naveguen en el árbol de directorios a las nuevas adiciones bajo - app/api/final
 
 y bajo - app/exercises/final-project.
 
-## **Etapa 1: Recibiendo un Requisito Vago y Descomponiendo el Problema**
+## Etapa 1: Recibiendo un Requisito Vago y Descomponiendo el Problema
 
 En el directorio app/exercises/final-project encontrarán el archivo TICKET-842.md.
 
@@ -48,7 +48,7 @@ Por ejemplo:
 
 Solo después de que estas preguntas estén claras para ustedes, procedan a la siguiente etapa.
 
-## **Etapa 2: Revisión de Código Hostil**
+## Etapa 2: Revisión de Código Hostil
 
 Un desarrollador junior del equipo, que usó el Agent ciegamente, ya intentó resolver la tarea. Su código está en:
 
@@ -69,7 +69,7 @@ Busquen falta de gestión de transacciones.
 
 Agreguen sus comentarios como comentarios directos dentro del archivo.
 
-## **Etapa 3: Decisión Arquitectónica Bajo Carga**
+## Etapa 3: Decisión Arquitectónica Bajo Carga
 
 Antes de escribir la solución correcta, deben tomar una decisión arquitectónica.
 

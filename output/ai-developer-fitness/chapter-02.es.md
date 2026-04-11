@@ -1,4 +1,4 @@
-# **Capítulo 1: Descomponer Problemas Antes de Activar el Agente**
+# Capítulo 1: Descomponer Problemas Antes de Activar el Agente
 
 En el trabajo de desarrollo regular, un requisito vago detendría el trabajo. Un desarrollador humano no puede escribir buen código cuando no entiende completamente cuál es el problema, cuáles son las restricciones y cómo luce el éxito.
 
@@ -8,7 +8,7 @@ Por lo tanto, el paso más crítico al trabajar con IA ocurre antes del primer p
 
 El énfasis en este capítulo no está en cómo pedirle al Agente que trabaje, sino en cómo definir los límites del juego por adelantado, para que no construya una solución convincente pero incorrecta para ti.
 
-## **La Trampa del Requisito Vago: Entre el Fracaso Arquitectónico y la Ilusión del Output**
+## La Trampa del Requisito Vago: Entre el Fracaso Arquitectónico y la Ilusión del Output
 
 Un requisito vago es cualquier solicitud que deja al Agente libre para determinar tu arquitectura por ti. En el mundo del desarrollo tradicional, tal requisito simplemente se quedaría atascado. Un desarrollador humano no puede adivinar lo que el sistema necesita sin hacer preguntas aclaratorias.
 
@@ -59,7 +59,7 @@ El Agente no cometió un error en el sentido clásico. Simplemente resolvió el 
 
 La lección es clara: cuando renunciamos a la etapa de descomposición, realmente no estamos ahorrando tiempo. Simplemente estamos transfiriendo al Agente el derecho de tomar decisiones arquitectónicas por nosotros.
 
-## **Proceso de Descomposición Sistemática: Requisito, Subproblemas, Restricciones y Criterios de Éxito**
+## Proceso de Descomposición Sistemática: Requisito, Subproblemas, Restricciones y Criterios de Éxito
 
 Para evitar caer en la trampa donde el Agente simplemente completa lo que falta según su propia manera, debemos adoptar una disciplina de descomposición de problemas. La descomposición no es solo un paso técnico. Es tu manera de definir límites de trabajo, restricciones y condiciones bajo las cuales opera el Agente.
 
@@ -110,7 +110,7 @@ Por ejemplo: "El output debe ser un objeto JSON que contenga la clave status com
 
 Usar un contrato claro y bien definido te permite ejecutar una prueba automática sobre lo que el Agente produce antes de integrarlo en el código fuente.
 
-## **Identificar Suposiciones Ocultas que el Agente Completará por su Cuenta**
+## Identificar Suposiciones Ocultas que el Agente Completará por su Cuenta
 
 Una de las características centrales de los modelos de lenguaje es la tendencia a completar lo que falta. A veces el Agente efectivamente se detendrá, preguntará qué quisiste decir, o presentará varias suposiciones posibles para elegir. Pero no puedes confiar en que siempre identificará por sí mismo cuándo falta información crítica. En lugares donde no se definieron límites claros, aún puede completar lo que falta según el camino más razonable que ha visto antes.
 

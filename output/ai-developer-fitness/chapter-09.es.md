@@ -1,6 +1,6 @@
-# **Capítulo 8: Código Seguro Contra un Agent Ciego**
+# Capítulo 8: Código Seguro Contra un Agent Ciego
 
-## **La Ilusión del Código Seguro: La Trampa Estadística**
+## La Ilusión del Código Seguro: La Trampa Estadística
 
 Una de las suposiciones más peligrosas al trabajar con Agents es que si el código se ve limpio, claro y funciona bien, probablemente también es seguro. Esta es una suposición incorrecta.
 
@@ -18,7 +18,7 @@ En este capítulo aprenderemos a identificar tres áreas de riesgo principales: 
 
 Cuando el Agent escribe rápido, la capacidad del ingeniero también se mide en la habilidad de asumir desde el principio que el código necesita sospecha, no confianza.
 
-## **Fuga de Secretos: El Peligro del Copiar-Pegar**
+## Fuga de Secretos: El Peligro del Copiar-Pegar
 
 Uno de los peligros más prácticos al trabajar con Agents no viene del código que el Agent escribe, sino de la información que le enviamos. En momentos de presión, es muy fácil copiar un error, un fragmento de código, un archivo de configuración o un log completo, y pegar todo en la ventana del chat para obtener una respuesta rápida. Este es exactamente el punto donde puede ocurrir una fuga.
 
@@ -53,7 +53,7 @@ El riesgo en la fuga de secretos casi nunca viene de mala intención. Viene de m
 
 Antes de cada pegado al Agent, detente, limpia y solo entonces envía.
 
-## **Bibliotecas Inventadas o Peligrosas: El Peligro de Agregar Dependencias**
+## Bibliotecas Inventadas o Peligrosas: El Peligro de Agregar Dependencias
 
 Un Agent tiende a completar una respuesta incluso cuando carece de conocimiento real. Cuando se le pide resolver un problema inusual, puede sugerir una biblioteca externa que suena confiable, adecuada e incluso familiar, aunque no exista en absoluto. En otros casos, la biblioteca existe pero no es estable, no tiene mantenimiento o simplemente no es digna de entrar en un sistema real.
 

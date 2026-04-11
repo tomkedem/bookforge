@@ -27,23 +27,82 @@ def _format_runs(para) -> str:
     Preserves bold (**text**), italic (*text*), and bold+italic (***text***).
     Consecutive runs with the same formatting are merged before wrapping.
     """
-    parts = []
+    if not para.runs:
+        return para.text.strip()
+    
+    # Group consecutive runs by formatting type
+    groups = []  # [(formatting_type, text), ...]
+    
     for run in para.runs:
         text = run.text
         if not text:
             continue
+        
+        # Determine formatting type
         is_bold = bool(run.bold)
         is_italic = bool(run.italic)
         if is_bold and is_italic:
-            text = f"***{text}***"
+            fmt = "bold_italic"
         elif is_bold:
-            text = f"**{text}**"
+            fmt = "bold"
         elif is_italic:
-            text = f"*{text}*"
-        parts.append(text)
+            fmt = "italic"
+        else:
+            fmt = "plain"
+        
+        # Merge with previous group if same formatting
+        if groups and groups[-1][0] == fmt:
+            groups[-1] = (fmt, groups[-1][1] + text)
+        else:
+            groups.append((fmt, text))
+    
+    # Convert groups to markdown
+    parts = []
+    for fmt, text in groups:
+        if fmt == "bold_italic":
+            parts.append(f"***{text}***")
+        elif fmt == "bold":
+            parts.append(f"**{text}**")
+        elif fmt == "italic":
+            parts.append(f"*{text}*")
+        else:
+            parts.append(text)
+    
     result = "".join(parts).strip()
-    # Fallback to plain text if runs produce empty string
+    
+    # Clean up redundant asterisks: **** → nothing, ** ** → space
+    result = _clean_markdown_asterisks(result)
+    
     return result if result else para.text.strip()
+
+
+def _clean_markdown_asterisks(text: str) -> str:
+    """
+    Clean up malformed markdown asterisks from Word formatting artifacts.
+    - Remove empty bold/italic markers: ****text**** → **text**
+    - Fix consecutive markers: **word1****word2** → **word1 word2** (shouldn't happen after grouping)
+    - Remove asterisks from headings (they're already bold by structure)
+    """
+    import re
+    
+    # Remove empty bold markers (adjacent **** with nothing between)
+    text = re.sub(r'\*{4,}', '**', text)
+    
+    # Fix patterns like **text**** or ****text**
+    text = re.sub(r'\*\*\*\*+', '**', text)
+    
+    # Fix space between bold markers: ** ** → just space
+    text = re.sub(r'\*\*\s+\*\*', ' ', text)
+    
+    # Clean leading/trailing ** that got orphaned
+    text = re.sub(r'^\*\*\s*\*\*', '', text)
+    text = re.sub(r'\*\*\s*\*\*$', '', text)
+    
+    # If entire text is wrapped in **, keep it clean
+    # Pattern: **...**...**...** with multiple segments → merge
+    # But don't break intentional bold
+    
+    return text.strip()
 
 
 def _ingest_docx(path: Path) -> dict:

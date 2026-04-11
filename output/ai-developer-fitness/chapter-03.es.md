@@ -1,4 +1,4 @@
-# **Capítulo 2: Leer Código Escrito por Humanos y por Agentes**
+# Capítulo 2: Leer Código Escrito por Humanos y por Agentes
 
 En el capítulo anterior, discutimos la escritura de código con la ayuda de un Agente. Ahora nos enfocaremos en una habilidad igualmente importante: la lectura crítica de código, identificar las decisiones incrustadas en él y comprender su costo de ingeniería.
 
@@ -16,7 +16,7 @@ A medida que la escritura de código se vuelve más rápida, más barata y más 
 
 - Cuál es el costo de ingeniería que resulta de él
 
-## **Cómo Entender del Código Qué Problema Intentaron Resolver**
+## Cómo Entender del Código Qué Problema Intentaron Resolver
 
 Después de verificar qué hace realmente el código, la siguiente pregunta es qué problema el escritor intentó resolver. Esto ya no es solo leer líneas, sino un intento de entender el diagnóstico detrás de ellas.
 
@@ -40,7 +40,7 @@ Cuando intentes entender qué problema resuelve el código, haz tres preguntas:
 
 - ¿Cambia la estructura del sistema o solo agrega correcciones locales?
 
-## **Cómo Identificar Decisiones de Diseño en Código que Parece Simple**
+## Cómo Identificar Decisiones de Diseño en Código que Parece Simple
 
 Después de entender qué problema intenta resolver el código y qué decisiones fueron incrustadas en él, necesitamos hacer una pregunta adicional: ¿Es esta solución realmente correcta para nuestro sistema?
 
@@ -62,7 +62,7 @@ La legibilidad es un rasgo importante, pero no es la medida última. El buen có
 
 **Cuando el código se ve demasiado bien, eso no es una señal para aprobarlo más rápido. A veces es precisamente una señal para detenerse y examinarlo más profundamente.**
 
-## **Cómo Identificar Puntos de Riesgo Típicos en Código Escrito por un Agente**
+## Cómo Identificar Puntos de Riesgo Típicos en Código Escrito por un Agente
 
 Después de examinar qué hace el código, qué problema intenta resolver, qué suposiciones fueron incrustadas en él, y si la solución realmente se ajusta al sistema, podemos pasar a la siguiente etapa: escaneo enfocado de puntos de riesgo típicos.
 
@@ -98,7 +98,7 @@ Qué sucede aquí cuando las cosas no van como se espera
 
 Estas no son solo preguntas para código escrito por un Agente. Estas son preguntas de lectura de ingeniería en general. Pero cuando el código se crea rápida y relativamente fácilmente, y en amplio alcance, se vuelven aún más importantes.
 
-## **Cómo Leer Código como Leer Decisiones, No Leer Líneas**
+## Cómo Leer Código como Leer Decisiones, No Leer Líneas
 
 En esta etapa, llegamos al corazón del capítulo. La lectura de código de alto nivel no es un paso sistemático de línea en línea, sino un intento de entender qué decisiones crearon la estructura que vemos ante nosotros.
 

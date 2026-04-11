@@ -1,6 +1,6 @@
-# **Resumen y Epílogo**
+# Resumen y Epílogo
 
-## **La Paradoja de la Automatización: Por Qué la IA Requiere que Sean Mejores Programadores**
+## La Paradoja de la Automatización: Por Qué la IA Requiere que Sean Mejores Programadores
 
 A lo largo de este libro, hemos desarmado y reensamblado la rutina de trabajo del programador. Aprendimos cómo guiar al Agent, cómo criticar su salida, cómo proteger el sistema del código ingenuo y cómo mantener el juicio profesional incluso cuando la solución siempre está a una tecla de distancia.
 

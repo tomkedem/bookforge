@@ -1,6 +1,6 @@
-# **Chapter 8: Secure Code Against a Blind Agent**
+# Chapter 8: Secure Code Against a Blind Agent
 
-## **The Illusion of Safe Code: The Statistical Trap**
+## The Illusion of Safe Code: The Statistical Trap
 
 One of the most dangerous assumptions when working with Agents is that if the code looks clean, clear, and works well, it's probably also secure. This is a wrong assumption.
 
@@ -18,7 +18,7 @@ In this chapter, we'll learn to identify three main risk areas: secret leakage f
 
 When the Agent writes fast, the engineer's capability is also measured in the ability to assume from the start that the code needs suspicion, not trust.
 
-## **Secret Leakage: The Copy-Paste Danger**
+## Secret Leakage: The Copy-Paste Danger
 
 One of the most practical dangers in working with Agents doesn't come from the code the Agent writes, but from the information we send to it. In moments of pressure, it's very easy to copy an error, a code snippet, a configuration file, or a full log, and paste everything into the chat window to get a quick answer. This is exactly the point where a leak can occur.
 
@@ -53,7 +53,7 @@ The risk in secret leakage almost never comes from bad intention. It comes from 
 
 Before every paste to the Agent, stop, clean, and only then send.
 
-## **Invented or Dangerous Libraries: The Danger in Adding Dependencies**
+## Invented or Dangerous Libraries: The Danger in Adding Dependencies
 
 An Agent tends to complete an answer even when it lacks real knowledge. When asked to solve an unusual problem, it may suggest an external library that sounds reliable, suitable, and even familiar, even though it doesn't exist at all. In other cases, the library exists but isn't stable, isn't maintained, or simply isn't worthy of entering a real system.
 

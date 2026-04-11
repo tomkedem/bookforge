@@ -1,4 +1,4 @@
-# **The Final Project: Lomda Engineering Journey**
+# The Final Project: Lomda Engineering Journey
 
 We've reached the finish line of the book. The project before you isn't a theoretical test and isn't an academic exercise. This is a simulation of a real workday of a software developer.
 
@@ -24,7 +24,7 @@ Navigate in the directory tree to the new additions under - app/api/final-projec
 
 and under - app/exercises/final-project.
 
-## **Stage 1: Receiving a Vague Requirement and Breaking Down the Problem**
+## Stage 1: Receiving a Vague Requirement and Breaking Down the Problem
 
 In the app/exercises/final-project directory, you'll find the file TICKET-842.md.
 
@@ -48,7 +48,7 @@ Can an appeal be submitted twice for the same exam?
 
 Only after these questions are clear to you, proceed to the next stage.
 
-## **Stage 2: Hostile Code Review**
+## Stage 2: Hostile Code Review
 
 A junior developer on the team, who used the Agent blindly, already tried to solve the task. Their code is at:
 
@@ -69,7 +69,7 @@ Look for lack of transaction management.
 
 Add your comments as direct comments inside the file.
 
-## **Stage 3: Architectural Decision Under Load**
+## Stage 3: Architectural Decision Under Load
 
 Before you write the correct solution, you must make an architectural decision.
 

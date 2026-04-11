@@ -1,6 +1,6 @@
-# **Summary and Afterword**
+# Summary and Afterword
 
-## **The Automation Paradox: Why AI Requires You to Be Better Programmers**
+## The Automation Paradox: Why AI Requires You to Be Better Programmers
 
 Throughout this book, we've disassembled and reassembled the programmer's work routine. We learned how to guide the Agent, how to critique its output, how to protect the system from naive code, and how to maintain professional judgment even when the solution is always a keystroke away.
 

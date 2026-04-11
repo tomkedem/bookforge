@@ -5,11 +5,25 @@ Returns a list of chapters with title, content, and images.
 """
 
 import os
+import re
 from pathlib import Path
 
 
 INTRO_KEYWORDS = ["מבוא", "פתיחה", "הקדמה", "introduction", "preface", "foreword"]
 COVER_KEYWORDS = ["שער", "cover", "title"]
+
+
+def _clean_heading(text: str) -> str:
+    """
+    Remove bold/italic markdown from headings - they're already styled by structure.
+    Handles Word artifacts like **פרק 1****:** or ***text***.
+    """
+    # Remove all asterisk formatting from headings
+    # They shouldn't have markdown bold/italic since heading style is already prominent
+    cleaned = re.sub(r'\*+', '', text)
+    # Clean up extra spaces that may result
+    cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+    return cleaned.strip()
 
 
 def parse(ingested: dict) -> list[dict]:
@@ -27,16 +41,21 @@ def parse(ingested: dict) -> list[dict]:
             if current:
                 chapters.append(current)
 
-            chapter_type = _classify_chapter(text, len(chapters))
+            # Clean heading text - remove markdown asterisks
+            clean_title = _clean_heading(text)
+            chapter_type = _classify_chapter(clean_title, len(chapters))
             current = {
                 "number": len(chapters) + 1,
-                "title": text,
+                "title": clean_title,
                 "heading_doc_index": doc_idx,
                 "content": [],
                 "has_images": False,
                 "type": chapter_type
             }
         elif current:
+            # Also clean Heading 2/3 text
+            if "Heading" in style:
+                text = _clean_heading(text)
             current["content"].append({
                 "text": text,
                 "style": style,

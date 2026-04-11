@@ -1,4 +1,4 @@
-# **Chapter 1: Breaking Down Problems Before Activating the Agent**
+# Chapter 1: Breaking Down Problems Before Activating the Agent
 
 In regular development work, a vague requirement would stop the work. A human developer cannot write good code when they don't fully understand what the problem is, what the constraints are, and what success looks like.
 
@@ -8,7 +8,7 @@ Therefore, the most critical step in working with AI occurs before the first pro
 
 The emphasis in this chapter is not on how to ask the Agent to work, but on how to define the boundaries of the game in advance, so it doesn't build a convincing but incorrect solution for you.
 
-## **The Vague Requirement Trap: Between Architectural Failure and Output Illusion**
+## The Vague Requirement Trap: Between Architectural Failure and Output Illusion
 
 A vague requirement is any request that leaves the Agent free to determine your architecture for you. In the traditional development world, such a requirement would simply get stuck. A human developer cannot guess what the system needs without asking clarifying questions.
 
@@ -59,7 +59,7 @@ The Agent didn't make a mistake in the classic sense. It simply solved the probl
 
 The lesson is clear: when we give up the decomposition stage, we're not really saving time. We're simply transferring to the Agent the right to make architectural decisions for us.
 
-## **Systematic Decomposition Process: Requirement, Sub-problems, Constraints, and Success Criteria**
+## Systematic Decomposition Process: Requirement, Sub-problems, Constraints, and Success Criteria
 
 To avoid falling into the trap where the Agent simply completes what's missing according to its own way, we must adopt a discipline of problem decomposition. Decomposition is not just a technical step. It's your way of defining work boundaries, constraints, and conditions under which the Agent operates.
 
@@ -110,7 +110,7 @@ For example: "The output must be a JSON object containing the status key as a bo
 
 Using a clear and well-defined contract allows you to run an automatic test on what the Agent produces before integrating it into the source code.
 
-## **Identifying Hidden Assumptions the Agent Will Complete on Its Own**
+## Identifying Hidden Assumptions the Agent Will Complete on Its Own
 
 One of the central characteristics of language models is the tendency to complete what's missing. Sometimes the Agent will indeed stop, ask what you meant, or present several possible assumptions to choose from. But you can't rely on it always identifying on its own when critical information is missing. In places where clear boundaries weren't defined, it may still complete what's missing according to the most reasonable path it has seen before.
 

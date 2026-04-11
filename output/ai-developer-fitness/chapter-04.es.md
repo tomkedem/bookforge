@@ -1,4 +1,4 @@
-# **Capítulo 3: Debugging Mental para un Sistema Donde Partes Fueron Escritas Automáticamente**
+# Capítulo 3: Debugging Mental para un Sistema Donde Partes Fueron Escritas Automáticamente
 
 En los capítulos anteriores, aprendimos a descomponer requisitos y leer código como leer decisiones. Ahora debemos hacer una pregunta más difícil: qué sucederá cuando este código comience a ejecutarse.
 
@@ -8,7 +8,7 @@ El código que se ve correcto dentro de un archivo aún no se ha probado. La pru
 
 **Cuando un Agente escribe rápido, la responsabilidad del programador no es escribir más, sino pensar mejor.**
 
-## **Seguimiento Lógico del Flujo de Ejecución**
+## Seguimiento Lógico del Flujo de Ejecución
 
 Cuando leemos código, es fácil entender cada línea por separado y sentir que todo está bien. Obtener, calcular, guardar. Todo está claro, todo está organizado. Pero un sistema no es una colección de líneas aisladas. Es una secuencia de acciones que ocurren en el tiempo.
 
@@ -42,7 +42,7 @@ Qué sucederá si el valor leído ya no es actual en el momento de escribir
 
 En sistemas simples, esta brecha puede no causar daño visible. En sistemas reales, es una de las fuentes más comunes de actualizaciones perdidas, corrupción de datos y bugs muy difíciles de reproducir.
 
-## **Identificar Estados Paralelos**
+## Identificar Estados Paralelos
 
 Si en la sección anterior examinamos qué sucede dentro de un único flujo a lo largo del tiempo, aquí surge una pregunta diferente: qué sucede cuando dos flujos diferentes operan al mismo tiempo sobre los mismos datos.
 
@@ -86,7 +86,7 @@ Por lo tanto, cuando leas código, pregunta:
 
 En un sistema pequeño, esto puede parecer un caso límite. En un sistema real, es una de las fuentes más comunes de duplicaciones, inconsistencia y datos incorrectos.
 
-## **Identificar Bloqueos Lógicos**
+## Identificar Bloqueos Lógicos
 
 Hay casos donde el problema no es un cálculo incorrecto, sino un estado donde diferentes procesos se impiden mutuamente progresar. Cada uno de ellos mantiene cierto recurso y espera otro recurso ya tomado por otro proceso.
 
@@ -128,7 +128,7 @@ Aquí nuevamente se expresa la diferencia entre código que se ve localmente cor
 
 Un bloqueo lógico no siempre aparece como un mensaje de error claro. A veces simplemente se verá como una solicitud que no termina, una pantalla que no progresa, o un sistema que parece congelado sin explicar por qué.
 
-## **Identificar Multiplicación de Estados No Controlada**
+## Identificar Multiplicación de Estados No Controlada
 
 No todo fallo proviene del timing, competencia por recursos o bloqueo. A veces el problema es más silencioso: el sistema permite demasiados estados, y algunos de ellos nunca debieron existir.
 

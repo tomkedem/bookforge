@@ -1,4 +1,4 @@
-# **Capítulo 4: La Mentira Elegante de las Soluciones de IA**
+# Capítulo 4: La Mentira Elegante de las Soluciones de IA
 
 En los capítulos anteriores, aprendimos a descomponer requisitos, leer código como leer decisiones, y ejecutar flujos en nuestra cabeza para identificar puntos de ruptura antes de la ejecución. Ahora pasamos a una etapa diaria igualmente crítica: criticar código escrito para nosotros.
 
@@ -8,7 +8,7 @@ Aquí es exactamente donde se prueba la capacidad de ingeniería del programador
 
 Esta es la mentira elegante de las soluciones de IA: no código que se ve incorrecto, sino código que se ve demasiado correcto. En este capítulo, aprenderemos a identificar esta ilusión, criticarla sistemáticamente, y aplicar una Checklist fija que devuelve la crítica de la estética a la ingeniería.
 
-## **Por Qué las Soluciones Convincentes A Veces Son las Más Peligrosas**
+## Por Qué las Soluciones Convincentes A Veces Son las Más Peligrosas
 
 Los Agentes fueron entrenados en millones de repositorios de código abierto. Sobresalen en producir estructuras de datos limpias, agregar comentarios concisos, y usar terminología profesional impresionante. El verdadero peligro yace en la brecha entre la estética del código y su corrección arquitectónica.
 
@@ -34,7 +34,7 @@ Qué costo crea fuera del archivo único
 
 El código más peligroso no es el que colapsa inmediatamente. Es el que pasa la revisión de código demasiado fácilmente.
 
-## **Sobre-Generalizaciones del Agente**
+## Sobre-Generalizaciones del Agente
 
 Los Agentes operan desde patrones estadísticos. No comienzan desde tu sistema, sino desde el patrón más probable que han visto antes para un problema que suena similar. Esto les da velocidad impresionante, pero también crea una debilidad profunda: una tendencia a sobre-generalizar.
 
@@ -82,7 +82,7 @@ Por lo tanto, frente a cada solución que el Agente ofrece, pregunta:
 
 El error peligroso no es pensar que el Agente siempre se equivoca. El error peligroso es pensar que la solución más razonable es también la más correcta.
 
-## **Falsa Confianza y Explicación Demasiado Elegante**
+## Falsa Confianza y Explicación Demasiado Elegante
 
 Un Agente no solo proporciona implementación. A menudo también proporciona explicación. Describe por qué eligió cierto camino, destaca ventajas, usa jerga profesional, y crea la impresión de una solución que ya ha pasado por análisis de ingeniería profundo. Este es un momento especialmente peligroso, porque el desarrollador ya no está examinando solo el código, sino que también es influenciado por la confianza con la que se presenta.
 
@@ -128,7 +128,7 @@ Por lo tanto, cuando el Agente proporciona tanto código como razonamiento, preg
 
 El peligro no es solo código incorrecto. El peligro es código incorrecto que viene con una explicación que adormece el escepticismo.
 
-## **Casos Límite Faltantes: La Trampa del Camino Feliz**
+## Casos Límite Faltantes: La Trampa del Camino Feliz
 
 Los Agentes tienden a escribir el camino más directo y limpio para completar la tarea. Asumen que la entrada válida llegará a tiempo, los servicios externos responderán normalmente, y cada paso en el flujo se completará exitosamente. Por lo tanto, por defecto, tienden a construir código bien adaptado al camino feliz, pero casi no trata con lo que sucede fuera de él.
 

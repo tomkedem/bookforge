@@ -1,4 +1,4 @@
-# **Chapter 2: Reading Code Written by Humans and by Agents**
+# Chapter 2: Reading Code Written by Humans and by Agents
 
 In the previous chapter, we discussed writing code with the help of an Agent. Now we will focus on an equally important skill: critical code reading, identifying the decisions embedded in it, and understanding their engineering cost.
 
@@ -16,7 +16,7 @@ As code writing becomes faster, cheaper, and more accessible, the value of engin
 
 - What is the engineering cost that results from it
 
-## **How to Understand from Code What Problem They Tried to Solve**
+## How to Understand from Code What Problem They Tried to Solve
 
 After we've checked what the code actually does, the next question is what problem the writer tried to solve. This is no longer just reading lines, but an attempt to understand the diagnosis behind them.
 
@@ -40,7 +40,7 @@ When you try to understand what problem the code solves, ask three questions:
 
 - Does it change the system structure or just add local fixes
 
-## **How to Identify Design Decisions in Code That Looks Simple**
+## How to Identify Design Decisions in Code That Looks Simple
 
 After we understood what problem the code tries to solve and what decisions were embedded in it, we need to ask an additional question: Is this solution really right for our system.
 
@@ -62,7 +62,7 @@ Readability is an important trait, but it's not the ultimate measure. Good code 
 
 **When code looks too good, that's not a sign to approve it faster. Sometimes it's precisely a sign to stop and examine it more deeply.**
 
-## **How to Identify Typical Risk Points in Code Written by an Agent**
+## How to Identify Typical Risk Points in Code Written by an Agent
 
 After we examined what the code does, what problem it tries to solve, what assumptions were embedded in it, and whether the solution actually fits the system, we can move to the next stage: focused scanning of typical risk points.
 
@@ -98,7 +98,7 @@ What implicit assumptions must be true for it to work
 
 These are not just questions for code written by an Agent. These are engineering reading questions in general. But when code is created quickly and relatively easily, and in broad scope, they become even more important.
 
-## **How to Read Code as Reading Decisions, Not Reading Lines**
+## How to Read Code as Reading Decisions, Not Reading Lines
 
 At this stage, we reach the heart of the chapter. High-level code reading is not a systematic pass from line to line, but an attempt to understand what decisions created the structure we see before us.
 

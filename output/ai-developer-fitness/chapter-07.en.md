@@ -1,6 +1,4 @@
-# **Chapter 6: Making Decisions When the Agent Suggests Alternatives but Bears No Responsibility**
-
-**The Illusion of Objective Comparison**
+# Chapter 6: Making Decisions When the Agent Suggests Alternatives but Bears No Responsibility The Illusion of Objective Comparison
 
 In previous chapters, we learned to formulate requirements better, identify weak code faster, and critique solutions that seem too convincing. Now we advance another level: not just examining code, but deciding between alternatives the Agent presents to us.
 
@@ -12,7 +10,7 @@ In this chapter, we'll learn how to read alternatives not as recommendations for
 
 When the Agent generates options quickly, the engineer's capability is measured in the ability to remain the decision-maker.
 
-## **Technical Considerations Versus What the System Can Actually Bear**
+## Technical Considerations Versus What the System Can Actually Bear
 
 When an Agent suggests technical alternatives, it tends to prefer the impressive, generalized, and theoretically "correct" solution. If you present it with a load problem, it will tend to suggest dedicated message queues, transition to event architecture, or advanced infrastructure components that look excellent in a comparison table.
 
@@ -40,7 +38,7 @@ Therefore, reading the Agent's technical alternatives doesn't end with asking wh
 
 When the Agent proposes alternatives quickly, the engineer's capability is also measured in the ability to prefer the appropriate solution, not the impressive one.
 
-## **Business Considerations: The Reality Filter Versus the Agent's Utopia**
+## Business Considerations: The Reality Filter Versus the Agent's Utopia
 
 An Agent knows how to compare technical alternatives well. It can assess complexity, explain performance advantages, and point to future flexibility. But it operates within an almost theoretical space. It doesn't feel deadline pressure, doesn't see budget limitations, and doesn't know how much time the team actually has left to complete the task.
 
@@ -75,7 +73,7 @@ Might a less impressive solution be more correct from a business perspective?
 
 Your professionalism today isn't measured only by the ability to choose the most elegant solution. It's measured by the ability to choose the solution that the business and system can actually afford.
 
-## **Risk Assessment: From Theory to Field Responsibility**
+## Risk Assessment: From Theory to Field Responsibility
 
 When an Agent presents architectural alternatives, it almost always knows how to attach a list of risks to each one. It might note data consistency issues, complexity in monitoring and observability, dependency on a specific library, or performance costs. On the surface, this looks like mature and responsible analysis.
 
@@ -110,7 +108,7 @@ Which risk seems small in the table but will become very expensive during failur
 
 The right alternative isn't the one with no risks. It's the one whose risks are known, tolerable, and manageable within your reality.
 
-## **Comparing Imperfect Alternatives: Accepting the Ugly Compromise**
+## Comparing Imperfect Alternatives: Accepting the Ugly Compromise
 
 When an Agent presents two or three alternatives, it tends to lay them out in a balanced, organized, and convincing manner. Each alternative has clear advantages, reasonable disadvantages, and a comparison table that seems like you can reach a clear decision from it. But real engineering decisions aren't made under sterile conditions.
 

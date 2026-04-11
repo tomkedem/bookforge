@@ -1,6 +1,4 @@
-# **Capítulo 6: Tomando Decisiones Cuando el Agent Sugiere Alternativas pero No Asume Responsabilidad**
-
-**La Ilusión de la Comparación Objetiva**
+# Capítulo 6: Tomando Decisiones Cuando el Agent Sugiere Alternativas pero No Asume Responsabilidad La Ilusión de la Comparación Objetiva
 
 En capítulos anteriores aprendimos a formular requisitos mejor, identificar código débil más rápido y criticar soluciones que parecen demasiado convincentes. Ahora avanzamos otro nivel: no solo examinar código, sino decidir entre alternativas que el Agent nos presenta.
 
@@ -12,7 +10,7 @@ En este capítulo aprenderemos a leer alternativas no como recomendaciones para 
 
 Cuando el Agent genera opciones rápidamente, la capacidad del ingeniero se mide en la habilidad de permanecer como el tomador de decisiones.
 
-## **Consideraciones Técnicas Versus Lo Que el Sistema Realmente Puede Soportar**
+## Consideraciones Técnicas Versus Lo Que el Sistema Realmente Puede Soportar
 
 Cuando un Agent sugiere alternativas técnicas, tiende a preferir la solución impresionante, generalizada y teóricamente "correcta". Si le presentas un problema de carga, tenderá a sugerir colas de mensajes dedicadas, transición a arquitectura de eventos o componentes de infraestructura avanzados que se ven excelentes en una tabla comparativa.
 
@@ -40,7 +38,7 @@ Por lo tanto, leer las alternativas técnicas del Agent no termina preguntando q
 
 Cuando el Agent propone alternativas rápidamente, la capacidad del ingeniero también se mide en la habilidad de preferir la solución apropiada, no la impresionante.
 
-## **Consideraciones de Negocio: El Filtro de Realidad Versus la Utopía del Agent**
+## Consideraciones de Negocio: El Filtro de Realidad Versus la Utopía del Agent
 
 Un Agent sabe comparar alternativas técnicas bien. Puede evaluar complejidad, explicar ventajas de rendimiento y señalar flexibilidad futura. Pero opera dentro de un espacio casi teórico. No siente presión de fechas límite, no ve limitaciones presupuestarias y no sabe cuánto tiempo le queda realmente al equipo para completar la tarea.
 
@@ -75,7 +73,7 @@ Por lo tanto, ante cada alternativa que el Agent sugiere, pregunta:
 
 Tu profesionalismo hoy no se mide solo por la capacidad de elegir la solución más elegante. Se mide por la capacidad de elegir la solución que el negocio y el sistema realmente pueden permitirse.
 
-## **Evaluación de Riesgos: De la Teoría a la Responsabilidad en el Campo**
+## Evaluación de Riesgos: De la Teoría a la Responsabilidad en el Campo
 
 Cuando un Agent presenta alternativas arquitectónicas, casi siempre sabe adjuntar una lista de riesgos a cada una. Podría notar problemas de consistencia de datos, complejidad en monitoreo y observabilidad, dependencia de una biblioteca específica o costos de rendimiento. En la superficie, esto parece un análisis maduro y responsable.
 
@@ -110,7 +108,7 @@ Ante cada alternativa que el Agent sugiere, pregunta:
 
 La alternativa correcta no es la que no tiene riesgos. Es aquella cuyos riesgos son conocidos, tolerables y manejables dentro de tu realidad.
 
-## **Comparando Alternativas Imperfectas: Aceptando el Compromiso Feo**
+## Comparando Alternativas Imperfectas: Aceptando el Compromiso Feo
 
 Cuando un Agent presenta dos o tres alternativas, tiende a exponerlas de manera equilibrada, organizada y convincente. Cada alternativa tiene ventajas claras, desventajas razonables y una tabla comparativa que parece que puedes llegar a una decisión clara desde ella. Pero las decisiones de ingeniería reales no se toman bajo condiciones estériles.
 
