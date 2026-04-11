@@ -6,6 +6,7 @@ import { initHighlighter } from './highlighter';
 import { initReadingHints } from './reading-hints';
 import { initChapterCompletion } from './chapter-completion';
 import { initSearch } from './search';
+import { initHighlightsPanel } from './highlights-panel';
 
 /**
  * Main initialization — wires up all reading-page modules.
@@ -22,6 +23,7 @@ function initializeReadingPage() {
   initReadingHints();
   initChapterCompletion();
   initSearch(controller.signal);
+  initHighlightsPanel();
 
   const cleanup = () => {
     progressCleanup();

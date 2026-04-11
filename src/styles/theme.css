@@ -69,9 +69,9 @@
 
   /* ── Text ── */
   --yuval-text: #ededed;
-  --yuval-text-secondary: #999999;
-  --yuval-text-tertiary: #666666;
-  --yuval-text-muted: #444444;
+  --yuval-text-secondary: #b0b0b0;
+  --yuval-text-tertiary: #888888;
+  --yuval-text-muted: #666666;
 
   /* ── Borders ── */
   --yuval-border: #272727;
@@ -94,19 +94,19 @@
   --yuval-moon-icon: #888888;
 
   /* ── TOC / Sidebar ── */
-  --yuval-toc-item-border: #222222;
-  --yuval-toc-number: #444444;
+  --yuval-toc-item-border: #2a2a2a;
+  --yuval-toc-number: #777777;
   --yuval-toc-active: #ededed;
 
   /* ── Chapter meta ── */
-  --yuval-meta-text: #666666;
-  --yuval-meta-bg: rgba(255, 255, 255, 0.04);
-  --yuval-meta-border: rgba(255, 255, 255, 0.07);
-  --yuval-meta-dot: rgba(255, 255, 255, 0.15);
+  --yuval-meta-text: #888888;
+  --yuval-meta-bg: rgba(255, 255, 255, 0.05);
+  --yuval-meta-border: rgba(255, 255, 255, 0.09);
+  --yuval-meta-dot: rgba(255, 255, 255, 0.2);
 
   /* ── Chapter header ── */
   --yuval-chapter-title: #ededed;
-  --yuval-progress-badge: #666666;
+  --yuval-progress-badge: #888888;
   --yuval-progress-line: rgba(255, 255, 255, 0.06);
   --yuval-progress-fill: #ededed;
 
