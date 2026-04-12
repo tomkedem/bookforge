@@ -6,57 +6,546 @@ interface Props {
 const { class: className } = Astro.props;
 ---
 
-<div
-  class:list={[
-    'inline-flex',
-    'items-center',
-    'gap-2',
-    className,
-  ]}
+<button
+  id="theme-toggle"
+  type="button"
+  role="switch"
+  aria-checked="false"
+  aria-label="Toggle dark mode"
+  dir="ltr"
+  class:list={['sky-window', className]}
 >
-  <!-- Sun icon -->
-  <svg
-    class="w-4 h-4 text-yuval-text-secondary transition-colors"
-    aria-hidden="true"
-    fill="currentColor"
-    viewBox="0 0 20 20"
-  >
-    <path
-      fill-rule="evenodd"
-      d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-      clip-rule="evenodd"
-    ></path>
-  </svg>
+  <!-- Sky background layers -->
+  <div class="sky-scene">
+    <!-- Day sky -->
+    <div class="sky-layer sky-day"></div>
+    <!-- Night sky -->
+    <div class="sky-layer sky-night"></div>
+    
+    <!-- Stars (night only) -->
+    <div class="stars">
+      <span class="star star-1"></span>
+      <span class="star star-2"></span>
+      <span class="star star-3"></span>
+      <span class="star star-4"></span>
+      <span class="star star-5"></span>
+      <span class="star star-6"></span>
+      <span class="star star-7"></span>
+    </div>
+    
+    <!-- Sun -->
+    <div class="celestial sun">
+      <div class="sun-core"></div>
+      <div class="sun-rays"></div>
+      <div class="sun-glow"></div>
+    </div>
+    
+    <!-- Moon -->
+    <div class="celestial moon">
+      <div class="moon-surface"></div>
+      <div class="moon-crater moon-crater-1"></div>
+      <div class="moon-crater moon-crater-2"></div>
+      <div class="moon-crater moon-crater-3"></div>
+      <div class="moon-glow"></div>
+    </div>
+    
+    <!-- Clouds - continuous drift -->
+    <div class="clouds">
+      <div class="cloud-track">
+        <div class="cloud cloud-a"></div>
+        <div class="cloud cloud-b"></div>
+        <div class="cloud cloud-c"></div>
+        <div class="cloud cloud-d"></div>
+        <div class="cloud cloud-e"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Glass frame overlay -->
+  <div class="window-frame"></div>
+</button>
 
-  <!-- Toggle switch -->
-  <button
-    id="theme-toggle"
-    type="button"
-    role="switch"
-    aria-checked="false"
-    aria-label="Toggle dark mode"
-    dir="ltr"
-    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight"
-    style="background-color: var(--yuval-toggle-track)"
-  >
-    <span
-      class="toggle-dot inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 translate-x-1"
-    ></span>
-  </button>
+<style>
+  .sky-window {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    border-radius: 14px;
+    overflow: visible;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background: transparent;
+    transition: transform 0.3s ease;
+  }
+  
+  .sky-window:hover {
+    transform: scale(1.05);
+  }
+  
+  .sky-window:active {
+    transform: scale(0.98);
+  }
+  
+  .sky-window:focus {
+    outline: none;
+  }
+  
+  .sky-window:focus .window-frame {
+    box-shadow:
+      0 0 0 2px var(--yuval-highlight),
+      0 2px 8px rgba(139, 105, 20, 0.3),
+      inset 0 1px 2px rgba(255, 255, 255, 0.5),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sky-scene {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    z-index: 2;
+  }
+  
+  /* Sky backgrounds */
+  .sky-layer {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.6s ease;
+  }
+  
+  /* In LIGHT mode: show night sky (preview of what you'll get) */
+  /* In DARK mode: show day sky (preview of what you'll get) */
+  .sky-day {
+    background: linear-gradient(
+      180deg,
+      #4facfe 0%,
+      #87ceeb 40%,
+      #b4e4ff 100%
+    );
+    opacity: 0;
+  }
+  
+  .sky-night {
+    background: linear-gradient(
+      180deg,
+      #0c1445 0%,
+      #1a237e 30%,
+      #311b92 60%,
+      #4a148c 100%
+    );
+    opacity: 1;
+  }
+  
+  :global(.dark) .sky-day {
+    opacity: 1;
+  }
+  
+  :global(.dark) .sky-night {
+    opacity: 0;
+  }
+  
+  /* Stars - visible in light mode (preview of dark) */
+  .stars {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    transition: opacity 0.6s ease 0.2s;
+  }
+  
+  :global(.dark) .stars {
+    opacity: 0;
+  }
+  
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 2s ease-in-out infinite;
+  }
+  
+  .star-1 { top: 5px; left: 8px; animation-delay: 0s; }
+  .star-2 { top: 8px; left: 38px; animation-delay: 0.3s; width: 1.5px; height: 1.5px; }
+  .star-3 { top: 15px; left: 6px; animation-delay: 0.6s; width: 1px; height: 1px; }
+  .star-4 { top: 4px; left: 20px; animation-delay: 0.9s; width: 1.5px; height: 1.5px; }
+  .star-5 { top: 18px; left: 42px; animation-delay: 1.2s; width: 1px; height: 1px; }
+  .star-6 { top: 22px; left: 12px; animation-delay: 0.4s; width: 1px; height: 1px; }
+  .star-7 { top: 10px; left: 45px; animation-delay: 0.8s; width: 1.5px; height: 1.5px; }
+  
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  
+  /* Celestial bodies positioning */
+  .celestial {
+    position: absolute;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* Sun - hidden in light mode, visible in dark (preview of light) */
+  .sun {
+    width: 18px;
+    height: 18px;
+    top: 5px;
+    left: 6px;
+    transform: translateY(30px) scale(0.5);
+  }
+  
+  :global(.dark) .sun {
+    transform: translateY(0) scale(1);
+  }
+  
+  .sun-core {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 2px;
+    left: 2px;
+    background: linear-gradient(135deg, #fff9c4 0%, #ffeb3b 50%, #ffc107 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ffeb3b;
+  }
+  
+  .sun-rays {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgba(255, 235, 59, 0.4) 10deg,
+      transparent 20deg,
+      transparent 45deg,
+      rgba(255, 235, 59, 0.4) 55deg,
+      transparent 65deg,
+      transparent 90deg,
+      rgba(255, 235, 59, 0.4) 100deg,
+      transparent 110deg,
+      transparent 135deg,
+      rgba(255, 235, 59, 0.4) 145deg,
+      transparent 155deg,
+      transparent 180deg,
+      rgba(255, 235, 59, 0.4) 190deg,
+      transparent 200deg,
+      transparent 225deg,
+      rgba(255, 235, 59, 0.4) 235deg,
+      transparent 245deg,
+      transparent 270deg,
+      rgba(255, 235, 59, 0.4) 280deg,
+      transparent 290deg,
+      transparent 315deg,
+      rgba(255, 235, 59, 0.4) 325deg,
+      transparent 335deg
+    );
+    border-radius: 50%;
+    animation: rotate-rays 20s linear infinite;
+  }
+  
+  @keyframes rotate-rays {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .sun-glow {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    top: -2px;
+    left: -2px;
+    background: radial-gradient(
+      circle,
+      rgba(255, 235, 59, 0.3) 0%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+  
+  /* Moon - visible in light mode (preview of dark), hidden in dark */
+  .moon {
+    width: 16px;
+    height: 16px;
+    top: 6px;
+    right: 6px;
+    left: auto;
+    transform: translateY(0) scale(1);
+  }
+  
+  :global(.dark) .moon {
+    transform: translateY(30px) scale(0.5);
+  }
+  
+  .moon-surface {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 1px;
+    left: 1px;
+    background: linear-gradient(135deg, #eceff1 0%, #cfd8dc 50%, #b0bec5 100%);
+    border-radius: 50%;
+    box-shadow: 
+      inset -2px -2px 4px rgba(0, 0, 0, 0.1),
+      0 0 12px rgba(255, 255, 255, 0.3);
+  }
+  
+  .moon-crater {
+    position: absolute;
+    background: rgba(176, 190, 197, 0.6);
+    border-radius: 50%;
+  }
+  
+  .moon-crater-1 {
+    width: 3px;
+    height: 3px;
+    top: 4px;
+    left: 4px;
+  }
+  
+  .moon-crater-2 {
+    width: 2px;
+    height: 2px;
+    top: 8px;
+    left: 8px;
+  }
+  
+  .moon-crater-3 {
+    width: 2px;
+    height: 2px;
+    top: 5px;
+    left: 10px;
+  }
+  
+  .moon-glow {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: -2px;
+    left: -2px;
+    background: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.2) 0%,
+      transparent 60%
+    );
+    border-radius: 50%;
+  }
+  
+  /* Clouds - hidden in light mode, visible in dark (preview of light) */
+  .clouds {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    overflow: hidden;
+  }
+  
+  :global(.dark) .clouds {
+    opacity: 1;
+  }
+  
+  /* Cloud track - infinite scroll container */
+  .cloud-track {
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    animation: drift-clouds 25s linear infinite;
+  }
+  
+  @keyframes drift-clouds {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+  }
+  
+  .cloud::before,
+  .cloud::after {
+    content: '';
+    position: absolute;
+    background: inherit;
+    border-radius: 50%;
+  }
+  
+  /* Cloud A - fluffy cumulus */
+  .cloud-a {
+    width: 14px;
+    height: 5px;
+    bottom: 8px;
+    left: 5px;
+  }
+  .cloud-a::before {
+    width: 7px;
+    height: 7px;
+    top: -4px;
+    left: 2px;
+  }
+  .cloud-a::after {
+    width: 6px;
+    height: 6px;
+    top: -3px;
+    left: 7px;
+  }
+  
+  /* Cloud B - small wisp */
+  .cloud-b {
+    width: 8px;
+    height: 3px;
+    bottom: 14px;
+    left: 28px;
+    opacity: 0.7;
+  }
+  .cloud-b::before {
+    width: 4px;
+    height: 4px;
+    top: -2px;
+    left: 1px;
+  }
+  .cloud-b::after {
+    width: 3px;
+    height: 3px;
+    top: -1px;
+    left: 4px;
+  }
+  
+  /* Cloud C - tall puffy */
+  .cloud-c {
+    width: 11px;
+    height: 4px;
+    bottom: 5px;
+    left: 45px;
+  }
+  .cloud-c::before {
+    width: 8px;
+    height: 8px;
+    top: -5px;
+    left: 1px;
+  }
+  .cloud-c::after {
+    width: 5px;
+    height: 5px;
+    top: -2px;
+    left: 5px;
+  }
+  
+  /* Cloud D - stretched cirrus (duplicate of A for seamless loop) */
+  .cloud-d {
+    width: 14px;
+    height: 5px;
+    bottom: 8px;
+    left: 57px;
+  }
+  .cloud-d::before {
+    width: 7px;
+    height: 7px;
+    top: -4px;
+    left: 2px;
+  }
+  .cloud-d::after {
+    width: 6px;
+    height: 6px;
+    top: -3px;
+    left: 7px;
+  }
+  
+  /* Cloud E - small wisp (duplicate of B for seamless loop) */
+  .cloud-e {
+    width: 8px;
+    height: 3px;
+    bottom: 14px;
+    left: 80px;
+    opacity: 0.7;
+  }
+  .cloud-e::before {
+    width: 4px;
+    height: 4px;
+    top: -2px;
+    left: 1px;
+  }
+  .cloud-e::after {
+    width: 3px;
+    height: 3px;
+    top: -1px;
+    left: 4px;
+  }
 
-  <!-- Moon icon -->
-  <svg
-    class="w-4 h-4 transition-colors"
-    style="color: var(--yuval-moon-icon)"
-    aria-hidden="true"
-    fill="currentColor"
-    viewBox="0 0 20 20"
-  >
-    <path
-      d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
-    ></path>
-  </svg>
-</div>
+  /* Window frame - metallic with animated shine */
+  .window-frame {
+    position: absolute;
+    inset: -2px;
+    border-radius: 16px;
+    pointer-events: none;
+    /* Light mode: silver/purple frame (matches moon preview) */
+    background: linear-gradient(
+      135deg,
+      #7c8ba1 0%,
+      #c4d0e4 15%,
+      #9ba8c2 30%,
+      #4a5568 45%,
+      #6b7db3 55%,
+      #a78bba 70%,
+      #c4b5d8 85%,
+      #8b7ca8 100%
+    );
+    z-index: 0;
+    box-shadow:
+      0 2px 12px rgba(107, 125, 179, 0.4),
+      0 0 20px rgba(167, 139, 186, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.4),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+    transition: all 0.6s ease;
+  }
+  
+  /* Inner frame edge */
+  .window-frame::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 14px;
+    border: 1px solid rgba(196, 181, 216, 0.3);
+    background: transparent;
+  }
+  
+  /* Dark mode: gold frame (matches sun preview) */
+  :global(.dark) .window-frame {
+    background: linear-gradient(
+      135deg,
+      #d4a574 0%,
+      #f4e4bc 15%,
+      #c9a55c 30%,
+      #8b6914 50%,
+      #c9a55c 70%,
+      #f4e4bc 85%,
+      #d4a574 100%
+    );
+    box-shadow:
+      0 2px 8px rgba(139, 105, 20, 0.3),
+      inset 0 1px 2px rgba(255, 255, 255, 0.5),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  :global(.dark) .window-frame::before {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  :global(.dark) .sky-window:focus .window-frame {
+    box-shadow:
+      0 0 0 2px var(--yuval-highlight),
+      0 2px 8px rgba(139, 105, 20, 0.3),
+      inset 0 1px 2px rgba(255, 255, 255, 0.5),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  }
+</style>
 
 <script>
   function getStoredTheme(): 'light' | 'dark' | null {
@@ -80,11 +569,6 @@ const { class: className } = Astro.props;
     const toggle = document.getElementById('theme-toggle');
     if (toggle) {
       toggle.setAttribute('aria-checked', theme === 'dark' ? 'true' : 'false');
-      // Move the toggle dot
-      const dot = toggle.querySelector('.toggle-dot') as HTMLElement;
-      if (dot) {
-        dot.style.transform = theme === 'dark' ? 'translateX(1.375rem)' : 'translateX(0.25rem)';
-      }
     }
   }
 
