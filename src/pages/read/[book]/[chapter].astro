@@ -204,6 +204,7 @@ try {
     position: sticky;
     top: 64px;
     z-index: 36;
+    margin-top: -0.25rem; /* Pull up to touch header */
     margin-left: -1rem;
     margin-right: -1rem;
     background: rgba(255, 255, 255, 0.55);
@@ -213,6 +214,18 @@ try {
     box-shadow:
       0 2px 8px rgba(0, 0, 0, 0.05),
       0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  @media (min-width: 640px) {
+    .chapter-meta-bar {
+      margin-top: -0.5rem; /* sm:py-2 compensation */
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .chapter-meta-bar {
+      margin-top: -0.75rem; /* lg:py-3 compensation */
+    }
   }
 
   :global(.dark) .chapter-meta-bar {
@@ -249,28 +262,11 @@ try {
     top: 108px; /* 64px header + ~44px meta bar */
     z-index: 35;
     background: var(--yuval-reading-bg);
-    padding: 0.5rem 1rem 0;
-    margin-left: -1rem;
-    margin-right: -1rem;
+    padding: 0.5rem 0 0;
+    /* Match chapter-content width for alignment */
+    max-width: var(--reading-content-width, 720px);
+    margin: 0 auto;
     transition: padding 0.15s ease, background 0.3s ease;
-  }
-
-  @media (min-width: 640px) {
-    .chapter-header {
-      padding-left: 1.5rem;
-      padding-right: 1.5rem;
-      margin-left: -1.5rem;
-      margin-right: -1.5rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .chapter-header {
-      padding-left: 2rem;
-      padding-right: 2rem;
-      margin-left: -2rem;
-      margin-right: -2rem;
-    }
   }
 
   .chapter-header.scrolled {

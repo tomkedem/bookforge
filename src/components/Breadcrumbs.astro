@@ -16,7 +16,7 @@ const { items, class: className } = Astro.props;
 
 <nav
   aria-label="Breadcrumb"
-  class:list={['text-sm font-body text-yuval-text-tertiary', className]}
+  class:list={['text-sm font-body text-yuval-text-tertiary breadcrumbs-nav', className]}
 >
   <ol class="flex flex-wrap items-center gap-1.5" data-breadcrumbs>
     {items.map((item, i) => {
@@ -54,3 +54,12 @@ const { items, class: className } = Astro.props;
     })}
   </ol>
 </nav>
+
+<style>
+  /* Match chapter-content width for alignment */
+  .breadcrumbs-nav {
+    max-width: var(--reading-content-width, 720px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>

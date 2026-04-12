@@ -189,67 +189,217 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   .toc-title {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
     color: var(--yuval-text-muted);
     text-transform: uppercase;
     margin-bottom: 16px;
-    padding: 0;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toc-title::before {
+    content: '';
+    width: 16px;
+    height: 2px;
+    background: linear-gradient(to right, #c9a227, transparent);
+    border-radius: 1px;
+  }
+
+  :global(.dark) .toc-title::before {
+    background: linear-gradient(to right, #8b7355, transparent);
   }
 
   .toc-list ul {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .toc-item {
+    position: relative;
     margin-bottom: 0;
-    border-bottom: 1px solid var(--yuval-toc-item-border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toc-item:hover {
+    transform: translateX(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .toc-sidebar-rtl .toc-item:hover {
+    transform: translateX(2px);
   }
 
   .toc-item-active {
-    border-left: 3px solid var(--yuval-toc-active);
-    border-bottom: none;
+    background: linear-gradient(135deg, 
+      rgba(201, 162, 39, 0.12) 0%,
+      rgba(201, 162, 39, 0.06) 100%
+    );
+    box-shadow: 
+      0 2px 12px rgba(201, 162, 39, 0.15),
+      inset 0 0 0 1px rgba(201, 162, 39, 0.25);
   }
 
-  .toc-sidebar-rtl .toc-item-active {
-    border-left: none;
-    border-right: 3px solid var(--yuval-toc-active);
+  .toc-item-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #e8c547, #c9a227, #a8852a);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .toc-sidebar-rtl .toc-item-active::before {
+    left: auto;
+    right: 0;
+    border-radius: 3px 0 0 3px;
+  }
+
+  /* Reading indicator dot for active chapter */
+  .toc-item-active::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #c9a227;
+    border-radius: 50%;
+    animation: reading-pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(201, 162, 39, 0.6);
+  }
+
+  .toc-sidebar-rtl .toc-item-active::after {
+    right: auto;
+    left: 12px;
+  }
+
+  @keyframes reading-pulse {
+    0%, 100% { 
+      opacity: 1; 
+      transform: translateY(-50%) scale(1);
+    }
+    50% { 
+      opacity: 0.6; 
+      transform: translateY(-50%) scale(0.85);
+    }
+  }
+
+  :global(.dark) .toc-item-active {
+    background: linear-gradient(135deg, 
+      rgba(139, 115, 85, 0.18) 0%,
+      rgba(139, 115, 85, 0.08) 100%
+    );
+    box-shadow: 
+      0 2px 12px rgba(139, 115, 85, 0.2),
+      inset 0 0 0 1px rgba(139, 115, 85, 0.3);
+  }
+
+  :global(.dark) .toc-item-active::before {
+    background: linear-gradient(to bottom, #a8956d, #8b7355, #6d5a42);
+  }
+
+  :global(.dark) .toc-item-active::after {
+    background: #a8956d;
+    box-shadow: 0 0 8px rgba(168, 149, 109, 0.6);
   }
 
   .toc-link {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 0;
+    gap: 10px;
+    padding: 10px 12px;
     color: var(--yuval-text-tertiary);
     text-decoration: none;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
+    border-radius: 10px;
   }
 
   .toc-link:hover {
     color: var(--yuval-text);
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  :global(.dark) .toc-link:hover {
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .toc-link-active {
     color: var(--yuval-text);
-    font-weight: 500;
+    font-weight: 600;
+    padding-right: 28px; /* Space for reading dot */
+  }
+
+  .toc-sidebar-rtl .toc-link-active {
+    padding-right: 12px;
+    padding-left: 28px;
   }
 
   .toc-number {
-    color: var(--yuval-toc-number);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--yuval-bg-secondary);
+    border-radius: 6px;
+    color: var(--yuval-text-muted);
     font-size: 11px;
-    font-weight: 500;
-    min-width: 24px;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .toc-item-active .toc-number {
+    background: linear-gradient(135deg, #c9a227, #a8852a);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(201, 162, 39, 0.35);
+  }
+
+  :global(.dark) .toc-item-active .toc-number {
+    background: linear-gradient(135deg, #8b7355, #6d5a42);
+    box-shadow: 0 2px 6px rgba(139, 115, 85, 0.4);
+  }
+
+  .toc-link:hover .toc-number {
+    transform: scale(1.05);
   }
 
   .toc-chapter-title {
     flex: 1;
+    font-size: 12.5px;
+    line-height: 1.35;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .toc-item-active .toc-chapter-title {
+    color: var(--yuval-chapter-title);
+  }
+
+  /* Completed chapter styling */
+  .toc-item-completed .toc-number {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+  }
+
+  :global(.dark) .toc-item-completed .toc-number {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    box-shadow: 0 2px 6px rgba(74, 222, 128, 0.35);
   }
 
   /* Completed chapter checkmark */
@@ -259,16 +409,47 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   .chapter-complete-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+    border-radius: 50%;
     color: #22c55e;
-    font-weight: 600;
-    font-size: 12px;
+    font-weight: 700;
+    font-size: 11px;
     margin-inline-start: auto;
     flex-shrink: 0;
-    padding-inline-start: 8px;
   }
 
   :global(.dark) .chapter-complete-check {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(74, 222, 128, 0.08));
     color: #4ade80;
+  }
+
+  /* Progress bar under chapter */
+  .toc-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: var(--yuval-border);
+    border-radius: 1px;
+    overflow: hidden;
+    opacity: 0.6;
+  }
+
+  .toc-progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, #c9a227, #e8c547);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+  }
+
+  :global(.dark) .toc-progress-fill {
+    background: linear-gradient(to right, #8b7355, #a8956d);
   }
 
   /* Outline Sidebar — RIGHT in English, LEFT in Hebrew */
