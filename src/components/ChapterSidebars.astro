@@ -479,48 +479,165 @@ const isRtl = language === LANGUAGES.HE;
 
   .outline-title {
     font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     color: var(--yuval-text-muted);
     text-transform: uppercase;
-    margin-bottom: 16px;
-    padding: 0;
+    margin-bottom: 20px;
+    padding: 0 0 12px 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .outline-title::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(135deg, #c9a227, #e8c547);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  :global(.dark) .outline-title::before {
+    background: linear-gradient(135deg, #8b7355, #a8956d);
+  }
+
+  .outline-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, rgba(201, 162, 39, 0.3), transparent 80%);
+  }
+
+  :global(.dark) .outline-title::after {
+    background: linear-gradient(to right, rgba(139, 115, 85, 0.4), transparent 80%);
   }
 
   .outline-list ul {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .outline-list li {
     margin-bottom: 0;
-    border-bottom: 1px solid var(--yuval-toc-item-border);
+    border-bottom: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .outline-list li:hover {
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.06), rgba(201, 162, 39, 0.02));
+  }
+
+  :global(.dark) .outline-list li:hover {
+    background: linear-gradient(135deg, rgba(139, 115, 85, 0.1), rgba(139, 115, 85, 0.04));
+  }
+
+  /* Active section indicator */
+  .outline-list li.active {
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.12), rgba(201, 162, 39, 0.05));
+    box-shadow: inset 3px 0 0 #c9a227;
+  }
+
+  :global(.dark) .outline-list li.active {
+    background: linear-gradient(135deg, rgba(139, 115, 85, 0.15), rgba(139, 115, 85, 0.06));
+    box-shadow: inset 3px 0 0 #8b7355;
+  }
+
+  /* RTL active indicator */
+  .outline-sidebar-rtl .outline-list li.active {
+    box-shadow: inset -3px 0 0 #c9a227;
+  }
+
+  :global(.dark) .outline-sidebar-rtl .outline-list li.active {
+    box-shadow: inset -3px 0 0 #8b7355;
   }
 
   .outline-list a {
-    display: block;
-    padding: 8px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
     color: var(--yuval-text-tertiary);
     text-decoration: none;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 450;
     word-break: break-word;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
+    line-height: 1.45;
   }
 
-  .outline-list a:hover {
+  .outline-list a::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-top: 6px;
+    background: var(--yuval-border);
+    border-radius: 2px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .outline-list li:hover a::before {
+    background: rgba(201, 162, 39, 0.5);
+    transform: scale(1.2);
+  }
+
+  :global(.dark) .outline-list li:hover a::before {
+    background: rgba(139, 115, 85, 0.6);
+  }
+
+  .outline-list li.active a::before {
+    background: #c9a227;
+    width: 8px;
+    height: 8px;
+    margin-top: 5px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(201, 162, 39, 0.4);
+  }
+
+  :global(.dark) .outline-list li.active a::before {
+    background: #8b7355;
+    box-shadow: 0 0 6px rgba(139, 115, 85, 0.5);
+  }
+
+  .outline-list li:hover a,
+  .outline-list li.active a {
     color: var(--yuval-text);
   }
 
-  /* Indentation for nested headings */
-  .outline-list li[data-level="h3"] a {
-    padding-left: 12px;
-    padding-right: 0;
+  .outline-list li.active a {
+    font-weight: 550;
   }
 
-  .outline-list li[data-level="h3"].outline-sidebar-rtl a {
-    padding-left: 0;
+  /* Indentation for nested headings (h3) */
+  .outline-list li[data-level="h3"] a {
+    padding-left: 24px;
     padding-right: 12px;
+    font-size: 12px;
+    color: var(--yuval-text-muted);
+  }
+
+  .outline-list li[data-level="h3"] a::before {
+    width: 4px;
+    height: 4px;
+    margin-top: 7px;
+    border-radius: 1px;
+  }
+
+  .outline-sidebar-rtl .outline-list li[data-level="h3"] a {
+    padding-left: 12px;
+    padding-right: 24px;
   }
 
   /* ── Smooth transition for immersive mode ── */

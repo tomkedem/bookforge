@@ -135,26 +135,46 @@ try {
 
   <!-- Sticky chapter header: title + progress — shrinks on scroll -->
   <div id="chapter-header" class="chapter-header">
-    <div data-lang="he" class="hidden header-lang" dir="rtl">
-      <div class="header-title-row">
-        <h1 class="chapter-title">{currentChapter.title_he}</h1>
-        <span class="progress-badge" id="progress-badge-he">0%</span>
+    <div class="chapter-header-card">
+      <div data-lang="he" class="hidden header-lang" dir="rtl">
+        <div class="header-title-row">
+          <div class="chapter-number-badge">
+            <span class="chapter-number">{chapterId}</span>
+          </div>
+          <div class="chapter-title-group">
+            <span class="chapter-label">פרק</span>
+            <h1 class="chapter-title">{currentChapter.title_he}</h1>
+          </div>
+          <span class="progress-badge" id="progress-badge-he">0%</span>
+        </div>
       </div>
-    </div>
-    <div data-lang="en" class="visible header-lang" dir="ltr">
-      <div class="header-title-row">
-        <h1 class="chapter-title">{currentChapter.title_en}</h1>
-        <span class="progress-badge" id="progress-badge-en">0%</span>
+      <div data-lang="en" class="visible header-lang" dir="ltr">
+        <div class="header-title-row">
+          <div class="chapter-number-badge">
+            <span class="chapter-number">{chapterId}</span>
+          </div>
+          <div class="chapter-title-group">
+            <span class="chapter-label">Chapter</span>
+            <h1 class="chapter-title">{currentChapter.title_en}</h1>
+          </div>
+          <span class="progress-badge" id="progress-badge-en">0%</span>
+        </div>
       </div>
-    </div>
-    <div data-lang="es" class="hidden header-lang" dir="ltr">
-      <div class="header-title-row">
-        <h1 class="chapter-title">{currentChapter.title_es || currentChapter.title_en}</h1>
-        <span class="progress-badge" id="progress-badge-es">0%</span>
+      <div data-lang="es" class="hidden header-lang" dir="ltr">
+        <div class="header-title-row">
+          <div class="chapter-number-badge">
+            <span class="chapter-number">{chapterId}</span>
+          </div>
+          <div class="chapter-title-group">
+            <span class="chapter-label">Capítulo</span>
+            <h1 class="chapter-title">{currentChapter.title_es || currentChapter.title_en}</h1>
+          </div>
+          <span class="progress-badge" id="progress-badge-es">0%</span>
+        </div>
       </div>
-    </div>
-    <div class="header-progress-line">
-      <div class="header-progress-fill" id="header-progress-fill"></div>
+      <div class="header-progress-line">
+        <div class="header-progress-fill" id="header-progress-fill"></div>
+      </div>
     </div>
   </div>
 
@@ -262,32 +282,126 @@ try {
     top: 108px; /* 64px header + ~44px meta bar */
     z-index: 35;
     background: var(--yuval-reading-bg);
-    padding: 0.5rem 0 0;
+    padding: 0.75rem 0 0;
     /* Match chapter-content width for alignment */
     max-width: var(--reading-content-width, 720px);
     margin: 0 auto;
-    transition: padding 0.15s ease, background 0.3s ease;
+    transition: padding 0.2s ease, background 0.3s ease;
+  }
+
+  .chapter-header-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem 1rem;
+    box-shadow:
+      0 4px 20px rgba(201, 162, 39, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(201, 162, 39, 0.15);
+    transition: all 0.25s ease;
+  }
+
+  :global(.dark) .chapter-header-card {
+    background: linear-gradient(135deg, rgba(45, 45, 50, 0.95), rgba(35, 35, 40, 0.9));
+    box-shadow:
+      0 4px 20px rgba(139, 115, 85, 0.12),
+      0 2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(139, 115, 85, 0.25);
   }
 
   .chapter-header.scrolled {
     padding-top: 0.375rem;
-    padding-bottom: 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    padding-bottom: 0.375rem;
+  }
+
+  .chapter-header.scrolled .chapter-header-card {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Chapter number badge */
+  .chapter-number-badge {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #c9a227, #a88620);
+    border-radius: 14px;
+    box-shadow:
+      0 4px 12px rgba(201, 162, 39, 0.35),
+      inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    transition: all 0.25s ease;
+  }
+
+  :global(.dark) .chapter-number-badge {
+    background: linear-gradient(145deg, #8b7355, #6d5a45);
+    box-shadow:
+      0 4px 12px rgba(139, 115, 85, 0.4),
+      inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  }
+
+  .chapter-header.scrolled .chapter-number-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .chapter-number {
+    font-family: var(--font-heading, serif);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: font-size 0.25s ease;
+  }
+
+  .chapter-header.scrolled .chapter-number {
+    font-size: 0.875rem;
+  }
+
+  /* Chapter title group */
+  .chapter-title-group {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .chapter-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #c9a227;
+    opacity: 0.9;
+    transition: all 0.25s ease;
+  }
+
+  :global(.dark) .chapter-label {
+    color: #a8956d;
+  }
+
+  .chapter-header.scrolled .chapter-label {
+    display: none;
   }
 
   .chapter-title {
     font-family: var(--font-heading, serif);
     font-weight: 700;
-    font-size: clamp(1.25rem, 4vw, 2rem);
-    line-height: 1.2;
+    font-size: clamp(1.25rem, 4vw, 1.75rem);
+    line-height: 1.25;
     color: var(--yuval-chapter-title);
-    margin: 0 0 0.25rem;
-    transition: font-size 0.2s ease, margin 0.2s ease, color 0.3s ease;
+    margin: 0;
+    transition: font-size 0.25s ease, color 0.3s ease;
   }
 
   .chapter-header.scrolled .chapter-title {
-    font-size: clamp(0.75rem, 2vw, 1rem);
-    margin-bottom: 0;
+    font-size: clamp(0.875rem, 2vw, 1rem);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -296,7 +410,6 @@ try {
   .header-title-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
   }
 
@@ -304,45 +417,79 @@ try {
     flex-direction: row-reverse;
   }
 
+  /* Progress badge */
   .progress-badge {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 700;
-    color: var(--yuval-progress-badge);
     font-variant-numeric: tabular-nums;
-    min-width: 2.75rem;
+    min-width: 3rem;
+    padding: 0.375rem 0.625rem;
     text-align: center;
     flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.15), rgba(201, 162, 39, 0.08));
+    color: #c9a227;
+    border-radius: 20px;
+    border: 1px solid rgba(201, 162, 39, 0.25);
     opacity: 0;
-    transform: scale(0.8);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: scale(0.8) translateX(10px);
+    transition: all 0.3s ease;
+  }
+
+  :global(.dark) .progress-badge {
+    background: linear-gradient(135deg, rgba(139, 115, 85, 0.2), rgba(139, 115, 85, 0.1));
+    color: #a8956d;
+    border: 1px solid rgba(139, 115, 85, 0.3);
   }
 
   .chapter-header.scrolled .progress-badge {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateX(0);
   }
 
+  .progress-badge.complete {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.08));
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+
+  :global(.dark) .progress-badge.complete {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(74, 222, 128, 0.1));
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.35);
+  }
+
+  /* Progress line */
   .header-progress-line {
-    height: 2px;
-    background: var(--yuval-progress-line);
-    margin-top: 0.5rem;
-    border-radius: 1px;
+    height: 3px;
+    background: linear-gradient(to right, rgba(201, 162, 39, 0.15), rgba(201, 162, 39, 0.08));
+    margin-top: 1rem;
+    border-radius: 2px;
     overflow: hidden;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease, margin 0.25s ease;
+  }
+
+  :global(.dark) .header-progress-line {
+    background: linear-gradient(to right, rgba(139, 115, 85, 0.2), rgba(139, 115, 85, 0.1));
   }
 
   .chapter-header.scrolled .header-progress-line {
     opacity: 1;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
   }
 
   .header-progress-fill {
     height: 100%;
     width: 0%;
-    background: var(--yuval-progress-fill);
-    transition: width 0.1s linear;
-    border-radius: 1px;
+    background: linear-gradient(to right, #c9a227, #e8c547);
+    transition: width 0.15s ease-out;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(201, 162, 39, 0.4);
+  }
+
+  :global(.dark) .header-progress-fill {
+    background: linear-gradient(to right, #8b7355, #a8956d);
+    box-shadow: 0 0 8px rgba(139, 115, 85, 0.4);
   }
 
   .header-lang.hidden { display: none !important; }
