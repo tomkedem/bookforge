@@ -210,7 +210,20 @@ function updatePlayerState(): void {
 
   // FAB icon: 🔊 idle → ⏸ playing → ▶ paused
   if (fab) {
-    fab.textContent = playing ? '⏸' : paused ? '▶' : '🔊';
+    if (playing) {
+      fab.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
+    } else if (paused) {
+      fab.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5.14v14l11-7-11-7z"/></svg>`;
+    } else {
+      fab.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="20" height="20">
+          <rect x="4" y="10" width="2" height="4" rx="1" fill="currentColor" class="tts-bar tts-bar-1"/>
+          <rect x="8" y="7" width="2" height="10" rx="1" fill="currentColor" class="tts-bar tts-bar-2"/>
+          <rect x="12" y="4" width="2" height="16" rx="1" fill="currentColor" class="tts-bar tts-bar-3"/>
+          <rect x="16" y="7" width="2" height="10" rx="1" fill="currentColor" class="tts-bar tts-bar-4"/>
+          <rect x="20" y="10" width="2" height="4" rx="1" fill="currentColor" class="tts-bar tts-bar-5"/>
+        </svg>`;
+    }
     fab.classList.toggle('tts-playing', playing);
     fab.classList.toggle('tts-paused', paused);
   }
@@ -257,9 +270,22 @@ function injectStyles(): void {
       font-size: 18px;
       transition: transform 0.2s, box-shadow 0.2s, background 0.15s;
     }
+    #tts-fab svg { display: block; }
     #tts-fab:hover {
       transform: scale(1.08);
       box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+    }
+    #tts-fab:hover .tts-bar {
+      animation: ttsWave 0.6s ease-in-out infinite;
+    }
+    #tts-fab:hover .tts-bar-1 { animation-delay: 0s; }
+    #tts-fab:hover .tts-bar-2 { animation-delay: 0.1s; }
+    #tts-fab:hover .tts-bar-3 { animation-delay: 0.2s; }
+    #tts-fab:hover .tts-bar-4 { animation-delay: 0.3s; }
+    #tts-fab:hover .tts-bar-5 { animation-delay: 0.4s; }
+    @keyframes ttsWave {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.5); }
     }
     #tts-fab.tts-playing {
       background: #6366f1;
@@ -382,7 +408,14 @@ function buildPlayer(): void {
   fab.id = 'tts-fab';
   fab.type = 'button';
   fab.setAttribute('aria-label', tr('tts.label'));
-  fab.textContent = '🔊';
+  fab.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="20" height="20">
+      <rect x="4" y="10" width="2" height="4" rx="1" fill="currentColor" class="tts-bar tts-bar-1"/>
+      <rect x="8" y="7" width="2" height="10" rx="1" fill="currentColor" class="tts-bar tts-bar-2"/>
+      <rect x="12" y="4" width="2" height="16" rx="1" fill="currentColor" class="tts-bar tts-bar-3"/>
+      <rect x="16" y="7" width="2" height="10" rx="1" fill="currentColor" class="tts-bar tts-bar-4"/>
+      <rect x="20" y="10" width="2" height="4" rx="1" fill="currentColor" class="tts-bar tts-bar-5"/>
+    </svg>`;
   document.body.appendChild(fab);
 
   // Player bar
@@ -392,7 +425,16 @@ function buildPlayer(): void {
   player.innerHTML = `
     <button class="tts-btn" id="tts-stop" title="${tr('tts.stop')}" disabled>⏹</button>
     <button class="tts-btn" id="tts-play" title="${tr('tts.play')}">▶</button>
-    <span class="tts-label">🔊 ${tr('tts.label')}</span>
+    <span class="tts-label">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="vertical-align:-2px;margin-inline-end:4px;">
+        <rect x="4" y="10" width="2" height="4" rx="1"/>
+        <rect x="8" y="7" width="2" height="10" rx="1"/>
+        <rect x="12" y="4" width="2" height="16" rx="1"/>
+        <rect x="16" y="7" width="2" height="10" rx="1"/>
+        <rect x="20" y="10" width="2" height="4" rx="1"/>
+      </svg>
+      ${tr('tts.label')}
+    </span>
     <select id="tts-voice-select" title="${tr('tts.voice')}" style="
       font-size:11px; max-width:90px; border-radius:6px;
       border:1px solid var(--yuval-border,#e5e7eb);
