@@ -1,23 +1,31 @@
 import type { Language, LanguageContext, LanguageMeta, LanguageName } from '../types/index';
 import { t } from '../i18n';
 
-export const LANGUAGES = {
-  HE: 'he' as const,
-  EN: 'en' as const,
-  ES: 'es' as const,
-} as const;
-
 /**
  * Master list of supported languages.
- * To add a new language: append one entry here — nothing else changes.
+ * To add a new language: append one entry here — nothing else in the codebase needs to change.
+ * The pipeline, components, and pages all derive their language support from this config.
  */
 export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
-  { code: 'he', label: 'עברית',   labelEn: 'Hebrew',  dir: 'rtl' },
-  { code: 'en', label: 'English', labelEn: 'English', dir: 'ltr' },
-  { code: 'es', label: 'Español', labelEn: 'Español', dir: 'ltr' },
+  { code: 'he', label: 'עברית',   labelEn: 'Hebrew',  dir: 'rtl', locale: 'he-IL' },
+  { code: 'en', label: 'English', labelEn: 'English', dir: 'ltr', locale: 'en-US' },
+  { code: 'es', label: 'Español', labelEn: 'Spanish', dir: 'ltr', locale: 'es-ES' },
+  // Add new languages here:
+  // { code: 'fr', label: 'Français', labelEn: 'French',  dir: 'ltr', locale: 'fr-FR' },
+  // { code: 'de', label: 'Deutsch',  labelEn: 'German',  dir: 'ltr', locale: 'de-DE' },
+  // { code: 'ar', label: 'العربية',  labelEn: 'Arabic',  dir: 'rtl', locale: 'ar-SA' },
 ];
 
-export const DEFAULT_LANGUAGE: Language = LANGUAGES.EN;
+// Derived constants from SUPPORTED_LANGUAGES
+export const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map(l => l.code);
+export const RTL_LANGUAGES = new Set(SUPPORTED_LANGUAGES.filter(l => l.dir === 'rtl').map(l => l.code));
+
+// Legacy LANGUAGES object for backward compatibility
+export const LANGUAGES = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(l => [l.code.toUpperCase(), l.code])
+) as Record<string, string>;
+
+export const DEFAULT_LANGUAGE: Language = 'en';
 const LANG_STORAGE_KEY = 'yuval_language';
 const LANG_COOKIE_NAME = 'yuval-lang';
 
@@ -117,7 +125,7 @@ export const setLanguageToStorage = (lang: Language): void => {
 
   // Update document attributes
   document.documentElement.lang = lang;
-  document.documentElement.dir = lang === LANGUAGES.HE ? 'rtl' : 'ltr';
+  document.documentElement.dir = RTL_LANGUAGES.has(lang) ? 'rtl' : 'ltr';
 };
 
 /**
@@ -141,20 +149,22 @@ export const applyLanguageToPage = (lang: Language): void => {
   });
 
   // ── 2. Legacy data-{lang} system (dynamic content) ──────────────────────────
-  const allLangCodes = SUPPORTED_LANGUAGES.map(l => l.code);
+  // Generate selector dynamically from SUPPORTED_LANGUAGES
+  const selector = LANGUAGE_CODES.map(code => `[data-${code}]`).join(', ');
 
-  document.querySelectorAll('[data-he], [data-en], [data-es]').forEach(el => {
-    const values: Partial<Record<Language, string | null>> = {};
-    allLangCodes.forEach(code => {
+  document.querySelectorAll(selector).forEach(el => {
+    const values: Record<string, string | null> = {};
+    LANGUAGE_CODES.forEach(code => {
       values[code] = el.getAttribute(`data-${code}`);
     });
 
-    const hasMultiple = allLangCodes.filter(code => values[code] !== null).length > 1;
+    const hasMultiple = LANGUAGE_CODES.filter(code => values[code] !== null).length > 1;
     if (hasMultiple) {
-      const text = values[lang] ?? values['en'] ?? values['he'] ?? null;
+      // Fallback chain: requested lang -> en -> first available
+      const text = values[lang] ?? values['en'] ?? Object.values(values).find(v => v !== null) ?? null;
       if (text !== null) el.textContent = text;
     } else {
-      const ownLang = allLangCodes.find(code => values[code] !== null);
+      const ownLang = LANGUAGE_CODES.find(code => values[code] !== null);
       if (ownLang) {
         (el as HTMLElement).classList.toggle('hidden', ownLang !== lang);
       }

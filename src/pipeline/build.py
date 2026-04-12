@@ -5,15 +5,15 @@ Supported format: .docx (Word) only.
 PDF is not supported - convert to Word first.
 
 Usage:
-    python -m pipeline.build <docx_path> <book_name> [--title-he "..."] [--title-en "..."] [--skip-translate]
+    python -m pipeline.build <docx_path> <book_name> [--title "..."] [--languages he,en,es,fr]
 
 Example:
-    python -m pipeline.build "D:\\Books\\MyBook.docx" my-book --title-he "הספר שלי" --title-en "My Book"
+    python -m pipeline.build "D:\\Books\\MyBook.docx" my-book --title "הספר שלי" --languages he,en,es
 
 Run from the project root (bookforge/src/).
 
 Translation:
-    Step 5.5 identifies Hebrew chapters needing translation.
+    Step 5.5 identifies chapters needing translation for all specified languages.
     When run from Copilot, the Translator agent handles translation.
     Use --skip-translate to skip translation (e.g., for re-parse only).
 """
@@ -31,40 +31,49 @@ from pipeline.ingest import ingest
 from pipeline.parse import parse, extract_images, to_markdown, extract_book_info, DEFAULT_ASSETS_DIR
 from pipeline.organize import organize
 from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt
+from pipeline.languages import (
+    SUPPORTED_LANGUAGES,
+    LANGUAGE_CODES,
+    SOURCE_LANGUAGE,
+    get_target_languages,
+    get_language_meta,
+    parse_languages_arg,
+)
 
 
-def sync_images_to_translations(book_dir: Path, book_name: str):
+def sync_images_to_translations(book_dir: Path, book_name: str, languages: list[str] = None):
     """
-    Copy correct image references from Hebrew chapters to all translated chapters.
+    Copy correct image references from source language chapters to all translated chapters.
     Translated files keep their text but get the same images
-    at the same positions as the Hebrew source.
+    at the same positions as the source file.
     
-    Supports: intro.he.md, chapter-XX.he.md
-    Languages: English (.en.md), Spanish (.es.md), and future languages.
+    Supports: intro.{lang}.md, chapter-XX.{lang}.md
+    Languages: All configured languages.
     Uses absolute paths: /{book_name}/assets/
     """
-    # Import target languages from translate module
-    from pipeline.translate import TARGET_LANGUAGES
+    if languages is None:
+        languages = LANGUAGE_CODES
+    
+    target_languages = [l for l in languages if l != SOURCE_LANGUAGE]
     
     img_pattern = re.compile(r'(<img [^>]+/>|!\[[^\]]*\]\([^)]+\))')
     
     synced_count = 0
     
-    # Collect all Hebrew source files (intro + chapters)
-    he_files = []
-    intro_path = book_dir / "intro.he.md"
+    # Collect all source language files (intro + chapters)
+    source_files = []
+    intro_path = book_dir / f"intro.{SOURCE_LANGUAGE}.md"
     if intro_path.exists():
-        he_files.append(intro_path)
-    he_files.extend(sorted(book_dir.glob("chapter-*.he.md")))
+        source_files.append(intro_path)
+    source_files.extend(sorted(book_dir.glob(f"chapter-*.{SOURCE_LANGUAGE}.md")))
     
-    for he_path in he_files:
-        he_content = he_path.read_text(encoding="utf-8")
-        he_images = img_pattern.findall(he_content)
+    for source_path in source_files:
+        source_content = source_path.read_text(encoding="utf-8")
+        source_images = img_pattern.findall(source_content)
         
         # Sync to all target languages
-        for lang in TARGET_LANGUAGES:
-            lang_code = lang["code"]
-            target_path = he_path.with_name(he_path.name.replace(".he.md", f".{lang_code}.md"))
+        for lang_code in target_languages:
+            target_path = source_path.with_name(source_path.name.replace(f".{SOURCE_LANGUAGE}.md", f".{lang_code}.md"))
             
             if not target_path.exists():
                 continue
@@ -72,7 +81,7 @@ def sync_images_to_translations(book_dir: Path, book_name: str):
             target_content = target_path.read_text(encoding="utf-8")
             target_images = img_pattern.findall(target_content)
             
-            if he_images == target_images:
+            if source_images == target_images:
                 continue  # Already in sync
             
             # Remove old images
@@ -83,10 +92,10 @@ def sync_images_to_translations(book_dir: Path, book_name: str):
                 clean_content = clean_content.replace(old_img, "")
             
             # Insert correct images after title line
-            if he_images:
+            if source_images:
                 lines = clean_content.split("\n")
                 insert_idx = 2  # After "# Title" and blank line
-                for img in reversed(he_images):
+                for img in reversed(source_images):
                     if "../assets/" in img:
                         img = img.replace("../assets/", f"/{book_name}/assets/")
                     lines.insert(insert_idx, "")
@@ -94,7 +103,7 @@ def sync_images_to_translations(book_dir: Path, book_name: str):
                 clean_content = "\n".join(lines)
             
             target_path.write_text(clean_content, encoding="utf-8")
-            print(f"  [SYNC] {target_path.name}: {len(target_images)} → {len(he_images)} images")
+            print(f"  [SYNC] {target_path.name}: {len(target_images)} → {len(source_images)} images")
             synced_count += 1
     
     return synced_count
@@ -115,9 +124,26 @@ def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
 
 
 def run_pipeline(docx_path: str, book_name: str,
-                 title_he: str = "", title_en: str = "", title_es: str = "",
+                 title: str = "", languages: list[str] = None,
                  output_dir: str = "output", skip_translate: bool = False):
-    """Run the full book processing pipeline."""
+    """
+    Run the full book processing pipeline.
+    
+    Args:
+        docx_path: Path to Word document
+        book_name: Book slug name
+        title: Book title (source language)
+        languages: List of language codes to support (default: all from config)
+        output_dir: Output directory path
+        skip_translate: Skip translation step
+    """
+    if languages is None:
+        languages = LANGUAGE_CODES
+    else:
+        # Validate and filter languages
+        languages = [l for l in languages if l in LANGUAGE_CODES or l == SOURCE_LANGUAGE]
+        if SOURCE_LANGUAGE not in languages:
+            languages.insert(0, SOURCE_LANGUAGE)  # Always include source
 
     print(f"{'=' * 60}")
     print(f"BookForge Pipeline: {book_name}")
@@ -136,9 +162,12 @@ def run_pipeline(docx_path: str, book_name: str,
         print(f"  תת-כותרת: {book_info['subtitle']}")
     
     # Use extracted title if not provided via CLI
-    if not title_he and book_info["title"]:
-        title_he = book_info["title"]
-    subtitle_he = book_info.get("subtitle", "")
+    source_title = title or book_info.get("title", "")
+    source_subtitle = book_info.get("subtitle", "")
+    
+    # Build titles/subtitles dicts for all languages
+    book_titles = {SOURCE_LANGUAGE: source_title} if source_title else {}
+    book_subtitles = {SOURCE_LANGUAGE: source_subtitle} if source_subtitle else {}
 
     # Step 2: Parse chapters
     print("\n[2/7] Parse chapters...")
@@ -171,29 +200,34 @@ def run_pipeline(docx_path: str, book_name: str,
     # Step 5: Organize output (cleans stale files + generates content-structure.json)
     print("\n[5/7] Organize output...")
     created = organize(book_name, chapters_md, output_dir,
-                       book_title_he=title_he, book_title_en=title_en,
-                       book_title_es=title_es, book_subtitle_he=subtitle_he)
-    print(f"  Hebrew files: {len(created)}")
+                       languages=languages,
+                       book_titles=book_titles,
+                       book_subtitles=book_subtitles)
+    print(f"  Source files: {len(created)}")
+    print(f"  Languages: {', '.join(languages)}")
 
     # Step 6: Translate (identify chapters needing translation)
     book_dir = Path(output_dir) / book_name
+    target_languages = [l for l in languages if l != SOURCE_LANGUAGE]
     pending_translations = []
     batch_prompt = ""
     if skip_translate:
         print("\n[6/7] Translate... SKIPPED (--skip-translate)")
     else:
         print("\n[6/7] Translate...")
-        pending_translations = get_chapters_to_translate(str(book_dir))
+        pending_translations = get_chapters_to_translate(str(book_dir), target_languages)
         if pending_translations:
-            batch_prompt = build_batch_prompt(pending_translations)
-            # Count by language
-            en_count = sum(1 for p in pending_translations if p["lang_code"] == "en")
-            es_count = sum(1 for p in pending_translations if p["lang_code"] == "es")
+            batch_prompt = build_batch_prompt(pending_translations, target_languages)
+            # Count by language dynamically
+            lang_counts = {}
+            for p in pending_translations:
+                lang_counts[p["lang_code"]] = lang_counts.get(p["lang_code"], 0) + 1
+            
             print(f"  {len(pending_translations)} chapters need translation:")
-            if en_count > 0:
-                print(f"    - English: {en_count} chapters")
-            if es_count > 0:
-                print(f"    - Spanish: {es_count} chapters")
+            for lang_code, count in sorted(lang_counts.items()):
+                lang_meta = get_language_meta(lang_code)
+                lang_name = lang_meta.label_en if lang_meta else lang_code
+                print(f"    - {lang_name}: {count} chapters")
             print("  >> Batch prompt ready for Translator agent")
             print("  >> הפעל את סוכן translator כדי לתרגם")
         else:
@@ -201,7 +235,7 @@ def run_pipeline(docx_path: str, book_name: str,
 
     # Step 7: Sync images to all translations
     print("\n[7/7] Sync & finalize...")
-    sync_images_to_translations(book_dir, book_name)
+    sync_images_to_translations(book_dir, book_name, languages)
     # Assets already in public/{book}/assets/ - no copy needed
 
     print(f"\n{'=' * 60}")
@@ -225,21 +259,28 @@ def main():
     # Always resolve output relative to project root (parent of src/)
     project_root = Path(__file__).resolve().parent.parent.parent
     default_output = str(project_root / "output")
+    default_languages = ",".join(LANGUAGE_CODES)
 
     parser = argparse.ArgumentParser(description="BookForge: Word → Chapters pipeline")
     parser.add_argument("docx_path", help="Path to Word (.docx) file")
     parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
-    parser.add_argument("--title-he", default="", help="Hebrew title")
-    parser.add_argument("--title-en", default="", help="English title")
-    parser.add_argument("--title-es", default="", help="Spanish title")
+    parser.add_argument("--title", default="", help="Book title (source language)")
+    parser.add_argument("--languages", default=default_languages,
+                        help=f"Comma-separated language codes (default: {default_languages})")
     parser.add_argument("--output-dir", default=default_output, help="Output directory")
     parser.add_argument("--skip-translate", action="store_true",
                         help="Skip translation step (re-parse only)")
     args = parser.parse_args()
 
+    # Parse language codes
+    languages = parse_languages_arg(args.languages)
+    if not languages:
+        print(f"❌ No valid languages specified. Supported: {', '.join(LANGUAGE_CODES)}")
+        sys.exit(1)
+
     run_pipeline(args.docx_path, args.book_name,
-                 title_he=args.title_he, title_en=args.title_en,
-                 title_es=args.title_es, output_dir=args.output_dir,
+                 title=args.title, languages=languages,
+                 output_dir=args.output_dir,
                  skip_translate=args.skip_translate)
 
 

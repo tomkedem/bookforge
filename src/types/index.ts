@@ -152,8 +152,9 @@ export interface DesignRules {
 
 // Content Types
 export interface Book {
-  title_he: string;
-  title_en: string;
+  titles: Record<string, string>;      // { he: '...', en: '...', fr: '...' }
+  subtitles: Record<string, string>;
+  descriptions: Record<string, string>;
   chapters: Chapter[];
   total_chapters: number;
   total_sections: number;
@@ -166,24 +167,28 @@ export interface Book {
 
 export interface Chapter {
   id: number;
-  title_he: string;
-  title_en: string;
-  title_es?: string;
+  titles: Record<string, string>;      // { he: '...', en: '...', fr: '...' }
   sections: number;
   has_images: boolean;
   word_count: number;
   topics: string[];
+  // Legacy support - kept for backwards compatibility
+  title_he?: string;
+  title_en?: string;
+  title_es?: string;
 }
 
 // Application Types
-export type Language = 'he' | 'en' | 'es';
-export type LanguageName = 'Hebrew' | 'English' | 'Español';
+// Language codes are dynamic strings - validated at runtime against SUPPORTED_LANGUAGES
+export type Language = string;
+export type LanguageName = string;
 
 export interface LanguageMeta {
-  code: Language;
-  label: string;         // native label, e.g. "עברית", "English", "Español"
-  labelEn: LanguageName; // English name
+  code: string;          // 'he', 'en', 'fr', etc.
+  label: string;         // native label, e.g. "עברית", "English", "Français"
+  labelEn: string;       // English name
   dir: 'rtl' | 'ltr';
+  locale: string;        // BCP 47 locale, e.g. 'he-IL', 'en-US', 'fr-FR'
 }
 
 export interface LanguageContext {

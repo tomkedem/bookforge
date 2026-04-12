@@ -1,38 +1,81 @@
 ---
+import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from '../utils/language';
+
 interface Props {
   slug: string;
-  title_he: string;
-  title_en: string;
-  title_es?: string;
-  subtitle_he?: string;
-  subtitle_en?: string;
-  subtitle_es?: string;
-  description_he: string;
-  description_en: string;
-  description_es?: string;
+  titles: Record<string, string>;        // { he: '...', en: '...', fr: '...' }
+  subtitles?: Record<string, string>;
+  descriptions?: Record<string, string>;
   coverImage: string;
   dominantColor?: string;
   category?: string;
   class?: string;
+  // Legacy props for backward compatibility
+  title_he?: string;
+  title_en?: string;
+  title_es?: string;
+  subtitle_he?: string;
+  subtitle_en?: string;
+  subtitle_es?: string;
+  description_he?: string;
+  description_en?: string;
+  description_es?: string;
 }
 
 const {
   slug,
-  title_he,
-  title_en,
-  title_es,
-  subtitle_he = '',
-  subtitle_en = '',
-  subtitle_es = '',
-  description_he,
-  description_en,
-  description_es,
+  titles = {},
+  subtitles = {},
+  descriptions = {},
   coverImage,
   dominantColor = '#888888',
   category = 'General',
   class: className,
+  // Merge legacy props into titles/subtitles/descriptions
+  title_he,
+  title_en,
+  title_es,
+  subtitle_he,
+  subtitle_en,
+  subtitle_es,
+  description_he,
+  description_en,
+  description_es,
 } = Astro.props;
 
+// Build unified records from both new and legacy props
+const allTitles = { ...titles };
+if (title_he) allTitles['he'] = title_he;
+if (title_en) allTitles['en'] = title_en;
+if (title_es) allTitles['es'] = title_es;
+
+const allSubtitles = { ...subtitles };
+if (subtitle_he) allSubtitles['he'] = subtitle_he;
+if (subtitle_en) allSubtitles['en'] = subtitle_en;
+if (subtitle_es) allSubtitles['es'] = subtitle_es;
+
+const allDescriptions = { ...descriptions };
+if (description_he) allDescriptions['he'] = description_he;
+if (description_en) allDescriptions['en'] = description_en;
+if (description_es) allDescriptions['es'] = description_es;
+
+// Get display values (default language fallback)
+const displayTitle = allTitles[DEFAULT_LANGUAGE] || allTitles['en'] || Object.values(allTitles)[0] || '';
+const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || allSubtitles['en'] || Object.values(allSubtitles)[0] || '';
+const displayDescription = allDescriptions[DEFAULT_LANGUAGE] || allDescriptions['en'] || Object.values(allDescriptions)[0] || '';
+
+// Generate data attributes for all supported languages
+const titleAttrs = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(l => [`data-${l.code}`, allTitles[l.code] || displayTitle])
+);
+const subtitleAttrs = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(l => [`data-${l.code}`, allSubtitles[l.code] || displaySubtitle])
+);
+const descAttrs = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(l => [`data-${l.code}`, allDescriptions[l.code] || displayDescription])
+);
+
+const hasSubtitle = Object.values(allSubtitles).some(v => v);
 const bookUrl = `/books/${slug}`;
 ---
 
@@ -71,31 +114,25 @@ const bookUrl = `/books/${slug}`;
 
     <h3
       class="font-heading font-semibold text-sm sm:text-base leading-snug text-yuval-text"
-      data-he={title_he}
-      data-en={title_en}
-      data-es={title_es || title_en}
+      {...titleAttrs}
     >
-      {title_en}
+      {displayTitle}
     </h3>
 
-    {(subtitle_he || subtitle_en) && (
+    {hasSubtitle && (
       <p
         class="text-xs text-yuval-text-muted italic leading-tight -mt-0.5"
-        data-he={subtitle_he}
-        data-en={subtitle_en}
-        data-es={subtitle_es || subtitle_en}
+        {...subtitleAttrs}
       >
-        {subtitle_en}
+        {displaySubtitle}
       </p>
     )}
 
     <p
       class="text-xs text-yuval-text-secondary leading-relaxed line-clamp-2"
-      data-he={description_he}
-      data-en={description_en}
-      data-es={description_es || description_en}
+      {...descAttrs}
     >
-      {description_en}
+      {displayDescription}
     </p>
 
     <!-- Read link — minimal, text only -->

@@ -6,36 +6,51 @@
  * 1. content-structure.json (if present) — used for rich metadata
  * 2. MD files scanned directly — titles extracted from # headings,
  *    word count from content, sections from ## headings
+ *
+ * Supports dynamic languages - reads from SUPPORTED_LANGUAGES config.
  */
 
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import type { Chapter } from '../types/index';
 import { PATHS } from '../config';
+import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from './language';
 
 const OUTPUT_DIR = PATHS.OUTPUT_DIR;
+const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map(l => l.code);
 
 export interface DiscoveredBook {
   slug: string;
-  title_he: string;
-  title_en: string;
-  title_es: string;
-  subtitle_he: string;
-  subtitle_en: string;
-  subtitle_es: string;
-  description_he: string;
-  description_en: string;
-  description_es: string;
+  titles: Record<string, string>;       // { he: '...', en: '...', fr: '...' }
+  subtitles: Record<string, string>;
+  descriptions: Record<string, string>;
   category: string;
   coverImage: string;
   dominantColor: string;
   chapters: Chapter[];
+  languages: string[];                   // Available language codes
+  // Legacy fields for backward compatibility
+  title_he?: string;
+  title_en?: string;
+  title_es?: string;
+  subtitle_he?: string;
+  subtitle_en?: string;
+  subtitle_es?: string;
+  description_he?: string;
+  description_en?: string;
+  description_es?: string;
 }
 
 interface ContentStructure {
   book: {
-    title_he: string;
-    title_en: string;
+    // New dynamic structure
+    titles?: Record<string, string>;
+    subtitles?: Record<string, string>;
+    descriptions?: Record<string, string>;
+    languages?: string[];
+    // Legacy fields
+    title_he?: string;
+    title_en?: string;
     title_es?: string;
     subtitle_he?: string;
     subtitle_en?: string;
@@ -45,9 +60,11 @@ interface ContentStructure {
     description_es?: string;
     category?: string;
     chapters: Array<{
-      id: number;
-      title_he: string;
-      title_en: string;
+      id: number | string;
+      titles?: Record<string, string>;
+      title_he?: string;
+      title_en?: string;
+      title_es?: string;
       sections: number;
       has_images: boolean;
       word_count: number;
@@ -86,37 +103,48 @@ function extractFromMd(filepath: string): {
 }
 
 /**
- * Discover all chapters in a book folder by scanning MD files
+ * Discover all chapters in a book folder by scanning MD files.
+ * Dynamically discovers all available languages.
  */
 function discoverChaptersFromFiles(bookDir: string): Chapter[] {
   const files = readdirSync(bookDir);
-
-  // Find all Hebrew chapter files: chapter-XX.he.md
-  const heFiles = files
+  
+  // Find source language files (Hebrew by default)
+  const sourceFiles = files
     .filter(f => /^chapter-\d+\.he\.md$/.test(f))
     .sort();
 
   const chapters: Chapter[] = [];
 
-  for (const heFile of heFiles) {
-    const match = heFile.match(/^chapter-(\d+)\.he\.md$/);
+  for (const sourceFile of sourceFiles) {
+    const match = sourceFile.match(/^chapter-(\d+)\.he\.md$/);
     if (!match) continue;
 
     const num = parseInt(match[1], 10);
-    const hePath = join(bookDir, heFile);
-    const enFile = heFile.replace('.he.md', '.en.md');
-    const enPath = join(bookDir, enFile);
-
-    const heMeta = extractFromMd(hePath);
-    const enMeta = existsSync(enPath) ? extractFromMd(enPath) : null;
+    const sourcePath = join(bookDir, sourceFile);
+    const sourceMeta = extractFromMd(sourcePath);
+    
+    // Build titles for all available languages
+    const titles: Record<string, string> = { he: sourceMeta.title };
+    
+    for (const lang of LANGUAGE_CODES) {
+      if (lang === 'he') continue;
+      const langFile = sourceFile.replace('.he.md', `.${lang}.md`);
+      const langPath = join(bookDir, langFile);
+      if (existsSync(langPath)) {
+        titles[lang] = extractFromMd(langPath).title;
+      }
+    }
 
     chapters.push({
       id: num,
-      title_he: heMeta.title,
-      title_en: enMeta?.title || heMeta.title,
-      sections: Math.max(heMeta.sections, enMeta?.sections || 0),
-      has_images: heMeta.hasImages || (enMeta?.hasImages ?? false),
-      word_count: Math.max(heMeta.wordCount, enMeta?.wordCount || 0),
+      titles,
+      // Legacy fields
+      title_he: titles['he'] || sourceMeta.title,
+      title_en: titles['en'] || sourceMeta.title,
+      sections: sourceMeta.sections,
+      has_images: sourceMeta.hasImages,
+      word_count: sourceMeta.wordCount,
       topics: [],
     });
   }
@@ -140,19 +168,31 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
     if (!data.book?.chapters?.length) return null;
 
     return data.book.chapters.map((ch, idx) => {
-      const chId = ch.id !== undefined ? ch.id + 1 : idx + 1;
-      const num = String(chId).padStart(2, '0');
+      // Handle both string ids ('intro') and numeric ids
+      const chId = typeof ch.id === 'string' ? ch.id : (ch.id !== undefined ? ch.id : idx + 1);
+      const fileSlug = typeof chId === 'string' ? chId : `chapter-${String(chId).padStart(2, '0')}`;
 
-      // Always read titles from actual MD files (source of truth)
-      const hePath = join(bookDir, `chapter-${num}.he.md`);
-      const enPath = join(bookDir, `chapter-${num}.en.md`);
-      const heTitle = existsSync(hePath) ? extractFromMd(hePath).title : ch.title_he;
-      const enTitle = existsSync(enPath) ? extractFromMd(enPath).title : ch.title_en;
+      // Build titles from all available languages
+      const titles: Record<string, string> = ch.titles || {};
+      
+      // Read titles from actual MD files (source of truth) for each language
+      for (const lang of LANGUAGE_CODES) {
+        const fileName = `${fileSlug}.${lang}.md`;
+        const filePath = join(bookDir, fileName);
+        if (existsSync(filePath)) {
+          titles[lang] = extractFromMd(filePath).title;
+        } else if (!titles[lang]) {
+          // Fallback to legacy fields or JSON titles
+          titles[lang] = (ch as any)[`title_${lang}`] || titles['he'] || titles['en'] || '';
+        }
+      }
 
       return {
-        id: chId,
-        title_he: heTitle,
-        title_en: enTitle,
+        id: typeof chId === 'string' ? 0 : chId,  // 0 for intro
+        titles,
+        // Legacy fields
+        title_he: titles['he'] || '',
+        title_en: titles['en'] || titles['he'] || '',
         sections: ch.sections,
         has_images: ch.has_images,
         word_count: ch.word_count,
@@ -165,54 +205,71 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
 }
 
 /**
- * Infer book-level metadata from content-structure.json or folder name
+ * Infer book-level metadata from content-structure.json or folder name.
+ * Supports both new dynamic structure (titles: {}) and legacy (title_he, title_en).
  */
 function loadBookMeta(bookDir: string, slug: string): {
-  title_he: string;
-  title_en: string;
-  title_es: string;
-  subtitle_he: string;
-  subtitle_en: string;
-  subtitle_es: string;
-  description_he: string;
-  description_en: string;
-  description_es: string;
+  titles: Record<string, string>;
+  subtitles: Record<string, string>;
+  descriptions: Record<string, string>;
   category: string;
+  languages: string[];
 } {
+  const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  
   const jsonPath = join(bookDir, 'content-structure.json');
   if (existsSync(jsonPath)) {
     try {
       const data: ContentStructure = JSON.parse(readFileSync(jsonPath, 'utf-8'));
-      const title_en = data.book.title_en || slug;
-      const subtitle_en = data.book.subtitle_en || data.book.subtitle_he || '';
+      const book = data.book;
+      
+      // Use new dynamic structure if available, otherwise build from legacy fields
+      const titles: Record<string, string> = book.titles || {};
+      const subtitles: Record<string, string> = book.subtitles || {};
+      const descriptions: Record<string, string> = book.descriptions || {};
+      
+      // Merge legacy fields
+      for (const lang of LANGUAGE_CODES) {
+        if (!titles[lang] && (book as any)[`title_${lang}`]) {
+          titles[lang] = (book as any)[`title_${lang}`];
+        }
+        if (!subtitles[lang] && (book as any)[`subtitle_${lang}`]) {
+          subtitles[lang] = (book as any)[`subtitle_${lang}`];
+        }
+        if (!descriptions[lang] && (book as any)[`description_${lang}`]) {
+          descriptions[lang] = (book as any)[`description_${lang}`];
+        }
+      }
+      
+      // Ensure at least default language has a value
+      if (!titles[DEFAULT_LANGUAGE] && !titles['he']) {
+        titles[DEFAULT_LANGUAGE] = formatted;
+      }
+      
+      // Detect available languages from existing files
+      const availableLanguages = LANGUAGE_CODES.filter(lang => {
+        const hasFile = existsSync(join(bookDir, `chapter-01.${lang}.md`)) ||
+                       existsSync(join(bookDir, `intro.${lang}.md`));
+        return hasFile || titles[lang];
+      });
+      
       return {
-        title_he: data.book.title_he || slug,
-        title_en,
-        title_es: data.book.title_es || title_en,
-        subtitle_he: data.book.subtitle_he || '',
-        subtitle_en,
-        subtitle_es: data.book.subtitle_es || subtitle_en,
-        description_he: data.book.description_he || '',
-        description_en: data.book.description_en || '',
-        description_es: data.book.description_es || data.book.description_en || '',
-        category: data.book.category || 'General',
+        titles,
+        subtitles,
+        descriptions,
+        category: book.category || 'General',
+        languages: book.languages || availableLanguages,
       };
     } catch { /* fall through */ }
   }
 
   // Fallback: format slug as title
-  const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   return {
-    title_he: formatted,
-    title_en: formatted,
-    title_es: formatted,
-    subtitle_he: '',
-    subtitle_en: '',
-    subtitle_es: '',
-    description_he: '',
-    description_en: '',
-    description_es: '',
+    titles: { en: formatted, he: formatted },
+    subtitles: {},
+    descriptions: {},
     category: 'General',
+    languages: ['he'],
   };
 }
 
@@ -248,19 +305,24 @@ export function discoverBook(slug: string): DiscoveredBook | null {
 
   return {
     slug,
-    title_he: meta.title_he,
-    title_en: meta.title_en,
-    title_es: meta.title_es,
-    subtitle_he: meta.subtitle_he,
-    subtitle_en: meta.subtitle_en,
-    subtitle_es: meta.subtitle_es,
-    description_he: meta.description_he,
-    description_en: meta.description_en,
-    description_es: meta.description_es,
+    titles: meta.titles,
+    subtitles: meta.subtitles,
+    descriptions: meta.descriptions,
     category: meta.category,
     coverImage,
     dominantColor: '#1a1a1a',
     chapters,
+    languages: meta.languages,
+    // Legacy fields for backward compatibility
+    title_he: meta.titles['he'] || meta.titles['en'] || '',
+    title_en: meta.titles['en'] || meta.titles['he'] || '',
+    title_es: meta.titles['es'] || meta.titles['en'] || '',
+    subtitle_he: meta.subtitles['he'] || '',
+    subtitle_en: meta.subtitles['en'] || meta.subtitles['he'] || '',
+    subtitle_es: meta.subtitles['es'] || meta.subtitles['en'] || '',
+    description_he: meta.descriptions['he'] || '',
+    description_en: meta.descriptions['en'] || '',
+    description_es: meta.descriptions['es'] || meta.descriptions['en'] || '',
   };
 }
 

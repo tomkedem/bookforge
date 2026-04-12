@@ -100,7 +100,7 @@ def build_translation_prompt(he_path: str, target_path: str, lang_name: str) -> 
 כתוב את התרגום לקובץ {target_path}."""
 
 
-def build_batch_prompt(chapters: list[dict]) -> str:
+def build_batch_prompt(chapters: list[dict], target_languages: list[str] = None) -> str:
     """
     Build a single batch prompt for the Translator agent.
     All pending chapters (across all languages) are listed so the agent
@@ -114,9 +114,12 @@ def build_batch_prompt(chapters: list[dict]) -> str:
         for i, ch in enumerate(chapters)
     )
 
+    # Get unique languages from chapters
+    unique_codes = list(dict.fromkeys(ch['lang_code'] for ch in chapters))
     lang_summary = ", ".join(
-        f"{l['name']} (.{l['code']}.md)"
-        for l in TARGET_LANGUAGES
+        f"{get_language_meta(code).label_en} (.{code}.md)"
+        for code in unique_codes
+        if get_language_meta(code)
     )
 
     return f"""מצב Batch: תרגם {len(chapters)} פרקים מעברית לשפות היעד ({lang_summary}).
