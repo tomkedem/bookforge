@@ -4,64 +4,20 @@
  * Reads the current chapter aloud using the Web Speech API.
  * - Floating player bar (play/pause, stop, speed, voice)
  * - Highlights the paragraph currently being read
- * - Auto-detects Hebrew / English voices
+ * - Auto-detects voices per language
  * - RTL-aware
  * - Reads paragraph by paragraph for precise control
  */
 
-type LangKey = 'he' | 'en' | 'es';
+import { t, isRtlLang } from '../i18n';
 
-function getLang(): LangKey {
-  return (new URLSearchParams(window.location.search).get('lang')
+function getLang(): string {
+  return new URLSearchParams(window.location.search).get('lang')
     || localStorage.getItem('yuval_language')
-    || 'en') as LangKey;
+    || 'en';
 }
 
-// ── i18n ─────────────────────────────────────────────────────────────────────
-
-const i18n: Record<LangKey, {
-  label: string;
-  play: string;
-  pause: string;
-  stop: string;
-  speed: string;
-  voice: string;
-  notSupported: string;
-  dir: 'rtl' | 'ltr';
-}> = {
-  he: {
-    label: 'האזן לפרק',
-    play: 'נגן',
-    pause: 'השהה',
-    stop: 'עצור',
-    speed: 'מהירות',
-    voice: 'קול',
-    notSupported: 'הדפדפן שלך לא תומך בקריאה בקול',
-    dir: 'rtl',
-  },
-  es: {
-    label: 'Escuchar capítulo',
-    play: 'Reproducir',
-    pause: 'Pausar',
-    stop: 'Detener',
-    speed: 'Velocidad',
-    voice: 'Voz',
-    notSupported: 'Tu navegador no soporta lectura en voz alta',
-    dir: 'ltr',
-  },
-  en: {
-    label: 'Listen to chapter',
-    play: 'Play',
-    pause: 'Pause',
-    stop: 'Stop',
-    speed: 'Speed',
-    voice: 'Voice',
-    notSupported: 'Your browser doesn\'t support text-to-speech',
-    dir: 'ltr',
-  },
-};
-
-function tr() { return i18n[getLang()] ?? i18n.en; }
+function tr(key: string) { return t(key, getLang()); }
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -74,6 +30,26 @@ let selectedVoice: SpeechSynthesisVoice | null = null;
 let playbackRate = 1;
 
 const HIGHLIGHT_CLASS = 'tts-reading-highlight';
+const VOICE_STORAGE_KEY = 'yuval_tts_voice';
+const SPEED_STORAGE_KEY = 'yuval_tts_speed';
+
+function getSavedVoiceName(): string | null {
+  const lang = getLang();
+  return localStorage.getItem(`${VOICE_STORAGE_KEY}_${lang}`);
+}
+
+function saveVoiceName(voice: SpeechSynthesisVoice): void {
+  const lang = getLang();
+  localStorage.setItem(`${VOICE_STORAGE_KEY}_${lang}`, voice.name);
+}
+
+function getSavedSpeed(): number {
+  return parseFloat(localStorage.getItem(SPEED_STORAGE_KEY) || '1');
+}
+
+function saveSpeed(rate: number): void {
+  localStorage.setItem(SPEED_STORAGE_KEY, String(rate));
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -223,10 +199,9 @@ function updatePlayerState(): void {
 
   if (!bar) return;
 
-  const labels = tr();
   if (playBtn) {
     playBtn.textContent = playing ? '⏸' : '▶';
-    playBtn.title = playing ? labels.pause : labels.play;
+    playBtn.title = playing ? tr('tts.pause') : tr('tts.play');
   }
   if (stopBtn) stopBtn.disabled = !playing && !paused;
 
@@ -244,7 +219,7 @@ function updatePlayerState(): void {
   document.querySelectorAll<HTMLElement>('.chapter-content p, .chapter-content h2, .chapter-content h3, .chapter-content li').forEach(el => {
     if (playing || paused) {
       el.style.cursor = 'pointer';
-      el.title = 'Click to read from here';
+      el.title = tr('tts.clickToRead');
     } else {
       el.style.cursor = '';
       el.title = '';
@@ -402,40 +377,38 @@ function injectStyles(): void {
 function buildPlayer(): void {
   if (document.getElementById('tts-fab')) return;
 
-  const labels = tr();
-
   // FAB
   const fab = document.createElement('button');
   fab.id = 'tts-fab';
   fab.type = 'button';
-  fab.setAttribute('aria-label', labels.label);
+  fab.setAttribute('aria-label', tr('tts.label'));
   fab.textContent = '🔊';
   document.body.appendChild(fab);
 
   // Player bar
   const player = document.createElement('div');
   player.id = 'tts-player';
-  player.setAttribute('dir', labels.dir);
+  player.setAttribute('dir', isRtlLang(getLang()) ? 'rtl' : 'ltr');
   player.innerHTML = `
-    <button class="tts-btn" id="tts-stop" title="${labels.stop}" disabled>⏹</button>
-    <button class="tts-btn" id="tts-play" title="${labels.play}">▶</button>
-    <span class="tts-label">🔊 ${labels.label}</span>
-    <select id="tts-voice-select" title="${labels.voice}" style="
+    <button class="tts-btn" id="tts-stop" title="${tr('tts.stop')}" disabled>⏹</button>
+    <button class="tts-btn" id="tts-play" title="${tr('tts.play')}">▶</button>
+    <span class="tts-label">🔊 ${tr('tts.label')}</span>
+    <select id="tts-voice-select" title="${tr('tts.voice')}" style="
       font-size:11px; max-width:90px; border-radius:6px;
       border:1px solid var(--yuval-border,#e5e7eb);
       background:var(--yuval-bg-secondary,#f3f4f6);
       color:var(--yuval-text,#1a1a1a);
       padding:3px 4px; cursor:pointer;
     "></select>
-    <button class="tts-btn" id="tts-speed" title="${labels.speed}">1×</button>
-    <button class="tts-btn" id="tts-close" title="${labels.stop}">✕</button>
+    <button class="tts-btn" id="tts-speed" title="${tr('tts.speed')}">1×</button>
+    <button class="tts-btn" id="tts-close" title="${tr('tts.stop')}">✕</button>
   `;
   document.body.appendChild(player);
 
   // FAB click — toggle play/pause or show player
   fab.addEventListener('click', () => {
     if (!window.speechSynthesis) {
-      alert(labels.notSupported);
+      alert(tr('tts.notSupported'));
       return;
     }
     if (playing) { pause(); fab.classList.remove('tts-playing'); }
@@ -474,8 +447,13 @@ function buildPlayer(): void {
     sel.innerHTML = voices.map((v, i) =>
       `<option value="${i}">${v.name.replace(/Microsoft |Google /, '').split(' (')[0]}</option>`
     ).join('');
-    // Pre-select the current selectedVoice if any
-    if (selectedVoice) {
+    // Restore saved voice, then fall back to current selectedVoice, then local voice
+    const savedName = getSavedVoiceName();
+    const savedIdx = savedName ? voices.findIndex(v => v.name === savedName) : -1;
+    if (savedIdx >= 0) {
+      sel.selectedIndex = savedIdx;
+      selectedVoice = voices[savedIdx];
+    } else if (selectedVoice) {
       const idx = voices.indexOf(selectedVoice);
       if (idx >= 0) sel.selectedIndex = idx;
     } else {
@@ -485,6 +463,7 @@ function buildPlayer(): void {
     }
     sel.addEventListener('change', () => {
       selectedVoice = voices[parseInt(sel.value, 10)];
+      if (selectedVoice) saveVoiceName(selectedVoice);
       if (playing) {
         window.speechSynthesis.cancel();
         setTimeout(() => speakParagraph(currentParagraphIdx), 50);
@@ -501,10 +480,16 @@ function buildPlayer(): void {
 
   // Speed cycle: 0.75 → 1 → 1.25 → 1.5 → 2 → 0.75
   const speeds = [0.75, 1, 1.25, 1.5, 2];
-  let speedIdx = 1;
+  const savedRate = getSavedSpeed();
+  let speedIdx = speeds.indexOf(savedRate) >= 0 ? speeds.indexOf(savedRate) : 1;
+  playbackRate = speeds[speedIdx];
+  const speedBtn = document.getElementById('tts-speed');
+  if (speedBtn) speedBtn.textContent = `${playbackRate}×`;
+
   document.getElementById('tts-speed')?.addEventListener('click', () => {
     speedIdx = (speedIdx + 1) % speeds.length;
     playbackRate = speeds[speedIdx];
+    saveSpeed(playbackRate);
     const btn = document.getElementById('tts-speed');
     if (btn) btn.textContent = `${playbackRate}×`;
     // Restart current paragraph at new speed
@@ -567,7 +552,7 @@ export function initTextToSpeech(signal: AbortSignal): void {
     paragraphs = [];
     // Update player bar direction
     const player = document.getElementById('tts-player');
-    if (player) player.setAttribute('dir', tr().dir);
+    if (player) player.setAttribute('dir', isRtlLang(getLang()) ? 'rtl' : 'ltr');
     // Auto-resume in new language if was playing
     if (wasPlaying) {
       setTimeout(() => {

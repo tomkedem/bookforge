@@ -97,6 +97,44 @@ Features:
 - ARIA tab/tabpanel roles on mobile drawer
 - Language-aware active chapter highlighting
 
+### CodeRunner.astro
+
+Interactive Python code execution component using Pyodide (WebAssembly).
+Modern IDE-style interface inspired by VS Code with Catppuccin theme.
+
+Props:
+- code: string - The Python code to display and run
+- language?: string - Language for syntax highlighting (default: 'python')
+- title?: string - Optional title/filename above the code block
+- editable?: boolean - Whether user can edit the code (default: true)
+- showLineNumbers?: boolean - Show line numbers (default: true)
+
+Features:
+- **VS Code style UI**: Window controls, toolbar, status bar
+- **Line numbers**: Synced scrolling with code editor
+- **Add custom code**: Panel to write and insert additional code
+  - Append to end
+  - Prepend to beginning
+  - Replace all
+- **Copy code**: One-click copy with visual feedback
+- **Reset code**: Restore original code
+- **Fullscreen mode**: Full viewport editing (ESC to exit)
+- **Keyboard shortcuts**: Ctrl+Enter to run, Tab for indent
+- **Live stats**: Line count, character count in status bar
+- **Execution time**: Shows how long the code took to run
+- **Output tabs**: Separate output and console views
+- **Mobile optimized**: Responsive with device capability detection
+- **Lazy loading**: Pyodide loads only when user clicks "Run"
+- **Service Worker cache**: Faster subsequent loads
+
+Usage:
+```astro
+<CodeRunner 
+  code="print('Hello World!')"
+  title="example.py"
+/>
+```
+
 ### Header.astro
 
 Sticky header with logo, theme toggle, and language toggle.

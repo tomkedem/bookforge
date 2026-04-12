@@ -25,16 +25,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline.ingest import ingest
-from pipeline.parse import parse, extract_images, to_markdown
+from pipeline.parse import parse, extract_images, to_markdown, DEFAULT_ASSETS_DIR
 from pipeline.organize import organize
 from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt
 
 
-def sync_images_to_english(book_dir: Path):
+def sync_images_to_english(book_dir: Path, book_name: str):
     """
     Copy correct image references from Hebrew chapters to English chapters.
     English files keep their translated text but get the same images
     at the same positions as the Hebrew source.
+    
+    Uses absolute paths: /{book_name}/assets/
     """
     img_pattern = re.compile(r'(<img [^>]+/>|!\[[^\]]*\]\([^)]+\))')
 
@@ -59,11 +61,14 @@ def sync_images_to_english(book_dir: Path):
             en_clean = en_clean.replace(old_img + "\n", "")
             en_clean = en_clean.replace(old_img, "")
 
-        # Insert correct images after title line
+        # Insert correct images after title line (using absolute path)
         if he_images:
             lines = en_clean.split("\n")
             insert_idx = 2  # After "# Title" and blank line
             for img in reversed(he_images):
+                # Ensure absolute path format
+                if "../assets/" in img:
+                    img = img.replace("../assets/", f"/{book_name}/assets/")
                 lines.insert(insert_idx, "")
                 lines.insert(insert_idx, img)
             en_clean = "\n".join(lines)
@@ -73,24 +78,15 @@ def sync_images_to_english(book_dir: Path):
 
 
 def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
-    """Copy book assets to public/ for Astro static serving."""
-    src = Path(output_dir) / book_slug / "assets"
-    dst = Path("public") / book_slug / "assets"
-
-    if not src.exists():
-        return
-
-    dst.mkdir(parents=True, exist_ok=True)
-    count = 0
-    for f in src.iterdir():
-        if f.is_file():
-            shutil.copy2(f, dst / f.name)
-            count += 1
-    print(f"  [OK] Copied {count} assets → public/{book_slug}/assets/")
+    """
+    DEPRECATED: Assets are now saved directly to public/{book}/assets/.
+    This function is kept for backward compatibility but does nothing.
+    """
+    pass  # No longer needed - images go directly to public/
 
 
 def run_pipeline(docx_path: str, book_name: str,
-                 title_he: str = "", title_en: str = "",
+                 title_he: str = "", title_en: str = "", title_es: str = "",
                  output_dir: str = "output", skip_translate: bool = False):
     """Run the full book processing pipeline."""
 
@@ -108,19 +104,20 @@ def run_pipeline(docx_path: str, book_name: str,
     chapters = parse(ingested)
     print(f"  Chapters: {len(chapters)}")
 
-    # Step 3: Extract images
+    # Step 3: Extract images (saved directly to public/{book}/assets/)
     print("\n[3/7] Extract images...")
-    images = extract_images(docx_path, book_name, output_dir)
+    images = extract_images(docx_path, book_name, DEFAULT_ASSETS_DIR)
     non_cover = [p for p in images["positions"] if p[0] >= 0]
     print(f"  Images: {len(non_cover)} chapter + {'1 cover' if images['has_cover'] else 'no cover'}")
+    print(f"  Saved to: public/{book_name}/assets/")
 
-    # Step 4: Generate markdown with images
+    # Step 4: Generate markdown with images (absolute paths: /{book}/assets/)
     print("\n[4/7] Generate markdown...")
     chapters_md = []
     total_images = 0
     for i, ch in enumerate(chapters):
         next_idx = chapters[i + 1].get("heading_doc_index") if i + 1 < len(chapters) else None
-        md = to_markdown(ch, images["positions"], next_heading_idx=next_idx)
+        md = to_markdown(ch, images["positions"], next_heading_idx=next_idx, book_name=book_name)
         chapters_md.append({"number": ch["number"], "content": md})
         img_count = md.count("<img ") + md.count("![")
         total_images += img_count
@@ -129,7 +126,8 @@ def run_pipeline(docx_path: str, book_name: str,
     # Step 5: Organize output (cleans stale files + generates content-structure.json)
     print("\n[5/7] Organize output...")
     created = organize(book_name, chapters_md, output_dir,
-                       book_title_he=title_he, book_title_en=title_en)
+                       book_title_he=title_he, book_title_en=title_en,
+                       book_title_es=title_es)
     print(f"  Hebrew files: {len(created)}")
 
     # Step 6: Translate (identify chapters needing translation)
@@ -148,10 +146,10 @@ def run_pipeline(docx_path: str, book_name: str,
         else:
             print("  All chapters already translated (EN files up to date)")
 
-    # Step 7: Sync images to English + copy assets to public/
+    # Step 7: Sync images to English (no need to copy to public - already there)
     print("\n[7/7] Sync & finalize...")
-    sync_images_to_english(book_dir)
-    copy_assets_to_public(book_name, output_dir)
+    sync_images_to_english(book_dir, book_name)
+    # Assets already in public/{book}/assets/ - no copy needed
 
     print(f"\n{'=' * 60}")
     print(f"Done! {len(chapters)} chapters, {total_images} images")
@@ -171,19 +169,25 @@ def run_pipeline(docx_path: str, book_name: str,
 
 
 def main():
+    # Always resolve output relative to project root (parent of src/)
+    project_root = Path(__file__).resolve().parent.parent.parent
+    default_output = str(project_root / "output")
+
     parser = argparse.ArgumentParser(description="BookForge: Word/PDF → Chapters pipeline")
     parser.add_argument("docx_path", help="Path to Word (.docx) or PDF file")
     parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
     parser.add_argument("--title-he", default="", help="Hebrew title")
     parser.add_argument("--title-en", default="", help="English title")
-    parser.add_argument("--output-dir", default="output", help="Output directory")
+    parser.add_argument("--title-es", default="", help="Spanish title")
+    parser.add_argument("--output-dir", default=default_output, help="Output directory")
     parser.add_argument("--skip-translate", action="store_true",
                         help="Skip translation step (re-parse only)")
     args = parser.parse_args()
 
     run_pipeline(args.docx_path, args.book_name,
                  title_he=args.title_he, title_en=args.title_en,
-                 output_dir=args.output_dir, skip_translate=args.skip_translate)
+                 title_es=args.title_es, output_dir=args.output_dir,
+                 skip_translate=args.skip_translate)
 
 
 if __name__ == "__main__":

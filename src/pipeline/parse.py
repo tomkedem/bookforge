@@ -5,11 +5,115 @@ Returns a list of chapters with title, content, and images.
 """
 
 import os
+import re
 from pathlib import Path
 
 
 INTRO_KEYWORDS = ["מבוא", "פתיחה", "הקדמה", "introduction", "preface", "foreword"]
 COVER_KEYWORDS = ["שער", "cover", "title"]
+
+
+def _clean_heading(text: str) -> str:
+    """
+    Remove bold/italic markdown from headings - they're already styled by structure.
+    Handles Word artifacts like **פרק 1****:** or ***text***.
+    """
+    # Remove all asterisk formatting from headings
+    # They shouldn't have markdown bold/italic since heading style is already prominent
+    cleaned = re.sub(r'\*+', '', text)
+    # Clean up extra spaces that may result
+    cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+    return cleaned.strip()
+
+
+def _clean_markdown_final(text: str) -> str:
+    """
+    Final comprehensive cleanup of markdown artifacts from Word formatting.
+    This is the LAST line of defense - catches all edge cases.
+    
+    IMPORTANT: This function must NOT break intentional bold formatting.
+    It only fixes malformed patterns from Word conversion.
+    
+    Patterns fixed:
+    - **** (4+ asterisks) → **
+    - **:** or **: ** → :
+    - **, ** between bold markers → ,
+    - ** ** (spaced asterisks) → space
+    - ה**text** → **הtext** (Hebrew prefix letters)
+    - **text**.** → **text**.
+    - line ending with . ** label → line ending with . **label**
+    - Unbalanced ** on a line (odd count) → balanced
+    """
+    import re
+    
+    # Process line by line to handle unbalanced ** properly
+    lines = text.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        # Count ** pairs
+        asterisk_count = line.count('**')
+        
+        # 1. Fix consecutive asterisks (4 or more) → **
+        line = re.sub(r'\*{4,}', '**', line)
+        
+        # 2. Fix **:** pattern → :
+        line = re.sub(r'\*\*:\*\*', ':', line)
+        line = re.sub(r'\*\*:\s*\*\*', ': ', line)
+        
+        # 3. Fix trailing **.** or **. → .
+        line = re.sub(r'\*\*\.\*\*', '.', line)
+        line = re.sub(r'\*\*\.$', '.', line)
+        
+        # 4. Fix **, ** pattern (comma between bold markers)
+        line = re.sub(r'\*\*,\s*\*\*', ', ', line)
+        
+        # 5. Fix ** ** pattern (space between markers)
+        line = re.sub(r'\*\*\s+\*\*', ' ', line)
+        
+        # 6. Fix Hebrew prefix letters before bold: ה**text** → **הtext**
+        line = re.sub(r'([הבלמכוש])\*\*([^*]+)\*\*', r'**\1\2**', line)
+        
+        # 7. Fix sentence ending with ". **label" → ". **label**"
+        # Pattern: text ends with . then space then ** then text without closing **
+        match = re.search(r'\.\s+\*\*([^*]+)$', line)
+        if match and line.count('**') % 2 != 0:
+            # Odd number of ** means unbalanced - add closing
+            line = line + '**'
+        
+        # 8. Fix bullet points with misplaced **: "- text:** label**" → "- **text: label**"
+        line = re.sub(r'^(- )([^*]+):\*\*\s*([^*]+)\*\*$', r'\1**\2: \3**', line)
+        
+        # 9. Fix pattern: "- תת-בעיה 1:** האלגוריתם**" → "- **תת-בעיה 1: האלגוריתם**"
+        line = re.sub(r'^(- )([^*:]+):\*\*\s*([^*]+)\*\*', r'\1**\2: \3**', line)
+        
+        # 10. Fix label patterns at line start: " text**:" → " **text:**"
+        line = re.sub(r'^(\s*)([^\s*][^*\n]{2,})\*\*:', r'\1**\2:**', line)
+        
+        # 11. Fix standalone ** on its own line (no content)
+        if re.match(r'^\s*\*\*\s*$', line):
+            line = ''
+        
+        # 12. Fix quotes: "**text**" → "text"
+        line = re.sub(r'"\*\*([^*"]+)\*\*"', r'"\1"', line)
+        
+        # 13. Recount and handle remaining unbalanced **
+        final_count = line.count('**')
+        if final_count % 2 != 0 and final_count > 0:
+            # Still unbalanced - check if it's an unclosed bold at end
+            if re.search(r'\*\*[^*]+$', line) and not re.search(r'[^*]\*\*$', line):
+                # Has opening ** but no closing - add it
+                line = line + '**'
+            elif re.search(r'^\s*\*\*\s*$', line):
+                # Just ** alone - remove it
+                line = ''
+        
+        # 14. Clean multiple spaces
+        line = re.sub(r' {2,}', ' ', line)
+        
+        cleaned_lines.append(line)
+    
+    return '\n'.join(cleaned_lines)
 
 
 def parse(ingested: dict) -> list[dict]:
@@ -22,21 +126,38 @@ def parse(ingested: dict) -> list[dict]:
         text = para["text"]
         # Use original document index for image mapping (aligned with extract_images)
         doc_idx = para.get("doc_para_index", idx)
+        
+        # Handle spacing paragraphs (empty lines for visual separation)
+        if style == "Spacing":
+            if current:
+                blank_count = para.get("blank_lines", 1)
+                for _ in range(blank_count):
+                    current["content"].append({
+                        "text": "",
+                        "style": "Spacing",
+                        "para_index": doc_idx
+                    })
+            continue
 
         if "Heading 1" in style:
             if current:
                 chapters.append(current)
 
-            chapter_type = _classify_chapter(text, len(chapters))
+            # Clean heading text - remove markdown asterisks
+            clean_title = _clean_heading(text)
+            chapter_type = _classify_chapter(clean_title, len(chapters))
             current = {
                 "number": len(chapters) + 1,
-                "title": text,
+                "title": clean_title,
                 "heading_doc_index": doc_idx,
                 "content": [],
                 "has_images": False,
                 "type": chapter_type
             }
         elif current:
+            # Also clean Heading 2/3 text
+            if "Heading" in style:
+                text = _clean_heading(text)
             current["content"].append({
                 "text": text,
                 "style": style,
@@ -64,9 +185,16 @@ def _classify_chapter(title: str, index: int) -> str:
     return "content"
 
 
-def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -> dict:
+# Default: save images to public/ for web serving (not output/)
+DEFAULT_ASSETS_DIR = "public"
+
+
+def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAULT_ASSETS_DIR) -> dict:
     """
     Extracts images from a Word document and maps them to paragraph positions.
+    
+    Images are saved directly to public/{book_name}/assets/ for web serving.
+    No duplicate copies in output/ folder.
     
     Cover image detection logic:
     - If an image exists BEFORE the first Heading 1 → that's the cover
@@ -76,6 +204,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
       - 'files': mapping rel_id to file path
       - 'positions': list of (paragraph_index, rel_id, filename, width_px, height_px)
       - 'has_cover': boolean indicating if cover was found
+      - 'book_name': slug for URL paths
     """
     try:
         from docx import Document
@@ -86,7 +215,7 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     import re
 
     doc = Document(docx_path)
-    assets_dir = Path(output_dir) / book_name / "assets"
+    assets_dir = Path(assets_base_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
     # Step 1: Find first TWO Heading 1 positions
@@ -224,21 +353,25 @@ def extract_images(docx_path: str, book_name: str, output_dir: str = "output") -
     return {
         'files': image_files,
         'positions': image_positions,
-        'has_cover': has_cover
+        'has_cover': has_cover,
+        'book_name': book_name  # For absolute URL paths
     }
 
 
-def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None) -> str:
+def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None, book_name: str = "") -> str:
     """
     Convert chapter to Markdown with embedded images at correct positions.
     
     Images are placed using range-based matching: an image belongs to this
     chapter if its doc_idx is >= this chapter's heading and < the next heading.
     
+    Image paths are absolute URLs for web serving: /{book_name}/assets/image.png
+    
     Args:
         chapter: Chapter dict with title, heading_doc_index, and content blocks
         image_positions: List of (para_index, rel_id, filename, w_px, h_px) tuples
         next_heading_idx: doc_para_index of next chapter's heading (exclusive upper bound)
+        book_name: Book slug for absolute image paths
     """
     lines = [f"# {chapter['title']}", ""]
     
@@ -275,16 +408,23 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         para_idx = item.get("para_index", -1)
         
         # Insert images whose doc_idx <= current paragraph's doc_idx
+        # Use absolute paths for web serving: /{book_name}/assets/
+        assets_path = f"/{book_name}/assets" if book_name else "../assets"
         while img_cursor < len(chapter_images) and chapter_images[img_cursor][0] <= para_idx:
             _, img_filename, w_px, h_px = chapter_images[img_cursor]
             if w_px > 0 and h_px > 0:
-                lines.append(f'<img src="../assets/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
+                lines.append(f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
             else:
-                lines.append(f"![{img_filename}](../assets/{img_filename})")
+                lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
             lines.append("")
             img_cursor += 1
 
-        if "Heading 2" in style:
+        if style == "Spacing":
+            # Spacing paragraph - represents blank line from Word
+            # Don't add extra blank line since this IS the blank line
+            lines.append("")
+            continue
+        elif "Heading 2" in style:
             lines.append(f"## {text}")
         elif "Heading 3" in style:
             lines.append(f"### {text}")
@@ -296,13 +436,18 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         lines.append("")
 
     # Append any remaining images after the last paragraph
+    assets_path = f"/{book_name}/assets" if book_name else "../assets"
     while img_cursor < len(chapter_images):
         _, img_filename, w_px, h_px = chapter_images[img_cursor]
         if w_px > 0 and h_px > 0:
-            lines.append(f'<img src="../assets/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
+            lines.append(f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />')
         else:
-            lines.append(f"![{img_filename}](../assets/{img_filename})")
+            lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
         lines.append("")
         img_cursor += 1
 
-    return "\n".join(lines)
+    # Final cleanup: catch any remaining Word formatting artifacts
+    result = "\n".join(lines)
+    result = _clean_markdown_final(result)
+    
+    return result

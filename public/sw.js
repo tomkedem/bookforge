@@ -3,9 +3,13 @@
  * Version bump triggers cache refresh.
  */
 
-const VERSION = 'yuval-v1';
+const VERSION = 'yuval-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE  = `${VERSION}-pages`;
+const PYODIDE_CACHE = `${VERSION}-pyodide`;
+
+// Pyodide CDN URL pattern
+const PYODIDE_CDN = 'cdn.jsdelivr.net/pyodide';
 
 // Always cache on install
 const PRECACHE = [
@@ -26,7 +30,7 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(k => k !== STATIC_CACHE && k !== PAGES_CACHE)
+        keys.filter(k => k !== STATIC_CACHE && k !== PAGES_CACHE && k !== PYODIDE_CACHE)
             .map(k => caches.delete(k))
       )
     )
@@ -39,8 +43,17 @@ self.addEventListener('fetch', (e) => {
   const { request } = e;
   const url = new URL(request.url);
 
-  // Only handle same-origin GET requests
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Only handle GET requests
+  if (request.method !== 'GET') return;
+
+  // Handle Pyodide CDN requests — cache-first for faster subsequent loads
+  if (url.hostname.includes(PYODIDE_CDN) || url.href.includes('pyodide')) {
+    e.respondWith(cacheFirst(request, PYODIDE_CACHE));
+    return;
+  }
+
+  // Only handle same-origin for other requests
+  if (url.origin !== self.location.origin) return;
 
   // Skip search-index and API calls — network only
   if (url.pathname.includes('search-index') || url.pathname.startsWith('/api/')) return;
