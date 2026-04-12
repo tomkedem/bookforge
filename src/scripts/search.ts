@@ -285,7 +285,7 @@ let mode: 'chapter' | 'book' = 'chapter';
 type IndexEntry = {
   book: string; bookTitle_he: string; bookTitle_en: string;
   chapterId: number; title_he: string; title_en: string;
-  url_he: string; url_en: string; text_he: string; text_en: string;
+  url: string; text_he: string; text_en: string;
 };
 
 let indexCache: IndexEntry[] | null = null;
@@ -436,7 +436,7 @@ async function runBookSearch(query: string): Promise<void> {
     const lang_ = getLang();
     const title   = lang_ === 'he' ? entry.title_he   : entry.title_en;
     const text    = lang_ === 'he' ? entry.text_he    : entry.text_en;
-    const url     = lang_ === 'he' ? entry.url_he     : entry.url_en;
+    const url     = entry.url;  // Single URL - language determined by toggle
     const chapter = labels.chapterLabel(entry.chapterId);
 
     const snippet = extractSnippet(text, query);

@@ -185,13 +185,7 @@ const bookUrl = `/books/${slug}`;
 
 <script>
   function initBookCards() {
-    const lang = localStorage.getItem('yuval_language') || 'en';
-
-    // Update links to include language
-    document.querySelectorAll<HTMLAnchorElement>('.book-card-link').forEach(link => {
-      const base = link.dataset.baseUrl || link.getAttribute('href') || '';
-      link.href = lang === 'he' ? `${base}?lang=he` : lang === 'es' ? `${base}?lang=es` : base;
-    });
+    // Links no longer need ?lang= - language is determined by toggle position
 
     // Show reading progress on cards
     document.querySelectorAll<HTMLElement>('.book-card[data-book-slug]').forEach(card => {

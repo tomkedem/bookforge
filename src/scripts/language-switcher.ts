@@ -29,16 +29,12 @@ function switchLanguage(lang: string) {
 }
 
 /**
- * Initialize language switching from URL param or localStorage.
+ * Initialize language switching from localStorage (single source of truth).
  * Listens for 'language-changed' custom events.
  */
 export function initLanguageSwitcher(controller: AbortController) {
-  const urlParams = new URLSearchParams(window.location.search);
-  let currentLanguage = urlParams.get('lang');
-
-  if (!currentLanguage || !isValidLanguage(currentLanguage)) {
-    currentLanguage = getLanguageFromStorage() || LANGUAGES.EN;
-  }
+  // Language is determined ONLY from localStorage (toggle position)
+  const currentLanguage = getLanguageFromStorage() || LANGUAGES.EN;
 
   setLanguageToStorage(currentLanguage as Language);
   switchLanguage(currentLanguage);

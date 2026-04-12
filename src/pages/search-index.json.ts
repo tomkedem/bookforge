@@ -36,8 +36,7 @@ export const GET: APIRoute = () => {
     chapterId: number;
     title_he: string;
     title_en: string;
-    url_he: string;
-    url_en: string;
+    url: string;
     text_he: string;
     text_en: string;
   }[] = [];
@@ -65,8 +64,7 @@ export const GET: APIRoute = () => {
         chapterId:    chapter.id,
         title_he:     chapter.title_he,
         title_en:     chapter.title_en,
-        url_he:       `/read/${book.slug}/${chapter.id}?lang=he`,
-        url_en:       `/read/${book.slug}/${chapter.id}`,
+        url:          `/read/${book.slug}/${chapter.id}`,
         text_he:      snippet(text_he, 2000),
         text_en:      snippet(text_en, 2000),
       });

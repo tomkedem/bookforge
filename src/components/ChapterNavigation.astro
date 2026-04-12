@@ -167,16 +167,5 @@ const isRtl = language === 'he';
 </nav>
 
 <script>
-  function updateNavLinks() {
-    const lang = new URLSearchParams(window.location.search).get('lang')
-      || localStorage.getItem('yuval_language') || 'en';
-    document.querySelectorAll<HTMLAnchorElement>('.chapter-nav-link').forEach(link => {
-      const base = link.dataset.baseUrl || '';
-      if (!base) return;
-      link.href = lang !== 'en' ? `${base}?lang=${lang}` : base;
-    });
-  }
-
-  updateNavLinks();
-  window.addEventListener('language-changed', updateNavLinks);
+  // No need to update nav links with ?lang= - language is determined by toggle position
 </script>

@@ -198,6 +198,24 @@ markdown content loading עובד דרך fetch() ל-public files.
 **הפתרון:**
 1. `fix_rtl_text()` ב-translate.py מחליף אותם במקף רגיל (-)
 2. `build.py` step 5.5 מריץ `fix_all_hebrew_files()` אוטומטית
+
+### 2026-04-12
+**Language toggle חייב להיות מקור אמת יחיד.**
+הבעיה: המערכת זיהתה שפה מכמה מקורות - URL ?lang= קודם ל-localStorage.
+כשמשתמש לחץ על toggle ואז ניווט לפרק אחר, ה-URL הישן הכתיב שפה אחרת.
+
+**הפתרון:**
+1. `getLanguageFromStorage()` קורא רק מ-localStorage (+ cookie כfallback)
+2. הסרנו את ?lang= מכל URLs פנימיים
+3. הטוגל (הבועה הזהובה) הוא המקור היחיד לאמת
+4. קבצים שעודכנו:
+   - `language.ts` - הסרת URL param priority
+   - `language-switcher.ts` - הסרת URL param check
+   - `LanguageToggle.astro` - כבר עובד מ-localStorage
+   - `ChapterSidebars.astro` - הסרת ?lang= מלינקים
+   - `BookCard.astro`, `ChapterNavigation.astro` - הסרת עדכון URLs
+   - `search.ts`, `search-index.json.ts` - URL יחיד ללא שפה
+   - `bookmarks.ts`, `highlights-panel.ts` - URLs נקיים
 3. לא צריך יותר להריץ `--fix-rtl` ידנית
 
 כלל לתרגום: כשמתרגמים ידנית, תמיד להשתמש במקף רגיל (-), לא ב-em/en dashes.

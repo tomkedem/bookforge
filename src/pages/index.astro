@@ -221,7 +221,7 @@ const initialQuote = getRandomQuote();
       ? (isHe ? titleEl.dataset.he : isEs ? titleEl.dataset.es : titleEl.dataset.en) || bookSlug
       : bookSlug;
 
-    const url = `/read/${bookSlug}/${chapterId}${lang !== 'en' ? `?lang=${lang}` : ''}`;
+    const url = `/read/${bookSlug}/${chapterId}`;
     const estPct = Math.min(95, Math.round((bestScroll / 3000) * 100));
 
     banner.innerHTML = `

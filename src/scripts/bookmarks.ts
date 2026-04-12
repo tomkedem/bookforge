@@ -386,10 +386,8 @@ function jumpToBookmark(bm: Bookmark): void {
       setTimeout(() => { marker.style.outline = ''; }, 1500);
     }
   } else {
-    // Different chapter — navigate
-    const url = lang === 'he'
-      ? `/read/${book}/${bm.chapterId}?lang=he`
-      : `/read/${book}/${bm.chapterId}`;
+    // Different chapter — navigate (no ?lang= needed, toggle position is source of truth)
+    const url = `/read/${book}/${bm.chapterId}`;
 
     if (typeof (window as any).yuvalLoadChapter === 'function') {
       (window as any).yuvalLoadChapter(url);

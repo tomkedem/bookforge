@@ -60,7 +60,7 @@ const isRtl = language === LANGUAGES.HE;
               ]}
             >
               <a
-                href={`/read/${bookSlug}/${chapter.id}${language !== LANGUAGES.EN ? `?lang=${language}` : ''}`}
+                href={`/read/${bookSlug}/${chapter.id}`}
                 class:list={[
                   'toc-link',
                   'mobile-toc-link',
@@ -108,7 +108,7 @@ const isRtl = language === LANGUAGES.HE;
             data-chapter-id={chapter.id}
           >
             <a
-              href={`/read/${bookSlug}/${chapter.id}${language !== LANGUAGES.EN ? `?lang=${language}` : ''}`}
+              href={`/read/${bookSlug}/${chapter.id}`}
               class:list={[
                 'toc-link',
                 chapter.id === currentChapterId && 'toc-link-active',
@@ -755,9 +755,8 @@ const isRtl = language === LANGUAGES.HE;
 
       e.preventDefault();
 
-      const base = target.getAttribute('href')?.split('?')[0] || '';
-      const lang = getCurrentLang();
-      const url = lang !== 'en' ? `${base}?lang=${lang}` : base;
+      // No ?lang= needed - language determined by toggle position
+      const url = target.getAttribute('href')?.split('?')[0] || '';
 
       await loadChapterContent(url);
     });
@@ -861,13 +860,11 @@ const isRtl = language === LANGUAGES.HE;
   }
 
   /**
-   * Update TOC link hrefs to include ?lang=he when Hebrew is active
+   * TOC links no longer need ?lang= - language is determined by toggle position
    */
   function updateTocLinks(lang: string) {
-    document.querySelectorAll<HTMLAnchorElement>('.toc-link').forEach(link => {
-      const base = link.getAttribute('href')?.split('?')[0] || '';
-      link.href = lang !== 'en' ? `${base}?lang=${lang}` : base;
-    });
+    // Links are now clean URLs without ?lang= parameter
+    // Language is determined solely by the toggle position in localStorage
   }
 
   /**
@@ -893,10 +890,9 @@ const isRtl = language === LANGUAGES.HE;
    * Initialize sidebars on page load and when language changes
    */
   function initializeSidebars(lang?: string) {
-    // Detect lang from URL first, then localStorage
+    // Language determined only from localStorage (toggle position)
     if (!lang) {
-      const urlParams = new URLSearchParams(window.location.search);
-      lang = urlParams.get('lang') || localStorage.getItem('yuval_language') || 'en';
+      lang = localStorage.getItem('yuval_language') || 'en';
     }
 
     // Update text
@@ -1163,9 +1159,8 @@ const isRtl = language === LANGUAGES.HE;
         e.preventDefault();
         closeDrawer();
         
-        const base = (link as HTMLAnchorElement).getAttribute('href')?.split('?')[0] || '';
-        const lang = getCurrentLang();
-        const url = lang !== 'en' ? `${base}?lang=${lang}` : base;
+        // No ?lang= needed - language determined by toggle position
+        const url = (link as HTMLAnchorElement).getAttribute('href')?.split('?')[0] || '';
 
         await loadChapterContent(url);
       });
@@ -1181,14 +1176,9 @@ const isRtl = language === LANGUAGES.HE;
 
   // Update mobile drawer on language change
   window.addEventListener('language-changed', () => {
-    const lang = getCurrentLang();
+    // Links no longer need ?lang= - language is determined by toggle position
     const drawer = document.getElementById('mobile-drawer');
-    if (!drawer) return;
-    drawer.querySelectorAll<HTMLAnchorElement>('a.mobile-toc-link').forEach(link => {
-      const base = link.getAttribute('href')?.split('?')[0] || '';
-      link.href = lang !== 'en' ? `${base}?lang=${lang}` : base;
-    });
-    if (drawer.classList.contains('open')) buildMobileOutline();
+    if (drawer && drawer.classList.contains('open')) buildMobileOutline();
   });
 
   /**

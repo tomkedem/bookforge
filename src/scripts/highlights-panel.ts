@@ -632,10 +632,8 @@ async function jumpToHighlight(chapterId: number, hl: HighlightData): Promise<vo
   const container = document.getElementById('chapter-container');
   const currentChapter = parseInt(container?.dataset.chapterId || '0', 10);
   const book = getCurrentBook();
-  const lang = getLang();
-  const url = lang === 'he'
-    ? `/read/${book}/${chapterId}?lang=he`
-    : `/read/${book}/${chapterId}`;
+  // No ?lang= needed - toggle position is the single source of truth
+  const url = `/read/${book}/${chapterId}`;
 
   closePanel();
 

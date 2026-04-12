@@ -156,10 +156,9 @@ const description = language === 'es' ? book.description_es : (language === LANG
                 language === LANGUAGES.HE
                   ? chapter.title_he
                   : chapter.title_en;
-              const langParam = language !== LANGUAGES.EN ? `?lang=${language}` : '';
               return (
                 <a
-                  href={`/read/${slug}/${chapter.id}${langParam}`}
+                  href={`/read/${slug}/${chapter.id}`}
                   class:list={[
                     'chapter-link',
                     `chapter-link-${chapter.id}`,
@@ -243,12 +242,7 @@ const description = language === 'es' ? book.description_es : (language === LANG
 
 <script>
   function updateChapterLinks() {
-    const lang = localStorage.getItem('yuval_language') || 'en';
-    document.querySelectorAll<HTMLAnchorElement>('.chapter-link').forEach(link => {
-      const href = link.getAttribute('href') || '';
-      const base = href.split('?')[0];
-      link.href = lang === 'he' ? `${base}?lang=he` : lang === 'es' ? `${base}?lang=es` : base;
-    });
+    // Links no longer need ?lang= - language is determined by toggle position
   }
 
   function updateChapterProgress() {

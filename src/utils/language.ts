@@ -74,28 +74,22 @@ export const getStorageKey = (key: string): string => {
 };
 
 /**
- * Get language from multiple sources: URL param, localStorage, cookie, default
- * Single source of truth for language detection
+ * Get language from localStorage ONLY (the toggle position).
+ * Cookie is used as fallback for SSR and first-time visitors.
+ * URL param is IGNORED to ensure toggle is the single source of truth.
  */
 export const getLanguageFromStorage = (): Language => {
   if (typeof window === 'undefined') {
     return DEFAULT_LANGUAGE;
   }
 
-  // Priority 1: URL query parameter
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlLang = urlParams.get('lang');
-  if (urlLang && isValidLanguage(urlLang)) {
-    return urlLang as Language;
-  }
-
-  // Priority 2: localStorage
+  // Priority 1: localStorage (the toggle position)
   const stored = localStorage.getItem(LANG_STORAGE_KEY);
   if (stored && isValidLanguage(stored)) {
     return stored as Language;
   }
 
-  // Priority 3: cookie (for server-side support)
+  // Priority 2: cookie (for first-time visitors)
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
     const [key, value] = cookie.trim().split('=');
