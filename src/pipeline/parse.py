@@ -186,7 +186,10 @@ def _classify_chapter(title: str, index: int) -> str:
 
 
 # Default: save images to public/ for web serving (not output/)
-DEFAULT_ASSETS_DIR = "public"
+# Resolved to absolute path relative to project root
+from pathlib import Path as _Path
+_PROJECT_ROOT = _Path(__file__).resolve().parent.parent.parent
+DEFAULT_ASSETS_DIR = str(_PROJECT_ROOT / "public")
 
 
 def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAULT_ASSETS_DIR) -> dict:

@@ -30,51 +30,68 @@ from pipeline.organize import organize
 from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt
 
 
-def sync_images_to_english(book_dir: Path, book_name: str):
+def sync_images_to_translations(book_dir: Path, book_name: str):
     """
-    Copy correct image references from Hebrew chapters to English chapters.
-    English files keep their translated text but get the same images
+    Copy correct image references from Hebrew chapters to all translated chapters.
+    Translated files keep their text but get the same images
     at the same positions as the Hebrew source.
     
+    Supports: English (.en.md), Spanish (.es.md), and future languages.
     Uses absolute paths: /{book_name}/assets/
     """
+    # Import target languages from translate module
+    from pipeline.translate import TARGET_LANGUAGES
+    
     img_pattern = re.compile(r'(<img [^>]+/>|!\[[^\]]*\]\([^)]+\))')
-
+    
+    synced_count = 0
     for he_path in sorted(book_dir.glob("chapter-*.he.md")):
-        en_path = he_path.with_name(he_path.name.replace(".he.md", ".en.md"))
-        if not en_path.exists():
-            continue
-
         he_content = he_path.read_text(encoding="utf-8")
-        en_content = en_path.read_text(encoding="utf-8")
-
         he_images = img_pattern.findall(he_content)
-        en_images = img_pattern.findall(en_content)
+        
+        # Sync to all target languages
+        for lang in TARGET_LANGUAGES:
+            lang_code = lang["code"]
+            target_path = he_path.with_name(he_path.name.replace(".he.md", f".{lang_code}.md"))
+            
+            if not target_path.exists():
+                continue
+            
+            target_content = target_path.read_text(encoding="utf-8")
+            target_images = img_pattern.findall(target_content)
+            
+            if he_images == target_images:
+                continue  # Already in sync
+            
+            # Remove old images
+            clean_content = target_content
+            for old_img in target_images:
+                clean_content = clean_content.replace(old_img + "\n\n", "")
+                clean_content = clean_content.replace(old_img + "\n", "")
+                clean_content = clean_content.replace(old_img, "")
+            
+            # Insert correct images after title line
+            if he_images:
+                lines = clean_content.split("\n")
+                insert_idx = 2  # After "# Title" and blank line
+                for img in reversed(he_images):
+                    if "../assets/" in img:
+                        img = img.replace("../assets/", f"/{book_name}/assets/")
+                    lines.insert(insert_idx, "")
+                    lines.insert(insert_idx, img)
+                clean_content = "\n".join(lines)
+            
+            target_path.write_text(clean_content, encoding="utf-8")
+            print(f"  [SYNC] {target_path.name}: {len(target_images)} → {len(he_images)} images")
+            synced_count += 1
+    
+    return synced_count
 
-        if he_images == en_images:
-            continue  # Already in sync
 
-        # Remove old images from English
-        en_clean = en_content
-        for old_img in en_images:
-            en_clean = en_clean.replace(old_img + "\n\n", "")
-            en_clean = en_clean.replace(old_img + "\n", "")
-            en_clean = en_clean.replace(old_img, "")
-
-        # Insert correct images after title line (using absolute path)
-        if he_images:
-            lines = en_clean.split("\n")
-            insert_idx = 2  # After "# Title" and blank line
-            for img in reversed(he_images):
-                # Ensure absolute path format
-                if "../assets/" in img:
-                    img = img.replace("../assets/", f"/{book_name}/assets/")
-                lines.insert(insert_idx, "")
-                lines.insert(insert_idx, img)
-            en_clean = "\n".join(lines)
-
-        en_path.write_text(en_clean, encoding="utf-8")
-        print(f"  [SYNC] {en_path.name}: {len(en_images)} → {len(he_images)} images")
+# Backward compatibility alias
+def sync_images_to_english(book_dir: Path, book_name: str):
+    """Deprecated: Use sync_images_to_translations instead."""
+    return sync_images_to_translations(book_dir, book_name)
 
 
 def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
@@ -141,14 +158,22 @@ def run_pipeline(docx_path: str, book_name: str,
         pending_translations = get_chapters_to_translate(str(book_dir))
         if pending_translations:
             batch_prompt = build_batch_prompt(pending_translations)
-            print(f"  {len(pending_translations)} chapters need translation")
+            # Count by language
+            en_count = sum(1 for p in pending_translations if p["lang_code"] == "en")
+            es_count = sum(1 for p in pending_translations if p["lang_code"] == "es")
+            print(f"  {len(pending_translations)} chapters need translation:")
+            if en_count > 0:
+                print(f"    - English: {en_count} chapters")
+            if es_count > 0:
+                print(f"    - Spanish: {es_count} chapters")
             print("  >> Batch prompt ready for Translator agent")
+            print("  >> הפעל את סוכן translator כדי לתרגם")
         else:
-            print("  All chapters already translated (EN files up to date)")
+            print("  All chapters already translated (all languages up to date)")
 
-    # Step 7: Sync images to English (no need to copy to public - already there)
+    # Step 7: Sync images to all translations
     print("\n[7/7] Sync & finalize...")
-    sync_images_to_english(book_dir, book_name)
+    sync_images_to_translations(book_dir, book_name)
     # Assets already in public/{book}/assets/ - no copy needed
 
     print(f"\n{'=' * 60}")

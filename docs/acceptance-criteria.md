@@ -9,7 +9,7 @@ Quality Gate לא יאשר בלי לבדוק כל אחד מהם ידנית.
 
 - [ ] שם הספר נחלץ משורה הראשונה בעמוד השער
 - [ ] שם הספר מופיע ב-content-structure.json תחת "book_title"
-- [ ] תמונת השער נחלצת ל-output/{book-name}/assets/cover.png
+- [ ] תמונת השער נחלצת ל-public/{book-name}/assets/cover.png
 - [ ] תמונת השער מוצגת בדף הספר ב-Yuval
 - [ ] עמוד השער לא מופיע כפרק רגיל ברשימת הפרקים
 

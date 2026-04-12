@@ -5,8 +5,17 @@ Extracts numbered lists, tables, hyperlinks, footnotes, code, and rich formattin
 """
 
 from pathlib import Path
-from docx import Document
-from docx.oxml.ns import qn
+
+try:
+    from docx import Document
+    from docx.oxml.ns import qn
+except ImportError:
+    raise ImportError(
+        "\n\n" + "="*60 + "\n"
+        "חסרה חבילת python-docx!\n"
+        "התקן באמצעות: pip install python-docx\n"
+        + "="*60 + "\n"
+    )
 
 
 # XML namespaces for Word document parsing
