@@ -1,5 +1,8 @@
 """
-Full pipeline: Word/PDF → chapters → images → markdown → translate → output.
+Full pipeline: Word → chapters → images → markdown → translate → output.
+
+Supported format: .docx (Word) only.
+PDF is not supported - convert to Word first.
 
 Usage:
     python -m pipeline.build <docx_path> <book_name> [--title-he "..."] [--title-en "..."] [--skip-translate]
@@ -211,8 +214,8 @@ def main():
     project_root = Path(__file__).resolve().parent.parent.parent
     default_output = str(project_root / "output")
 
-    parser = argparse.ArgumentParser(description="BookForge: Word/PDF → Chapters pipeline")
-    parser.add_argument("docx_path", help="Path to Word (.docx) or PDF file")
+    parser = argparse.ArgumentParser(description="BookForge: Word → Chapters pipeline")
+    parser.add_argument("docx_path", help="Path to Word (.docx) file")
     parser.add_argument("book_name", help="Book slug name (e.g. my-book)")
     parser.add_argument("--title-he", default="", help="Hebrew title")
     parser.add_argument("--title-en", default="", help="English title")

@@ -1,7 +1,7 @@
 # BookForge
 
 ## מה המערכת עושה
-מקבלת ספר בעברית בפורמט Word או PDF, מפרקת אותו לפרקים,
+מקבלת ספר בעברית בפורמט Word (.docx), מפרקת אותו לפרקים,
 לכל פרק קובץ MD נפרד. כל פרק מתורגם לאנגלית אוטומטית.
 הפלט הסופי: שתי גרסאות מלאות של הספר, עברית ואנגלית.
 מהתוכן הזה נבנית Yuval, פלטפורמת קריאה דיגיטלית ברמה עולמית.
@@ -48,7 +48,7 @@ Memory Keeper, Error Handler, Code Reviewer.
 
 ## סדר הפעלת הסוכנים
 
-כשמקבלים קובץ Word או PDF לעיבוד:
+כשמקבלים קובץ Word לעיבוד:
 
 1. הפעל Explorer על הקובץ
    קלט: נתיב הקובץ
@@ -109,7 +109,7 @@ Memory Keeper, Error Handler, Code Reviewer.
 לפני כל הרצת pipeline, הקוד הבא כבר קיים ב-src/pipeline/.
 אל תכתוב קוד חדש לביצוע משימות אלו:
 
-src/pipeline/ingest.py    קריאת קובץ Word או PDF
+src/pipeline/ingest.py    קריאת קובץ Word
 src/pipeline/parse.py     פירוק לפרקים לפי כותרות
 src/pipeline/organize.py  סידור קבצים בתיקיות
 src/pipeline/build.py     יצירת skeleton של Astro

@@ -1,7 +1,9 @@
 """
-Reads a Word or PDF file and extracts raw text.
-Supports .docx and .pdf formats.
+Reads a Word file and extracts raw text.
+Supports .docx format only.
 Extracts numbered lists, tables, hyperlinks, footnotes, code, and rich formatting.
+
+Note: PDF is not supported - convert to Word first for best results.
 """
 
 from pathlib import Path
@@ -170,9 +172,14 @@ def ingest(file_path: str) -> dict:
     if path.suffix == ".docx":
         return _ingest_docx(path)
     elif path.suffix == ".pdf":
-        return _ingest_pdf(path)
+        raise ValueError(
+            "\n" + "="*60 + "\n"
+            "פורמט PDF לא נתמך.\n"
+            "המר את הקובץ ל-Word (.docx) לפני העיבוד.\n"
+            + "="*60
+        )
     else:
-        raise ValueError(f"Unsupported format: {path.suffix}")
+        raise ValueError(f"Unsupported format: {path.suffix}. Use .docx files only.")
 
 
 def _format_runs(para, hyperlinks: dict = None) -> str:
@@ -1026,30 +1033,3 @@ def _to_hebrew_letter(num: int) -> str:
         return hundreds[num // 100] + tens[(num % 100) // 10] + ones[num % 10]
     else:
         return str(num)  # Fallback for large numbers
-
-
-def _ingest_pdf(path: Path) -> dict:
-    try:
-        from pypdf import PdfReader
-    except ImportError:
-        raise ImportError("pip install pypdf")
-
-    reader = PdfReader(path)
-    paragraphs = []
-
-    for page in reader.pages:
-        text = page.extract_text()
-        if text:
-            for line in text.split("\n"):
-                if line.strip():
-                    paragraphs.append({
-                        "text": line.strip(),
-                        "style": "Normal"
-                    })
-
-    return {
-        "file": path.name,
-        "format": "pdf",
-        "paragraphs": paragraphs,
-        "total": len(paragraphs)
-    }
