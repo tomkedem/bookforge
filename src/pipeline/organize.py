@@ -23,10 +23,21 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
     _clean_stale_chapters(book_dir, len(chapters_md))
 
     created = []
+    content_chapter_num = 0  # Counter for regular chapters (not intro)
 
     for chapter in chapters_md:
-        num = str(chapter["number"]).zfill(2)
-        he_file = book_dir / f"chapter-{num}.he.md"
+        chapter_type = chapter.get("type", "content")
+        
+        if chapter_type == "intro":
+            # Introduction saved as intro.he.md
+            he_file = book_dir / "intro.he.md"
+            print(f"  [INTRO] מבוא נשמר כ-intro.he.md")
+        else:
+            # Regular chapters numbered from 01
+            content_chapter_num += 1
+            num = str(content_chapter_num).zfill(2)
+            he_file = book_dir / f"chapter-{num}.he.md"
+        
         he_file.write_text(chapter["content"], encoding="utf-8")
         created.append(str(he_file))
 
@@ -38,12 +49,14 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
 
 def _clean_stale_chapters(book_dir: Path, chapter_count: int):
     """Remove chapter files with numbers beyond the current chapter count."""
-    for pattern in ["chapter-*.he.md", "chapter-*.en.md"]:
+    # Clean stale chapter files
+    for pattern in ["chapter-*.he.md", "chapter-*.en.md", "chapter-*.es.md"]:
         for f in book_dir.glob(pattern):
             match = re.match(r"chapter-(\d+)\.", f.name)
             if match:
                 num = int(match.group(1))
-                if num > chapter_count:
+                # chapter_count includes intro, so actual chapters = chapter_count - 1
+                if num > chapter_count - 1:
                     f.unlink()
                     print(f"  [CLEAN] Removed stale: {f.name}")
 
@@ -53,9 +66,12 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
                                  book_title_es: str):
     """Generate content-structure.json from chapter markdown content."""
     chapters_json = []
+    content_chapter_num = 0  # Counter for regular chapters
+    
     for ch in chapters_md:
         content = ch["content"]
         lines = content.split("\n")
+        chapter_type = ch.get("type", "content")
 
         # Title from first # heading
         title_he = ""
@@ -69,8 +85,18 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
         has_images = "<img " in content or "![" in content
         word_count = len(content.split())
 
+        if chapter_type == "intro":
+            chapter_id = "intro"
+            file_slug = "intro"
+        else:
+            content_chapter_num += 1
+            chapter_id = content_chapter_num
+            file_slug = f"chapter-{str(content_chapter_num).zfill(2)}"
+
         chapters_json.append({
-            "id": ch["number"] - 1,
+            "id": chapter_id,
+            "file_slug": file_slug,  # For URL routing
+            "type": chapter_type,
             "title_he": title_he,
             "title_en": title_he,  # Placeholder until translation
             "title_es": title_he,  # Placeholder until translation

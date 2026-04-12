@@ -36,7 +36,8 @@ def sync_images_to_translations(book_dir: Path, book_name: str):
     Translated files keep their text but get the same images
     at the same positions as the Hebrew source.
     
-    Supports: English (.en.md), Spanish (.es.md), and future languages.
+    Supports: intro.he.md, chapter-XX.he.md
+    Languages: English (.en.md), Spanish (.es.md), and future languages.
     Uses absolute paths: /{book_name}/assets/
     """
     # Import target languages from translate module
@@ -45,7 +46,15 @@ def sync_images_to_translations(book_dir: Path, book_name: str):
     img_pattern = re.compile(r'(<img [^>]+/>|!\[[^\]]*\]\([^)]+\))')
     
     synced_count = 0
-    for he_path in sorted(book_dir.glob("chapter-*.he.md")):
+    
+    # Collect all Hebrew source files (intro + chapters)
+    he_files = []
+    intro_path = book_dir / "intro.he.md"
+    if intro_path.exists():
+        he_files.append(intro_path)
+    he_files.extend(sorted(book_dir.glob("chapter-*.he.md")))
+    
+    for he_path in he_files:
         he_content = he_path.read_text(encoding="utf-8")
         he_images = img_pattern.findall(he_content)
         
@@ -135,7 +144,11 @@ def run_pipeline(docx_path: str, book_name: str,
     for i, ch in enumerate(chapters):
         next_idx = chapters[i + 1].get("heading_doc_index") if i + 1 < len(chapters) else None
         md = to_markdown(ch, images["positions"], next_heading_idx=next_idx, book_name=book_name)
-        chapters_md.append({"number": ch["number"], "content": md})
+        chapters_md.append({
+            "number": ch["number"],
+            "content": md,
+            "type": ch.get("type", "content")  # intro, cover, or content
+        })
         img_count = md.count("<img ") + md.count("![")
         total_images += img_count
     print(f"  {total_images} images placed across {len(chapters_md)} chapters")

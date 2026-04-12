@@ -27,6 +27,8 @@ def get_chapters_to_translate(book_dir: str, lang_code: str = None) -> list[dict
     """
     Find Hebrew chapters that need translation for a given target language.
     If lang_code is None, returns pending chapters for ALL target languages.
+    
+    Includes intro.he.md and all chapter-XX.he.md files.
 
     Returns list of {he_path, target_path, number, lang_code, lang_name}.
     """
@@ -36,6 +38,24 @@ def get_chapters_to_translate(book_dir: str, lang_code: str = None) -> list[dict
     langs = [l for l in TARGET_LANGUAGES if l["code"] == lang_code] if lang_code else TARGET_LANGUAGES
 
     for lang in langs:
+        # Include intro.he.md
+        intro_file = book_path / "intro.he.md"
+        if intro_file.exists():
+            target_file = book_path / f"intro.{lang['code']}.md"
+            needs_translation = (
+                not target_file.exists()
+                or target_file.stat().st_mtime < intro_file.stat().st_mtime
+            )
+            if needs_translation:
+                to_translate.append({
+                    "number": "intro",
+                    "he_path": str(intro_file),
+                    "target_path": str(target_file),
+                    "lang_code": lang["code"],
+                    "lang_name": lang["name"],
+                })
+        
+        # Include all chapter-XX.he.md files
         for he_file in sorted(book_path.glob("chapter-*.he.md")):
             target_file = he_file.with_name(he_file.name.replace(".he.md", f".{lang['code']}.md"))
             num = he_file.name.replace("chapter-", "").replace(".he.md", "")
