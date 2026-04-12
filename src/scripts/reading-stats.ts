@@ -183,10 +183,22 @@ function injectStyles(): void {
       font-size: 17px;
       transition: transform 0.2s, box-shadow 0.2s, background 0.15s;
     }
+    #stats-fab-btn svg { display: block; }
     #stats-fab-btn:hover {
       transform: scale(1.08);
       box-shadow: 0 4px 16px rgba(0,0,0,0.14);
       background: var(--yuval-bg-secondary, #f3f4f6);
+    }
+    #stats-fab-btn:hover .stats-bar {
+      animation: statsGrow 0.6s ease-in-out infinite;
+      transform-origin: bottom;
+    }
+    #stats-fab-btn:hover .stats-bar-1 { animation-delay: 0s; }
+    #stats-fab-btn:hover .stats-bar-2 { animation-delay: 0.15s; }
+    #stats-fab-btn:hover .stats-bar-3 { animation-delay: 0.3s; }
+    @keyframes statsGrow {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.6); }
     }
     :is(.dark) #stats-fab-btn {
       background: #2a2a2a;
@@ -323,7 +335,12 @@ function buildWidget(): void {
   btn.id = 'stats-fab-btn';
   btn.type = 'button';
   btn.setAttribute('aria-label', 'Reading stats');
-  btn.textContent = '📊';
+  btn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+      <path d="M18 20V10" class="stats-bar stats-bar-1"/>
+      <path d="M12 20V4" class="stats-bar stats-bar-2"/>
+      <path d="M6 20v-6" class="stats-bar stats-bar-3"/>
+    </svg>`;
   document.body.appendChild(btn);
 
   const overlay = document.createElement('div');
