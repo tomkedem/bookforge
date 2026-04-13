@@ -39,7 +39,8 @@ print()
 print("=" * 60)
 print("Step 3: IMAGES - Extracting images from document...")
 print("=" * 60)
-image_positions = extract_images(INPUT_FILE, BOOK_SLUG, "src/public")
+image_data = extract_images(INPUT_FILE, BOOK_SLUG, "src/public")
+image_positions = image_data.get("positions", [])
 print(f"✓ Extracted {len(image_positions)} images")
 print()
 
@@ -62,7 +63,7 @@ print("=" * 60)
 chapters_md = []
 for i, ch in enumerate(chapters):
     next_idx = chapters[i+1].get("heading_doc_index") if i+1 < len(chapters) else None
-    md_content = to_markdown(ch, list(image_positions.values()), next_idx, BOOK_SLUG)
+    md_content = to_markdown(ch, image_positions, next_idx, BOOK_SLUG)
     chapters_md.append({
         "content": md_content,
         "title": ch.get("title", ""),

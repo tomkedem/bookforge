@@ -1,0 +1,686 @@
+{
+  "book": {
+    "titles": {
+      "he": "Ai Engineering Intro",
+      "en": "Ai Engineering Intro",
+      "es": "Ai Engineering Intro"
+    },
+    "subtitles": {
+      "he": "",
+      "en": "",
+      "es": ""
+    },
+    "descriptions": {
+      "he": "",
+      "en": "",
+      "es": ""
+    },
+    "title_he": "Ai Engineering Intro",
+    "title_en": "Ai Engineering Intro",
+    "subtitle_he": "",
+    "subtitle_en": "",
+    "chapters": [
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "Verint כמקרה בוחן: האתגר שמאחורי המספרים",
+          "en": "Verint כמקרה בוחן: האתגר שמאחורי המספרים",
+          "es": "Verint כמקרה בוחן: האתגר שמאחורי המספרים"
+        },
+        "title_he": "Verint כמקרה בוחן: האתגר שמאחורי המספרים",
+        "title_en": "Verint כמקרה בוחן: האתגר שמאחורי המספרים",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 236,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "ניתוח נתוני מוקד שירות",
+          "en": "ניתוח נתוני מוקד שירות",
+          "es": "ניתוח נתוני מוקד שירות"
+        },
+        "title_he": "ניתוח נתוני מוקד שירות",
+        "title_en": "ניתוח נתוני מוקד שירות",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 281,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "דוגמאות למאפייני ML (או פיצ'רים של ML)",
+          "en": "דוגמאות למאפייני ML (או פיצ'רים של ML)",
+          "es": "דוגמאות למאפייני ML (או פיצ'רים של ML)"
+        },
+        "title_he": "דוגמאות למאפייני ML (או פיצ'רים של ML)",
+        "title_en": "דוגמאות למאפייני ML (או פיצ'רים של ML)",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 352,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "תרחישי שימוש נפוצים",
+          "en": "תרחישי שימוש נפוצים",
+          "es": "תרחישי שימוש נפוצים"
+        },
+        "title_he": "תרחישי שימוש נפוצים",
+        "title_en": "תרחישי שימוש נפוצים",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 272,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)",
+          "en": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)",
+          "es": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)"
+        },
+        "title_he": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)",
+        "title_en": "דוגמה לממשק חדש פיצ'ר חדש של - Verint AI Insights (תובנות בינה מלאכותית)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 387,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "רשימת נושאי הקורס (Course Topic List)",
+          "en": "רשימת נושאי הקורס (Course Topic List)",
+          "es": "רשימת נושאי הקורס (Course Topic List)"
+        },
+        "title_he": "רשימת נושאי הקורס (Course Topic List)",
+        "title_en": "רשימת נושאי הקורס (Course Topic List)",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 904,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "ניתוח לוגיסטיקת הקורס (Course Logistics)",
+          "en": "ניתוח לוגיסטיקת הקורס (Course Logistics)",
+          "es": "ניתוח לוגיסטיקת הקורס (Course Logistics)"
+        },
+        "title_he": "ניתוח לוגיסטיקת הקורס (Course Logistics)",
+        "title_en": "ניתוח לוגיסטיקת הקורס (Course Logistics)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 570,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "Is AI just a hype?",
+          "en": "Is AI just a hype?",
+          "es": "Is AI just a hype?"
+        },
+        "title_he": "Is AI just a hype?",
+        "title_en": "Is AI just a hype?",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 144,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "מה זה AI Engineering? (ההגדרה של המקצוע החדש)",
+          "en": "מה זה AI Engineering? (ההגדרה של המקצוע החדש)",
+          "es": "מה זה AI Engineering? (ההגדרה של המקצוע החדש)"
+        },
+        "title_he": "מה זה AI Engineering? (ההגדרה של המקצוע החדש)",
+        "title_en": "מה זה AI Engineering? (ההגדרה של המקצוע החדש)",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 171,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "ארגז הכלים של מהנדס ה-AI",
+          "en": "ארגז הכלים של מהנדס ה-AI",
+          "es": "ארגז הכלים של מהנדס ה-AI"
+        },
+        "title_he": "ארגז הכלים של מהנדס ה-AI",
+        "title_en": "ארגז הכלים של מהנדס ה-AI",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 241,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "מיומנויות מהנדס AI חלק ב'",
+          "en": "מיומנויות מהנדס AI חלק ב'",
+          "es": "מיומנויות מהנדס AI חלק ב'"
+        },
+        "title_he": "מיומנויות מהנדס AI חלק ב'",
+        "title_en": "מיומנויות מהנדס AI חלק ב'",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 251,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "מהי בינה מלאכותית (AI)? הגדרת היסוד",
+          "en": "מהי בינה מלאכותית (AI)? הגדרת היסוד",
+          "es": "מהי בינה מלאכותית (AI)? הגדרת היסוד"
+        },
+        "title_he": "מהי בינה מלאכותית (AI)? הגדרת היסוד",
+        "title_en": "מהי בינה מלאכותית (AI)? הגדרת היסוד",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 84,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "למידת מכונה (Machine Learning)",
+          "en": "למידת מכונה (Machine Learning)",
+          "es": "למידת מכונה (Machine Learning)"
+        },
+        "title_he": "למידת מכונה (Machine Learning)",
+        "title_en": "למידת מכונה (Machine Learning)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 278,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "מה זה Generative AI? (מעבר להגדרה המילונית)",
+          "en": "מה זה Generative AI? (מעבר להגדרה המילונית)",
+          "es": "מה זה Generative AI? (מעבר להגדרה המילונית)"
+        },
+        "title_he": "מה זה Generative AI? (מעבר להגדרה המילונית)",
+        "title_en": "מה זה Generative AI? (מעבר להגדרה המילונית)",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 57,
+        "topics": []
+      },
+      {
+        "id": 15,
+        "file_slug": "chapter-15",
+        "type": "content",
+        "titles": {
+          "he": "מה הופך את מהפכת ה-AI לשונה? (The AI Revolution)",
+          "en": "מה הופך את מהפכת ה-AI לשונה? (The AI Revolution)",
+          "es": "מה הופך את מהפכת ה-AI לשונה? (The AI Revolution)"
+        },
+        "title_he": "מה הופך את מהפכת ה-AI לשונה? (The AI Revolution)",
+        "title_en": "מה הופך את מהפכת ה-AI לשונה? (The AI Revolution)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 187,
+        "topics": []
+      },
+      {
+        "id": 16,
+        "file_slug": "chapter-16",
+        "type": "content",
+        "titles": {
+          "he": "מפת ההתפתחות של AI: מהיסטוריה להנדסה",
+          "en": "מפת ההתפתחות של AI: מהיסטוריה להנדסה",
+          "es": "מפת ההתפתחות של AI: מהיסטוריה להנדסה"
+        },
+        "title_he": "מפת ההתפתחות של AI: מהיסטוריה להנדסה",
+        "title_en": "מפת ההתפתחות של AI: מהיסטוריה להנדסה",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 446,
+        "topics": []
+      },
+      {
+        "id": 17,
+        "file_slug": "chapter-17",
+        "type": "content",
+        "titles": {
+          "he": "Generative AI is just a glorified autocomplete (?)",
+          "en": "Generative AI is just a glorified autocomplete (?)",
+          "es": "Generative AI is just a glorified autocomplete (?)"
+        },
+        "title_he": "Generative AI is just a glorified autocomplete (?)",
+        "title_en": "Generative AI is just a glorified autocomplete (?)",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 236,
+        "topics": []
+      },
+      {
+        "id": 18,
+        "file_slug": "chapter-18",
+        "type": "content",
+        "titles": {
+          "he": "LLM = Large Language Model",
+          "en": "LLM = Large Language Model",
+          "es": "LLM = Large Language Model"
+        },
+        "title_he": "LLM = Large Language Model",
+        "title_en": "LLM = Large Language Model",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 208,
+        "topics": []
+      },
+      {
+        "id": 19,
+        "file_slug": "chapter-19",
+        "type": "content",
+        "titles": {
+          "he": "LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן)",
+          "en": "LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן)",
+          "es": "LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן)"
+        },
+        "title_he": "LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן)",
+        "title_en": "LLM Tokens: היחידות היסודיות של השפה (והמכניקה שמאחוריהן)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 226,
+        "topics": []
+      },
+      {
+        "id": 20,
+        "file_slug": "chapter-20",
+        "type": "content",
+        "titles": {
+          "he": "LLM: ה\"קופסה השחורה\" של הפרמטרים",
+          "en": "LLM: ה\"קופסה השחורה\" של הפרמטרים",
+          "es": "LLM: ה\"קופסה השחורה\" של הפרמטרים"
+        },
+        "title_he": "LLM: ה\"קופסה השחורה\" של הפרמטרים",
+        "title_en": "LLM: ה\"קופסה השחורה\" של הפרמטרים",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 152,
+        "topics": []
+      },
+      {
+        "id": 21,
+        "file_slug": "chapter-21",
+        "type": "content",
+        "titles": {
+          "he": "The Inference Pipeline: איך נוצרת תשובה?",
+          "en": "The Inference Pipeline: איך נוצרת תשובה?",
+          "es": "The Inference Pipeline: איך נוצרת תשובה?"
+        },
+        "title_he": "The Inference Pipeline: איך נוצרת תשובה?",
+        "title_en": "The Inference Pipeline: איך נוצרת תשובה?",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 429,
+        "topics": []
+      },
+      {
+        "id": 22,
+        "file_slug": "chapter-22",
+        "type": "content",
+        "titles": {
+          "he": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
+          "en": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
+          "es": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>"
+        },
+        "title_he": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
+        "title_en": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 235,
+        "topics": []
+      },
+      {
+        "id": 23,
+        "file_slug": "chapter-23",
+        "type": "content",
+        "titles": {
+          "he": "בינה מלאכותית - 1,000 דוקטורים אצלך בכיס.",
+          "en": "בינה מלאכותית - 1,000 דוקטורים אצלך בכיס.",
+          "es": "בינה מלאכותית - 1,000 דוקטורים אצלך בכיס."
+        },
+        "title_he": "בינה מלאכותית - 1,000 דוקטורים אצלך בכיס.",
+        "title_en": "בינה מלאכותית - 1,000 דוקטורים אצלך בכיס.",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 113,
+        "topics": []
+      },
+      {
+        "id": 24,
+        "file_slug": "chapter-24",
+        "type": "content",
+        "titles": {
+          "he": "מגבלות ה-LLM: מעבר לרהיטות השפתית",
+          "en": "מגבלות ה-LLM: מעבר לרהיטות השפתית",
+          "es": "מגבלות ה-LLM: מעבר לרהיטות השפתית"
+        },
+        "title_he": "מגבלות ה-LLM: מעבר לרהיטות השפתית",
+        "title_en": "מגבלות ה-LLM: מעבר לרהיטות השפתית",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 394,
+        "topics": []
+      },
+      {
+        "id": 25,
+        "file_slug": "chapter-25",
+        "type": "content",
+        "titles": {
+          "he": "LLM לפעמים הוזים (Hallucinate):",
+          "en": "LLM לפעמים הוזים (Hallucinate):",
+          "es": "LLM לפעמים הוזים (Hallucinate):"
+        },
+        "title_he": "LLM לפעמים הוזים (Hallucinate):",
+        "title_en": "LLM לפעמים הוזים (Hallucinate):",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 190,
+        "topics": []
+      },
+      {
+        "id": 26,
+        "file_slug": "chapter-26",
+        "type": "content",
+        "titles": {
+          "he": "LLMs מוגבלים לנתונים עליהם התאמנו: אפקט \"ממנטו\"",
+          "en": "LLMs מוגבלים לנתונים עליהם התאמנו: אפקט \"ממנטו\"",
+          "es": "LLMs מוגבלים לנתונים עליהם התאמנו: אפקט \"ממנטו\""
+        },
+        "title_he": "LLMs מוגבלים לנתונים עליהם התאמנו: אפקט \"ממנטו\"",
+        "title_en": "LLMs מוגבלים לנתונים עליהם התאמנו: אפקט \"ממנטו\"",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 273,
+        "topics": []
+      },
+      {
+        "id": 27,
+        "file_slug": "chapter-27",
+        "type": "content",
+        "titles": {
+          "he": "LLMs מנותקים מהעולם: המומחה בבידוד",
+          "en": "LLMs מנותקים מהעולם: המומחה בבידוד",
+          "es": "LLMs מנותקים מהעולם: המומחה בבידוד"
+        },
+        "title_he": "LLMs מנותקים מהעולם: המומחה בבידוד",
+        "title_en": "LLMs מנותקים מהעולם: המומחה בבידוד",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 263,
+        "topics": []
+      },
+      {
+        "id": 28,
+        "file_slug": "chapter-28",
+        "type": "content",
+        "titles": {
+          "he": "הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית",
+          "en": "הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית",
+          "es": "הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית"
+        },
+        "title_he": "הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית",
+        "title_en": "הטיה במודלי שפה זה לא באג, אלא מציאות סטטיסטית",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 299,
+        "topics": []
+      },
+      {
+        "id": 29,
+        "file_slug": "chapter-29",
+        "type": "content",
+        "titles": {
+          "he": "הגדרת זרימת העבודה (The Flow)",
+          "en": "הגדרת זרימת העבודה (The Flow)",
+          "es": "הגדרת זרימת העבודה (The Flow)"
+        },
+        "title_he": "הגדרת זרימת העבודה (The Flow)",
+        "title_en": "הגדרת זרימת העבודה (The Flow)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 244,
+        "topics": []
+      },
+      {
+        "id": 30,
+        "file_slug": "chapter-30",
+        "type": "content",
+        "titles": {
+          "he": "מבנה חלון ההקשר המפורט (Context Window Structure)",
+          "en": "מבנה חלון ההקשר המפורט (Context Window Structure)",
+          "es": "מבנה חלון ההקשר המפורט (Context Window Structure)"
+        },
+        "title_he": "מבנה חלון ההקשר המפורט (Context Window Structure)",
+        "title_en": "מבנה חלון ההקשר המפורט (Context Window Structure)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 241,
+        "topics": []
+      },
+      {
+        "id": 31,
+        "file_slug": "chapter-31",
+        "type": "content",
+        "titles": {
+          "he": "הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering)",
+          "en": "הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering)",
+          "es": "הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering)"
+        },
+        "title_he": "הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering)",
+        "title_en": "הגדרת הדיסציפלינה הנדסת הקשר (Context Engineering)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 251,
+        "topics": []
+      },
+      {
+        "id": 32,
+        "file_slug": "chapter-32",
+        "type": "content",
+        "titles": {
+          "he": "משוואת איכות התוצאה",
+          "en": "משוואת איכות התוצאה",
+          "es": "משוואת איכות התוצאה"
+        },
+        "title_he": "משוואת איכות התוצאה",
+        "title_en": "משוואת איכות התוצאה",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 228,
+        "topics": []
+      },
+      {
+        "id": 33,
+        "file_slug": "chapter-33",
+        "type": "content",
+        "titles": {
+          "he": "RAG (Retrieval-Augmented Generation)",
+          "en": "RAG (Retrieval-Augmented Generation)",
+          "es": "RAG (Retrieval-Augmented Generation)"
+        },
+        "title_he": "RAG (Retrieval-Augmented Generation)",
+        "title_en": "RAG (Retrieval-Augmented Generation)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 241,
+        "topics": []
+      },
+      {
+        "id": 34,
+        "file_slug": "chapter-34",
+        "type": "content",
+        "titles": {
+          "he": "ארכיטקטורת RAG",
+          "en": "ארכיטקטורת RAG",
+          "es": "ארכיטקטורת RAG"
+        },
+        "title_he": "ארכיטקטורת RAG",
+        "title_en": "ארכיטקטורת RAG",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 308,
+        "topics": []
+      },
+      {
+        "id": 35,
+        "file_slug": "chapter-35",
+        "type": "content",
+        "titles": {
+          "he": "סוכני בינה מלאכותית (AI Agents)",
+          "en": "סוכני בינה מלאכותית (AI Agents)",
+          "es": "סוכני בינה מלאכותית (AI Agents)"
+        },
+        "title_he": "סוכני בינה מלאכותית (AI Agents)",
+        "title_en": "סוכני בינה מלאכותית (AI Agents)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 294,
+        "topics": []
+      },
+      {
+        "id": 36,
+        "file_slug": "chapter-36",
+        "type": "content",
+        "titles": {
+          "he": "תכונות מפתח של סוכני בינה מלאכותית",
+          "en": "תכונות מפתח של סוכני בינה מלאכותית",
+          "es": "תכונות מפתח של סוכני בינה מלאכותית"
+        },
+        "title_he": "תכונות מפתח של סוכני בינה מלאכותית",
+        "title_en": "תכונות מפתח של סוכני בינה מלאכותית",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 349,
+        "topics": []
+      },
+      {
+        "id": 37,
+        "file_slug": "chapter-37",
+        "type": "content",
+        "titles": {
+          "he": "מבנה זרימת העבודה של הסוכן (Agentic Workflow)",
+          "en": "מבנה זרימת העבודה של הסוכן (Agentic Workflow)",
+          "es": "מבנה זרימת העבודה של הסוכן (Agentic Workflow)"
+        },
+        "title_he": "מבנה זרימת העבודה של הסוכן (Agentic Workflow)",
+        "title_en": "מבנה זרימת העבודה של הסוכן (Agentic Workflow)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 248,
+        "topics": []
+      },
+      {
+        "id": 38,
+        "file_slug": "chapter-38",
+        "type": "content",
+        "titles": {
+          "he": "תוכנה מסורתית מול יישומי AI",
+          "en": "תוכנה מסורתית מול יישומי AI",
+          "es": "תוכנה מסורתית מול יישומי AI"
+        },
+        "title_he": "תוכנה מסורתית מול יישומי AI",
+        "title_en": "תוכנה מסורתית מול יישומי AI",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 323,
+        "topics": []
+      },
+      {
+        "id": 39,
+        "file_slug": "chapter-39",
+        "type": "content",
+        "titles": {
+          "he": "תחומי האימוץ של סוכני AI בארגונים (2026)",
+          "en": "תחומי האימוץ של סוכני AI בארגונים (2026)",
+          "es": "תחומי האימוץ של סוכני AI בארגונים (2026)"
+        },
+        "title_he": "תחומי האימוץ של סוכני AI בארגונים (2026)",
+        "title_en": "תחומי האימוץ של סוכני AI בארגונים (2026)",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 301,
+        "topics": []
+      },
+      {
+        "id": 40,
+        "file_slug": "chapter-40",
+        "type": "content",
+        "titles": {
+          "he": "אתגרי האימוץ של בינה מלאכותית בארגון",
+          "en": "אתגרי האימוץ של בינה מלאכותית בארגון",
+          "es": "אתגרי האימוץ של בינה מלאכותית בארגון"
+        },
+        "title_he": "אתגרי האימוץ של בינה מלאכותית בארגון",
+        "title_en": "אתגרי האימוץ של בינה מלאכותית בארגון",
+        "sections": 0,
+        "has_images": true,
+        "word_count": 284,
+        "topics": []
+      },
+      {
+        "id": 41,
+        "file_slug": "chapter-41",
+        "type": "content",
+        "titles": {
+          "he": "עתיד ה-AI מכאן לאן",
+          "en": "עתיד ה-AI מכאן לאן",
+          "es": "עתיד ה-AI מכאן לאן"
+        },
+        "title_he": "עתיד ה-AI מכאן לאן",
+        "title_en": "עתיד ה-AI מכאן לאן",
+        "sections": 0,
+        "has_images": false,
+        "word_count": 294,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he",
+      "en",
+      "es"
+    ]
+  }
+}
