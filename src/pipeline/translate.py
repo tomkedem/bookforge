@@ -545,11 +545,8 @@ def update_content_structure_titles(book_dir: str, languages: list[str] = None) 
                         chapter["titles"][lang] = new_title
                         updated_count += 1
                     
-                    # Update legacy fields
-                    if lang == "he":
-                        chapter["title_he"] = new_title
-                    elif lang == "en":
-                        chapter["title_en"] = new_title
+                    # Update legacy field for this language (title_he, title_en, title_es, etc.)
+                    chapter[f"title_{lang}"] = new_title
                     
                     break
     

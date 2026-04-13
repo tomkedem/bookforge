@@ -12,6 +12,60 @@ from pathlib import Path
 from .languages import LANGUAGE_CODES, SOURCE_LANGUAGE
 
 
+def wrap_hebrew_tables_with_rtl(content: str) -> str:
+    """
+    Wrap markdown tables in Hebrew content with RTL direction divs.
+    
+    Detects markdown tables (lines starting/ending with |) and wraps them
+    with <div dir="rtl"> ... </div> for proper right-to-left display.
+    
+    Args:
+        content: Markdown content potentially containing tables
+        
+    Returns:
+        Content with tables wrapped in RTL divs
+    """
+    lines = content.split('\n')
+    result = []
+    in_table = False
+    table_lines = []
+    
+    for line in lines:
+        stripped = line.strip()
+        is_table_line = stripped.startswith('|') and stripped.endswith('|')
+        
+        if is_table_line and not in_table:
+            # Start of a new table
+            in_table = True
+            table_lines = [line]
+        elif is_table_line and in_table:
+            # Continuation of current table
+            table_lines.append(line)
+        elif in_table and not is_table_line:
+            # End of table - wrap it with RTL div
+            result.append('<div dir="rtl">')
+            result.append('')
+            result.extend(table_lines)
+            result.append('')
+            result.append('</div>')
+            result.append(line)  # Add the non-table line
+            in_table = False
+            table_lines = []
+        else:
+            # Regular line, not in table
+            result.append(line)
+    
+    # Handle case where file ends with a table
+    if in_table and table_lines:
+        result.append('<div dir="rtl">')
+        result.append('')
+        result.extend(table_lines)
+        result.append('')
+        result.append('</div>')
+    
+    return '\n'.join(result)
+
+
 def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output",
              languages: list[str] = None,
              book_titles: dict[str, str] = None,
@@ -64,7 +118,9 @@ def organize(book_name: str, chapters_md: list[dict], output_dir: str = "output"
             num = str(content_chapter_num).zfill(2)
             he_file = book_dir / f"chapter-{num}.he.md"
         
-        he_file.write_text(chapter["content"], encoding="utf-8")
+        # Wrap Hebrew tables with RTL direction for proper display
+        content_with_rtl = wrap_hebrew_tables_with_rtl(chapter["content"])
+        he_file.write_text(content_with_rtl, encoding="utf-8")
         created.append(str(he_file))
 
     # Generate content-structure.json with dynamic language support
@@ -124,20 +180,22 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
 
         # Build titles dict for all languages (placeholder until translation)
         chapter_titles = {lang: title_source for lang in languages}
+        
+        # Build legacy title fields for all languages
+        legacy_title_fields = {f"title_{lang}": title_source for lang in languages}
 
-        chapters_json.append({
+        chapter_entry = {
             "id": chapter_id,
             "file_slug": file_slug,
             "type": chapter_type,
             "titles": chapter_titles,
-            # Legacy fields for backward compatibility
-            "title_he": title_source,
-            "title_en": title_source,
             "sections": sections,
             "has_images": has_images,
             "word_count": word_count,
             "topics": []
-        })
+        }
+        chapter_entry.update(legacy_title_fields)
+        chapters_json.append(chapter_entry)
 
     # Build book-level titles/subtitles/descriptions for all languages
     titles = {}
@@ -149,16 +207,18 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
         subtitles[lang] = book_subtitles.get(lang) or book_subtitles.get(SOURCE_LANGUAGE) or ""
         descriptions[lang] = book_descriptions.get(lang) or book_descriptions.get(SOURCE_LANGUAGE) or ""
 
+    # Build legacy title/subtitle fields for all languages
+    legacy_fields = {}
+    for lang in languages:
+        legacy_fields[f"title_{lang}"] = titles.get(lang) or default_title
+        legacy_fields[f"subtitle_{lang}"] = subtitles.get(lang) or ""
+
     data = {
         "book": {
             "titles": titles,
             "subtitles": subtitles,
             "descriptions": descriptions,
-            # Legacy fields for backward compatibility
-            "title_he": titles.get('he') or default_title,
-            "title_en": titles.get('en') or default_title,
-            "subtitle_he": subtitles.get('he') or "",
-            "subtitle_en": subtitles.get('en') or "",
+            **legacy_fields,
             "chapters": chapters_json,
             "languages": languages
         }
