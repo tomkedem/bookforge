@@ -249,3 +249,18 @@ markdown content loading עובד דרך fetch() ל-public files.
 5. אחרי תרגום: `python -m pipeline.build ml-book --finalize`
 
 **שימו לב:** כותרת הספר עצמו (לא הפרקים) לא מתעדכנת אוטומטית - צריך לתרגם ידנית.
+
+### 2026-04-14
+**data-es חייב להשתמש ב-title_es ולא ב-title_en.**
+הבעיה: ב-ChapterNavigation, כל ה-`data-es` attributes הוגדרו כ-`title_en` במקום `title_es`.
+זה גרם לכך שכשבחרת ספרדית, כותרות הפרקים הופיעו באנגלית.
+
+**הפתרון:**
+```jsx
+// נכון:
+data-es={chapter.title_es || chapter.title_en}
+// לא נכון:
+data-es={chapter.title_en}
+```
+
+**כלל:** בכל קומפוננט שמשתמש ב-data-he/data-en/data-es, לוודא שכל שפה מקבלת את הערך שלה עם fallback.

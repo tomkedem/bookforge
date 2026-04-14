@@ -1,4 +1,5 @@
 import { LANGUAGES, SUPPORTED_LANGUAGES, getLanguageFromStorage, setLanguageToStorage, isValidLanguage } from '../utils/language';
+import { applyLanguageToPage } from '../utils/language';
 import type { Language } from '../types/index';
 
 /**
@@ -27,6 +28,9 @@ function switchLanguage(lang: string) {
   const meta = SUPPORTED_LANGUAGES.find(l => l.code === lang);
   document.documentElement.lang = lang;
   document.documentElement.dir = meta?.dir ?? 'ltr';
+  
+  // Also update data-he/data-en/data-es text elements (breadcrumbs, etc.)
+  applyLanguageToPage(lang as Language);
 }
 
 /**

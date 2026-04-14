@@ -58,7 +58,7 @@ const isRtl = language === 'he';
       >
         {isRtl ? (
           <>
-            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_en}>{previousChapter.title_he}</span>
+            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_es || previousChapter.title_en}>{previousChapter.title_he}</span>
             <svg
               class="w-4 h-4"
               fill="none"
@@ -88,7 +88,7 @@ const isRtl = language === 'he';
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_en}>{previousChapter.title_en}</span>
+            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_es || previousChapter.title_en}>{previousChapter.title_en}</span>
           </>
         )}
       </a>
@@ -110,7 +110,7 @@ const isRtl = language === 'he';
           class="text-center font-heading font-bold text-lg text-yuval-text"
           data-he={currentChapter.title_he}
           data-en={currentChapter.title_en}
-          data-es={currentChapter.title_en}
+          data-es={currentChapter.title_es || currentChapter.title_en}
         >
           {language === 'he' ? currentChapter.title_he : currentChapter.title_en}
         </h2>
@@ -141,11 +141,11 @@ const isRtl = language === 'he';
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_en}>{nextChapter.title_he}</span>
+            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_es || nextChapter.title_en}>{nextChapter.title_he}</span>
           </>
         ) : (
           <>
-            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_en}>{nextChapter.title_en}</span>
+            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_es || nextChapter.title_en}>{nextChapter.title_en}</span>
             <svg
               class="w-4 h-4"
               fill="none"
