@@ -2,7 +2,7 @@
 
 This concept takes "context engineering" and focuses on its most central technique today. If the context window is the workbench, RAG is the librarian who brings the exact book from the organization's giant library to the table.
 
-
+<img src="/ai-engineering-intro/assets/image-21.png" alt="image-21.png" width="518" height="255" />
 **The main components:**
 
 • **Connection to trusted external knowledge:** Breaking the limitation of "frozen knowledge" from model training. The LLM gets access to information sources that are the organization's Truth Source.
@@ -13,7 +13,7 @@ This concept takes "context engineering" and focuses on its most central techniq
 
 • **Ideal for organizational and private data:** The perfect solution for working with sensitive documents (Enterprise) that can't or shouldn't be exposed to the model in a retraining process.
 
-<img src="/ai-engineering-intro/assets/image-22.png" alt="image-22.png" width="551" height="321" />
+
 
 • **Real-time updated responses:** The ability to answer questions about things that happened an hour ago, not just two years ago.
 

@@ -134,9 +134,57 @@ CRITICAL: עיצוב מודגש
 - השאר באנגלית כפי שהם (API, GPU, ML)
 - אל תתרגם שמות מוצרים או טכנולוגיות
 
+## תרגום מטא-דאטה של ספר
+
+בנוסף לפרקים, עליך לתרגם גם את מטא-דאטה הספר ב-content-structure.json:
+
+### כותרת הספר (titles)
+- תרגם את כותרת הספר לכל שפת יעד
+- **שמור על מונחים מקצועיים באנגלית**: AI, ML, LLM, RAG, API, GPU וכו'
+- דוגמה: "מבוא להנדסת AI" → "Introduction to AI Engineering" / "Introducción a la Ingeniería de IA"
+
+### כותרת משנה (subtitles)
+- תרגם בצורה טבעית
+- שמור על סגנון עקבי עם הכותרת הראשית
+
+### תיאור הספר (descriptions) — חובה!
+- כתוב תיאור של ~25 מילים לכל שפה
+- התיאור מוצג בכרטיס הספר בספריה
+- כלול את הנושאים העיקריים של הספר
+- כתוב בסגנון מזמין לקריאה
+- דוגמה לעברית: "למד את יסודות הנדסת AI: מודלי שפה גדולים, RAG, סוכנים חכמים, הנדסת הקשר ואתגרי האימוץ בארגונים."
+
+### מבנה ב-content-structure.json
+```json
+{
+  "book": {
+    "titles": {
+      "he": "כותרת בעברית",
+      "en": "English Title",
+      "es": "Título en Español"
+    },
+    "subtitles": { ... },
+    "descriptions": {
+      "he": "תיאור ~25 מילים בעברית",
+      "en": "~25 word description in English",
+      "es": "Descripción de ~25 palabras en español"
+    },
+    "title_he": "...", "title_en": "...", "title_es": "...",
+    "subtitle_he": "...", "subtitle_en": "...", "subtitle_es": "...",
+    "description_he": "...", "description_en": "...", "description_es": "..."
+  }
+}
+```
+
+### סדר עבודה מומלץ
+1. תרגם קודם את הפרקים
+2. לאחר סיום, תרגם את מטא-דאטה הספר
+3. עדכן את content-structure.json
+
 דיווח:
 בסיום כל ה-batch, דווח:
   translated: {מספר קבצים}
   skipped: {מספר קבצים שדולגו}
   input_words: {מספר מילים בעברית שנקראו}
   output_words: {מספר מילים באנגלית שנכתבו}
+  book_metadata: {כן/לא - האם עודכן מטא-דאטה של הספר}

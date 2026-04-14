@@ -14,7 +14,7 @@
 
 3. **Construido sobre otras capas:**
 
-<img src="/ai-engineering-intro/assets/image-08.png" alt="image-08.png" width="702" height="461" />
+
 
 • **La explicación:** La IA no podría haber sucedido sin la infraestructura que ya construimos: poder de cómputo (Compute), nube, móvil y software moderno.
 

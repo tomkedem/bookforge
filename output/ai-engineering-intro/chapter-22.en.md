@@ -1,4 +1,4 @@
-# <div style="text-align: center"> LLMs are like autocomplete with PHD in everything </div>
+# LLMs are like autocomplete with PHD in everything
 
 The phrase "LLMs are like autocomplete with PHD in everything" is the most accurate description of the technology today. It breaks down the "magic" into two critical engineering components:
 
@@ -6,6 +6,7 @@ The phrase "LLMs are like autocomplete with PHD in everything" is the most accur
 
 
 
+<img src="/ai-engineering-intro/assets/image-12.png" alt="image-12.png" width="700" height="350" />
 
 
 
@@ -15,7 +16,6 @@ The phrase "LLMs are like autocomplete with PHD in everything" is the most accur
 
 After seeing the technical internals of how the model guesses word after word, we understand that the LLM is not a thinking entity. At its core, it's an engine for predicting the next token. The difference between it and the Autocomplete on your phone is only in the scale and complexity of context it can hold. It's a statistical prediction engine, not a logical understanding engine.
 
-<img src="/ai-engineering-intro/assets/image-13.png" alt="image-13.png" width="645" height="438" />
 
 2. **The PHD in everything (The Scale)**
 

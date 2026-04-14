@@ -8,8 +8,8 @@
 
 • מה שמבדיל אותן מתוכנה רגילה הוא שאני מלמד את התוכנה שלי לילמוד מתוך דוגמאות – לדוגמא אני מראה לו הרבה תמונות של חתולים או כלבים אני לא אומר למכונה זה חתול וזה כלב הוא לומד לבד כאשר אני מראה לו תמונות של אלפי חתולים או כלבים
 
-<img src="/ai-engineering-intro/assets/image-07.png" alt="image-07.png" width="503" height="168" />
 
+<img src="/ai-engineering-intro/assets/image-06.png" alt="image-06.png" width="588" height="320" />
 
 
 

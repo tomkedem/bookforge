@@ -1,6 +1,6 @@
 # AI Engineer Skills Part 2
 
-<img src="/ai-engineering-intro/assets/image-05.png" alt="image-05.png" width="534" height="356" />
+
 
 
 | Skill | What Does This Mean in Practice? | Added Value |

@@ -1,6 +1,6 @@
 # מיומנויות מהנדס AI חלק ב'
 
-<img src="/ai-engineering-intro/assets/image-05.png" alt="image-05.png" width="534" height="356" />
+
 
 
 <div dir="rtl">

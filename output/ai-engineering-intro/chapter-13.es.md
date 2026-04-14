@@ -8,8 +8,8 @@ Un subconjunto de la inteligencia artificial
 
 • Lo que los distingue del software regular es que enseño a mi software a aprender de ejemplos – por ejemplo, le muestro muchas fotos de gatos o perros. No le digo a la máquina esto es un gato y esto es un perro - aprende solo cuando le muestro fotos de miles de gatos o perros.
 
-<img src="/ai-engineering-intro/assets/image-07.png" alt="image-07.png" width="503" height="168" />
 
+<img src="/ai-engineering-intro/assets/image-06.png" alt="image-06.png" width="588" height="320" />
 
 
 

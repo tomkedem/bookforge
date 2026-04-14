@@ -56,7 +56,7 @@ Gestionar riesgos de seguridad de información, controlar presupuestos de tokens
 
 Desarrollar la capacidad de identificar tecnologías centrales versus tendencias pasajeras. Las cosas cambian todo el tiempo y por lo tanto es importante conocer los principios y cómo aprenderlos sin miedo – siempre hay que seguir aprendiendo y constantemente actualizarnos porque hoy en día las cosas se actualizan semanalmente.
 
-<img src="/ai-engineering-intro/assets/image-04.jpg" alt="image-04.jpg" width="342" height="219" />
+
 
 • **Construir el Mindset correcto para el éxito en la era de la IA:**
 

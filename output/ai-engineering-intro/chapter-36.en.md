@@ -2,6 +2,7 @@
 
 This slide breaks down the general concept of "agent" into a list of functional requirements. It defines what transforms an AI system from just a "chatbot" into a complex software system capable of managing workflows.
 
+<img src="/ai-engineering-intro/assets/image-24.png" alt="image-24.png" width="472" height="218" />
 
 **The main components:**
 
@@ -34,7 +35,7 @@ This list of features is the "wish list" of every AI developer, but in Productio
 
 3. **Dangerous proactivity:** A system that initiates actions by itself requires very strict protection mechanisms (Guardrails). Without oversight, a proactive agent can perform irreversible or expensive actions due to misinterpretation of an environmental change.
 
-<img src="/ai-engineering-intro/assets/image-25.png" alt="image-25.png" width="709" height="269" />
+
 
 **Strengths in the illustration:**
 

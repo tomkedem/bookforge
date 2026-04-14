@@ -1,6 +1,6 @@
 # The Result Quality Equation
 
-
+<img src="/ai-engineering-intro/assets/image-20.jpg" alt="image-20.jpg" width="401" height="232" />
 This is the summary illustration, the "why." It connects all the points we raised throughout the presentation and presents a simple mathematical equation that determines the success of your project.
 
 **The main components:**
@@ -13,7 +13,7 @@ The raw "brain." The logical, linguistic, and explanatory capability of the LLM 
 
 • **Context Quality:** This is the main variable we developed. The illustration emphasizes that it's divided into two:
 
-<img src="/ai-engineering-intro/assets/image-21.png" alt="image-21.png" width="518" height="255" />
+
 
  • **Precision:** How accurate is the information we brought (without noise)?
 

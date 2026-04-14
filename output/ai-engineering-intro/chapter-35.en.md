@@ -2,6 +2,7 @@
 
 Until now we talked about the model as a passive tool waiting for information (RAG). Here we present a quantum leap: the model becomes an active system that operates in the world. This is the transition from "chatbot" to "digital worker."
 
+<img src="/ai-engineering-intro/assets/image-23.png" alt="image-23.png" width="533" height="393" />
 
 **The main components:**
 
@@ -22,8 +23,6 @@ The term "autonomous" sounds promising, but as programmers and team managers, it
 1. **Infinite loops:** Agents can get "stuck" in faulty logic and waste thousands of tokens (and money) without reaching a result.
 
 2. **Loss of control:** Unlike regular code, it's hard to predict in advance every action the agent will choose to take. This is a huge challenge for Production systems that require stability.
-
-<img src="/ai-engineering-intro/assets/image-24.png" alt="image-24.png" width="472" height="218" />
 
 3. **Costs (Token Overhead):** Agents that "think out loud" (like in the ReAct method) consume an enormous amount of tokens on every small step.
 

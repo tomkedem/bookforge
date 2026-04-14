@@ -1,7 +1,6 @@
-# <div style="text-align: center"> Los LLMs son como autocompletado con doctorado en todo </div>
+# Los LLMs son como autocompletado con doctorado en todo 
 
 La frase "LLMs are like autocomplete with PHD in everything" es la descripción más precisa de la tecnología hoy. Descompone la "magia" en dos componentes de ingeniería críticos:
-
 
 
 
@@ -15,7 +14,7 @@ La frase "LLMs are like autocomplete with PHD in everything" es la descripción 
 
 Después de ver los internos técnicos de cómo el modelo adivina palabra tras palabra, entendemos que el LLM no es una entidad pensante. En su núcleo, es un motor para predecir el siguiente token. La diferencia entre él y el Autocompletado en tu teléfono es solo la escala y complejidad del contexto que puede mantener. Es un motor de predicción estadística, no un motor de comprensión lógica.
 
-<img src="/ai-engineering-intro/assets/image-13.png" alt="image-13.png" width="645" height="438" />
+
 
 2. **El Doctorado en Todo (La Escala)**
 

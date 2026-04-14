@@ -4,13 +4,13 @@
 
 (Fuente: Encyclopedia Britannica)
 
-
+<img src="/ai-engineering-intro/assets/image-05.png" alt="image-05.png" width="534" height="356" />
 
 **¿Qué significa esto para nosotros como equipo de desarrollo?**
 
 Esta definición es intencionalmente muy amplia. Incluye todo lo que nos parece "inteligente", desde completar oraciones hasta planificar rutas de viaje.
 
-<img src="/ai-engineering-intro/assets/image-06.png" alt="image-06.png" width="588" height="320" />
+
 
 • **El énfasis está en el resultado:** La computadora logra "imitar" la función cognitiva humana (como: resolución de problemas, aprendizaje o comprensión del lenguaje).
 

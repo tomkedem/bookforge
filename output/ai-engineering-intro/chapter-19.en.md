@@ -9,7 +9,7 @@ As shown in the illustration, the complex word multiculturalism is not read as a
 
 
 
-
+<img src="/ai-engineering-intro/assets/image-09.png" alt="image-09.png" width="546" height="321" />
 
 
 
@@ -23,7 +23,6 @@ As shown in the illustration, the complex word multiculturalism is not read as a
 
 3. **Pattern understanding:** Breaking into sub-words allows the model to "understand" new words it never saw during training, or to handle spelling errors (like **Understading** shown in the illustration - missing the letter 'n'). The model recognizes the familiar parts of the word and infers the meaning from context.
 
-<img src="/ai-engineering-intro/assets/image-10.png" alt="image-10.png" width="558" height="272" />
 
 **Constructive skepticism:**
 

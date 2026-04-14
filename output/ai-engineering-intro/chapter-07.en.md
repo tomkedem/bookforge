@@ -56,7 +56,7 @@ Managing information security risks, controlling token budgets, and improving sy
 
 Developing the ability to identify core technologies versus passing trends. Things change all the time and therefore it's important to know the principles and how to learn them without fear – you always need to keep learning and constantly upgrade yourself because nowadays things are updated on a weekly basis.
 
-<img src="/ai-engineering-intro/assets/image-04.jpg" alt="image-04.jpg" width="342" height="219" />
+
 
 • **Building the right Mindset for success in the AI era:**
 

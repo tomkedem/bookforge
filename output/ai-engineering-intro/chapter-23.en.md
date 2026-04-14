@@ -1,5 +1,6 @@
 # Artificial Intelligence - 1,000 Doctors in Your Pocket.
 
+<img src="/ai-engineering-intro/assets/image-13.png" alt="image-13.png" width="645" height="438" />
 
 Steve Jobs said the iPod is a thousand songs in your pocket, so AI is 1000 PhDs in your pocket, and whoever dismisses this is probably not with us today.
 

@@ -1,4 +1,4 @@
-# רשימת נושאי הקורס (Course Topic List)
+# רשימת נושאי הקורס
 
 
 <div dir="rtl">

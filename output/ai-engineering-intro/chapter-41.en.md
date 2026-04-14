@@ -1,5 +1,6 @@
 # The Future of AI: Where Do We Go from Here
 
+<img src="/ai-engineering-intro/assets/image-29.jpg" alt="image-29.jpg" width="710" height="397" />
 Beyond all the architectures, diagrams, and technical terms we surveyed, we stand facing a wall that no roadmap really knows how to bypass. The year 2027 marks the point where classic and deterministic software engineering loses its final grip in favor of probabilistic systems we're still learning how to even manage.
 
 **Here are some of the difficult questions that really concern me about this future:**

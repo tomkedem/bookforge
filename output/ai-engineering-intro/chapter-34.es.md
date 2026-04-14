@@ -1,7 +1,7 @@
 # Arquitectura RAG
 
 Esta es la ilustración de "ejecución". Toma los conceptos abstractos y presenta el plan de trabajo práctico del sistema. El rol central aquí es del Framework, actuando como el director de toda la orquesta.
-
+<img src="/ai-engineering-intro/assets/image-22.png" alt="image-22.png" width="551" height="321" />
 
 **Los componentes principales:**
 
@@ -17,7 +17,7 @@ Esta es la ilustración de "ejecución". Toma los conceptos abstractos y present
 
 **Análisis profesional y escepticismo constructivo:** Esta arquitectura muestra claramente la importancia del Framework como factor conector. Pero como programadores, debemos mirar los puntos de falla potenciales en este diagrama:
 
-<img src="/ai-engineering-intro/assets/image-23.png" alt="image-23.png" width="533" height="393" />
+
 
 1. **Cuellos de Botella (Latencia):** Cada flecha en el diagrama representa una Llamada de Red. Búsqueda en Vector DB, envío del prompt al LLM, y procesamiento de datos en el Framework. Todo esto se acumula en tiempo de respuesta que puede ser demasiado lento para el usuario.
 

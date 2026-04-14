@@ -1,5 +1,5 @@
 # Los LLMs Están Desconectados del Mundo: El Experto en Aislamiento
-
+<img src="/ai-engineering-intro/assets/image-15.png" alt="image-15.png" width="509" height="340" />
 
 Aquí explicamos por qué el modelo, a pesar de su PhD, no puede funcionar como un trabajador independiente sin mediación humana o tecnológica.
 
@@ -18,15 +18,6 @@ Puede explicarte cómo arreglar un bug, pero no "entiende" las implicaciones fí
 3. **Desconexión del Contexto Personal (Falta de Contexto Personal)**
 
 El modelo no sabe quién eres, cuál es tu rol en la organización, o qué se decidió en la reunión de ayer, a menos que esté explícitamente escrito dentro de la Ventana de Contexto. Cada interacción comienza desde cero.
-
-<img src="/ai-engineering-intro/assets/image-16.jpg" alt="image-16.jpg" width="710" height="238" />
-
-
-
-
-
-
-
 
 **El ángulo escéptico:**
 

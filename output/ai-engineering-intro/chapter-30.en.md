@@ -1,11 +1,12 @@
 # Detailed Context Window Structure
+<img src="/ai-engineering-intro/assets/image-18.png" alt="image-18.png" width="519" height="313" />
 
 
 In this illustration we "open the engine" and look at the internals of the context window. This is the stage where theory becomes real architecture.
 
 **The main components:**
 
-<img src="/ai-engineering-intro/assets/image-19.png" alt="image-19.png" width="384" height="323" />
+
 
 • **Prompts:** This is not just the user's question, but the entire System Prompt. These are the house rules: defining the model's role, its limitations, and the format in which it must answer.
 

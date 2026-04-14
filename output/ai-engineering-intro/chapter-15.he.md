@@ -14,7 +14,7 @@
 
 3. **נבנית על גבי שכבות קיימות (Built on top of other layers):**
 
-<img src="/ai-engineering-intro/assets/image-08.png" alt="image-08.png" width="702" height="461" />
+
 
 • **ההסבר:** ה-AI לא היה יכול לקרות ללא התשתיות שכבר בנינו: כוח מחשוב (Compute), ענן (Cloud), מובייל ותוכנה מודרנית.
 

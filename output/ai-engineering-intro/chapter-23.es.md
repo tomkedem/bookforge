@@ -1,6 +1,6 @@
 # Inteligencia Artificial - 1,000 Doctores en Tu Bolsillo.
 
-
+<img src="/ai-engineering-intro/assets/image-13.png" alt="image-13.png" width="645" height="438" />
 Steve Jobs dijo que el iPod son mil canciones en tu bolsillo, entonces la IA es 1000 PhDs en tu bolsillo, y quien desestima esto probablemente no está con nosotros hoy.
 
 **El ángulo escéptico:**

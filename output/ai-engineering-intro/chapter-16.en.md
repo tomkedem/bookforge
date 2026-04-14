@@ -11,7 +11,7 @@ This is the part that provides the **historical perspective** and explains the e
 
 
 
-
+<img src="/ai-engineering-intro/assets/image-08.png" alt="image-08.png" width="702" height="461" />
 
 
 

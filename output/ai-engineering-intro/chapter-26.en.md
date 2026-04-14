@@ -1,5 +1,6 @@
 # LLMs Are Limited to the Data They Were Trained On: The "Memento" Effect
 
+<img src="/ai-engineering-intro/assets/image-14.png" alt="image-14.png" width="434" height="289" />
 
 This illustration clarifies that our "doctor" is actually a tragic character, similar to Leonard Shelby from the movie **Memento**: he has identity and skills, but he's stuck at a specific point in time.
 
@@ -17,7 +18,6 @@ Why is this movie the perfect analogy?
 
 • **Short-term memory (Context Window):** These are Leonard's notes and tattoos. The model can "remember" new information only if we push it into the Prompt (like in RAG). As soon as the conversation ends and the window closes, everything is erased. The model returns to being exactly the same "doctor" from the past.
 
-<img src="/ai-engineering-intro/assets/image-15.png" alt="image-15.png" width="509" height="340" />
 
 
 

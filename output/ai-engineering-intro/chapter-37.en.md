@@ -2,7 +2,7 @@
 
 While the previous illustration focused on agent features, this illustration focuses on how it operates at the system level. It presents the technical structure that separates the LLM as a thinking engine from the Agent as an operational logic layer.
 
-
+<img src="/ai-engineering-intro/assets/image-25.png" alt="image-25.png" width="709" height="269" />
 
 
 **The main components:**
@@ -18,9 +18,6 @@ While the previous illustration focused on agent features, this illustration foc
 • **Memory:** A mechanism for storing and retrieving information (Store / Retrieve). This is the component that allows the agent to maintain consistency over time and not forget the goal.
 
 • **User:** The input source (Prompt) and the destination for receiving the final answer (Response).
-
-<img src="/ai-engineering-intro/assets/image-26.png" alt="image-26.png" width="616" height="380" />
-
 
 
 **Constructive skepticism:**

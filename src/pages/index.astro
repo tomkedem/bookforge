@@ -14,7 +14,23 @@ const { language = LANGUAGES.EN } = Astro.props;
 const isRtl = language === LANGUAGES.HE;
 
 const books = discoverAllBooks();
-const categories = ['All', ...Array.from(new Set(books.map(b => b.category).filter(Boolean))).sort()];
+
+// Build unique categories as multilingual objects, keyed by English name
+const categoryMap = new Map<string, Record<string, string>>();
+books.forEach(b => {
+  if (b.category && typeof b.category === 'object') {
+    const key = b.category.en || b.category.he || Object.values(b.category)[0] || 'General';
+    if (!categoryMap.has(key)) {
+      categoryMap.set(key, b.category);
+    }
+  }
+});
+// Sort categories alphabetically by English name
+const sortedCategoryKeys = Array.from(categoryMap.keys()).sort();
+const categories = [
+  { key: 'All', labels: { he: 'הכל', en: 'All', es: 'Todos' } },
+  ...sortedCategoryKeys.map(key => ({ key, labels: categoryMap.get(key)! }))
+];
 
 // Get initial quote (will be replaced client-side for true randomness)
 const initialQuote = getRandomQuote();
@@ -60,10 +76,13 @@ const initialQuote = getRandomQuote();
               'hover:bg-yuval-surface hover:text-yuval-text',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight',
             ]}
-            data-category={cat}
-            data-active={cat === 'All' ? 'true' : 'false'}
+            data-category={cat.key}
+            data-active={cat.key === 'All' ? 'true' : 'false'}
+            data-he={cat.labels.he}
+            data-en={cat.labels.en}
+            data-es={cat.labels.es}
           >
-            {cat}
+            {cat.labels.en}
           </button>
         ))}
       </div>

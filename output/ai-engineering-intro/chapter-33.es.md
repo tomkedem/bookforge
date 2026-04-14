@@ -1,7 +1,7 @@
 # RAG (Generación Aumentada por Recuperación)
 
 Este concepto toma la "ingeniería de contexto" y se enfoca en su técnica más central hoy. Si la ventana de contexto es el banco de trabajo, RAG es el bibliotecario que trae el libro exacto de la biblioteca gigante de la organización a la mesa.
-
+<img src="/ai-engineering-intro/assets/image-21.png" alt="image-21.png" width="518" height="255" />
 
 **Los componentes principales:**
 
@@ -13,7 +13,7 @@ Este concepto toma la "ingeniería de contexto" y se enfoca en su técnica más 
 
 • **Ideal para datos organizacionales y privados:** La solución perfecta para trabajar con documentos sensibles (Enterprise) que no pueden o no deben exponerse al modelo en un proceso de reentrenamiento.
 
-<img src="/ai-engineering-intro/assets/image-22.png" alt="image-22.png" width="551" height="321" />
+
 
 • **Respuestas actualizadas en tiempo real:** La capacidad de responder preguntas sobre cosas que pasaron hace una hora, no solo hace dos años.
 

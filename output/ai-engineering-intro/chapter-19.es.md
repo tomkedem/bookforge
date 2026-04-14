@@ -8,7 +8,7 @@ Como se muestra en la ilustración, la palabra compleja multiculturalism no se l
 
 
 
-
+<img src="/ai-engineering-intro/assets/image-09.png" alt="image-09.png" width="546" height="321" />
 
 
 
@@ -23,7 +23,6 @@ Como se muestra en la ilustración, la palabra compleja multiculturalism no se l
 
 3. **Comprensión de patrones:** Descomponer en sub-palabras permite al modelo "entender" palabras nuevas que nunca vio durante el entrenamiento, o manejar errores de ortografía (como **Understading** mostrado en la ilustración - falta la letra 'n'). El modelo reconoce las partes familiares de la palabra e infiere el significado del contexto.
 
-<img src="/ai-engineering-intro/assets/image-10.png" alt="image-10.png" width="558" height="272" />
 
 **Escepticismo constructivo:**
 

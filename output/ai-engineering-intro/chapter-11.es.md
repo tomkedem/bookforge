@@ -1,6 +1,6 @@
 # Habilidades del Ingeniero de IA Parte 2
 
-<img src="/ai-engineering-intro/assets/image-05.png" alt="image-05.png" width="534" height="356" />
+
 
 
 | Habilidad | ¿Qué Significa Esto en la Práctica? | Valor Agregado |

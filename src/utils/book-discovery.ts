@@ -19,16 +19,27 @@ import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from './language';
 const OUTPUT_DIR = PATHS.OUTPUT_DIR;
 const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map(l => l.code);
 
+/**
+ * Credits for a book — supports lecture summaries and original works
+ */
+export interface BookCredits {
+  type: 'lecture_summary' | 'original';
+  lecturer?: string;    // For lecture_summary: the lecturer's name
+  editor?: string;      // For lecture_summary: who summarized/edited
+  author?: string;      // For original: the author's name
+}
+
 export interface DiscoveredBook {
   slug: string;
   titles: Record<string, string>;       // { he: '...', en: '...', fr: '...' }
   subtitles: Record<string, string>;
   descriptions: Record<string, string>;
-  category: string;
+  category: Record<string, string>;     // { he: '...', en: '...', es: '...' }
   coverImage: string;
   dominantColor: string;
   chapters: Chapter[];
   languages: string[];                   // Available language codes
+  credits?: BookCredits;                 // Optional credits/attribution
   // Legacy fields for backward compatibility
   title_he?: string;
   title_en?: string;
@@ -48,6 +59,7 @@ interface ContentStructure {
     subtitles?: Record<string, string>;
     descriptions?: Record<string, string>;
     languages?: string[];
+    credits?: BookCredits;              // Credits/attribution
     // Legacy fields
     title_he?: string;
     title_en?: string;
@@ -58,7 +70,7 @@ interface ContentStructure {
     description_he?: string;
     description_en?: string;
     description_es?: string;
-    category?: string;
+    category?: string | Record<string, string>;
     chapters: Array<{
       id: number | string;
       titles?: Record<string, string>;
@@ -214,8 +226,9 @@ function loadBookMeta(bookDir: string, slug: string): {
   titles: Record<string, string>;
   subtitles: Record<string, string>;
   descriptions: Record<string, string>;
-  category: string;
+  category: Record<string, string>;
   languages: string[];
+  credits?: BookCredits;
 } {
   const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   
@@ -255,12 +268,23 @@ function loadBookMeta(bookDir: string, slug: string): {
         return hasFile || titles[lang];
       });
       
+      // Handle category - support both string and multilingual object
+      let category: Record<string, string>;
+      if (typeof book.category === 'object' && book.category !== null) {
+        category = book.category;
+      } else if (typeof book.category === 'string') {
+        category = { he: book.category, en: book.category, es: book.category };
+      } else {
+        category = { he: 'כללי', en: 'General', es: 'General' };
+      }
+      
       return {
         titles,
         subtitles,
         descriptions,
-        category: book.category || 'General',
+        category,
         languages: book.languages || availableLanguages,
+        credits: book.credits,
       };
     } catch { /* fall through */ }
   }
@@ -270,8 +294,9 @@ function loadBookMeta(bookDir: string, slug: string): {
     titles: { en: formatted, he: formatted },
     subtitles: {},
     descriptions: {},
-    category: 'General',
+    category: { he: 'כללי', en: 'General', es: 'General' },
     languages: ['he'],
+    credits: undefined,
   };
 }
 
@@ -315,6 +340,7 @@ export function discoverBook(slug: string): DiscoveredBook | null {
     dominantColor: '#1a1a1a',
     chapters,
     languages: meta.languages,
+    credits: meta.credits,
     // Legacy fields for backward compatibility
     title_he: meta.titles['he'] || meta.titles['en'] || '',
     title_en: meta.titles['en'] || meta.titles['he'] || '',

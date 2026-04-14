@@ -1,6 +1,6 @@
 # La Ecuación de Calidad del Resultado
 
-
+<img src="/ai-engineering-intro/assets/image-20.jpg" alt="image-20.jpg" width="401" height="232" />
 Esta es la ilustración de resumen, el "por qué". Conecta todos los puntos que planteamos a lo largo de la presentación y presenta una ecuación matemática simple que determina el éxito de tu proyecto.
 
 **Los componentes principales:**
@@ -13,7 +13,7 @@ El "cerebro" crudo. La capacidad lógica, lingüística y explicativa del LLM (p
 
 • **Calidad del Contexto:** Esta es la variable principal que desarrollamos. La ilustración enfatiza que se divide en dos:
 
-<img src="/ai-engineering-intro/assets/image-21.png" alt="image-21.png" width="518" height="255" />
+
 
  • **Precisión:** ¿Qué tan precisa es la información que trajimos (sin ruido)?
 

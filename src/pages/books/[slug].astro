@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../types/index';
 import { LANGUAGES } from '../../utils/language';
-import { discoverAllBooks } from '../../utils/book-discovery';
+import { discoverAllBooks, type BookCredits } from '../../utils/book-discovery';
 
 interface Props {
   language?: Language;
@@ -45,6 +45,7 @@ const book = {
   coverImage: bookData.coverImage,
   dominantColor: bookData.dominantColor,
   chapters: bookData.chapters,
+  credits: bookData.credits,
 };
 
 const title = language === 'es' ? book.title_es : (language === LANGUAGES.HE ? book.title_he : book.title_en);
@@ -98,6 +99,30 @@ const description = language === 'es' ? book.description_es : (language === LANG
             decoding="async"
             class="w-full rounded-lg shadow-lg bg-yuval-bg-secondary object-contain"
           />
+          {/* Credits under cover */}
+          {book.credits && (
+            <div class:list={[
+              'mt-3',
+              'text-sm',
+              'text-yuval-text-secondary',
+              isRtl && 'text-right',
+            ]}>
+              {book.credits.type === 'lecture_summary' ? (
+                <p>
+                  <span data-he="מרצה:" data-en="Lecturer:" data-es="Profesor:">{language === 'he' ? 'מרצה:' : language === 'es' ? 'Profesor:' : 'Lecturer:'}</span>
+                  {' '}{book.credits.lecturer}
+                  <br />
+                  <span data-he="סוכם ונערך על ידי:" data-en="Summarized and edited by:" data-es="Resumido y editado por:">{language === 'he' ? 'סוכם ונערך על ידי:' : language === 'es' ? 'Resumido y editado por:' : 'Summarized and edited by:'}</span>
+                  {' '}{book.credits.editor}
+                </p>
+              ) : (
+                <p>
+                  <span data-he="מאת:" data-en="By:" data-es="Por:">{language === 'he' ? 'מאת:' : language === 'es' ? 'Por:' : 'By:'}</span>
+                  {' '}{book.credits.author}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <!-- Book Info -->

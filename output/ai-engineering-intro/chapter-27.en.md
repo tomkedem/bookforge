@@ -1,5 +1,5 @@
 # LLMs Are Disconnected from the World: The Expert in Isolation
-
+<img src="/ai-engineering-intro/assets/image-15.png" alt="image-15.png" width="509" height="340" />
 
 Here we explain why the model, despite its PhD, cannot function as an independent worker without human or technological mediation.
 
@@ -18,14 +18,6 @@ It can explain to you how to fix a bug, but it doesn't "understand" the physical
 3. **Disconnection from Personal Context (Lack of Personal Context)**
 
 The model doesn't know who you are, what your role in the organization is, or what was decided in yesterday's meeting, unless it's explicitly written inside the Context Window. Every interaction starts from zero.
-
-<img src="/ai-engineering-intro/assets/image-16.jpg" alt="image-16.jpg" width="710" height="238" />
-
-
-
-
-
-
 
 
 **The skeptical angle:**

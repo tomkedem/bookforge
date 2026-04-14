@@ -1,5 +1,5 @@
 # El Sesgo en Modelos de Lenguaje No Es un Bug, Sino una Realidad Estadística
-
+<img src="/ai-engineering-intro/assets/image-16.jpg" alt="image-16.jpg" width="710" height="238" />
 
 El sesgo en modelos de lenguaje no es una "opinión" humana, sino una distribución de pesos matemáticos. El modelo no intenta tener razón. Intenta ser "predecible".
 
@@ -23,7 +23,6 @@ Como programadores, encontramos esto diariamente:
 
 El LLM es un **motor conformista.**
 
-<img src="/ai-engineering-intro/assets/image-17.png" alt="image-17.png" width="637" height="275" />
 
 Como apunta a la probabilidad más alta, siempre sugerirá la solución "segura". No es capaz de creatividad radical o avance lógico, porque esos están en la cola estadística (Long Tail), el lugar donde la probabilidad es baja.
 

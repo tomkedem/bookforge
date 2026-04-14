@@ -3,6 +3,7 @@
 After surveying the potential and architecture, this summary illustration sets the practical "price tag." Organizational AI adoption isn't stopped due to lack of technology, but due to five deep structural barriers.
 
 
+<img src="/ai-engineering-intro/assets/image-28.jpg" alt="image-28.jpg" width="710" height="397" />
 
 **Analysis of the main challenges:**
 
@@ -10,7 +11,7 @@ After surveying the potential and architecture, this summary illustration sets t
 
 • **Accuracy and hallucinations:** The probabilistic nature of the LLM is the enemy of organizational systems that require consistency. One hallucination from an agent in a financial or legal process can negate all the efficiency gains.
 
-<img src="/ai-engineering-intro/assets/image-29.jpg" alt="image-29.jpg" width="710" height="397" />
+
 
 • **Governance and risks:** Who's responsible when the agent makes a mistake? How do you maintain data privacy when the agent accesses databases? Organizations struggle to create a regulatory framework that allows freedom of action for the agent without losing control.
 

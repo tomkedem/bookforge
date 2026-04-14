@@ -1,6 +1,6 @@
 # Defining the Workflow (The Flow)
 
-
+<img src="/ai-engineering-intro/assets/image-17.png" alt="image-17.png" width="637" height="275" />
 The illustration defines the "rules of the game" of the system you're building.
 
 **The main components:**
@@ -9,7 +9,7 @@ The illustration defines the "rules of the game" of the system you're building.
 
 • **The Application (App):** This is the center of gravity. Here lies your logic. The application is not just a "pipe" that passes text. It's the central processor. It's the one that decides which data to retrieve, which filters to apply, and how to "package" everything for the model.
 
-<img src="/ai-engineering-intro/assets/image-18.png" alt="image-18.png" width="519" height="313" />
+
 
 • **The Context Window - The empty purple rectangle:** This is the real estate where processing takes place. The fact that it's empty in this slide emphasizes that it's **a resource to manage**. This is the model's operational Memory.
 

@@ -8,7 +8,7 @@
 
 2. **הפרדוקס של ה-PhD: מעדיף להיות רהוט על פני מדויק**
 
-<img src="/ai-engineering-intro/assets/image-14.png" alt="image-14.png" width="434" height="289" />
+
 
 דוקטור אמיתי יודע מתי להגיד "אני לא יודע". ה-LLM, מעצם הגדרתו כמנוע **Autocomplete**, חייב להשלים את המשפט.
 

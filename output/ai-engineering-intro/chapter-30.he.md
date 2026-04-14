@@ -1,11 +1,12 @@
 # מבנה חלון ההקשר המפורט (Context Window Structure)
 
+<img src="/ai-engineering-intro/assets/image-18.png" alt="image-18.png" width="519" height="313" />
 
 באיור זה אנחנו "פותחים את המנוע" ומסתכלים על הקרביים של חלון ההקשר. זה השלב שבו הופכים תיאוריה לארכיטקטורה של ממש.
 
 **המרכיבים המרכזיים:**
 
-<img src="/ai-engineering-intro/assets/image-19.png" alt="image-19.png" width="384" height="323" />
+
 
 • **הנחיות (Prompts):** לא מדובר רק בשאלה של המשתמש, אלא בכל ה-System Prompt. אלו חוקי הבית: הגדרת התפקיד של המודל, המגבלות שלו והפורמט שבו הוא חייב לענות.
 

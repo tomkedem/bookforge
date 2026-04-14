@@ -3,6 +3,7 @@
 Después de examinar el potencial y la arquitectura, esta ilustración de resumen establece la "etiqueta de precio" práctica. La adopción organizacional de IA no se detiene por falta de tecnología, sino por cinco barreras estructurales profundas.
 
 
+<img src="/ai-engineering-intro/assets/image-28.jpg" alt="image-28.jpg" width="710" height="397" />
 
 **Análisis de los principales desafíos:**
 
@@ -10,7 +11,7 @@ Después de examinar el potencial y la arquitectura, esta ilustración de resume
 
 • **Precisión y alucinaciones:** La naturaleza probabilística del LLM es el enemigo de los sistemas organizacionales que requieren consistencia. Una alucinación de un agente en un proceso financiero o legal puede anular todas las ganancias de eficiencia.
 
-<img src="/ai-engineering-intro/assets/image-29.jpg" alt="image-29.jpg" width="710" height="397" />
+
 
 • **Gobernanza y riesgos:** ¿Quién es responsable cuando el agente comete un error? ¿Cómo mantienes la privacidad de datos cuando el agente accede a bases de datos? Las organizaciones luchan por crear un marco regulatorio que permita libertad de acción al agente sin perder control.
 

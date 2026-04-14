@@ -10,7 +10,7 @@ Esta es la parte que proporciona la **perspectiva histórica** y explica el salt
 
 
 
-
+<img src="/ai-engineering-intro/assets/image-08.png" alt="image-08.png" width="702" height="461" />
 
 
 

@@ -4,13 +4,12 @@
 
 (מקור: Encyclopedia Britannica)
 
-
+<img src="/ai-engineering-intro/assets/image-05.png" alt="image-05.png" width="534" height="356" />
 
 **מה זה אומר עבורנו כקבוצת פיתוח?**
 
 ההגדרה הזו רחבה מאוד בכוונה. היא כוללת בתוכה כל מה שנראה לנו "חכם" מהשלמת משפטים ועד תכנון מסלול נסיעה.
 
-<img src="/ai-engineering-intro/assets/image-06.png" alt="image-06.png" width="588" height="320" />
 
 • **הדגש הוא על התוצאה:** המחשב מצליח "לחקות" תפקוד קוגניטיבי אנושי (כגון: פתרון בעיות, למידה או הבנת שפה).
 

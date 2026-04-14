@@ -2,6 +2,7 @@
 
 The illustration presents the "roadmap" of the organizational revolution. In 2026, we're no longer talking about experiments, but about broad deployment in seven critical domains:
 
+<img src="/ai-engineering-intro/assets/image-27.jpg" alt="image-27.jpg" width="709" height="166" />
 
 1. **Move from chat to actions:**
 
@@ -34,7 +35,7 @@ Claims management, underwriting, and fraud detection. In these areas the risk le
 
 and therefore the architecture usually includes **Human-In-The-Loop** as we saw in the anatomy slide.
 
-<img src="/ai-engineering-intro/assets/image-28.jpg" alt="image-28.jpg" width="709" height="166" />
+
 
 
 **Constructive skepticism:**

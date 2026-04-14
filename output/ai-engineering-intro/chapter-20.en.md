@@ -6,7 +6,7 @@ Let's talk at a high level, and we'll dive into details later.
 
 We're talking about a model composed of many "neurons," where each neuron is essentially a simple mathematical function that receives values, performs a calculation, and passes the result forward.
 
-<img src="/ai-engineering-intro/assets/image-11.jpg" alt="image-11.jpg" width="709" height="346" />
+<img src="/ai-engineering-intro/assets/image-10.png" alt="image-10.png" width="558" height="272" />
 
 The neurons are connected to each other in a large network, so the result of one affects the others, and together they create a complex calculation that leads to predicting the next token.
 

@@ -1,6 +1,7 @@
 # The Inference Pipeline: How is an Answer Created?
 
 
+<img src="/ai-engineering-intro/assets/image-11.jpg" alt="image-11.jpg" width="709" height="346" />
 The illustration demonstrates the **"Auto-regression"** process in a complete and unified form. It explains why we call this an "Inference Pipeline" - it's a word production line.
 
 The illustration shows the serial (Sequential) process in which the model builds a sentence token after token.
@@ -36,7 +37,6 @@ On the right side, we see the "production line":
 
 As professionals, this illustration explains to us why these systems behave the way they do:
 
-<img src="/ai-engineering-intro/assets/image-12.png" alt="image-12.png" width="700" height="350" />
 
 **1. Latency Cost:** Since the model must finish calculating the first word to start calculating the second, response time depends on the length of the answer. This is why we use **Streaming** in our user interfaces. So the user sees "signs of life" while the loop runs.
 

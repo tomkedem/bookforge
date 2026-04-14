@@ -3,7 +3,7 @@
 The illustration presents the fundamental differences between classic software development and building artificial intelligence-based systems. This is not merely a technological improvement, but a complete transition in working methodology and project risk management.
 
 
-
+<img src="/ai-engineering-intro/assets/image-26.png" alt="image-26.jpg" width="682" height="323" />
 **The main components for comparison:**
 
 • **Logic source:** In traditional software, logic is dictated top-down by a programmer who writes explicit rules. In AI applications, logic grows bottom-up through pattern recognition from data.
@@ -20,7 +20,6 @@ In AI models there's a phenomenon of "Model Drift." The model becomes less accur
 
 **Constructive skepticism:**
 
-<img src="/ai-engineering-intro/assets/image-27.jpg" alt="image-27.jpg" width="682" height="323" />
 
 As programmers, we should look at this table critically to understand the real challenges:
 

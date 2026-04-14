@@ -14,7 +14,7 @@ Esto incluye no solo inglés o hebreo, sino también lenguajes de programación,
 
 3. **Model (Modelo):** Esta es una representación matemática (algoritmo) que se guarda como archivo.
 
-<img src="/ai-engineering-intro/assets/image-09.png" alt="image-09.png" width="546" height="321" />
+
 
 No es un motor de búsqueda y no es una base de datos. Es una "instantánea" de todo el conocimiento que el modelo adquirió durante el entrenamiento, permitiéndole predecir la siguiente salida.
 

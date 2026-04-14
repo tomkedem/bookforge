@@ -1,5 +1,5 @@
 # Los LLMs Están Limitados a los Datos con los que Fueron Entrenados: El Efecto "Memento"
-
+<img src="/ai-engineering-intro/assets/image-14.png" alt="image-14.png" width="434" height="289" />
 
 Esta ilustración aclara que nuestro "doctor" es en realidad un personaje trágico, similar a Leonard Shelby de la película **Memento**: tiene identidad y habilidades, pero está atascado en un punto específico del tiempo.
 
@@ -16,11 +16,6 @@ El conocimiento del LLM está bloqueado en el momento en que terminó la fase de
 • **Memoria a largo plazo (Entrenamiento):** Estos son los parámetros fijos. Este es el "pasado" del modelo, lo que logró comprimir adentro antes de que "su memoria fuera dañada".
 
 • **Memoria a corto plazo (Ventana de Contexto):** Estas son las notas y tatuajes de Leonard. El modelo puede "recordar" información nueva solo si la empujamos al Prompt (como en RAG). Tan pronto como la conversación termina y la ventana se cierra, todo se borra. El modelo vuelve a ser exactamente el mismo "doctor" del pasado.
-
-<img src="/ai-engineering-intro/assets/image-15.png" alt="image-15.png" width="509" height="340" />
-
-
-
 
 
 **El ángulo escéptico:**

@@ -1,10 +1,12 @@
-# <div style="text-align: center"> LLMs are like autocomplete with PHD in everything </div>
+# מודלי שפה גדולים הם כמו השלמה אוטומטית עם דוקטורט בכל תחום
 
 המשפט "LLMs are like autocomplete with PHD in everything" הוא התיאור המדויק ביותר להגדרת הטכנולוגיה כיום. הוא מפרק את ה"קסם" לשני מרכיבים הנדסיים קריטיים:
 
 
 
 
+
+<img src="/ai-engineering-intro/assets/image-12.png" alt="image-12.png" width="700" height="350" />
 
 
 
@@ -15,7 +17,6 @@
 
 אחרי שראינו בקרביים הטכניים איך המודל מנחש מילה אחר מילה, אנחנו מבינים שה-LLM הוא לא יישות חושבת. ביסודו, הוא מנוע לחיזוי הטוקן הבא. ההבדל בינו לבין ה-Autocomplete בטלפון הוא רק בקנה המידה ובמורכבות ההקשר שהוא מסוגל להחזיק. זהו מנוע ניבוי סטטיסטי, לא מנוע הבנה לוגי.
 
-<img src="/ai-engineering-intro/assets/image-13.png" alt="image-13.png" width="645" height="438" />
 
 2. **ה-PHD in everything (הקנה מידה)**
 

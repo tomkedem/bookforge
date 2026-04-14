@@ -208,6 +208,21 @@ markdown content loading עובד דרך fetch() ל-public files.
 1. `getLanguageFromStorage()` קורא רק מ-localStorage (+ cookie כfallback)
 2. הסרנו את ?lang= מכל URLs פנימיים
 3. הטוגל (הבועה הזהובה) הוא המקור היחיד לאמת
+
+### 2026-04-14
+**Tailwind מסיר list-style מרשימות ממוספרות ולא ממוספרות.**
+הבעיה: רשימות ol/ul לא הציגו מספרים או נקודות כי Tailwind preflight מאפס אותם.
+
+**הפתרון (ב-ReadingLayout.astro):**
+```css
+:global(article ul) {
+  list-style-type: disc;
+}
+:global(article ol) {
+  list-style-type: decimal;
+}
+```
+התיקון כבר מוטמע. ספרים חדשים יקבלו עיצוב רשימות אוטומטית.
 4. קבצים שעודכנו:
    - `language.ts` - הסרת URL param priority
    - `language-switcher.ts` - הסרת URL param check

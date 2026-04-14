@@ -1,5 +1,6 @@
 # El Futuro de la IA: ¿Hacia Dónde Vamos Desde Aquí?
 
+<img src="/ai-engineering-intro/assets/image-29.jpg" alt="image-29.jpg" width="710" height="397" />
 Más allá de todas las arquitecturas, diagramas y términos técnicos que examinamos, nos encontramos frente a un muro que ningún mapa de ruta realmente sabe cómo sortear. El año 2027 marca el punto donde la ingeniería de software clásica y determinística pierde su agarre final a favor de sistemas probabilísticos que todavía estamos aprendiendo cómo siquiera gestionar.
 
 **Aquí hay algunas de las preguntas difíciles que realmente me preocupan sobre este futuro:**

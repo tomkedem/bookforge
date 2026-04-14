@@ -6,7 +6,9 @@ Hablemos a un nivel alto, y profundizaremos en los detalles después.
 
 Estamos hablando de un modelo compuesto por muchas "neuronas", donde cada neurona es esencialmente una función matemática simple que recibe valores, realiza un cálculo y pasa el resultado hacia adelante.
 
-<img src="/ai-engineering-intro/assets/image-11.jpg" alt="image-11.jpg" width="709" height="346" />
+
+<img src="/ai-engineering-intro/assets/image-10.png" alt="image-10.png" width="558" height="272" />
+
 
 Las neuronas están conectadas entre sí en una red grande, por lo que el resultado de una afecta a las otras, y juntas crean un cálculo complejo que lleva a predecir el siguiente token.
 

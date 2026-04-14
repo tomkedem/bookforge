@@ -1,11 +1,11 @@
 # Estructura Detallada de la Ventana de Contexto
+<img src="/ai-engineering-intro/assets/image-18.png" alt="image-18.png" width="519" height="313" />
 
 
 En esta ilustración "abrimos el motor" y miramos los internos de la ventana de contexto. Esta es la etapa donde la teoría se convierte en arquitectura real.
 
 **Los componentes principales:**
 
-<img src="/ai-engineering-intro/assets/image-19.png" alt="image-19.png" width="384" height="323" />
 
 • **Prompts:** Esto no es solo la pregunta del usuario, sino todo el System Prompt. Estas son las reglas de la casa: definiendo el rol del modelo, sus limitaciones y el formato en el que debe responder.
 

@@ -1,7 +1,7 @@
 # תחומי האימוץ של סוכני AI בארגונים (2026)
 
 האיור מציג את "מפת הדרכים" של המהפכה הארגונית. בשנת 2026, אנחנו כבר לא מדברים על ניסויים, אלא על פריסה רחבה בשבעה תחומים קריטיים:
-
+<img src="/ai-engineering-intro/assets/image-27.jpg" alt="image-27.jpg" width="709" height="166" />
 
 1. **Move from chat to actions:**
 
@@ -34,7 +34,7 @@
 
 ולכן הארכיטקטורה כוללת בדרך כלל **Human-In-The-Loop** כפי שראינו בשקף האנטומיה.
 
-<img src="/ai-engineering-intro/assets/image-28.jpg" alt="image-28.jpg" width="709" height="166" />
+
 
 
 **ספקנות בונה:**

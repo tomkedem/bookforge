@@ -1,5 +1,5 @@
 # Bias in Language Models Is Not a Bug, But a Statistical Reality
-
+<img src="/ai-engineering-intro/assets/image-16.jpg" alt="image-16.jpg" width="710" height="238" />
 
 Bias in language models is not a human "opinion," but a distribution of mathematical weights. The model doesn't try to be right. It tries to be "predictable."
 
@@ -23,7 +23,7 @@ As programmers, we encounter this daily:
 
 The LLM is a **conformist engine.**
 
-<img src="/ai-engineering-intro/assets/image-17.png" alt="image-17.png" width="637" height="275" />
+
 
 Since it aims for the highest probability, it will always suggest the "safe" solution. It's not capable of radical creativity or logical breakthrough, because those are in the statistical tail (Long Tail), the place where probability is low.
 

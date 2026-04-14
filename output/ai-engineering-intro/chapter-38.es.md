@@ -2,7 +2,7 @@
 
 La ilustración presenta las diferencias fundamentales entre el desarrollo de software clásico y la construcción de sistemas basados en inteligencia artificial. Esto no es meramente una mejora tecnológica, sino una transición completa en metodología de trabajo y gestión de riesgos del proyecto.
 
-
+<img src="/ai-engineering-intro/assets/image-26.png" alt="image-26.jpg" width="682" height="323" />
 
 **Los componentes principales para comparación:**
 
@@ -20,7 +20,7 @@ En modelos de IA hay un fenómeno de "Deriva del Modelo" (Model Drift). El model
 
 **Escepticismo constructivo:**
 
-<img src="/ai-engineering-intro/assets/image-27.jpg" alt="image-27.jpg" width="682" height="323" />
+
 
 Como programadores, deberíamos mirar esta tabla críticamente para entender los desafíos reales:
 

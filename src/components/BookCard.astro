@@ -8,7 +8,7 @@ interface Props {
   descriptions?: Record<string, string>;
   coverImage: string;
   dominantColor?: string;
-  category?: string;
+  category?: Record<string, string> | string;
   class?: string;
   // Legacy props for backward compatibility
   title_he?: string;
@@ -29,7 +29,7 @@ const {
   descriptions = {},
   coverImage,
   dominantColor = '#888888',
-  category = 'General',
+  category: categoryProp = { he: 'כללי', en: 'General', es: 'General' },
   class: className,
   // Merge legacy props into titles/subtitles/descriptions
   title_he,
@@ -59,6 +59,17 @@ if (description_he) allDescriptions['he'] = description_he;
 if (description_en) allDescriptions['en'] = description_en;
 if (description_es) allDescriptions['es'] = description_es;
 
+// Normalize category to Record<string, string>
+const allCategories: Record<string, string> = typeof categoryProp === 'string'
+  ? { he: categoryProp, en: categoryProp, es: categoryProp }
+  : categoryProp;
+const displayCategory = allCategories[DEFAULT_LANGUAGE] || allCategories['en'] || Object.values(allCategories)[0] || 'General';
+
+// Generate category data attributes for all supported languages
+const categoryAttrs = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(l => [`data-category-${l.code}`, allCategories[l.code] || displayCategory])
+);
+
 // Get display values (default language fallback)
 const displayTitle = allTitles[DEFAULT_LANGUAGE] || allTitles['en'] || Object.values(allTitles)[0] || '';
 const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || allSubtitles['en'] || Object.values(allSubtitles)[0] || '';
@@ -81,8 +92,9 @@ const bookUrl = `/books/${slug}`;
 
 <article
   class:list={['book-card', 'group', 'relative', 'overflow-hidden', 'rounded-xl', 'bg-yuval-surface', className]}
-  data-book-category={category}
+  data-book-category={displayCategory}
   data-book-slug={slug}
+  {...categoryAttrs}
   style={`--card-glow: ${dominantColor};`}
 >
   <!-- Cover image — exactly 50% height -->

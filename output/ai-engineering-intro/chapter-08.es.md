@@ -2,7 +2,7 @@
 
 
 
-
+<img src="/ai-engineering-intro/assets/image-04.jpg" alt="image-04.jpg" width="342" height="219" />
 
 
 

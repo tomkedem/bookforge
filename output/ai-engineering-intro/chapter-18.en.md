@@ -14,7 +14,7 @@ This includes not just English or Hebrew, but also programming languages, mathem
 
 3. **Model:** This is a mathematical representation (algorithm) that is saved as a file.
 
-<img src="/ai-engineering-intro/assets/image-09.png" alt="image-09.png" width="546" height="321" />
+
 
 It's not a search engine and not a database. It's a "snapshot" of all the knowledge the model acquired during training, enabling it to predict the next output.
 

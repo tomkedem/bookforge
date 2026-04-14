@@ -2,6 +2,7 @@
 
 Esta diapositiva descompone el concepto general de "agente" en una lista de requisitos funcionales. Define qué transforma un sistema de IA de solo un "chatbot" a un sistema de software complejo capaz de gestionar flujos de trabajo.
 
+<img src="/ai-engineering-intro/assets/image-24.png" alt="image-24.png" width="472" height="218" />
 
 **Los componentes principales:**
 
@@ -34,7 +35,7 @@ Esta lista de características es la "lista de deseos" de todo desarrollador de 
 
 3. **Proactividad peligrosa:** Un sistema que inicia acciones por sí mismo requiere mecanismos de protección (Guardrails) muy estrictos. Sin supervisión, un agente proactivo puede realizar acciones irreversibles o costosas debido a malinterpretación de un cambio ambiental.
 
-<img src="/ai-engineering-intro/assets/image-25.png" alt="image-25.png" width="709" height="269" />
+
 
 **Fortalezas en la ilustración:**
 

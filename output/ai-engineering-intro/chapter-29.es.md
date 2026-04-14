@@ -1,5 +1,5 @@
 # Definiendo el Flujo de Trabajo (The Flow)
-
+<img src="/ai-engineering-intro/assets/image-17.png" alt="image-17.png" width="637" height="275" />
 
 La ilustración define las "reglas del juego" del sistema que estás construyendo.
 
@@ -9,7 +9,7 @@ La ilustración define las "reglas del juego" del sistema que estás construyend
 
 • **La Aplicación (App):** Este es el centro de gravedad. Aquí reside tu lógica. La aplicación no es solo una "tubería" que pasa texto. Es el procesador central. Es la que decide qué datos recuperar, qué filtros aplicar y cómo "empaquetar" todo para el modelo.
 
-<img src="/ai-engineering-intro/assets/image-18.png" alt="image-18.png" width="519" height="313" />
+
 
 • **La Ventana de Contexto - El rectángulo púrpura vacío:** Este es el espacio inmobiliario donde ocurre el procesamiento. El hecho de que esté vacío en esta diapositiva enfatiza que es **un recurso a gestionar**. Esta es la Memoria operacional del modelo.
 

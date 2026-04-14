@@ -1,13 +1,12 @@
 # Definiendo la Disciplina: Ingeniería de Contexto
 
-
+<img src="/ai-engineering-intro/assets/image-19.png" alt="image-19.png" width="384" height="323" />
 Esta ilustración cambia la terminología y aclara que lo que pensábamos que era toda la profesión es en realidad solo una pequeña parte de una imagen mucho más amplia.
 
 **Los componentes principales:**
 
 • **Ingeniería de Prompts (El círculo interno):** Enfoque en el texto en sí. La redacción, el tono, técnicas como Chain of Thought o Few-shot. Este es el "cómo" nos dirigimos al modelo.
 
-<img src="/ai-engineering-intro/assets/image-20.jpg" alt="image-20.jpg" width="401" height="232" />
 
 • **Ingeniería de Contexto (La envoltura más amplia):** La disciplina que rodea al prompt. Incluye todo lo que sucede **antes** de que se envíe el texto: recuperación de información, clasificación de relevancia, gestión de memoria del usuario y selección dinámica de las herramientas correctas para la situación.
 

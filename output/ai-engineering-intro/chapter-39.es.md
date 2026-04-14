@@ -1,6 +1,7 @@
 # Dominios de Adopción de Agentes IA en Organizaciones (2026)
 
 La ilustración presenta el "mapa de ruta" de la revolución organizacional. En 2026, ya no hablamos de experimentos, sino de despliegue amplio en siete dominios críticos:
+<img src="/ai-engineering-intro/assets/image-27.jpg" alt="image-27.jpg" width="709" height="166" />
 
 
 1. **Pasar del chat a las acciones:**
@@ -34,7 +35,7 @@ Gestión de reclamos, suscripción y detección de fraude. En estas áreas el ni
 
 y por lo tanto la arquitectura usualmente incluye **Human-In-The-Loop** como vimos en la diapositiva de anatomía.
 
-<img src="/ai-engineering-intro/assets/image-28.jpg" alt="image-28.jpg" width="709" height="166" />
+
 
 
 **Escepticismo constructivo:**

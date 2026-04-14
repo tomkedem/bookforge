@@ -2,7 +2,7 @@
 
 Hasta ahora hablamos del modelo como una herramienta pasiva esperando información (RAG). Aquí presentamos un salto cuántico: el modelo se convierte en un sistema activo que opera en el mundo. Esta es la transición de "chatbot" a "trabajador digital."
 
-
+<img src="/ai-engineering-intro/assets/image-23.png" alt="image-23.png" width="533" height="393" />
 **Los componentes principales:**
 
 • **Sistema autónomo:** El agente no solo responde una pregunta. Recibe un objetivo y decide por sí mismo el orden de acciones requeridas para lograrlo.
@@ -22,8 +22,6 @@ El término "autónomo" suena prometedor, pero como programadores y gerentes de 
 1. **Bucles infinitos:** Los agentes pueden "atascarse" en lógica defectuosa y desperdiciar miles de tokens (y dinero) sin llegar a un resultado.
 
 2. **Pérdida de control:** A diferencia del código regular, es difícil predecir de antemano cada acción que el agente elegirá hacer. Este es un desafío enorme para sistemas de Producción que requieren estabilidad.
-
-<img src="/ai-engineering-intro/assets/image-24.png" alt="image-24.png" width="472" height="218" />
 
 3. **Costos (Token Overhead):** Agentes que "piensan en voz alta" (como en el método ReAct) consumen una cantidad enorme de tokens en cada pequeño paso.
 

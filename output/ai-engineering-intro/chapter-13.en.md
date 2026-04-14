@@ -8,7 +8,7 @@ A subset of artificial intelligence
 
 • What distinguishes them from regular software is that I teach my software to learn from examples – for example, I show it many pictures of cats or dogs. I don't tell the machine this is a cat and this is a dog - it learns on its own when I show it pictures of thousands of cats or dogs.
 
-<img src="/ai-engineering-intro/assets/image-07.png" alt="image-07.png" width="503" height="168" />
+<img src="/ai-engineering-intro/assets/image-06.png" alt="image-06.png" width="588" height="320" />
 
 
 

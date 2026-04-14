@@ -8,7 +8,7 @@ Como vimos en el Pipeline de Inferencia y el Bucle de Retroalimentación (Auto-r
 
 2. **La Paradoja del PhD: Prefiere Ser Fluido Sobre Ser Preciso**
 
-<img src="/ai-engineering-intro/assets/image-14.png" alt="image-14.png" width="434" height="289" />
+
 
 Un doctor real sabe cuándo decir "no sé". El LLM, por su misma definición como motor de **Autocompletado**, debe completar la oración.
 

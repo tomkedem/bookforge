@@ -15,6 +15,16 @@
       "en": "Learn AI engineering fundamentals: large language models, RAG, intelligent agents, context engineering, and organizational adoption challenges. The practical guide for aspiring AI engineers.",
       "es": "Aprende los fundamentos de ingeniería de IA: modelos de lenguaje grandes, RAG, agentes inteligentes, ingeniería de contexto y desafíos de adopción organizacional. La guía práctica para ingenieros de IA."
     },
+    "credits": {
+      "type": "lecture_summary",
+      "lecturer": "ערן סלע",
+      "editor": "תומר קדם"
+    },
+    "category": {
+      "he": "קורס הנדסת AI",
+      "en": "AI Engineering Course",
+      "es": "Curso de Ingeniería de IA"
+    },
     "title_he": "מבוא להנדסת AI",
     "title_en": "Introduction to AI Engineering",
     "subtitle_he": "המדריך המלא למקצוע החדש",
@@ -110,11 +120,11 @@
         "file_slug": "chapter-06",
         "type": "content",
         "titles": {
-          "he": "רשימת נושאי הקורס (Course Topic List)",
+          "he": "רשימת נושאי הקורס",
           "en": "Course Topic List",
           "es": "Lista de Temas del Curso"
         },
-        "title_he": "רשימת נושאי הקורס (Course Topic List)",
+        "title_he": "רשימת נושאי הקורס",
         "title_en": "Course Topic List",
         "sections": 0,
         "has_images": false,
@@ -127,11 +137,11 @@
         "file_slug": "chapter-07",
         "type": "content",
         "titles": {
-          "he": "ניתוח לוגיסטיקת הקורס (Course Logistics)",
+          "he": "מבנה הקורס, דרישות וכלים",
           "en": "Course Logistics Analysis",
           "es": "Análisis de Logística del Curso"
         },
-        "title_he": "ניתוח לוגיסטיקת הקורס (Course Logistics)",
+        "title_he": "מבנה הקורס, דרישות וכלים",
         "title_en": "Course Logistics Analysis",
         "sections": 0,
         "has_images": true,
@@ -144,11 +154,11 @@
         "file_slug": "chapter-08",
         "type": "content",
         "titles": {
-          "he": "Is AI just a hype?",
+          "he": "האם בינה מלאכותית היא רק הייפ?",
           "en": "Is AI just a hype?",
           "es": "¿Es la IA solo un hype?"
         },
-        "title_he": "Is AI just a hype?",
+        "title_he": "האם בינה מלאכותית היא רק הייפ?",
         "title_en": "Is AI just a hype?",
         "sections": 0,
         "has_images": false,
@@ -297,11 +307,11 @@
         "file_slug": "chapter-17",
         "type": "content",
         "titles": {
-          "he": "Generative AI is just a glorified autocomplete (?)",
+          "he": "בינה מלאכותית יוצרת היא רק השלמה אוטומטית משודרגת (?)",
           "en": "Generative AI is just a glorified autocomplete (?)",
           "es": "Generative AI es solo un autocompletado glorificado (?)"
         },
-        "title_he": "Generative AI is just a glorified autocomplete (?)",
+        "title_he": "בינה מלאכותית יוצרת היא רק השלמה אוטומטית משודרגת (?)",
         "title_en": "Generative AI is just a glorified autocomplete (?)",
         "sections": 0,
         "has_images": false,
@@ -382,17 +392,17 @@
         "file_slug": "chapter-22",
         "type": "content",
         "titles": {
-          "he": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
-          "en": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
-          "es": "<div style=\"text-align: center\"> Los LLMs son como autocompletado con doctorado en todo </div>"
+          "he": "מודלי שפה גדולים הם כמו השלמה אוטומטית עם דוקטורט בכל תחום",
+          "en": "LLMs are like autocomplete with PHD in everything",
+          "es": "Los LLMs son como autocompletado con doctorado en todo"
         },
-        "title_he": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
-        "title_en": "<div style=\"text-align: center\"> LLMs are like autocomplete with PHD in everything </div>",
+        "title_he": "מודלי שפה גדולים הם כמו השלמה אוטומטית עם דוקטורט בכל תחום",
+        "title_en": "LLMs are like autocomplete with PHD in everything",
         "sections": 0,
         "has_images": true,
         "word_count": 235,
         "topics": [],
-        "title_es": "<div style=\"text-align: center\"> Los LLMs son como autocompletado con doctorado en todo </div>"
+        "title_es": "Los LLMs son como autocompletado con doctorado en todo"
       },
       {
         "id": 23,

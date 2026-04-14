@@ -8,7 +8,7 @@ As we saw in the Inference Pipeline and the Feedback Loop (Auto-regression), the
 
 2. **The PhD Paradox: Prefers Being Fluent Over Being Accurate**
 
-<img src="/ai-engineering-intro/assets/image-14.png" alt="image-14.png" width="434" height="289" />
+
 
 A real doctor knows when to say "I don't know." The LLM, by its very definition as an **Autocomplete** engine, must complete the sentence.
 

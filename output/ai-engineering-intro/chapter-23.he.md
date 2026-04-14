@@ -1,5 +1,6 @@
 # בינה מלאכותית - 1,000 דוקטורים אצלך בכיס.
 
+<img src="/ai-engineering-intro/assets/image-13.png" alt="image-13.png" width="645" height="438" />
 
 סטיב ג'ובס אמר ש-IPod זה אלף שירים בכיס אז AI זה PhDs1000 בכיס שלך ומי שמזלזל בזה כנראה לא איתנו היום.
 

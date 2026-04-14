@@ -1,13 +1,12 @@
 # Defining the Discipline: Context Engineering
-
-
+<img src="/ai-engineering-intro/assets/image-19.png" alt="image-19.png" width="384" height="323" />
 This illustration changes the terminology and clarifies that what we thought was the entire profession is actually just a small part of a much broader picture.
 
 **The main components:**
 
 • **Prompt Engineering (The inner circle):** Focus on the text itself. The wording, tone, techniques like Chain of Thought or Few-shot. This is the "how" we address the model.
 
-<img src="/ai-engineering-intro/assets/image-20.jpg" alt="image-20.jpg" width="401" height="232" />
+
 
 • **Context Engineering (The broader envelope):** The discipline that surrounds the prompt. Includes everything that happens **before** the text is sent: information retrieval, relevance ranking, user memory management, and dynamic selection of the right tools for the situation.
 

@@ -566,6 +566,154 @@ def update_content_structure_titles(book_dir: str, languages: list[str] = None) 
     return updated_count
 
 
+# ── Book Metadata Translation ─────────────────────────────────────────────────
+
+def build_book_metadata_prompt(book_dir: str, target_languages: list[str] = None) -> str:
+    """
+    Build a prompt for translating book metadata (title, subtitle, description).
+    
+    Args:
+        book_dir: Path to book output directory
+        target_languages: List of language codes (default: all from config)
+    
+    Returns:
+        Prompt string for the agent to translate book metadata.
+    """
+    book_path = Path(book_dir)
+    json_path = book_path / "content-structure.json"
+    
+    if not json_path.exists():
+        return ""
+    
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    book_data = data.get("book", {})
+    
+    # Get Hebrew title (source)
+    he_title = book_data.get("titles", {}).get("he") or book_data.get("title_he", "")
+    he_subtitle = book_data.get("subtitles", {}).get("he") or book_data.get("subtitle_he", "")
+    
+    # Get chapter titles for context (to generate description)
+    chapters = book_data.get("chapters", [])
+    chapter_titles_he = [ch.get("titles", {}).get("he", ch.get("title_he", "")) for ch in chapters[:10]]
+    chapter_summary = "\n".join(f"  - {t}" for t in chapter_titles_he if t)
+    
+    if target_languages is None:
+        target_languages = [l["code"] for l in TARGET_LANGUAGES]
+    
+    lang_names = ", ".join(
+        get_language_meta(code).label_en if get_language_meta(code) else code
+        for code in target_languages
+    )
+    
+    return f"""תרגם את מטא-דאטה של הספר לשפות: {lang_names}
+
+כותרת הספר בעברית: {he_title}
+כותרת משנה בעברית: {he_subtitle}
+
+כותרות פרקים לדוגמה (להבנת תוכן הספר):
+{chapter_summary}
+
+משימות:
+
+1. תרגם את כותרת הספר לכל שפת יעד:
+   - שמור על מונחים מקצועיים כמו AI, ML, LLM, RAG באנגלית
+   - תרגם את שאר המילים בצורה טבעית
+
+2. תרגם את כותרת המשנה לכל שפת יעד
+
+3. כתוב תיאור קצר (~25 מילים) לכל שפה שמסביר במה עוסק הספר
+   - התיאור יוצג בכרטיס הספר בספריה
+   - כלול את הנושאים העיקריים
+   - כתוב בסגנון מזמין לקריאה
+
+נתיב לעדכון: {json_path}
+
+לאחר התרגום, עדכן את content-structure.json:
+- titles: {{ he: "...", en: "...", es: "..." }}
+- subtitles: {{ he: "...", en: "...", es: "..." }}
+- descriptions: {{ he: "...", en: "...", es: "..." }}
+- title_he, title_en, title_es (שדות legacy)
+- subtitle_he, subtitle_en, subtitle_es (שדות legacy)
+- description_he, description_en, description_es (שדות legacy)"""
+
+
+def get_book_metadata_for_translation(book_dir: str) -> dict:
+    """
+    Get current book metadata that needs translation.
+    
+    Returns:
+        Dict with title_he, subtitle_he, and list of chapter titles for context.
+    """
+    book_path = Path(book_dir)
+    json_path = book_path / "content-structure.json"
+    
+    if not json_path.exists():
+        return {}
+    
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    book_data = data.get("book", {})
+    
+    return {
+        "title_he": book_data.get("titles", {}).get("he") or book_data.get("title_he", ""),
+        "subtitle_he": book_data.get("subtitles", {}).get("he") or book_data.get("subtitle_he", ""),
+        "chapter_titles": [
+            ch.get("titles", {}).get("he", ch.get("title_he", ""))
+            for ch in book_data.get("chapters", [])
+        ],
+        "json_path": str(json_path)
+    }
+
+
+def update_book_metadata(book_dir: str, 
+                         titles: dict[str, str],
+                         subtitles: dict[str, str],
+                         descriptions: dict[str, str]) -> bool:
+    """
+    Update book-level metadata in content-structure.json.
+    
+    Args:
+        book_dir: Path to book output directory
+        titles: Dict of {lang: title} for each language
+        subtitles: Dict of {lang: subtitle} for each language
+        descriptions: Dict of {lang: description} for each language
+    
+    Returns:
+        True if updated successfully.
+    """
+    book_path = Path(book_dir)
+    json_path = book_path / "content-structure.json"
+    
+    if not json_path.exists():
+        return False
+    
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    book_data = data.get("book", {})
+    
+    # Update titles dict and legacy fields
+    if titles:
+        book_data["titles"] = {**book_data.get("titles", {}), **titles}
+        for lang, title in titles.items():
+            book_data[f"title_{lang}"] = title
+    
+    # Update subtitles dict and legacy fields
+    if subtitles:
+        book_data["subtitles"] = {**book_data.get("subtitles", {}), **subtitles}
+        for lang, subtitle in subtitles.items():
+            book_data[f"subtitle_{lang}"] = subtitle
+    
+    # Update descriptions dict and legacy fields
+    if descriptions:
+        book_data["descriptions"] = {**book_data.get("descriptions", {}), **descriptions}
+        for lang, desc in descriptions.items():
+            book_data[f"description_{lang}"] = desc
+    
+    data["book"] = book_data
+    json_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    
+    print(f"  [UPDATE] Book metadata updated in content-structure.json")
+    return True
+
+
 # ── CLI Interface ─────────────────────────────────────────────────────────────
 
 def main():

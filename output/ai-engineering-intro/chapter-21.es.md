@@ -1,5 +1,6 @@
 # El Pipeline de Inferencia: ¿Cómo se Crea una Respuesta?
 
+<img src="/ai-engineering-intro/assets/image-11.jpg" alt="image-11.jpg" width="709" height="346" />
 
 La ilustración demuestra el proceso de **"Auto-regresión"** de forma completa y unificada. Explica por qué llamamos a esto un "Pipeline de Inferencia" - es una línea de producción de palabras.
 
@@ -36,7 +37,6 @@ En el lado derecho, vemos la "línea de producción":
 
 Como profesionales, esta ilustración nos explica por qué estos sistemas se comportan como lo hacen:
 
-<img src="/ai-engineering-intro/assets/image-12.png" alt="image-12.png" width="700" height="350" />
 
 **1. Costo de Latencia:** Como el modelo debe terminar de calcular la primera palabra para empezar a calcular la segunda, el tiempo de respuesta depende de la longitud de la respuesta. Por eso usamos **Streaming** en nuestras interfaces de usuario. Para que el usuario vea "señales de vida" mientras el bucle se ejecuta.
 

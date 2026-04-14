@@ -1,7 +1,7 @@
 # RAG Architecture
 
 This is the "execution" illustration. It takes the abstract concepts and presents the practical work plan of the system. The central role here is of the Framework, acting as the conductor of the entire orchestra.
-
+<img src="/ai-engineering-intro/assets/image-22.png" alt="image-22.png" width="551" height="321" />
 
 **The main components:**
 
@@ -17,7 +17,7 @@ This is the "execution" illustration. It takes the abstract concepts and present
 
 **Professional analysis and constructive skepticism:** This architecture clearly shows the importance of the Framework as the connecting factor. But as programmers, we must look at the potential failure points in this diagram:
 
-<img src="/ai-engineering-intro/assets/image-23.png" alt="image-23.png" width="533" height="393" />
+
 
 1. **Bottlenecks (Latency):** Every arrow in the diagram represents a Network Call. Search in Vector DB, sending the prompt to LLM, and processing data in the Framework. All these accumulate to response time that may be too slow for the user.
 

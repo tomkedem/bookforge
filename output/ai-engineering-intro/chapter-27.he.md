@@ -1,6 +1,6 @@
 # LLMs מנותקים מהעולם: המומחה בבידוד
 
-
+<img src="/ai-engineering-intro/assets/image-15.png" alt="image-15.png" width="509" height="340" />
 כאן אנחנו מסבירים למה המודל, למרות ה-PhD שלו, לא יכול לתפקד כעובד עצמאי ללא תיווך אנושי או טכנולוגי.
 
 1. **היעדר חושים (No Real-time Sensors)**
@@ -18,15 +18,6 @@
 3. **הניתוק מהקשר אישי (Lack of Personal Context)**
 
 המודל לא יודע מי אתם, מה התפקיד שלכם בארגון או מה הוחלט בישיבה אתמול, אלא אם זה נכתב במפורש בתוך חלון ההקשר (Context Window). כל אינטראקציה מתחילה מנקודת אפס.
-
-<img src="/ai-engineering-intro/assets/image-16.jpg" alt="image-16.jpg" width="710" height="238" />
-
-
-
-
-
-
-
 
 **הזווית הספקנית:**
 

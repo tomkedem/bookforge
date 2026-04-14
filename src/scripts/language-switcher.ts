@@ -15,7 +15,8 @@ function switchLanguage(lang: string) {
     if (!el) continue;
 
     for (const code of langCodes) {
-      const block = el.querySelector<HTMLElement>(`:scope > [data-lang="${code}"]`);
+      // Use descendant selector to find data-lang elements at any nesting level
+      const block = el.querySelector<HTMLElement>(`[data-lang="${code}"]`);
       if (!block) continue;
       const isActive = code === lang;
       block.classList.toggle('hidden', !isActive);

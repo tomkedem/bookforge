@@ -1,24 +1,39 @@
 {
   "book": {
     "titles": {
-      "he": "Ml Lesson 2 Summary",
-      "en": "Ml Lesson 2 Summary",
-      "es": "Ml Lesson 2 Summary"
+      "he": "סיכום שיעור 2 ב-Machine Learning",
+      "en": "Machine Learning Lesson 2 Summary",
+      "es": "Resumen de la Lección 2 de Machine Learning"
     },
     "subtitles": {
-      "he": "",
-      "en": "",
-      "es": ""
+      "he": "מבוא לבינה מלאכותית ולמידת מכונה",
+      "en": "Introduction to AI and Machine Learning",
+      "es": "Introducción a la IA y el Aprendizaje Automático"
     },
     "descriptions": {
-      "he": "",
-      "en": "",
-      "es": ""
+      "he": "סיכום מקיף של יסודות Machine Learning: מהי בינה מלאכותית, סוגי למידת מכונה, דוגמאות שימוש קלאסיות ומושגי מפתח למתחילים.",
+      "en": "Comprehensive summary of Machine Learning fundamentals: what is AI, types of machine learning, classic use cases, and key concepts for beginners.",
+      "es": "Resumen completo de los fundamentos de Machine Learning: qué es la IA, tipos de aprendizaje automático, casos de uso clásicos y conceptos clave para principiantes."
     },
-    "title_he": "Ml Lesson 2 Summary",
-    "title_en": "Ml Lesson 2 Summary",
-    "subtitle_he": "",
-    "subtitle_en": "",
+    "credits": {
+      "type": "lecture_summary",
+      "lecturer": "ערן סלע",
+      "editor": "תומר קדם"
+    },
+    "category": {
+      "he": "קורס הנדסת AI",
+      "en": "AI Engineering Course",
+      "es": "Curso de Ingeniería de IA"
+    },
+    "title_he": "סיכום שיעור 2 ב-Machine Learning",
+    "title_en": "Machine Learning Lesson 2 Summary",
+    "title_es": "Resumen de la Lección 2 de Machine Learning",
+    "subtitle_he": "מבוא לבינה מלאכותית ולמידת מכונה",
+    "subtitle_en": "Introduction to AI and Machine Learning",
+    "subtitle_es": "Introducción a la IA y el Aprendizaje Automático",
+    "description_he": "סיכום מקיף של יסודות Machine Learning: מהי בינה מלאכותית, סוגי למידת מכונה, דוגמאות שימוש קלאסיות ומושגי מפתח למתחילים.",
+    "description_en": "Comprehensive summary of Machine Learning fundamentals: what is AI, types of machine learning, classic use cases, and key concepts for beginners.",
+    "description_es": "Resumen completo de los fundamentos de Machine Learning: qué es la IA, tipos de aprendizaje automático, casos de uso clásicos y conceptos clave para principiantes.",
     "chapters": [
       {
         "id": "intro",
@@ -34,7 +49,8 @@
         "sections": 0,
         "has_images": false,
         "word_count": 102,
-        "topics": []
+        "topics": [],
+        "title_es": "Introducción"
       },
       {
         "id": 1,
@@ -50,7 +66,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 39,
-        "topics": []
+        "topics": [],
+        "title_es": "¿Qué es la Inteligencia Artificial (AI)?"
       },
       {
         "id": 2,
@@ -66,7 +83,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 55,
-        "topics": []
+        "topics": [],
+        "title_es": "¿Qué es Machine Learning?"
       },
       {
         "id": 3,
@@ -82,7 +100,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 106,
-        "topics": []
+        "topics": [],
+        "title_es": "¿Por qué usar Machine Learning?"
       },
       {
         "id": 4,
@@ -98,7 +117,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 235,
-        "topics": []
+        "topics": [],
+        "title_es": "Ejemplos de Usos Clásicos de Machine Learning"
       },
       {
         "id": 5,
@@ -114,7 +134,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 138,
-        "topics": []
+        "topics": [],
+        "title_es": "Cuándo Usar Machine Learning Clásico"
       },
       {
         "id": 6,
@@ -130,7 +151,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 75,
-        "topics": []
+        "topics": [],
+        "title_es": "Cómo Funciona el Proceso de Machine Learning en la Práctica"
       },
       {
         "id": 7,
@@ -146,7 +168,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 167,
-        "topics": []
+        "topics": [],
+        "title_es": "Tipos de Aprendizaje en Machine Learning"
       },
       {
         "id": 8,
@@ -162,7 +185,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 98,
-        "topics": []
+        "topics": [],
+        "title_es": "Aprendizaje Supervisado"
       },
       {
         "id": 9,
@@ -178,7 +202,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 67,
-        "topics": []
+        "topics": [],
+        "title_es": "Tipos de Problemas en Aprendizaje Supervisado"
       },
       {
         "id": 10,
@@ -194,7 +219,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 71,
-        "topics": []
+        "topics": [],
+        "title_es": "Regresión Lineal (Linear Regression)"
       },
       {
         "id": 11,
@@ -210,7 +236,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 87,
-        "topics": []
+        "topics": [],
+        "title_es": "Regresión Logística (Logistic Regression)"
       },
       {
         "id": 12,
@@ -226,7 +253,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 43,
-        "topics": []
+        "topics": [],
+        "title_es": "Árbol de Decisión (Decision Tree)"
       },
       {
         "id": 13,
@@ -242,7 +270,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 69,
-        "topics": []
+        "topics": [],
+        "title_es": "Random Forest (Bosque Aleatorio)"
       },
       {
         "id": 14,
@@ -258,7 +287,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 51,
-        "topics": []
+        "topics": [],
+        "title_es": "Gradient Boosting (XGBoost)"
       },
       {
         "id": 15,
@@ -274,7 +304,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 50,
-        "topics": []
+        "topics": [],
+        "title_es": "Aprendizaje No Supervisado - Intuición"
       },
       {
         "id": 16,
@@ -290,7 +321,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 120,
-        "topics": []
+        "topics": [],
+        "title_es": "Aprendizaje No Supervisado - Proceso"
       },
       {
         "id": 17,
@@ -306,7 +338,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 351,
-        "topics": []
+        "topics": [],
+        "title_es": "Aprendizaje Supervisado vs No Supervisado"
       },
       {
         "id": 18,
@@ -322,7 +355,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 152,
-        "topics": []
+        "topics": [],
+        "title_es": "Aprendizaje Semi-supervisado"
       },
       {
         "id": 19,
@@ -338,7 +372,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 113,
-        "topics": []
+        "topics": [],
+        "title_es": "Aprendizaje por Refuerzo"
       },
       {
         "id": 20,
@@ -354,7 +389,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 125,
-        "topics": []
+        "topics": [],
+        "title_es": "¿Qué es una Red Neuronal?"
       },
       {
         "id": 21,
@@ -370,7 +406,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 75,
-        "topics": []
+        "topics": [],
+        "title_es": "Neurona"
       },
       {
         "id": 22,
@@ -386,7 +423,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 111,
-        "topics": []
+        "topics": [],
+        "title_es": "Perceptrón"
       },
       {
         "id": 23,
@@ -402,7 +440,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 371,
-        "topics": []
+        "topics": [],
+        "title_es": "Propagación Hacia Adelante y Hacia Atrás"
       },
       {
         "id": 24,
@@ -418,7 +457,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 207,
-        "topics": []
+        "topics": [],
+        "title_es": "Matriz de Confusión"
       },
       {
         "id": 25,
@@ -434,7 +474,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 199,
-        "topics": []
+        "topics": [],
+        "title_es": "Puntuación F1 y Comprensión del Rendimiento del Modelo"
       },
       {
         "id": 26,
@@ -450,7 +491,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 101,
-        "topics": []
+        "topics": [],
+        "title_es": "Lo que Necesitas Saber como AI Engineer"
       },
       {
         "id": 27,
@@ -466,7 +508,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 131,
-        "topics": []
+        "topics": [],
+        "title_es": "NumPy: Trabajo Eficiente con Datos Numéricos"
       },
       {
         "id": 28,
@@ -482,7 +525,8 @@
         "sections": 0,
         "has_images": true,
         "word_count": 300,
-        "topics": []
+        "topics": [],
+        "title_es": "Pandas: La Puerta de Entrada al Procesamiento de Datos en Machine Learning"
       }
     ],
     "languages": [

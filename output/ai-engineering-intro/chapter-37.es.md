@@ -3,7 +3,7 @@
 Mientras que la ilustración anterior se enfocó en las características del agente, esta ilustración se enfoca en cómo opera a nivel del sistema. Presenta la estructura técnica que separa al LLM como motor de pensamiento del Agente como capa de lógica operacional.
 
 
-
+<img src="/ai-engineering-intro/assets/image-25.png" alt="image-25.png" width="709" height="269" />
 
 **Los componentes principales:**
 
@@ -18,10 +18,6 @@ Mientras que la ilustración anterior se enfocó en las características del age
 • **Memoria:** Un mecanismo para almacenar y recuperar información (Store / Retrieve). Este es el componente que permite al agente mantener consistencia a lo largo del tiempo y no olvidar el objetivo.
 
 • **Usuario:** La fuente de entrada (Prompt) y el destino para recibir la respuesta final (Response).
-
-<img src="/ai-engineering-intro/assets/image-26.png" alt="image-26.png" width="616" height="380" />
-
-
 
 **Escepticismo constructivo:**
 
