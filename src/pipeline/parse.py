@@ -8,6 +8,8 @@ import os
 import re
 from pathlib import Path
 
+from ingest import _detect_code_language
+
 
 INTRO_KEYWORDS = ["מבוא", "פתיחה", "הקדמה", "introduction", "preface", "foreword"]
 COVER_KEYWORDS = ["שער", "cover", "title"]
@@ -510,12 +512,12 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
 def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None, book_name: str = "") -> str:
     """
     Convert chapter to Markdown with embedded images at correct positions.
-    
+
     Images are placed using range-based matching: an image belongs to this
     chapter if its doc_idx is >= this chapter's heading and < the next heading.
-    
+
     Image paths are absolute URLs for web serving: /{book_name}/assets/image.png
-    
+
     Args:
         chapter: Chapter dict with title, heading_doc_index, and content blocks
         image_positions: List of (para_index, rel_id, filename, w_px, h_px) tuples
@@ -523,7 +525,7 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         book_name: Book slug for absolute image paths
     """
     lines = [f"# {chapter['title']}", ""]
-    
+
     content = chapter["content"]
     if not content:
         return "\n".join(lines)
@@ -544,18 +546,20 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             h_px = item[4] if len(item) > 4 else 0
             if ch_start <= para_idx < ch_end:
                 chapter_images.append((para_idx, filename, w_px, h_px))
-    
+
     # Sort images by position
     chapter_images.sort(key=lambda x: x[0])
 
     # Build output: for each content paragraph, insert any images that
     # appear before it (doc_idx <= this paragraph's doc_idx)
     img_cursor = 0
-    for item in content:
+    i = 0
+    while i < len(content):
+        item = content[i]
         style = item["style"]
         text = item["text"]
         para_idx = item.get("para_index", -1)
-        
+
         # Insert images whose doc_idx <= current paragraph's doc_idx
         # Use absolute paths for web serving: /{book_name}/assets/
         assets_path = f"/{book_name}/assets" if book_name else "../assets"
@@ -572,6 +576,30 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             # Spacing paragraph - represents blank line from Word
             # Don't add extra blank line since this IS the blank line
             lines.append("")
+            i += 1
+            continue
+        elif style == "code":
+            # Start of code block - collect consecutive code lines
+            code_lines = [text]
+            lang = "python"  # Default language
+            j = i + 1
+
+            # Collect all consecutive code lines
+            while j < len(content) and content[j]["style"] == "code":
+                code_lines.append(content[j]["text"])
+                j += 1
+
+            # Detect language from code content
+            code_text = "\n".join(code_lines)
+            lang = _detect_code_language(code_text)
+
+            # Output code block
+            lines.append(f"```{lang}")
+            lines.extend(code_lines)
+            lines.append("```")
+            lines.append("")
+
+            i = j
             continue
         elif "Heading 2" in style:
             lines.append(f"## {text}")
@@ -591,6 +619,7 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             lines.append(text)
 
         lines.append("")
+        i += 1
 
     # Append any remaining images after the last paragraph
     assets_path = f"/{book_name}/assets" if book_name else "../assets"
