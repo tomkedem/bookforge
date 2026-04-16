@@ -510,13 +510,10 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   }
 
   // Bridge language-selector-change to language-changed for compatibility
-  console.log('🔄 Header: Setting up language-selector-change listener');
   window.addEventListener('language-selector-change', (e: Event) => {
     const customEvent = e as CustomEvent<{ language: string }>;
-    console.log('🔄 Header: language-selector-change event captured, detail:', customEvent.detail);
     if (customEvent.detail?.language) {
       const lang = customEvent.detail.language;
-      console.log('🔄 Header: language-selector-change received, bridging to language-changed:', lang);
 
       // Update localStorage first
       localStorage.setItem('yuval_language', lang);

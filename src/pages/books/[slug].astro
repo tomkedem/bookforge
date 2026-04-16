@@ -275,8 +275,6 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
   import { SOURCE_LANGUAGE } from '../../utils/language';
 
   function updatePageContent(lang: string) {
-    console.log('📖 Book page: updatePageContent called with:', lang);
-
     // Update chapter titles dynamically
     document.querySelectorAll<HTMLElement>('[data-chapter-title]').forEach(el => {
       const titleData = el.dataset.chapterTitle;
@@ -284,9 +282,8 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
         try {
           const titles = JSON.parse(titleData);
           el.textContent = titles[lang] || titles['he'] || Object.values(titles)[0] || '';
-          console.log('📖 Book page: updated chapter title element');
         } catch (e) {
-          console.error('📖 Book page: failed to parse title data:', e);
+          // Silently fail for invalid title data
         }
       }
     });
@@ -301,8 +298,6 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
         }
       }
     });
-
-    console.log('📖 Book page: updatePageContent completed');
   }
 
   function updateChapterLinks() {

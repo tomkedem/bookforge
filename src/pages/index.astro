@@ -296,7 +296,6 @@ const categories = [
 
   window.addEventListener('language-changed', (e: Event) => {
     const lang = (e as CustomEvent<{ language: string }>).detail?.language;
-    console.log('🏠 Home page: language-changed detected:', lang);
     updateCategoryLabels();
     buildContinueReading();
   });

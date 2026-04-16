@@ -478,9 +478,7 @@ const isRtl = getLanguageDirection(current) === 'rtl';
 
 <script>
   function initLanguageSelector() {
-    console.log('🎯 LanguageSelector: initLanguageSelector called');
     const containers = document.querySelectorAll<HTMLElement>('.language-selector-container');
-    console.log('🎯 LanguageSelector: found', containers.length, 'containers');
 
     containers.forEach(container => {
       const trigger = container.querySelector<HTMLButtonElement>('.language-selector-trigger');
@@ -502,24 +500,19 @@ const isRtl = getLanguageDirection(current) === 'rtl';
         const lang = option.dataset.language;
         if (!lang) return;
 
-        console.log('🎯 LanguageSelector: option selected:', lang);
-
         // Save to localStorage first
         localStorage.setItem('yuval_language', lang);
-        console.log('🎯 LanguageSelector: saved to localStorage:', lang);
 
         // Close panel
         closePanel();
 
         // Dispatch custom event
-        console.log('🎯 LanguageSelector: dispatching language-selector-change event');
-        const event = new CustomEvent('language-selector-change', {
-          detail: { language: lang },
-          bubbles: true,
-        });
-        console.log('🎯 LanguageSelector: event created, now dispatching');
-        window.dispatchEvent(event);
-        console.log('🎯 LanguageSelector: event dispatched');
+        window.dispatchEvent(
+          new CustomEvent('language-selector-change', {
+            detail: { language: lang },
+            bubbles: true,
+          })
+        );
       };
 
       // Click trigger to toggle
@@ -583,8 +576,6 @@ const isRtl = getLanguageDirection(current) === 'rtl';
   window.addEventListener('language-changed', (e: Event) => {
     const lang = (e as CustomEvent<{ language: string }>).detail?.language;
     if (!lang) return;
-
-    console.log('🔔 LanguageSelector: language-changed detected, updating UI:', lang);
 
     // Reinit to update displays
     setTimeout(() => {
