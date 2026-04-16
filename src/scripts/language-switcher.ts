@@ -1,11 +1,15 @@
-import { LANGUAGES, SUPPORTED_LANGUAGES, getLanguageFromStorage, setLanguageToStorage, isValidLanguage } from '../utils/language';
+import {
+  SUPPORTED_LANGUAGES,
+  getLanguageFromStorage,
+  setLanguageToStorage,
+} from '../utils/language';
+
 import { applyLanguageToPage } from '../utils/language';
+import { resolveLanguage } from '../i18n';
 import type { Language } from '../types/index';
 
 /**
- * Switch content to the selected language using data-lang attributes.
- * Shows only the matching [data-lang] block; hides all others.
- * Works for any number of languages — driven by SUPPORTED_LANGUAGES.
+ * Switch content blocks by data-lang
  */
 function switchLanguage(lang: string) {
   const targets = ['chapter-container', 'chapter-header', 'chapter-meta-bar'];
@@ -16,9 +20,9 @@ function switchLanguage(lang: string) {
     if (!el) continue;
 
     for (const code of langCodes) {
-      // Use descendant selector to find data-lang elements at any nesting level
       const block = el.querySelector<HTMLElement>(`[data-lang="${code}"]`);
       if (!block) continue;
+
       const isActive = code === lang;
       block.classList.toggle('hidden', !isActive);
       block.classList.toggle('visible', isActive);
@@ -26,29 +30,33 @@ function switchLanguage(lang: string) {
   }
 
   const meta = SUPPORTED_LANGUAGES.find(l => l.code === lang);
+
   document.documentElement.lang = lang;
   document.documentElement.dir = meta?.dir ?? 'ltr';
-  
-  // Also update data-he/data-en/data-es text elements (breadcrumbs, etc.)
+
   applyLanguageToPage(lang as Language);
 }
 
 /**
- * Initialize language switching from localStorage (single source of truth).
- * Listens for 'language-changed' custom events.
+ * Init language system
  */
 export function initLanguageSwitcher(controller: AbortController) {
-  // Language is determined ONLY from localStorage (toggle position)
-  const currentLanguage = getLanguageFromStorage() || LANGUAGES.EN;
+  // ✅ normalize language from storage
+  const raw = getLanguageFromStorage();
+  const currentLanguage = resolveLanguage(raw);
 
+  // ✅ persist normalized value
   setLanguageToStorage(currentLanguage as Language);
+
+  // ✅ apply immediately
   switchLanguage(currentLanguage);
 
   window.addEventListener('language-changed', (event: Event) => {
-    const lang = (event as CustomEvent<{ language: string }>).detail?.language;
-    if (lang) {
-      setLanguageToStorage(lang as Language);
-      switchLanguage(lang);
-    }
+    const lang = resolveLanguage(
+      (event as CustomEvent<{ language: string }>).detail?.language
+    );
+
+    setLanguageToStorage(lang as Language);
+    switchLanguage(lang);
   }, { signal: controller.signal });
 }

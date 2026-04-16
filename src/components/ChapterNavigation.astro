@@ -1,5 +1,6 @@
 ---
 import type { Language, Chapter } from '../types/index';
+import { getLanguageDirection } from '../utils/language';
 
 interface Props {
   currentChapterId: number;
@@ -23,10 +24,19 @@ const nextChapter = chapters.find((ch) => ch.id === currentChapterId + 1);
 
 const getPreviousUrl = () =>
   previousChapter ? `/read/${bookSlug}/${previousChapter.id}` : '';
+
 const getNextUrl = () =>
   nextChapter ? `/read/${bookSlug}/${nextChapter.id}` : '';
 
-const isRtl = language === 'he';
+function getLocalizedText(
+  map: Record<string, string> | undefined,
+  lang: string
+): string {
+  if (!map) return '';
+  return map[lang] ?? map['en'] ?? Object.values(map)[0] ?? '';
+}
+
+const isRtl = getLanguageDirection(language) === 'rtl';
 ---
 
 <nav
@@ -46,49 +56,25 @@ const isRtl = language === 'he';
     className,
   ]}
   id="chapter-nav"
-  aria-label={language === 'he' ? 'ניווט פרקים' : language === 'es' ? 'Navegación de capítulos' : 'Chapter navigation'}
+  aria-label="chapter navigation"
 >
   {
     previousChapter && (
       <a
         href={getPreviousUrl()}
-        class="chapter-nav-link inline-flex items-center gap-2 px-3 py-2 sm:px-4 font-body text-xs sm:text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight max-w-[45%] sm:max-w-none"
-        data-base-url={getPreviousUrl()}
+        class="chapter-nav-link inline-flex items-center gap-2 px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium max-w-[45%] sm:max-w-none"
         data-nav="prev"
+        data-chapter-titles={JSON.stringify(previousChapter.titles)}
       >
         {isRtl ? (
           <>
-            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_es || previousChapter.title_en}>{previousChapter.title_he}</span>
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <span>{getLocalizedText(previousChapter.titles, language)}</span>
+            <span>→</span>
           </>
         ) : (
           <>
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            <span data-he={previousChapter.title_he} data-en={previousChapter.title_en} data-es={previousChapter.title_es || previousChapter.title_en}>{previousChapter.title_en}</span>
+            <span>←</span>
+            <span>{getLocalizedText(previousChapter.titles, language)}</span>
           </>
         )}
       </a>
@@ -98,21 +84,15 @@ const isRtl = language === 'he';
   {
     currentChapter && (
       <div class="hidden sm:flex flex-col items-center gap-1">
-        <span
-          class="text-xs font-body text-yuval-text-tertiary uppercase tracking-wide"
-          data-he={`פרק ${currentChapter.id + 1} מתוך ${chapters.length}`}
-          data-en={`Chapter ${currentChapter.id + 1} of ${chapters.length}`}
-          data-es={`Capítulo ${currentChapter.id + 1} de ${chapters.length}`}
-        >
-          Chapter {currentChapter.id + 1} of {chapters.length}
+        <span class="text-xs text-yuval-text-tertiary">
+          {currentChapterId + 1} / {chapters.length}
         </span>
+
         <h2
-          class="text-center font-heading font-bold text-lg text-yuval-text"
-          data-he={currentChapter.title_he}
-          data-en={currentChapter.title_en}
-          data-es={currentChapter.title_es || currentChapter.title_en}
+          class="text-center font-bold text-lg"
+          data-chapter-titles={JSON.stringify(currentChapter.titles)}
         >
-          {language === 'he' ? currentChapter.title_he : currentChapter.title_en}
+          {getLocalizedText(currentChapter.titles, language)}
         </h2>
       </div>
     )
@@ -122,43 +102,19 @@ const isRtl = language === 'he';
     nextChapter && (
       <a
         href={getNextUrl()}
-        class="chapter-nav-link inline-flex items-center gap-2 px-3 py-2 sm:px-4 font-body text-xs sm:text-sm font-medium text-yuval-text hover:text-yuval-text-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yuval-highlight max-w-[45%] sm:max-w-none"
-        data-base-url={getNextUrl()}
+        class="chapter-nav-link inline-flex items-center gap-2 px-3 py-2 sm:px-4 text-xs sm:text-sm font-medium max-w-[45%] sm:max-w-none"
         data-nav="next"
+        data-chapter-titles={JSON.stringify(nextChapter.titles)}
       >
         {isRtl ? (
           <>
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_es || nextChapter.title_en}>{nextChapter.title_he}</span>
+            <span>←</span>
+            <span>{getLocalizedText(nextChapter.titles, language)}</span>
           </>
         ) : (
           <>
-            <span data-he={nextChapter.title_he} data-en={nextChapter.title_en} data-es={nextChapter.title_es || nextChapter.title_en}>{nextChapter.title_en}</span>
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <span>{getLocalizedText(nextChapter.titles, language)}</span>
+            <span>→</span>
           </>
         )}
       </a>
@@ -167,14 +123,9 @@ const isRtl = language === 'he';
 </nav>
 
 <style>
-  /* Match chapter-content width for alignment */
   #chapter-nav {
     max-width: var(--reading-content-width, 720px);
     margin-left: auto;
     margin-right: auto;
   }
 </style>
-
-<script>
-  // No need to update nav links with ?lang= - language is determined by toggle position
-</script>

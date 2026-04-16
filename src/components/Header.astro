@@ -2,6 +2,7 @@
 import type { Language } from '../types/index';
 import LanguageToggle from './LanguageToggle.astro';
 import ThemeToggle from './ThemeToggle.astro';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   language?: Language;
@@ -9,8 +10,10 @@ interface Props {
   class?: string;
 }
 
-const { language = 'en', showLanguageToggle = true, class: className } =
+const { language = SOURCE_LANGUAGE, showLanguageToggle = true, class: className } =
   Astro.props;
+
+const isRtl = getLanguageDirection(language) === 'rtl';
 ---
 
 <header
@@ -24,13 +27,14 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     className,
   ]}
 >
-  <!-- Skip to content link for keyboard users -->
   <a
     href="#main-content"
+    id="skip-to-content-link"
     class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-yuval-accent focus:text-yuval-accent-text focus:rounded-md focus:text-sm focus:font-medium"
   >
-    {language === 'he' ? 'דלג לתוכן' : 'Skip to content'}
+    <span data-i18n="header.skipToContent">Skip to content</span>
   </a>
+
   <div
     class:list={[
       'header-inner',
@@ -41,34 +45,29 @@ const { language = 'en', showLanguageToggle = true, class: className } =
       'px-4',
       'sm:px-6',
       'lg:px-8',
-      language === 'he' && 'flex-row-reverse',
+      isRtl && 'flex-row-reverse',
     ]}
   >
-    <!-- Logo / Brand -->
     <a
       href="/"
+      id="site-logo-link"
       class="yuval-logo"
-      data-he="Yuval"
-      data-en="Yuval"
-      aria-label={language === 'he' ? 'Yuval — עמוד הבית' : 'Yuval — Home'}
+      aria-label="Yuval"
     >
       <span class="logo-letter">Y</span><span class="logo-rest">uval</span>
     </a>
 
-    <!-- Motivational Quote - Desktop -->
     <div class="quote-container hidden sm:block">
       <p class="quote-text" id="header-quote"></p>
     </div>
 
-    <!-- Controls: Theme + Language -->
-    <div class:list={['flex', 'items-center', 'gap-3', language === 'he' && 'flex-row-reverse']}>
+    <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
       <ThemeToggle />
       {showLanguageToggle && <LanguageToggle currentLanguage={language} />}
     </div>
   </div>
 </header>
 
-<!-- Mobile Quote Bar - Floating at bottom -->
 <div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar">
   <div class="mobile-quote-track">
     <span class="mobile-quote-text" id="mobile-quote"></span>
@@ -79,18 +78,13 @@ const { language = 'en', showLanguageToggle = true, class: className } =
 </div>
 
 <style>
-  /* ═══════════════════════════════════════════════════════════════════
-     HEADER - Light Mode (warm cream) with subtle 3D shelf effect
-     ═══════════════════════════════════════════════════════════════════ */
   .yuval-header {
     background: linear-gradient(to bottom, #faf8f5, #f5f3f0);
-    /* Soft floating shadow */
-    box-shadow: 
+    box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.06),
       0 4px 12px rgba(0, 0, 0, 0.04);
   }
 
-  /* Subtle gold bottom line - refined accent */
   .yuval-header::before {
     content: '';
     position: absolute;
@@ -108,7 +102,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     z-index: 2;
   }
 
-  /* Soft underside shadow - subtle depth */
   .yuval-header::after {
     content: '';
     position: absolute;
@@ -127,12 +120,9 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     z-index: 1;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     HEADER - Dark Mode (deep charcoal) with subtle 3D shelf effect
-     ═══════════════════════════════════════════════════════════════════ */
   :global(.dark) .yuval-header {
     background: linear-gradient(to bottom, #1a1a1f, #141418);
-    box-shadow: 
+    box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.15),
       0 4px 12px rgba(0, 0, 0, 0.1);
   }
@@ -161,9 +151,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     z-index: 1;
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     LOGO - Elegant typography
-     ═══════════════════════════════════════════════════════════════════ */
   .yuval-logo {
     display: inline-flex;
     align-items: baseline;
@@ -208,7 +195,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     color: #b8b8c0;
   }
 
-  /* Hover - warm gold tones */
   .yuval-logo:hover .logo-letter {
     color: #8b7355;
   }
@@ -245,12 +231,9 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MOTIVATIONAL QUOTE
-     ═══════════════════════════════════════════════════════════════════ */
   .quote-container {
     flex: 1;
-    display: none; /* Hidden on mobile by default */
+    display: none;
     justify-content: center;
     align-items: center;
     padding: 0 24px;
@@ -260,7 +243,7 @@ const { language = 'en', showLanguageToggle = true, class: className } =
 
   @media (min-width: 640px) {
     .quote-container {
-      display: flex; /* Show on sm+ screens */
+      display: flex;
     }
   }
 
@@ -302,9 +285,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     MOBILE QUOTE BAR - Marquee style at bottom
-     ═══════════════════════════════════════════════════════════════════ */
   .mobile-quote-bar {
     position: fixed;
     bottom: 0;
@@ -316,17 +296,16 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     height: 36px;
-    display: flex; /* Show on mobile by default */
+    display: flex;
     align-items: center;
   }
 
   @media (min-width: 640px) {
     .mobile-quote-bar {
-      display: none; /* Hide on sm+ screens */
+      display: none;
     }
   }
 
-  /* Edge fade gradients */
   .mobile-quote-bar::before,
   .mobile-quote-bar::after {
     content: '';
@@ -370,7 +349,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     padding-left: 100%;
   }
 
-  /* RTL support - reverse animation direction */
   :global([dir="rtl"]) .mobile-quote-track,
   .mobile-quote-bar.rtl .mobile-quote-track {
     animation: marquee-rtl 25s linear infinite;
@@ -420,7 +398,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     color: #8b7355;
   }
 
-  /* Pause animation on touch/hover */
   .mobile-quote-bar:hover .mobile-quote-track,
   .mobile-quote-bar:active .mobile-quote-track {
     animation-play-state: paused;
@@ -428,7 +405,8 @@ const { language = 'en', showLanguageToggle = true, class: className } =
 </style>
 
 <script>
-  // 200+ Motivational quotes about knowledge and wisdom
+  const SOURCE_LANG = 'he';
+
   const quotesEN = [
     "Knowledge is power.",
     "The only true wisdom is knowing you know nothing.",
@@ -524,7 +502,7 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     "The best way to predict the future is to create it.",
     "What you get by achieving your goals is not as important as what you become.",
     "Dream big and dare to fail.",
-    "Your limitation—it's only your imagination.",
+    "Your limitation-it's only your imagination.",
     "Push yourself, because no one else is going to do it for you.",
     "Great things never come from comfort zones.",
     "Dream it. Wish it. Do it.",
@@ -543,7 +521,7 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     "Information is not knowledge. Knowledge is not wisdom.",
     "The illiterate of the 21st century will not be those who cannot read and write.",
     "Learning is not attained by chance, it must be sought for with ardor.",
-    "Intelligence plus character—that is the goal of true education.",
+    "Intelligence plus character-that is the goal of true education.",
     "The purpose of learning is growth, and our minds can grow continuously.",
     "Education is not filling a pail, but lighting a fire.",
     "The mind is not a vessel to fill but a fire to ignite.",
@@ -551,7 +529,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     "Read not to contradict and confute, but to weigh and consider.",
     "A wise man learns more from his enemies than a fool from his friends.",
     "The only source of knowledge is experience.",
-    "Imagination is more important than knowledge.",
     "Logic will get you from A to B. Imagination will take you everywhere.",
     "Anyone who stops learning is old, whether at twenty or eighty.",
     "The best teachers are those who show you where to look but don't tell you what to see.",
@@ -754,7 +731,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     "קרא לא כדי לסתור ולהפריך, אלא כדי לשקול ולהתבונן.",
     "חכם לומד יותר מאויביו מאשר טיפש מחבריו.",
     "המקור היחיד לידע הוא הניסיון.",
-    "דמיון חשוב יותר מידע.",
     "היגיון יביא אותך מא' לב'. דמיון יקח אותך לכל מקום.",
     "כל מי שמפסיק ללמוד זקן, בין אם בן עשרים או שמונים.",
     "המורים הטובים ביותר מראים לך לאן להסתכל אבל לא אומרים לך מה לראות.",
@@ -957,7 +933,6 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     "Lee no para contradecir y refutar, sino para sopesar y considerar.",
     "Un sabio aprende más de sus enemigos que un tonto de sus amigos.",
     "La única fuente de conocimiento es la experiencia.",
-    "La imaginación es más importante que el conocimiento.",
     "La lógica te llevará de A a B. La imaginación te llevará a todas partes.",
     "Cualquiera que deja de aprender es viejo, ya sea a los veinte u ochenta.",
     "Los mejores maestros te muestran dónde mirar pero no te dicen qué ver.",
@@ -1038,6 +1013,24 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     "Un libro verdaderamente bueno me enseña mejor que leerlo.",
   ];
 
+  const QUOTES_BY_LANGUAGE = {
+    he: quotesHE,
+    en: quotesEN,
+    es: quotesES,
+  };
+
+  function getCurrentLanguage() {
+    return localStorage.getItem('yuval_language') || SOURCE_LANG;
+  }
+
+  function getQuotesForLanguage(lang) {
+    return QUOTES_BY_LANGUAGE[lang] || QUOTES_BY_LANGUAGE[SOURCE_LANG];
+  }
+
+  function getHeaderAriaLabel(lang) {
+    return lang === SOURCE_LANG ? 'Yuval - עמוד הבית' : 'Yuval - Home';
+  }
+
   let lastQuoteIndex = -1;
 
   function showQuote() {
@@ -1045,59 +1038,71 @@ const { language = 'en', showLanguageToggle = true, class: className } =
     const mobileQuote = document.getElementById('mobile-quote');
     const mobileQuoteDup = document.getElementById('mobile-quote-duplicate');
     const mobileBar = document.getElementById('mobile-quote-bar');
+    const logoLink = document.getElementById('site-logo-link');
 
-    const lang = localStorage.getItem('yuval_language') || 'en';
-    const quotes = lang === 'he' ? quotesHE : lang === 'es' ? quotesES : quotesEN;
-    
-    // Get random quote, ensuring it's different from the last one
+    const lang = getCurrentLanguage();
+    const quotes = getQuotesForLanguage(lang);
+
+    if (!quotes.length) return;
+
     let newIndex;
     do {
       newIndex = Math.floor(Math.random() * quotes.length);
     } while (newIndex === lastQuoteIndex && quotes.length > 1);
+
     lastQuoteIndex = newIndex;
 
     const randomQuote = quotes[newIndex];
     const quoteWithMarks = `"${randomQuote}"`;
 
-    // Update desktop quote with fade effect
+    if (logoLink) {
+      logoLink.setAttribute('aria-label', getHeaderAriaLabel(lang));
+    }
+
     if (quoteEl) {
       quoteEl.classList.add('fade-out');
       setTimeout(() => {
         quoteEl.textContent = quoteWithMarks;
-        quoteEl.dir = lang === 'he' ? 'rtl' : 'ltr';
+        quoteEl.dir = document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr';
         quoteEl.classList.remove('fade-out');
       }, 500);
     }
 
-    // Update mobile marquee - set RTL class for animation direction
     if (mobileBar) {
-      if (lang === 'he') {
+      if (document.documentElement.dir === 'rtl') {
         mobileBar.classList.add('rtl');
       } else {
         mobileBar.classList.remove('rtl');
       }
     }
 
-    // Update mobile marquee quotes (both copies for seamless loop)
     if (mobileQuote) {
       mobileQuote.textContent = quoteWithMarks;
     }
+
     if (mobileQuoteDup) {
       mobileQuoteDup.textContent = quoteWithMarks;
     }
   }
 
-  // Initial quote
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', showQuote);
-  } else {
+  function initHeaderQuotes() {
+    if (window.__yuvalHeaderQuotesInitialized) {
+      showQuote();
+      return;
+    }
+
+    window.__yuvalHeaderQuotesInitialized = true;
+
     showQuote();
+    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 5000);
+
+    window.addEventListener('language-changed', showQuote);
+    document.addEventListener('astro:page-load', showQuote);
   }
 
-  // Rotate quotes every 5 seconds
-  setInterval(showQuote, 5000);
-
-  // Listen for language changes
-  window.addEventListener('yuval:languageChange', showQuote);
-  document.addEventListener('astro:page-load', showQuote);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeaderQuotes, { once: true });
+  } else {
+    initHeaderQuotes();
+  }
 </script>

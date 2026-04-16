@@ -124,9 +124,7 @@ const isRtl = language === LANGUAGES.HE;
     </main>
 
     <BackToTop />
-
-    <script>
-      // Initialize language preference on page load
+    <script type="module">
       import {
         getLanguageFromStorage,
         isValidLanguage,
@@ -145,17 +143,14 @@ const isRtl = language === LANGUAGES.HE;
       applyStoredLanguage();
       document.addEventListener('astro:after-swap', applyStoredLanguage);
 
-      // Listen for language changes and update page content
-      window.addEventListener(
-        'language-changed',
-        (e: Event) => {
-          const event = e as CustomEvent;
-          const lang = event.detail.language;
-          document.documentElement.lang = lang;
-          document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
-          applyLanguageToPage(lang);
-        }
-      );
+      window.addEventListener('language-changed', (e) => {
+        const event = e;
+        const lang = event.detail.language;
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+        applyLanguageToPage(lang);
+      });
     </script>
-  </body>
+    
+    </body>
 </html>

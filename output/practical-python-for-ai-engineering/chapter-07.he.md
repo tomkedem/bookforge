@@ -32,13 +32,9 @@ data_path.parent.mkdir(parents=True, exist_ok=True)
 print(f"Full path: {data_path.resolve()}")
 ```
 
-
 שימו לב: השימוש ב-/ בתוך Path אינו חיבור מחרוזות, אלא פעולה חכמה שמבינה את מבנה הנתיבים בכל מערכת הפעלה
-
 (Windows, Linux, macOS).
-
 חיפוש קבצים הוא פשוט להפליא:
-
 ```python
 # Scan all JSON files in the config directory
 for file in base_dir.glob("config/*.json"):
@@ -46,11 +42,8 @@ for file in base_dir.glob("config/*.json"):
 ```
 
 
-
 וכדי לזהות את שורש הפרויקט (root):
-
 ניתן לעבור כלפי מעלה עד שמזהים קובץ מובהק כמו pyproject.toml או .git
-
 ```python
 from pathlib import Path
 
@@ -73,11 +66,8 @@ root = find_project_root()
 print(f"Project root: {root}")
 ```
 
-
-## קריאה וכתיבה של טקסט (UTF-8 תמיד)
-
+קריאה וכתיבה של טקסט (UTF-8 תמיד)
 קידוד טקסט הוא אחד ממוקדי הכאב הגדולים במערכות רב-לשוניות. בפרויקטים מודרניים, ובמיוחד בעבודה עם עברית, חובה להשתמש **תמיד** בקידוד UTF-8.
-
 ```python
 from pathlib import Path
 
@@ -96,14 +86,10 @@ content = text_file.read_text(encoding="utf-8")
 print(content)
 ```
 
-
 השימוש ב-encoding=utf-8"" אינו מותרות, הוא ביטוח מפני תקלות מסתוריות של תווים משובשים בקונסול או בהעלאה לשרת.
 
-
-## עבודה עם JSON
-
+עבודה עם JSON
 קובצי JSON משמשים כמעט לכל דבר: תצורה, נתונים, הגדרות, מודלים וכו'. בפייתון נשתמש במודול json, אך נוסיף טיפ חשוב אחד. בעת שמירה, נקבע ensure_ascii=False כדי לא לשבור טקסט בעברית.
-
 ```python
 import json
 from pathlib import Path
@@ -130,14 +116,10 @@ with config_path.open("r", encoding="utf-8") as f:
 print(loaded)
 ```
 
-
-## עבודה עם CSV
-
+עבודה עם CSV
 קובצי CSV הם עדיין דרך פופולרית להעביר datasets.
 פייתון מאפשרת גישה אליהם גם דרך csv.DictReader וגם באמצעות pandas לעיבוד מתקדם.
-
 **קריאה באמצעות csv.DictReader:**
-
 ```python
 import csv
 from pathlib import Path
@@ -155,9 +137,7 @@ if path.exists():
 ```
 
 
-
 **קריאה באמצעות pandas:**
-
 ```python
 import pandas as pd
 
@@ -171,12 +151,9 @@ df.to_csv("data/active_users.csv", index=False, encoding="utf8")
 ```
 ```
 
-
 בעולם של AI, קובצי CSV עלולים להיות כבדים ואיטיים.
 
-
 הפתרון הנפוץ הוא להשתמש בפורמטים בינאריים כמו **Parquet** או **Feather** שמאפשרים טעינה מהירה פי כמה:
-
 ```python
 import pandas as pd
 
@@ -187,13 +164,9 @@ df.to_parquet("data/users.parquet", index=False)
 df2 = pd.read_parquet("data/users.parquet")
 ```
 
-
 פורמטים אלו נתמכים ישירות ב-pandas ומומלצים מאוד לעבודה עם datasets גדולים בענן.
-
-## קונפיגורציה חיצונית (JSON/YAML)
-
+קונפיגורציה חיצונית (JSON/YAML)
 אף אחד לא רוצה לפתוח קוד ולשנות שם API Key או מיקום Dataset. כל ערך כזה צריך לשבת בקובץ קונפיגורציה חיצוני, JSON או YAML.
-
 ```python
 import json
 from pathlib import Path
@@ -213,20 +186,15 @@ cfg = load_config()
 print(f"API key: {cfg['api_key']}")
 ```
 
-
 אם מעדיפים YAML (קריא יותר לאנשים), ניתן להשתמש ב-PyYAML:
-
 ```python
 import yaml
 
 with open("config/app.yaml", "r", encoding="utf-8") as f:
  cfg = yaml.safe_load(f)
 ```
-
 הרעיון פשוט:** אין לשנות קוד כדי לשנות התנהגות.**
-
 לעיתים נרצה להחזיק כמה גרסאות של קונפיגורציה. אחת לפיתוח, אחת לבדיקה ואחת ל-Production. אפשר לעשות זאת בקלות בעזרת משתנה סביבה פשוט:
-
 ```python
 import os, json
 from pathlib import Path
@@ -239,13 +207,9 @@ print(f"Loaded configuration for environment: {env}")
 ```
 
 
-
 **os.environ - משתני סביבה ו-dotenv**
-
 קבצי קונפיגורציה נוחים, אך לעיתים הם כוללים מידע רגיש.
-
 כגון: סיסמאות או מפתחות API. לכן נעדיף לשמור פרטים כאלה במשתני סביבה (os.environ).
-
 ```python
 import os
 
@@ -256,9 +220,7 @@ if not api_key:
 ```
 ```
 
-
 כדי לנהל משתנים כאלה בסביבה מקומית, נשתמש בקובץ .env יחד עם הספרייה python-dotenv:
-
 ```python
 import os
 from dotenv import load_dotenv
@@ -269,23 +231,17 @@ db_user = os.environ["DB_USER"]
 db_pass = os.environ["DB_PASS"]
 ```
 
-
 קובץ .env ייראה כך:
-
-```plaintext
+```Plaintext
 DB_USER=tomer
 DB_PASS=1234secure
 API_KEY=abcd-efgh
 ```
 
-
 והוא **לעולם לא נכנס ל-git!** (הוסיפו.env ל-.gitignore).
 
-
-## דוגמה מרכזית: קריאת Dataset, ניקוי ושמירה
-
+דוגמה מרכזית: קריאת Dataset, ניקוי ושמירה
 נניח שיש לנו קובץ CSV עם שמות משתמשים, אימיילים וסטטוס. נרצה לנקות אותו ולשמור גרסה נקייה.
-
 ```python
 import pandas as pd
 from pathlib import Path
@@ -334,16 +290,12 @@ print(f"Clean file saved at: {output_path.resolve()}")
 ```
 
 
-
 דוגמה זו ממחישה את היסוד של עבודה נקייה עם נתונים: נתיבים ברורים, קידוד אחיד, שליטה בתוצאות.
 
 
 
-
 **טוען אוניברסלי לפי סוג הקובץ**
-
 לעיתים נרצה פונקציה אחת שתדע להתמודד עם כל סוגי הקבצים הנפוצים (JSON, YAML, CSV) באופן אחיד.
-
 
 ```python
 import json, yaml, pandas as pd
@@ -363,32 +315,21 @@ def load_file(path: Path):
 ```
 ```
 
-
 כך ניתן לעבוד עם כל סוגי הקבצים באותה דרך.
-
 גישה נקייה, גנרית ואידיאלית למערכות AI מרובות מקורות.
-
-## Best Practices
-
+Best Practices
 • **השתמשו תמיד ב-UTF-8 **אל תסמכו על ברירת המחדל של מערכת ההפעלה.
-
 • **בדקו קיום קבצים **(()Path.exists) לפני קריאה.
-
 • **הפרידו בין קוד לקונפיגורציה** אל תשנו קוד כדי לשנות הגדרות.
-
 • **הימנעו מנתיבים קשיחים** השתמשו ב-Path(__file__) וב-/.
-
 • **הוסיפו לוגים בעת קריאה וכתיבה של קבצים** כדי לדעת מה נכשל ומתי.
-
 • **אל תשמרו סיסמאות בקוד** רק בקובץ .env או במשתני סביבה.
 
-
-## סיכום - למה קונפיגורציה נכונה חוסכת כאב ראש
-
+סיכום - למה קונפיגורציה נכונה חוסכת כאב ראש
 מתכנתים צעירים מתלהבים מקוד שרץ.
 מתכנתים מנוסים מתלהבים מקוד שניתן לפרוס, להפעיל, ולתחזק.
 ניהול נכון של קבצים, נתיבים וקונפיגורציה הוא הצעד הראשון במעבר ממפתח "שעובד אצלי" למפתח שעובד בכל מקום.
-
 כשכל הנתיבים נבנים נכון, כל הקבצים נכתבים ב-UTF-8, וההגדרות יושבות מחוץ לקוד אתה ישן טוב יותר בלילה, גם כשה-AI שלך רץ על שרת בצד השני של העולם.
 
 
+```

@@ -25,13 +25,9 @@ def test_tokenize_with_fixture(sample_text):
  assert len(tokens) == 4
 ```
 
-
 אפשר להגדיר Fixtures כלליים בקובץ conftest.py כדי לשתף אותם בכל הפרויקט. הם מעולים להכנות חוזרות כמו פתיחת קובץ, יצירת אובייקט API, או ניקוי נתונים.
-
-## בדיקות חריגות (pytest.raises)
-
+בדיקות חריגות (pytest.raises)
 נרצה לוודא שגם במקרים חריגים הפונקציה מתנהגת כמצופה. כלומר, זורקת את החריגה הנכונה.
-
 ```python
 import pytest
 from mini_text_analyzer.io_utils import read_json
@@ -41,14 +37,10 @@ def test_read_json_not_found():
  read_json("data/missing.json")
 ```
 
-
 בדיקה כזו אינה נועדה “להפיל” את הקוד, אלא לוודא שהתנהגות השגיאה צפויה, מתועדת וניתנת ללכידה.
 
-
-## Mocking - סימולציה של API חיצוני
-
+Mocking - סימולציה של API חיצוני
 לא תמיד נרצה לגשת לשירות חיצוני אמיתי בזמן הבדיקות (כמו OpenAI API או Google Cloud). במקום זאת, נשתמש ב-Mock, אובייקט שמדמה התנהגות אמיתית.
-
 ```python
 from unittest.mock import patch
 from mini_text_analyzer.llm_client import query_model
@@ -66,25 +58,16 @@ def test_query_model(mock_send):
  mock_send.assert_called_once_with("hi")
 ```
 
-
 אנו בודקים את הלוגיקה שלנו בלי תלות ברשת או ב-API אמיתי.
 גישה זו חיונית במיוחד במערכות מבוססות AI שבהן הגישה החיצונית איטית או עולה כסף.
-
-## כלים משלימים (black, ruff, pre-commit)
-
+כלים משלימים (black, ruff, pre-commit)
 בדיקות הן לא רק “בדיקת תוצאה”, הן חלק מתרבות של איכות קוד ונוחות פיתוח. שימוש בכלים חכמים שמקלים על המפתח, שומרים על אחידות בקוד, ומונעים בעיות עוד לפני שהן קורות.
-
 כלים משלימים יכולים להפוך את הסביבה שלך לחכמה ואחידה:
-
 • :**Black ** מעצב קוד אוטומטית לפי תקן אחיד.
-
 • :**Ruff** מנתח סגנון (lint) ומזהה בעיות בזמן כתיבה.
-
 • **pre-commit**: מריץ בדיקות לפני כל commit כדי למנוע טעויות מראש.
-
 דוגמה לקובץ .pre-commit-config.yaml:
-
-```yaml
+```YAML
 repos:
  - repo: https://github.com/psf/black
  rev: 24.4.0
@@ -100,11 +83,8 @@ repos:
  - id: mypy
 ```
 
-
-## דוגמה מרכזית: בדיקות ל-tokenize ו-clean
-
+דוגמה מרכזית: בדיקות ל-tokenize ו-clean
 נבנה בדיקות אמיתיות לשתי פונקציות מהפרקים הקודמים:
-
 ```python
 ```python
 from mini_text_analyzer.text_utils import tokenize, normalize
@@ -120,9 +100,7 @@ def test_normalize_lowercase():
  result = normalize(text)
  assert result == "Python"
 ```
-
 אפשר גם לבדוק קלט בעייתי:
-
 ```python
 import pytest
 
@@ -133,16 +111,11 @@ def test_normalize_non_string():
  with pytest.raises(AttributeError):
  normalize(None)
 ```
-
 בדיקות קטנות, ממוקדות וברורות, הרבה יותר יעילות מבדיקה אחת ענקית שמנסה לבדוק את הכול.
-
-## שילוב ב-CI/CD (GitHub Actions)
-
+שילוב ב-CI/CD (GitHub Actions)
 בדיקות אוטומטיות הופכות משמעותיות באמת כשהן רצות לבד, בכל פעם שמישהו מבצע push או pull request.
-
 דוגמה פשוטה ל-GitHub Actions:
-
-```yaml
+```YAML
 name: Tests
 
 on: [push, pull_request]

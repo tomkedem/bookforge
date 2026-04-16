@@ -24,7 +24,7 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
         data-language={lang.code}
         data-index={index}
         aria-pressed={currentLanguage === lang.code}
-        aria-label={`Switch to ${lang.labelEn}`}
+        aria-label={`Switch language to ${lang.labelEn}`}
       >
         <span class="option-label">{lang.label}</span>
       </button>
@@ -197,13 +197,13 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
   }
 </style>
 
-<script>
+<script type="module">
   import { LANGUAGES, SUPPORTED_LANGUAGES, setLanguageToStorage, isValidLanguage, getLanguageFromStorage } from '../utils/language';
-  import type { Language } from '../types/index';
+
 
   function initLanguageToggle(controller: AbortController) {
-    const buttons = document.querySelectorAll<HTMLButtonElement>('.toggle-option[data-language]');
-    const slider = document.querySelector<HTMLElement>('.toggle-slider');
+    const buttons = document.querySelectorAll('.toggle-option[data-language]');
+    const slider = document.querySelector('.toggle-slider');
     
     if (!slider || buttons.length === 0) return;
 
@@ -228,7 +228,7 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
     }
 
     const clickHandler = (e: Event) => {
-      const target = e.currentTarget as HTMLButtonElement;
+      const target = e.currentTarget;
       const lang = target.dataset.language;
 
       if (lang && isValidLanguage(lang)) {
@@ -241,7 +241,7 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
 
         window.dispatchEvent(
           new CustomEvent('language-changed', {
-            detail: { language: lang as Language }
+            detail: { language: lang }
           })
         );
       }
@@ -253,7 +253,7 @@ const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
 
     // Listen for language changes from other sources
     window.addEventListener('language-changed', (e: Event) => {
-      const customEvent = e as CustomEvent;
+      const customEvent = e;
       if (customEvent.detail?.language) {
         updateToggle(customEvent.detail.language);
       }
