@@ -8,11 +8,77 @@ import { applyLanguageToPage } from '../utils/language';
 import { resolveLanguage } from '../i18n';
 import type { Language } from '../types/index';
 
+function getCurrentPageLanguage(): string {
+  const params = new URLSearchParams(window.location.search);
+  const rawUrlLang = params.get('lang');
+  const urlLang = rawUrlLang ? resolveLanguage(rawUrlLang) : '';
+
+  const available = Array.from(document.querySelectorAll<HTMLElement>('[data-lang]'))
+    .map((node) => node.dataset.lang)
+    .filter((lang): lang is string => Boolean(lang));
+
+  if (urlLang && available.includes(urlLang)) {
+    return urlLang;
+  }
+
+  const stored = resolveLanguage(getLanguageFromStorage());
+  if (available.includes(stored)) {
+    return stored;
+  }
+
+  return urlLang || stored;
+}
+
+function updateChapterNavigation(lang: string) {
+  const nav = document.getElementById('chapter-nav');
+  if (!nav) return;
+
+  const isRtl = document.documentElement.dir === 'rtl';
+  nav.classList.toggle('sm:flex-row-reverse', isRtl);
+  nav.classList.toggle('sm:flex-row', !isRtl);
+
+  nav.querySelectorAll<HTMLElement>('[data-chapter-titles]').forEach((node) => {
+    const raw = node.dataset.chapterTitles;
+    if (!raw) return;
+
+    try {
+      const titles = JSON.parse(raw) as Record<string, string>;
+      const text = titles[lang] ?? titles.he ?? titles.en ?? Object.values(titles)[0] ?? '';
+
+      if (node.matches('a')) {
+        const label = node.querySelector<HTMLElement>('.chapter-nav-label');
+        if (label) label.textContent = text;
+      } else {
+        node.textContent = text;
+      }
+    } catch {
+      // ignore malformed title payloads
+    }
+  });
+
+  const prev = nav.querySelector<HTMLElement>('[data-nav="prev"]');
+  const next = nav.querySelector<HTMLElement>('[data-nav="next"]');
+
+  if (prev) {
+    const arrow = prev.querySelector<HTMLElement>('.chapter-nav-arrow');
+    if (arrow) {
+      arrow.textContent = isRtl ? '→' : '←';
+    }
+  }
+
+  if (next) {
+    const arrow = next.querySelector<HTMLElement>('.chapter-nav-arrow');
+    if (arrow) {
+      arrow.textContent = isRtl ? '←' : '→';
+    }
+  }
+}
+
 /**
  * Switch content blocks by data-lang
  */
 function switchLanguage(lang: string) {
-  const targets = ['chapter-container', 'chapter-header', 'chapter-meta-bar'];
+  const targets = ['chapter-container', 'chapter-header', 'chapter-meta-bar', 'breadcrumb-container'];
   const langCodes = SUPPORTED_LANGUAGES.map(l => l.code);
 
   for (const id of targets) {
@@ -30,25 +96,41 @@ function switchLanguage(lang: string) {
   }
 
   const meta = SUPPORTED_LANGUAGES.find(l => l.code === lang);
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get('lang') !== lang) {
+    params.set('lang', lang);
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+  }
 
   document.documentElement.lang = lang;
   document.documentElement.dir = meta?.dir ?? 'ltr';
 
   applyLanguageToPage(lang as Language);
+  updateChapterNavigation(lang);
+  window.dispatchEvent(
+    new CustomEvent('language-ui-sync', {
+      detail: { language: lang },
+      bubbles: true,
+    })
+  );
 }
 
 /**
  * Init language system
  */
 export function initLanguageSwitcher(controller: AbortController) {
-  // ✅ normalize language from storage
-  const raw = getLanguageFromStorage();
-  const currentLanguage = resolveLanguage(raw);
+  const currentLanguage = getCurrentPageLanguage();
 
-  // ✅ persist normalized value
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('lang') !== currentLanguage) {
+    params.set('lang', currentLanguage);
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+  }
+
   setLanguageToStorage(currentLanguage as Language);
-
-  // ✅ apply immediately
   switchLanguage(currentLanguage);
 
   window.addEventListener('language-changed', (event: Event) => {

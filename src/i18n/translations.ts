@@ -39,13 +39,21 @@ export const translations: Translations = {
   // ── Navigation ──────────────────────────────────────────────────────────────
   'nav.chapterNavLabel':   { he: 'ניווט פרקים',    en: 'Chapter navigation', es: 'Navegación de capítulos' },
   'nav.chapterOf':         { he: 'פרק {{n}} מתוך {{total}}', en: 'Chapter {{n}} of {{total}}', es: 'Capítulo {{n}} de {{total}}' },
+  'chapter.label':         { he: 'פרק',            en: 'Chapter',          es: 'Capítulo' },
 
   // ── Sidebar ─────────────────────────────────────────────────────────────────
+  'sidebar.openNavigation': { he: 'פתח ניווט',      en: 'Open navigation',  es: 'Abrir navegación' },
   'sidebar.chapters':      { he: 'פרקים',          en: 'Chapters',         es: 'Capítulos' },
   'sidebar.inChapter':     { he: 'בפרק זה',        en: 'In This Chapter',  es: 'En Este Capítulo' },
   'sidebar.toc':           { he: 'תוכן עניינים',   en: 'Table of Contents', es: 'Tabla de Contenidos' },
   'sidebar.outline':       { he: 'מתוכן הפרק',     en: 'Chapter Outline',  es: 'Esquema del Capítulo' },
   'sidebar.noSections':    { he: 'לא נמצאו סעיפים', en: 'No sections found', es: 'No se encontraron secciones' },
+  'sidebar.noSectionsFound': { he: 'לא נמצאו סעיפים', en: 'No sections found', es: 'No se encontraron secciones' },
+
+  // ── Reading status ──────────────────────────────────────────────────────────
+  'reading.total':         { he: '{{n}} דקות קריאה', en: '{{n}} min read',   es: '{{n}} min de lectura' },
+  'reading.remaining':     { he: '{{n}} דקות נותרו', en: '{{n}} min left',   es: '{{n}} min restantes' },
+  'reading.completed':     { he: 'הקריאה הושלמה',   en: 'Completed',        es: 'Completado' },
 
   // ── Home page ───────────────────────────────────────────────────────────────
   'home.title':            { he: 'ספרים',          en: 'Books',            es: 'Libros' },
@@ -58,14 +66,20 @@ export const translations: Translations = {
   'home.noBooks':          { he: 'אין ספרים זמינים כרגע', en: 'No books available yet', es: 'No hay libros disponibles aún' },
   'home.noBooksHint':      { he: 'הוסף ספרים לתיקיית output/ כדי להתחיל', en: 'Add books to the output/ folder to get started', es: 'Agrega libros a la carpeta output/ para comenzar' },
 
+  // ── Search ──────────────────────────────────────────────────────────────────
+  'search.placeholderChapter': { he: 'חפש בפרק...', en: 'Search chapter...', es: 'Buscar en el capítulo...' },
+  'search.placeholderBook': { he: 'חפש בספר...', en: 'Search book...', es: 'Buscar en el libro...' },
+  'search.modeChapter':    { he: 'חיפוש בפרק',      en: 'Search chapter',    es: 'Buscar en capítulo' },
+  'search.modeBook':       { he: 'חיפוש בספר',      en: 'Search book',       es: 'Buscar en libro' },
+
   // ── Book page ───────────────────────────────────────────────────────────────
   'book.chapterOne':       { he: 'פרק אחד',       en: '1 chapter',        es: '1 capítulo' },
   'book.chapters':         { he: '{{n}} פרקים',   en: '{{n}} chapters',   es: '{{n}} capítulos' },
   'book.words':            { he: '{{n}} מילים',   en: '{{n}} words',      es: '{{n}} palabras' },
   'book.sectionOne':       { he: 'סעיף אחד',      en: '1 section',        es: '1 sección' },
   'book.sections':         { he: '{{n}} סעיפים',  en: '{{n}} sections',   es: '{{n}} secciones' },
-  'book.lecturer':         { he: 'מורה:',        en: 'Lecturer:',        es: 'Instructor:' },
-  'book.editedBy':         { he: 'סוכם וערך על ידי:', en: 'Summarized and edited by:', es: 'Resumido y editado por:' },
+  'book.lecturer':         { he: 'מרצה',         en: 'Lecturer',         es: 'Instructor' },
+  'book.editedBy':         { he: 'סיכום ועריכה', en: 'Summarized and edited by', es: 'Resumido y editado por' },
   'book.by':               { he: 'מאת:',          en: 'By:',              es: 'Por:' },
 
   // ── Header ─────────────────────────────────────────────────────────────────
@@ -112,6 +126,19 @@ export const translations: Translations = {
   'onboarding.step4.body': { he: 'בחר כל טקסט בדף כדי להדגיש אותו. 4 צבעים לארגון: תובנות, שאלות, פעולות, ציטוטים.', en: 'Select any text on the page to highlight it. 4 colors to organize: insights, questions, actions, quotes.', es: 'Selecciona cualquier texto para resaltarlo. 4 colores para organizar: ideas, preguntas, acciones, citas.' },
   'onboarding.step5.title': { he: 'יעד קריאה יומי 🎯', en: 'Daily Reading Goal 🎯', es: 'Meta de Lectura Diaria 🎯' },
   'onboarding.step5.body': { he: 'הגדר יעד יומי ועקב אחרי הרצף שלך. לחץ על הכפתור להגדרה.', en: 'Set a daily reading goal and track your streak. Click the button to configure.', es: 'Establece una meta diaria y sigue tu racha. Haz clic en el botón para configurar.' },
+  'onboard.skip':          { he: 'דלג',            en: 'Skip',             es: 'Omitir' },
+  'onboard.next':          { he: 'הבא ←',          en: 'Next →',           es: 'Siguiente →' },
+  'onboard.done':          { he: 'סיום! 🎉',       en: 'Done! 🎉',         es: '¡Listo! 🎉' },
+  'onboard.welcome.title': { he: 'ברוכים הבאים! 👋', en: 'Welcome! 👋',   es: '¡Bienvenido! 👋' },
+  'onboard.welcome.body':  { he: 'זוהי פלטפורמת הקריאה של Yuval. נסייר יחד בתכונות העיקריות.', en: "This is Yuval's reading platform. Let's take a quick tour of the key features.", es: 'Esta es la plataforma de lectura Yuval. Hagamos un recorrido rápido por las funciones principales.' },
+  'onboard.toc.title':     { he: 'תוכן עניינים 📋', en: 'Table of Contents 📋', es: 'Tabla de Contenidos 📋' },
+  'onboard.toc.body':      { he: 'ניווט מהיר בין פרקים. לחץ על כל פרק לניווט מיידי.', en: 'Navigate between chapters instantly. Click any chapter to jump there.', es: 'Navega entre capítulos al instante. Haz clic en cualquier capítulo para ir allí.' },
+  'onboard.display.title': { he: 'בקרי תצוגה ⚙️', en: 'Display Controls ⚙️', es: 'Controles de Pantalla ⚙️' },
+  'onboard.display.body':  { he: 'שנה גודל טקסט, גופן, רוחב, וערכת צבע. הכל נשמר אוטומטית.', en: 'Change font size, typeface, width, and color theme. All saved automatically.', es: 'Cambia el tamaño de fuente, tipografía, ancho y tema de color. Todo se guarda automáticamente.' },
+  'onboard.highlight.title': { he: 'סמן טקסט 💡', en: 'Highlight Text 💡', es: 'Resaltar Texto 💡' },
+  'onboard.highlight.body': { he: 'בחר כל טקסט בדף כדי להדגיש אותו. 4 צבעים לארגון: תובנות, שאלות, פעולות, ציטוטים.', en: 'Select any text on the page to highlight it. 4 colors to organize: insights, questions, actions, quotes.', es: 'Selecciona cualquier texto para resaltarlo. 4 colores para organizar: ideas, preguntas, acciones, citas.' },
+  'onboard.goal.title':    { he: 'יעד קריאה יומי 🎯', en: 'Daily Reading Goal 🎯', es: 'Meta de lectura diaria 🎯' },
+  'onboard.goal.body':     { he: 'הגדר יעד יומי ועקב אחרי הרצף שלך. לחץ על הכפתור להגדרה.', en: 'Set a daily reading goal and track your streak. Click the button to configure.', es: 'Establece una meta diaria y sigue tu racha. Haz clic en el botón para configurar.' },
 
   // ── Keyboard Shortcuts ──────────────────────────────────────────────────────
   'kbd.title':             { he: '⌨️ קיצורי מקלדת', en: '⌨️ Keyboard Shortcuts', es: '⌨️ Atajos de Teclado' },
@@ -151,6 +178,9 @@ export const translations: Translations = {
 
   // ── Reading Stats ───────────────────────────────────────────────────────────
   'stats.title':           { he: 'סטטיסטיקות קריאה', en: 'Reading Stats',  es: 'Estadísticas' },
+  'stats.of':              { he: 'מתוך',            en: 'of',              es: 'de' },
+  'stats.chapters':        { he: 'פרקים שהושלמו',   en: 'Chapters completed', es: 'Capítulos completados' },
+  'stats.words':           { he: 'מילים נקראו',     en: 'Words read',      es: 'Palabras leídas' },
   'stats.chaptersRead':    { he: 'פרקים שהושלמו',  en: 'Chapters completed', es: 'Capítulos leídos' },
   'stats.wordsRead':       { he: 'מילים נקראו',     en: 'Words read',       es: 'Palabras leídas' },
   'stats.highlights':      { he: 'הדגשות שמורות',  en: 'Saved highlights', es: 'Resaltados guardados' },

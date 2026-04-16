@@ -143,4 +143,9 @@ function start() {
 
 export function initOnboardingTour() {
   setTimeout(start, 1200);
+
+  window.addEventListener('language-changed', () => {
+    if (!overlayEl) return;
+    renderStep(currentStep);
+  });
 }

@@ -482,6 +482,47 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
 </style>
 
 <script>
+  function createCheckmark() {
+    const checkmark = document.createElement('span');
+    checkmark.className = 'option-checkmark';
+    checkmark.setAttribute('aria-hidden', 'true');
+    checkmark.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path></svg>';
+    return checkmark;
+  }
+
+  function syncSelectorState(container, lang) {
+    const trigger = container.querySelector('.language-selector-trigger');
+    const triggerFlag = container.querySelector('.trigger-flag');
+    const triggerLabel = container.querySelector('.trigger-label');
+    const options = container.querySelectorAll('.language-option');
+    const activeOption = container.querySelector(`.language-option[data-language="${lang}"]`);
+
+    if (!trigger || !triggerFlag || !triggerLabel || !activeOption) return;
+
+    const optionFlag = activeOption.querySelector('.option-flag');
+    const optionLabel = activeOption.querySelector('.option-label');
+    const optionDir = activeOption.getAttribute('data-dir') || 'ltr';
+
+    triggerFlag.textContent = optionFlag?.textContent || '🌐';
+    triggerLabel.textContent = optionLabel?.textContent || lang;
+    trigger.setAttribute('aria-label', `Change language. Current: ${activeOption.getAttribute('aria-label') || lang}`);
+    container.setAttribute('data-current', lang);
+    container.setAttribute('data-rtl', String(optionDir === 'rtl'));
+
+    options.forEach((option) => {
+      const isActive = option.getAttribute('data-language') === lang;
+      option.classList.toggle('language-option-active', isActive);
+      option.setAttribute('aria-selected', String(isActive));
+
+      const existingCheckmark = option.querySelector('.option-checkmark');
+      if (isActive && !existingCheckmark) {
+        option.appendChild(createCheckmark());
+      } else if (!isActive && existingCheckmark) {
+        existingCheckmark.remove();
+      }
+    });
+  }
+
   function initLanguageSelector() {
     const containers = document.querySelectorAll<HTMLElement>('.language-selector-container');
 
@@ -497,6 +538,7 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
       if (!trigger || !panel || options.length === 0) return;
 
       container.dataset.initialized = 'true';
+      syncSelectorState(container, document.documentElement.lang || container.dataset.current || 'he');
 
       const togglePanel = () => {
         const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
@@ -595,9 +637,17 @@ const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
     const lang = (e as CustomEvent<{ language: string }>).detail?.language;
     if (!lang) return;
 
-    // Reinit to update displays
-    setTimeout(() => {
-      initLanguageSelector();
-    }, 50);
+    document.querySelectorAll('.language-selector-container').forEach((container) => {
+      syncSelectorState(container as HTMLElement, lang);
+    });
+  });
+
+  window.addEventListener('language-ui-sync', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
+    if (!lang) return;
+
+    document.querySelectorAll('.language-selector-container').forEach((container) => {
+      syncSelectorState(container as HTMLElement, lang);
+    });
   });
 </script>

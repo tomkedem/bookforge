@@ -94,51 +94,58 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     bookSlug={book || ''}
     language={language}
   />
-
-  <div class="chapter-meta-bar">
-    {langs.map(l => (
-      <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
-        <ChapterMeta
-          wordCount={current.word_count}
-          readingTimeMinutes={Math.ceil(current.word_count / 200)}
-          sections={current.sections}
-          language={l}
-        />
-      </div>
-    ))}
-  </div>
-
-  <Breadcrumbs
-    language={language}
-    items={[
-      { key: 'home.title', href: '/' },
-      { label: bookData.titles, href: `/books/${book}` },
-      { label: current.titles }
-    ]}
-  />
-
-  <div class="chapter-header">
-    <div class="chapter-header-card">
+  <div id="chapter-sticky-stack" class="chapter-sticky-stack">
+    <div id="chapter-meta-bar" class="chapter-meta-bar">
       {langs.map(l => (
         <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
-          <div class="header-title-row">
-            <div class="chapter-number-badge">
-              <span class="chapter-number">{chapterId}</span>
-            </div>
-
-            <div class="chapter-title-group">
-              <span class="chapter-label">
-                {t('chapter.label', l) || 'Chapter'}
-              </span>
-              <h1 class="chapter-title">
-                {getLocalized(current.titles, l)}
-              </h1>
-            </div>
-
-            <span class="progress-badge">0%</span>
-          </div>
+          <ChapterMeta
+            wordCount={current.word_count}
+            readingTimeMinutes={Math.ceil(current.word_count / 200)}
+            sections={current.sections}
+            language={l}
+          />
         </div>
       ))}
+    </div>
+
+    <div id="breadcrumb-container" class="breadcrumb-container">
+      {langs.map(l => (
+        <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
+          <Breadcrumbs
+            language={l}
+            items={[
+              { key: 'breadcrumb.books', href: '/' },
+              { label: bookData.titles, href: `/books/${book}` },
+              { label: current.titles }
+            ]}
+          />
+        </div>
+      ))}
+    </div>
+
+    <div id="chapter-header" class="chapter-header">
+      <div class="chapter-header-card">
+        {langs.map(l => (
+          <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
+            <div class="header-title-row">
+              <div class="chapter-number-badge">
+                <span class="chapter-number">{chapterId}</span>
+              </div>
+
+              <div class="chapter-title-group">
+                <span class="chapter-label">
+                  {t('chapter.label', l) || 'Chapter'}
+                </span>
+                <h1 class="chapter-title">
+                  {getLocalized(current.titles, l)}
+                </h1>
+              </div>
+
+              <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   </div>
 
@@ -167,6 +174,191 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 <style>
 .hidden { display: none !important; }
 .visible { display: block; }
+
+.chapter-sticky-stack {
+  position: sticky;
+  top: var(--reading-sticky-top, 4rem);
+  z-index: 40;
+  margin-inline: -1rem;
+  padding: 0.2rem 0 0.75rem;
+  margin-bottom: 1rem;
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent), color-mix(in srgb, var(--yuval-reading-bg) 88%, transparent 12%));
+  backdrop-filter: blur(14px);
+}
+
+.chapter-sticky-stack::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--yuval-border) 12%, var(--yuval-border) 88%, transparent 100%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.chapter-sticky-stack.scrolled {
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.08);
+}
+
+.chapter-meta-bar,
+.breadcrumb-container,
+.chapter-header {
+  width: 100%;
+}
+
+.chapter-meta-bar {
+  margin-bottom: 0.5rem;
+}
+
+.breadcrumb-container {
+  margin-bottom: 0.5rem;
+  padding-inline: 0.125rem;
+}
+
+.chapter-header {
+  margin: 0;
+}
+
+.chapter-header-card {
+  padding: 0.9rem 1rem;
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--yuval-border) 85%, transparent);
+  background: color-mix(in srgb, var(--yuval-bg) 92%, transparent 8%);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.chapter-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--yuval-accent) 12%, var(--yuval-bg));
+  color: var(--yuval-chapter-title);
+  border: 1px solid color-mix(in srgb, var(--yuval-accent) 20%, transparent);
+}
+
+.chapter-number {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chapter-title-group {
+  min-width: 0;
+  flex: 1;
+}
+
+.chapter-label {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--yuval-text-tertiary);
+}
+
+.chapter-title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  color: var(--yuval-chapter-title);
+}
+
+.progress-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  height: 2.25rem;
+  padding-inline: 0.75rem;
+  flex-shrink: 0;
+  border-radius: 0;
+  background: var(--yuval-meta-bg);
+  border: 1px solid var(--yuval-meta-border);
+  color: var(--yuval-progress-badge);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+#chapter-meta-bar :global(.chapter-meta) {
+  margin-bottom: 0;
+  justify-content: center;
+}
+
+#breadcrumb-container :global(.breadcrumbs),
+#breadcrumb-container :global(.breadcrumbs-nav) {
+  margin-bottom: 0;
+  max-width: none;
+}
+
+@media (min-width: 640px) {
+  .chapter-sticky-stack {
+    margin-inline: -1.5rem;
+    padding-inline: 0;
+  }
+
+  .chapter-sticky-stack::after {
+    inset-inline: 0;
+  }
+
+  .chapter-header-card {
+    padding: 1rem 1.25rem;
+  }
+
+  .chapter-title {
+    font-size: 1.35rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chapter-sticky-stack {
+    margin-inline: -2rem;
+    padding-inline: 0;
+  }
+
+  .chapter-sticky-stack::after {
+    inset-inline: 0;
+  }
+
+  .chapter-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .chapter-sticky-stack {
+    padding-top: 0.15rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .header-title-row {
+    gap: 0.625rem;
+  }
+
+  .chapter-number-badge {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .progress-badge {
+    min-width: 2.6rem;
+    height: 2rem;
+    padding-inline: 0.55rem;
+    font-size: 0.8rem;
+  }
+}
 </style>
 
 <script>

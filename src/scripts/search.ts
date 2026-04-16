@@ -528,6 +528,9 @@ function updateModeUI(): void {
 
   modeBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === mode);
+    btn.textContent = btn.dataset.mode === 'chapter'
+      ? tr('search.modeChapter')
+      : tr('search.modeBook');
   });
 
   searchResults.style.display = mode === 'book' ? 'block' : 'none';

@@ -215,6 +215,11 @@ export function initReadingStats(): void {
   if (book) computeStreak(book);
 
   window.addEventListener('language-changed', () => {
+    const button = document.getElementById('stats-fab-btn');
+    if (button) {
+      button.setAttribute('aria-label', tr('stats.title'));
+    }
+
     if (document.getElementById('stats-modal')?.classList.contains('open')) {
       renderStats();
     }

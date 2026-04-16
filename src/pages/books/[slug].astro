@@ -105,9 +105,12 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
     class:list={[
       'min-h-screen',
       'bg-yuval-bg',
-      'py-12',
-      'sm:py-16',
-      'lg:py-20',
+      'pt-4',
+      'sm:pt-6',
+      'lg:pt-8',
+      'pb-12',
+      'sm:pb-16',
+      'lg:pb-20',
       'px-4',
       'sm:px-6',
       'lg:px-8',
@@ -120,7 +123,7 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
           { key: 'breadcrumb.books', href: '/' },
           { label: book.titles },
         ]}
-        class="mb-8"
+        class="mb-4 sm:mb-5"
       />
 
       <div
@@ -128,8 +131,10 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
           'grid',
           'grid-cols-1',
           'md:grid-cols-3',
-          'gap-8',
-          'mb-12',
+          'gap-6',
+          'sm:gap-8',
+          'mb-8',
+          'sm:mb-10',
           'items-start',
         ]}
       >
@@ -147,14 +152,20 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
               'mt-3',
               'text-sm',
               'text-yuval-text-secondary',
+              'space-y-1.5',
               isRtl && 'text-right',
             ]}>
               {book.credits.type === 'lecture_summary' ? (
-                <p>
-                  <span>{t('book.lecturer', language)}</span> {' '}{book.credits.lecturer}
-                  <br />
-                  <span>{t('book.editedBy', language)}</span> {' '}{book.credits.editor}
-                </p>
+                <div class="space-y-1.5">
+                  <p>
+                    <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
+                    <span>{book.credits.lecturer}</span>
+                  </p>
+                  <p>
+                    <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
+                    <span>{book.credits.editor}</span>
+                  </p>
+                </div>
               ) : (
                 <p>
                   <span>{t('book.by', language)}</span> {' '}{book.credits.author}
@@ -191,7 +202,7 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
         </div>
       </div>
 
-      <div class="border-t border-yuval-border pt-12">
+      <div class="border-t border-yuval-border pt-8 sm:pt-10">
         <h2 class="font-heading font-bold text-2xl mb-6 text-yuval-text">
           {t('sidebar.chapters', language)}
         </h2>

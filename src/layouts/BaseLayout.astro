@@ -12,6 +12,7 @@ interface Props {
   description?: string;
   language?: Language;
   availableLanguages?: Language[];
+  allowClientLanguageOverride?: boolean;
   showHeader?: boolean;
   showProgress?: boolean;
   showLanguageToggle?: boolean;
@@ -23,6 +24,7 @@ const {
   description = 'Yuval - A digital reading platform',
   language = SOURCE_LANGUAGE,
   availableLanguages,
+  allowClientLanguageOverride = false,
   showHeader = true,
   showProgress = false,
   showLanguageToggle = true,
@@ -100,7 +102,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     <!-- Sync language between URL ?lang= and localStorage before the page renders.
          If user has a saved language preference but the URL doesn't reflect it,
          redirect so the server re-renders in the correct language. -->
-    <script is:inline define:vars={{ serverLang: language, availableLangs: availableLanguages ?? [language] }}>
+    <script is:inline define:vars={{ serverLang: language, availableLangs: availableLanguages ?? [language], allowClientLanguageOverride }}>
       (function() {
         try {
           var params = new URLSearchParams(window.location.search);
@@ -110,14 +112,14 @@ const isRtl = getLanguageDirection(language) === 'rtl';
           var allowed = Array.isArray(availableLangs) && availableLangs.length > 0 ? availableLangs : [serverLang];
 
           if (urlLang && valid.indexOf(urlLang) !== -1) {
-            if (allowed.indexOf(urlLang) !== -1 && urlLang === serverLang) {
+            if (allowed.indexOf(urlLang) !== -1 && (urlLang === serverLang || allowClientLanguageOverride)) {
               if (storedLang !== urlLang) localStorage.setItem('yuval_language', urlLang);
             } else {
               params.set('lang', serverLang);
               localStorage.setItem('yuval_language', serverLang);
               window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
             }
-          } else if (storedLang && valid.indexOf(storedLang) !== -1 && storedLang !== serverLang && allowed.indexOf(storedLang) !== -1) {
+          } else if (!allowClientLanguageOverride && storedLang && valid.indexOf(storedLang) !== -1 && storedLang !== serverLang && allowed.indexOf(storedLang) !== -1) {
             // No URL override, but stored preference differs from what server rendered — redirect
             params.set('lang', storedLang);
             window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);

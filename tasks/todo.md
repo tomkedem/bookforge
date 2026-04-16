@@ -1,5 +1,10 @@
 # tasks/todo.md
 
+## משימה נוכחית - הצמדת בר הקריאה ל-header
+
+- אבחון: ב-`/read/[book]/[chapter]` שורת המטא, ה-breadcrumbs וכותרת הפרק יושבים כחלקים נפרדים בתוך התוכן, עם רווח מה-header, והם נעלמים בגלילה.
+- פעולה: לעטוף אותם כ-stack sticky אחד, להצמיד אותו מתחת ל-header הגלובלי, להרחיב אותו לרוחב אזור הקריאה, ולהשאיר את כותרת הפרק גלויה בזמן גלילה.
+
 ## משימה נוכחית - תיקון גילוי שפות לספר Practical Python
 
 - אבחון: LanguageSelector תוקן, אבל הספר `practical-python-for-ai-engineering` עדיין הצהיר ב-`content-structure.json` על `en` ו-`es` למרות שקיימים רק קבצי `he`.

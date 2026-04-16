@@ -19,9 +19,15 @@ export function initStickyHeader(controller: AbortController) {
   if (!headerEl) return;
 
   const header = headerEl;
+  const stickyStack = document.getElementById('chapter-sticky-stack');
+  const siteHeader = document.getElementById('site-header');
   const progressFill = document.getElementById('header-progress-fill');
-  const progressHe = document.getElementById('progress-badge-he');
-  const progressEn = document.getElementById('progress-badge-en');
+  const progressBadges = Array.from(document.querySelectorAll<HTMLElement>('.progress-badge'));
+
+  function updateStickyOffset(): void {
+    const top = siteHeader?.offsetHeight ?? 64;
+    document.documentElement.style.setProperty('--reading-sticky-top', `${top}px`);
+  }
 
   function calcPct(): number {
     const container = document.getElementById('chapter-container');
@@ -68,8 +74,10 @@ export function initStickyHeader(controller: AbortController) {
   function onScroll() {
     if (window.scrollY > SCROLL_THRESHOLD) {
       header.classList.add('scrolled');
+      stickyStack?.classList.add('scrolled');
     } else {
       header.classList.remove('scrolled');
+      stickyStack?.classList.remove('scrolled');
     }
 
     if (chapterCompleted) return;
@@ -77,15 +85,9 @@ export function initStickyHeader(controller: AbortController) {
     const pct = calcPct();
     const text = `${pct}%`;
 
-    if (progressHe) {
-      progressHe.textContent = text;
-      progressHe.style.opacity = pct > 0 ? '1' : '0';
-    }
-
-    if (progressEn) {
-      progressEn.textContent = text;
-      progressEn.style.opacity = pct > 0 ? '1' : '0';
-    }
+    progressBadges.forEach((badge) => {
+      badge.textContent = text;
+    });
 
     if (progressFill) {
       progressFill.style.width = `${pct}%`;
@@ -115,8 +117,9 @@ export function initStickyHeader(controller: AbortController) {
 
     const text = '100%';
 
-    if (progressHe) progressHe.textContent = text;
-    if (progressEn) progressEn.textContent = text;
+    progressBadges.forEach((badge) => {
+      badge.textContent = text;
+    });
 
     if (progressFill) progressFill.style.width = '100%';
 
@@ -125,6 +128,17 @@ export function initStickyHeader(controller: AbortController) {
   }
 
   window.addEventListener('chapter-completed', forceComplete, {
+    signal: controller.signal,
+  });
+
+  window.addEventListener('language-changed', () => {
+    if (chapterCompleted) {
+      updateReadingTime(100);
+      return;
+    }
+
+    updateReadingTime(calcPct());
+  }, {
     signal: controller.signal,
   });
 
@@ -149,5 +163,11 @@ export function initStickyHeader(controller: AbortController) {
     signal: controller.signal,
   });
 
+  window.addEventListener('resize', updateStickyOffset, {
+    passive: true,
+    signal: controller.signal,
+  });
+
+  updateStickyOffset();
   onScroll();
 }

@@ -20,6 +20,7 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
   title={title}
   language={language}
   availableLanguages={availableLanguages}
+  allowClientLanguageOverride={true}
   showHeader={true}
   showProgress={true}
   showLanguageToggle={true}
@@ -33,13 +34,14 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
       'px-4',
       'sm:px-6',
       'lg:px-8',
-      'py-1',
-      'sm:py-2',
-      'lg:py-3',
+      'pt-0',
+      'pb-4',
+      'sm:pb-6',
+      'lg:pb-8',
       isRtl && 'text-right',
       className,
     ]}
-    style="background-color: var(--yuval-reading-bg); padding-bottom: 2rem;"
+    style="background-color: var(--yuval-reading-bg);"
   >
     <!-- Chapter content -->
     <div
