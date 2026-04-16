@@ -96,6 +96,29 @@ const isRtl = getLanguageDirection(language) === 'rtl';
         } catch(e) {}
       })();
     </script>
+
+    <!-- Sync language between URL ?lang= and localStorage before the page renders.
+         If user has a saved language preference but the URL doesn't reflect it,
+         redirect so the server re-renders in the correct language. -->
+    <script is:inline define:vars={{ serverLang: language }}>
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var urlLang = params.get('lang');
+          var storedLang = localStorage.getItem('yuval_language');
+          var valid = ['he','en','es'];
+
+          if (urlLang && valid.indexOf(urlLang) !== -1) {
+            // URL drives truth — sync it to storage for future visits
+            if (storedLang !== urlLang) localStorage.setItem('yuval_language', urlLang);
+          } else if (storedLang && valid.indexOf(storedLang) !== -1 && storedLang !== serverLang) {
+            // No URL override, but stored preference differs from what server rendered — redirect
+            params.set('lang', storedLang);
+            window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
 
   <body

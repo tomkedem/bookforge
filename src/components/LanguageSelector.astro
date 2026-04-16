@@ -503,19 +503,26 @@ const isRtl = getLanguageDirection(current) === 'rtl';
         const lang = option.dataset.language;
         if (!lang) return;
 
-        // Save to localStorage first
         localStorage.setItem('yuval_language', lang);
-
-        // Close panel
         closePanel();
 
-        // Dispatch custom event
-        window.dispatchEvent(
-          new CustomEvent('language-selector-change', {
-            detail: { language: lang },
-            bubbles: true,
-          })
-        );
+        // Chapter page pre-renders all languages and supports client-side toggle.
+        // Other pages (home, book) render a single language server-side, so we
+        // must reload with ?lang=xx to re-render the whole page.
+        const supportsClientSwitch = !!document.getElementById('chapter-container');
+
+        if (supportsClientSwitch) {
+          window.dispatchEvent(
+            new CustomEvent('language-selector-change', {
+              detail: { language: lang },
+              bubbles: true,
+            })
+          );
+        } else {
+          const url = new URL(window.location.href);
+          url.searchParams.set('lang', lang);
+          window.location.href = url.toString();
+        }
       };
 
       // Click trigger to toggle

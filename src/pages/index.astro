@@ -23,10 +23,12 @@ function getLocalizedText(
 
 const { language: propLanguage } = Astro.props;
 
+const urlLang = Astro.url.searchParams.get('lang')?.trim().toLowerCase();
+
 const requestedLanguage =
-  propLanguage && isValidLanguage(propLanguage)
-    ? propLanguage
-    : DEFAULT_LANGUAGE;
+  (urlLang && isValidLanguage(urlLang))
+    ? urlLang
+    : (propLanguage && isValidLanguage(propLanguage) ? propLanguage : DEFAULT_LANGUAGE);
 
 const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
