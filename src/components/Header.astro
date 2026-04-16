@@ -160,6 +160,10 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     transition: all 0.3s ease;
   }
 
+  :global([dir="rtl"]) .yuval-logo {
+    flex-direction: row-reverse;
+  }
+
   .yuval-logo:hover {
     background: rgba(139, 115, 85, 0.1);
   }
@@ -176,6 +180,11 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     color: #2c2c34;
     margin-right: -1px;
     transition: color 0.3s ease;
+  }
+
+  :global([dir="rtl"]) .logo-letter {
+    margin-right: 0;
+    margin-left: -1px;
   }
 
   .logo-rest {
