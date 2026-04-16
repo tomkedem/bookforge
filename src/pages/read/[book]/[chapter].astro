@@ -43,21 +43,17 @@ if (!currentChapter) {
 }
 
 // Load ALL language versions at BUILD TIME for client-side switching
-function stripFirstH1(html: string): string {
-  return html.replace(/<h1[^>]*>.*?<\/h1>\s*/s, '');
-}
-
 async function loadChapterContent(langCode: string, fallbackTitle: string, fallbackMsg: string): Promise<string> {
   // Chapter 0 is the intro, stored as intro.{lang}.md
-  const filename = chapterId === 0 
-    ? `intro.${langCode}.md` 
+  const filename = chapterId === 0
+    ? `intro.${langCode}.md`
     : `chapter-${String(chapterId).padStart(2, '0')}.${langCode}.md`;
   const filepath = resolve(`output/${book}`, filename);
   try {
     const md = readFileSync(filepath, 'utf-8');
     let html = await marked(md);
     html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
-    return stripFirstH1(html);
+    return html;
   } catch {
     console.warn(`Warning: ${langCode} chapter file not found: ${filepath}`);
     return `<h2>${fallbackTitle}</h2><p><em>${fallbackMsg}</em></p>`;
