@@ -55,9 +55,9 @@ if (!bookData) {
   return Astro.redirect('/404');
 }
 
-const availableLanguages = Array.isArray(bookData.languages) && bookData.languages.length > 0
+const availableLanguages = (Array.isArray(bookData.languages) && bookData.languages.length > 0
   ? bookData.languages
-  : Object.keys(bookData.titles || {});
+  : Object.keys(bookData.titles || {})) as Language[];
 
 const urlLang = Astro.url.searchParams.get('lang')?.trim().toLowerCase();
 
