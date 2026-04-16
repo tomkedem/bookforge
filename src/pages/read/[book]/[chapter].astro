@@ -84,6 +84,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 <ReadingLayout
   title={getLocalized(current.titles, language)}
   language={language}
+  availableLanguages={langs as Language[]}
 >
 
   <ChapterSidebars

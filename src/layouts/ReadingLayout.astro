@@ -2,22 +2,24 @@
 import type { Language } from '../types/index';
 import BaseLayout from './BaseLayout.astro';
 import ReadingControls from '../components/ReadingControls.astro';
-import { LANGUAGES } from '../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   title: string;
   language?: Language;
+  availableLanguages?: Language[];
   class?: string;
 }
 
-const { title, language = LANGUAGES.EN, class: className } = Astro.props;
-const isRtl = language === LANGUAGES.HE;
+const { title, language = SOURCE_LANGUAGE, availableLanguages, class: className } = Astro.props;
+const isRtl = getLanguageDirection(language) === 'rtl';
 const COPY_SUCCESS_MESSAGE = 'Code copied!';
 ---
 
 <BaseLayout
   title={title}
   language={language}
+  availableLanguages={availableLanguages}
   showHeader={true}
   showProgress={true}
   showLanguageToggle={true}
