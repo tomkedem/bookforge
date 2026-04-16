@@ -5,7 +5,7 @@ import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../../types/index';
-import { SUPPORTED_LANGUAGES } from '../../../utils/language';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../../../utils/language';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { marked } from '../../../utils/markdown';
@@ -16,7 +16,7 @@ type LocalizedMap = Record<string, string | undefined>;
 
 function getLocalized(value: LocalizedMap | undefined, lang: string): string {
   if (!value) return '';
-  return value[lang] ?? value['en'] ?? Object.values(value)[0] ?? '';
+  return value[lang] ?? value[SOURCE_LANGUAGE] ?? Object.values(value)[0] ?? '';
 }
 
 export async function getStaticPaths() {
@@ -78,7 +78,7 @@ const contentByLang = Object.fromEntries(
   )
 ) as Record<string, string>;
 
-const language = (langs.includes('en') ? 'en' : langs[0] || 'he') as Language;
+const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] || SOURCE_LANGUAGE) as Language;
 ---
 
 <ReadingLayout
