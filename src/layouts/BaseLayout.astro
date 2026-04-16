@@ -11,6 +11,7 @@ interface Props {
   title: string;
   description?: string;
   language?: Language;
+  availableLanguages?: Language[];
   showHeader?: boolean;
   showProgress?: boolean;
   showLanguageToggle?: boolean;
@@ -21,6 +22,7 @@ const {
   title,
   description = 'Yuval - A digital reading platform',
   language = SOURCE_LANGUAGE,
+  availableLanguages,
   showHeader = true,
   showProgress = false,
   showLanguageToggle = true,
@@ -112,6 +114,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     {showHeader && (
       <Header
         language={language}
+        availableLanguages={availableLanguages}
         showLanguageToggle={showLanguageToggle}
       />
     )}

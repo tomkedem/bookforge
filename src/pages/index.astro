@@ -33,6 +33,18 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
 const books = discoverAllBooks();
 
+// Detect available languages (languages that have at least one book)
+const availableLanguagesSet = new Set<Language>();
+books.forEach(book => {
+  const bookLangs = book.languages?.length
+    ? book.languages
+    : Object.keys(book.titles || {});
+  bookLangs.forEach(lang => {
+    if (lang) availableLanguagesSet.add(lang as Language);
+  });
+});
+const availableLanguages = Array.from(availableLanguagesSet);
+
 const categoryMap = new Map<string, Record<string, string>>();
 books.forEach(book => {
   if (book.category && typeof book.category === 'object') {
@@ -59,6 +71,7 @@ const categories = [
   title={t('home.title', language)}
   description={t('home.subtitle', language)}
   language={language}
+  availableLanguages={availableLanguages}
 >
   <div class="min-h-screen bg-yuval-bg px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <header class="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
