@@ -271,6 +271,24 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
 </BaseLayout>
 
 <script>
+  import { t, resolveLanguage } from '../../i18n';
+  import { SOURCE_LANGUAGE } from '../../utils/language';
+
+  function updatePageContent(lang: string) {
+    console.log('📖 Book page: updating content for language:', lang);
+
+    // Update all i18n strings
+    document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if (key) {
+        const translatedText = t(key, lang);
+        if (translatedText && translatedText !== key) {
+          el.textContent = translatedText;
+        }
+      }
+    });
+  }
+
   function updateChapterLinks() {
     // Links no longer need ?lang= - language is determined by toggle position
   }
@@ -311,5 +329,11 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
 
   updateChapterLinks();
   updateChapterProgress();
-  window.addEventListener('language-changed', updateChapterLinks);
+
+  window.addEventListener('language-changed', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language || SOURCE_LANGUAGE;
+    updatePageContent(lang);
+    updateChapterLinks();
+    updateChapterProgress();
+  });
 </script>

@@ -500,6 +500,8 @@ const isRtl = getLanguageDirection(current) === 'rtl';
         const lang = option.dataset.language;
         if (!lang) return;
 
+        console.log('🎯 LanguageSelector: option selected, emitting language-selector-change:', lang);
+
         // Close panel
         closePanel();
 
@@ -563,4 +565,55 @@ const isRtl = getLanguageDirection(current) === 'rtl';
   }
 
   document.addEventListener('astro:after-swap', initLanguageSelector);
+
+  // Listen to language changes from other instances
+  window.addEventListener('language-changed', (e: Event) => {
+    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
+    if (!lang) return;
+
+    console.log('🔔 LanguageSelector: language-changed detected, updating UI:', lang);
+
+    document.querySelectorAll<HTMLElement>('.language-selector-container').forEach(container => {
+      const trigger = container.querySelector<HTMLButtonElement>('.language-selector-trigger');
+      const options = container.querySelectorAll<HTMLButtonElement>('.language-option');
+
+      if (!trigger) return;
+
+      // Update trigger label and flag
+      const option = Array.from(options).find(o => o.dataset.language === lang);
+      if (option) {
+        const flag = option.querySelector('.option-flag');
+        const label = option.querySelector('.option-label');
+        if (flag) {
+          const triggerFlag = trigger.querySelector<HTMLElement>('.trigger-flag');
+          if (triggerFlag) triggerFlag.textContent = flag.textContent;
+        }
+        if (label) {
+          const triggerLabel = trigger.querySelector<HTMLElement>('.trigger-label');
+          if (triggerLabel) triggerLabel.textContent = label.textContent;
+        }
+      }
+
+      // Update active state
+      options.forEach(o => {
+        const isActive = o.dataset.language === lang;
+        o.classList.toggle('language-option-active', isActive);
+        o.setAttribute('aria-selected', String(isActive));
+
+        // Update checkmark
+        const checkmark = o.querySelector('.option-checkmark');
+        if (isActive && !checkmark) {
+          const newCheckmark = document.createElement('span');
+          newCheckmark.className = 'option-checkmark';
+          newCheckmark.setAttribute('aria-hidden', 'true');
+          newCheckmark.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" /></svg>';
+          o.appendChild(newCheckmark);
+        } else if (!isActive && checkmark) {
+          checkmark.remove();
+        }
+      });
+
+      container.setAttribute('data-current', lang);
+    });
+  });
 </script>

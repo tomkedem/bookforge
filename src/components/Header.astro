@@ -513,9 +513,15 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   window.addEventListener('language-selector-change', (e: Event) => {
     const customEvent = e as CustomEvent<{ language: string }>;
     if (customEvent.detail?.language) {
+      const lang = customEvent.detail.language;
+      console.log('🔄 Header: language-selector-change received, bridging to language-changed:', lang);
+
+      // Update localStorage first
+      localStorage.setItem('yuval_language', lang);
+
       window.dispatchEvent(
         new CustomEvent('language-changed', {
-          detail: { language: customEvent.detail.language },
+          detail: { language: lang },
           bubbles: true,
         })
       );
