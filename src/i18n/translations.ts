@@ -58,6 +58,16 @@ export const translations: Translations = {
   'home.noBooks':          { he: 'אין ספרים זמינים כרגע', en: 'No books available yet', es: 'No hay libros disponibles aún' },
   'home.noBooksHint':      { he: 'הוסף ספרים לתיקיית output/ כדי להתחיל', en: 'Add books to the output/ folder to get started', es: 'Agrega libros a la carpeta output/ para comenzar' },
 
+  // ── Book page ───────────────────────────────────────────────────────────────
+  'book.chapterOne':       { he: 'פרק אחד',       en: '1 chapter',        es: '1 capítulo' },
+  'book.chapters':         { he: '{{n}} פרקים',   en: '{{n}} chapters',   es: '{{n}} capítulos' },
+  'book.words':            { he: '{{n}} מילים',   en: '{{n}} words',      es: '{{n}} palabras' },
+  'book.sectionOne':       { he: 'סעיף אחד',      en: '1 section',        es: '1 sección' },
+  'book.sections':         { he: '{{n}} סעיפים',  en: '{{n}} sections',   es: '{{n}} secciones' },
+  'book.lecturer':         { he: 'מורה:',        en: 'Lecturer:',        es: 'Instructor:' },
+  'book.editedBy':         { he: 'סוכם וערך על ידי:', en: 'Summarized and edited by:', es: 'Resumido y editado por:' },
+  'book.by':               { he: 'מאת:',          en: 'By:',              es: 'Por:' },
+
   // ── Header ─────────────────────────────────────────────────────────────────
   'header.skipToContent':  { he: 'דלג לתוכן',       en: 'Skip to content',  es: 'Saltar al contenido' },
 

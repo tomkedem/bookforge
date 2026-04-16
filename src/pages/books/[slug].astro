@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import type { Language, Chapter } from '../../types/index';
-import { getLanguageDirection, isValidLanguage } from '../../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage } from '../../utils/language';
 import { discoverAllBooks } from '../../utils/book-discovery';
 import { t } from '../../i18n';
 
@@ -15,25 +15,26 @@ type LocalizedMap = Record<string, string | undefined>;
 function getLocalizedText(
   value: LocalizedMap | undefined,
   lang: string,
-  fallback = 'en'
+  fallback = SOURCE_LANGUAGE
 ): string {
   if (!value) return '';
   return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
 }
 
-function formatChapterCount(count: number): string {
-  return `${count} chapters`;
+function formatChapterCount(count: number, lang: string): string {
+  if (count === 1) return t('book.chapterOne', lang);
+  return t('book.chapters', lang, { n: count.toString() });
 }
 
-function formatWordCount(count: number): string {
-  return `${count} words`;
+function formatWordCount(count: number, lang: string): string {
+  return t('book.words', lang, { n: count.toString() });
 }
 
-function getChapterMetaText(chapter: Chapter): string {
+function getChapterMetaText(chapter: Chapter, lang: string): string {
   const sections = chapter.sections ?? 0;
   const wordCount = chapter.word_count ?? 0;
-  const sectionLabel = sections === 1 ? '1 section' : `${sections} sections`;
-  return `${sectionLabel} • ${wordCount} words`;
+  const sectionLabel = sections === 1 ? t('book.sectionOne', lang) : t('book.sections', lang, { n: sections.toString() });
+  return `${sectionLabel} • ${formatWordCount(wordCount, lang)}`;
 }
 
 export async function getStaticPaths() {
@@ -65,7 +66,7 @@ const requestedLanguage =
     ? urlLang
     : (propLanguage && availableLanguages.includes(propLanguage) ? propLanguage : undefined);
 
-const language = (requestedLanguage ?? (availableLanguages.includes('en') ? 'en' : availableLanguages[0] ?? 'en')) as Language;
+const language = (requestedLanguage ?? (availableLanguages.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : availableLanguages[0] ?? SOURCE_LANGUAGE)) as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
 const book = {
@@ -140,13 +141,13 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
             ]}>
               {book.credits.type === 'lecture_summary' ? (
                 <p>
-                  <span>Lecturer:</span> {' '}{book.credits.lecturer}
+                  <span>{t('book.lecturer', language)}</span> {' '}{book.credits.lecturer}
                   <br />
-                  <span>Summarized and edited by:</span> {' '}{book.credits.editor}
+                  <span>{t('book.editedBy', language)}</span> {' '}{book.credits.editor}
                 </p>
               ) : (
                 <p>
-                  <span>By:</span> {' '}{book.credits.author}
+                  <span>{t('book.by', language)}</span> {' '}{book.credits.author}
                 </p>
               )}
             </div>
@@ -170,11 +171,11 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
 
           <div class="space-y-2 mb-6">
             <p class="text-sm text-yuval-text-tertiary">
-              {formatChapterCount(book.chapters.length)}
+              {formatChapterCount(book.chapters.length, language)}
             </p>
 
             <p class="text-sm text-yuval-text-tertiary">
-              {formatWordCount(totalWords)}
+              {formatWordCount(totalWords, language)}
             </p>
           </div>
         </div>
@@ -240,7 +241,7 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
                       </div>
 
                       <p class="text-sm text-yuval-text-tertiary mt-1">
-                        {getChapterMetaText(chapter)}
+                        {getChapterMetaText(chapter, language)}
                       </p>
                     </div>
 
