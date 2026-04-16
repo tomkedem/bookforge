@@ -10,8 +10,11 @@ interface Props {
 
 const { languages = [SOURCE_LANGUAGE], current = SOURCE_LANGUAGE, class: className } = Astro.props;
 
+console.log('LanguageSelector received languages prop:', languages, 'type:', typeof languages);
+
 // Filter to only selected languages, maintain order from SUPPORTED_LANGUAGES
 const availableLangs = SUPPORTED_LANGUAGES.filter(l => languages.includes(l.code as Language));
+console.log('LanguageSelector filtered languages:', availableLangs.map(l => l.code));
 
 // Get metadata for available languages
 const langOptions = availableLangs.map(meta => ({
