@@ -1,13 +1,13 @@
 ---
 import type { Language } from '../types/index';
-import { LANGUAGES, SUPPORTED_LANGUAGES } from '../utils/language';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../utils/language';
 
 interface Props {
   currentLanguage?: Language;
   class?: string;
 }
 
-const { currentLanguage = LANGUAGES.EN, class: className } = Astro.props;
+const { currentLanguage = SOURCE_LANGUAGE, class: className } = Astro.props;
 ---
 
 <div
