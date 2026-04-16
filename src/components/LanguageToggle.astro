@@ -8,6 +8,8 @@ interface Props {
 }
 
 const { currentLanguage = SOURCE_LANGUAGE, class: className } = Astro.props;
+
+const initialPosition = SUPPORTED_LANGUAGES.findIndex(l => l.code === currentLanguage);
 ---
 
 <div
@@ -16,7 +18,7 @@ const { currentLanguage = SOURCE_LANGUAGE, class: className } = Astro.props;
   aria-label="Language Selection"
 >
   <div class="toggle-track">
-    <div class="toggle-slider" data-position="1"></div>
+    <div class="toggle-slider" data-position={initialPosition}></div>
     {SUPPORTED_LANGUAGES.map((lang, index) => (
       <button
         type="button"
