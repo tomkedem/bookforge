@@ -70,10 +70,10 @@ const categoryAttrs = Object.fromEntries(
   SUPPORTED_LANGUAGES.map(l => [`data-category-${l.code}`, allCategories[l.code] || displayCategory])
 );
 
-// Get display values (default language fallback)
-const displayTitle = allTitles[DEFAULT_LANGUAGE] || allTitles['en'] || Object.values(allTitles)[0] || '';
-const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || allSubtitles['en'] || Object.values(allSubtitles)[0] || '';
-const displayDescription = allDescriptions[DEFAULT_LANGUAGE] || allDescriptions['en'] || Object.values(allDescriptions)[0] || '';
+// Get display values (default language fallback to source language only)
+const displayTitle = allTitles[DEFAULT_LANGUAGE] || Object.values(allTitles)[0] || '';
+const displaySubtitle = allSubtitles[DEFAULT_LANGUAGE] || Object.values(allSubtitles)[0] || '';
+const displayDescription = allDescriptions[DEFAULT_LANGUAGE] || Object.values(allDescriptions)[0] || '';
 
 // Generate data attributes for all supported languages
 const titleAttrs = Object.fromEntries(
@@ -117,7 +117,7 @@ const bookUrl = `/books/${slug}`;
   <div class="card-content p-3 flex flex-col justify-center">
     <!-- Continue reading indicator -->
     <span class="card-continue hidden text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wide" data-slug={slug}>
-      <span data-he="ממשיך" data-en="Continue" data-es="Continuar">Continue</span>
+      <span data-i18n="home.continueReading">Continue</span>
       <span class="card-continue-chapter"></span>
     </span>
 

@@ -3,6 +3,7 @@
  */
 
 import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { SOURCE_LANGUAGE } from '../utils/language';
 
 // ── Language ────────────────────────────────────────────────────────────────
 
@@ -10,7 +11,7 @@ function getLang(): string {
   return resolveLanguage(
     new URLSearchParams(window.location.search).get('lang')
       || localStorage.getItem('yuval_language')
-      || 'en'
+      || SOURCE_LANGUAGE
   );
 }
 
@@ -46,7 +47,7 @@ function getContext() {
 }
 
 function getLocalizedText(map: Record<string, string>, lang: string): string {
-  return map[lang] ?? map['en'] ?? Object.values(map)[0] ?? '';
+  return map[lang] ?? map[SOURCE_LANGUAGE] ?? Object.values(map)[0] ?? '';
 }
 
 function isLastChapter(): boolean {

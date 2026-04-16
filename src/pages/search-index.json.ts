@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { discoverAllBooks } from '../utils/book-discovery';
-import { SUPPORTED_LANGUAGES } from '../utils/language';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../utils/language';
 
 /** Strip Markdown → plain text */
 function mdToText(md: string): string {
@@ -26,7 +26,7 @@ type LocalizedMap = Record<string, string | undefined>;
 
 function getLocalized(value: LocalizedMap | undefined, lang: string): string {
   if (!value) return '';
-  return value[lang] ?? value['en'] ?? Object.values(value)[0] ?? '';
+  return value[lang] ?? value[SOURCE_LANGUAGE] ?? Object.values(value)[0] ?? '';
 }
 
 export const GET: APIRoute = () => {

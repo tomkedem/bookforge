@@ -9,12 +9,12 @@
  */
 
 import { translations } from './translations';
-import { getSupportedLanguage, getLanguageDirection } from '../utils/language';
+import { getSupportedLanguage, getLanguageDirection, SOURCE_LANGUAGE } from '../utils/language';
 
 export type { Translations } from './translations';
 export { translations } from './translations';
 
-const FALLBACK_LANGUAGE = 'en';
+const FALLBACK_LANGUAGE = SOURCE_LANGUAGE;
 
 function normalizeLang(lang: string | null | undefined): string {
   return (lang || '').trim().toLowerCase();

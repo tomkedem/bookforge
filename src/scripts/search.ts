@@ -7,9 +7,8 @@
  * Dynamic language support via central i18n + search-index.json
  */
 
-import { t, getI18nDirection } from '../i18n';
-import { resolveLanguage } from '../i18n';
-import { SUPPORTED_LANGUAGES } from '../utils/language';
+import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { SOURCE_LANGUAGE, SUPPORTED_LANGUAGES } from '../utils/language';
 
 // ── Language helpers ─────────────────────────────────────────────────────────
 
@@ -17,7 +16,7 @@ function getLang(): string {
   return resolveLanguage(
     new URLSearchParams(window.location.search).get('lang')
       || localStorage.getItem('yuval_language')
-      || 'en'
+      || SOURCE_LANGUAGE
   );
 }
 

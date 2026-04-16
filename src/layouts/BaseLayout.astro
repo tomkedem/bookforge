@@ -5,7 +5,7 @@ import type { Language } from '../types/index';
 import Header from '../components/Header.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
 import BackToTop from '../components/BackToTop.astro';
-import { LANGUAGES } from '../utils/language';
+import { LANGUAGES, getLanguageDirection } from '../utils/language';
 
 interface Props {
   title: string;
@@ -27,7 +27,7 @@ const {
   class: className,
 } = Astro.props;
 
-const isRtl = language === LANGUAGES.HE;
+const isRtl = getLanguageDirection(language) === 'rtl';
 ---
 
 <!doctype html>
@@ -129,13 +129,14 @@ const isRtl = language === LANGUAGES.HE;
         getLanguageFromStorage,
         isValidLanguage,
         applyLanguageToPage,
+        getLanguageDirection,
       } from '../utils/language';
 
       function applyStoredLanguage() {
         const storedLang = getLanguageFromStorage();
         if (isValidLanguage(storedLang)) {
           document.documentElement.lang = storedLang;
-          document.documentElement.dir = storedLang === 'he' ? 'rtl' : 'ltr';
+          document.documentElement.dir = getLanguageDirection(storedLang);
           applyLanguageToPage(storedLang);
         }
       }
@@ -147,7 +148,7 @@ const isRtl = language === LANGUAGES.HE;
         const event = e;
         const lang = event.detail.language;
         document.documentElement.lang = lang;
-        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+        document.documentElement.dir = getLanguageDirection(lang);
         applyLanguageToPage(lang);
       });
     </script>
