@@ -176,13 +176,13 @@ try {
 
   <!-- Chapter content -->
   <div id="chapter-container" data-chapter-id={chapterId} data-book={book} data-word-count={currentChapter.word_count} data-book-title-he={bookData.title_he} data-book-title-en={bookData.title_en} data-total-chapters={allChapters.length} data-dominant-color={bookData.dominantColor} transition:animate="none">
-    <div data-lang="he" class="hidden" dir="rtl" style="text-align: right">
+    <div data-lang="he" class="visible" dir="rtl" style="text-align: right">
       <div class="chapter-content prose prose-lg">
         {chapterContentHe && <Fragment set:html={chapterContentHe} />}
       </div>
     </div>
 
-    <div data-lang="en" class="visible" dir="ltr" style="text-align: left">
+    <div data-lang="en" class="hidden" dir="ltr" style="text-align: left">
       <div class="chapter-content prose prose-lg">
         {chapterContentEn && <Fragment set:html={chapterContentEn} />}
       </div>
