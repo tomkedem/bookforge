@@ -5,7 +5,7 @@ import type { Language } from '../types/index';
 import Header from '../components/Header.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
 import BackToTop from '../components/BackToTop.astro';
-import { LANGUAGES, getLanguageDirection } from '../utils/language';
+import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
   title: string;
@@ -20,7 +20,7 @@ interface Props {
 const {
   title,
   description = 'Yuval - A digital reading platform',
-  language = LANGUAGES.EN,
+  language = SOURCE_LANGUAGE,
   showHeader = true,
   showProgress = false,
   showLanguageToggle = true,
