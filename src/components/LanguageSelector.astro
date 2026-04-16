@@ -35,7 +35,8 @@ function getFlagEmoji(code: string): string {
 }
 
 const currentLang = langOptions.find(l => l.code === current) || langOptions[0];
-const isRtl = getLanguageDirection(current) === 'rtl';
+const isRtl = getLanguageDirection(currentLang.code) === 'rtl';
+
 ---
 
 <div
@@ -45,6 +46,7 @@ const isRtl = getLanguageDirection(current) === 'rtl';
 >
   <!-- Trigger Button -->
   <button
+    type="button"
     class="language-selector-trigger"
     aria-haspopup="listbox"
     aria-expanded="false"
@@ -484,11 +486,17 @@ const isRtl = getLanguageDirection(current) === 'rtl';
     const containers = document.querySelectorAll<HTMLElement>('.language-selector-container');
 
     containers.forEach(container => {
+      if (container.dataset.initialized === 'true') {
+        return;
+      }
+
       const trigger = container.querySelector<HTMLButtonElement>('.language-selector-trigger');
       const panel = container.querySelector<HTMLElement>('.language-selector-panel');
       const options = container.querySelectorAll<HTMLButtonElement>('.language-option');
 
       if (!trigger || !panel || options.length === 0) return;
+
+      container.dataset.initialized = 'true';
 
       const togglePanel = () => {
         const isExpanded = trigger.getAttribute('aria-expanded') === 'true';

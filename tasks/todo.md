@@ -1,5 +1,10 @@
 # tasks/todo.md
 
+## משימה נוכחית - תיקון גילוי שפות לספר Practical Python
+
+- אבחון: LanguageSelector תוקן, אבל הספר `practical-python-for-ai-engineering` עדיין הצהיר ב-`content-structure.json` על `en` ו-`es` למרות שקיימים רק קבצי `he`.
+- פעולה: להעדיף גילוי שפות לפי קבצי Markdown קיימים בפועל, ולסנן `book.languages` ישן או שגוי.
+
 ## משימה שהושלמה: "Practical Python for AI Engineering" (Hebrew Build)
 
 ### שלבים שהושלמו

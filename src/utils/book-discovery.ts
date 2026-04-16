@@ -212,6 +212,18 @@ function loadBookMeta(bookDir: string, slug: string): {
         return hasFile || Boolean(titles[lang]);
       });
 
+      const normalizedBookLanguages = Array.isArray(book.languages)
+        ? book.languages.filter((lang): lang is string => typeof lang === 'string' && LANGUAGE_CODES.includes(lang))
+        : [];
+
+      const languages = normalizedBookLanguages.length > 0
+        ? normalizedBookLanguages.filter((lang) => availableLanguages.includes(lang))
+        : availableLanguages;
+
+      if (!languages.includes(SOURCE_LANGUAGE) && availableLanguages.includes(SOURCE_LANGUAGE)) {
+        languages.unshift(SOURCE_LANGUAGE);
+      }
+
       let category: Record<string, string>;
       if (typeof book.category === 'object' && book.category !== null) {
         category = book.category;
@@ -232,7 +244,7 @@ function loadBookMeta(bookDir: string, slug: string): {
         subtitles,
         descriptions,
         category,
-        languages: book.languages || availableLanguages,
+        languages: languages.length > 0 ? languages : [SOURCE_LANGUAGE],
         credits: book.credits,
       };
     } catch {

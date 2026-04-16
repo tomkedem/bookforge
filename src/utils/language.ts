@@ -1,5 +1,4 @@
 import type { Language, LanguageContext, LanguageMeta, LanguageName } from '../types/index';
-import { applyTranslations } from '../i18n';
 
 /**
  * Master list of supported languages.
@@ -138,8 +137,15 @@ export const setLanguageToStorage = (lang: Language): void => {
  * Apply language globally
  */
 export const applyLanguageToPage = (lang: Language): void => {
-  applyTranslations(document, lang);
   setLanguageToStorage(lang);
+
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  void import('../i18n').then(({ applyTranslations }) => {
+    applyTranslations(document, lang);
+  });
 };
 
 /**
