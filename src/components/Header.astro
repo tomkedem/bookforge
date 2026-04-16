@@ -70,7 +70,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       <ThemeToggle />
       {showLanguageToggle && (
         <LanguageSelector
-          languages={availableLanguages}
+          languages={availableLanguages || [SOURCE_LANGUAGE]}
           current={language}
         />
       )}
