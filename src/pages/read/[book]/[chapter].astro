@@ -99,7 +99,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   <div id="chapter-sticky-stack" class="chapter-sticky-stack">
     <div id="chapter-meta-bar" class="chapter-meta-bar">
       {langs.map(l => (
-        <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
+        <div
+          data-lang={l}
+          class={l === language ? 'visible' : 'hidden'}
+          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+        >
           <ChapterMeta
             wordCount={current.word_count}
             readingTimeMinutes={Math.ceil(current.word_count / 200)}
@@ -112,7 +116,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 
     <div id="breadcrumb-container" class="breadcrumb-container">
       {langs.map(l => (
-        <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
+        <div
+          data-lang={l}
+          class={l === language ? 'visible' : 'hidden'}
+          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+        >
           <Breadcrumbs
             language={l}
             items={[
@@ -128,7 +136,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     <div id="chapter-header" class="chapter-header">
       <div class="chapter-header-card">
         {langs.map(l => (
-          <div data-lang={l} class={l === language ? 'visible' : 'hidden'}>
+          <div
+            data-lang={l}
+            class={l === language ? 'visible' : 'hidden'}
+            dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+          >
             <div class="header-title-row">
               <div class="chapter-number-badge">
                 <span class="chapter-number">{chapterId}</span>
@@ -262,16 +274,21 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 .chapter-title-group {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
 }
 
 .chapter-label {
-  display: inline-block;
+  display: block;
   margin-bottom: 0.2rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--yuval-text-tertiary);
+  text-align: start;
 }
 
 .chapter-title {
@@ -279,6 +296,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   font-size: 1.15rem;
   line-height: 1.25;
   color: var(--yuval-chapter-title);
+  text-align: start;
 }
 
 .progress-badge {
@@ -359,6 +377,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 
   .chapter-title-group {
     display: flex;
+    flex-direction: row;
     align-items: baseline;
     gap: 0.3rem;
     min-width: 0;

@@ -67,6 +67,8 @@ const isRtl = getLanguageDirection(language) === 'rtl';
         data-nav="prev"
         data-chapter-titles={JSON.stringify(previousChapter.titles)}
         data-prev-arrow={isRtl ? '→' : '←'}
+        title={getLocalizedText(previousChapter.titles, language)}
+        aria-label={getLocalizedText(previousChapter.titles, language)}
       >
         <span class="chapter-nav-arrow">{isRtl ? '→' : '←'}</span>
         <span class="chapter-nav-label">{getLocalizedText(previousChapter.titles, language)}</span>
@@ -100,6 +102,8 @@ const isRtl = getLanguageDirection(language) === 'rtl';
         data-nav="next"
         data-chapter-titles={JSON.stringify(nextChapter.titles)}
         data-next-arrow={isRtl ? '←' : '→'}
+        title={getLocalizedText(nextChapter.titles, language)}
+        aria-label={getLocalizedText(nextChapter.titles, language)}
       >
         <span class="chapter-nav-label">{getLocalizedText(nextChapter.titles, language)}</span>
         <span class="chapter-nav-arrow">{isRtl ? '←' : '→'}</span>
@@ -113,5 +117,9 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     max-width: var(--reading-content-width, 720px);
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .chapter-nav-link .chapter-nav-label {
+    text-align: start;
   }
 </style>

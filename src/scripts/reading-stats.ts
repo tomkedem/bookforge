@@ -129,6 +129,7 @@ function buildWidget(): void {
   btn.id = 'stats-fab-btn';
   btn.type = 'button';
   btn.setAttribute('aria-label', tr('stats.title'));
+  btn.title = tr('stats.title');
   btn.innerHTML = '📊';
   document.body.appendChild(btn);
 

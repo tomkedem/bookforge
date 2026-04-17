@@ -277,6 +277,7 @@ function buildIndicator(): void {
   el.id = 'goal-indicator';
   el.type = 'button';
   el.setAttribute('aria-label', tr('goal.title'));
+  el.title = tr('goal.title');
   el.innerHTML = `
     <svg id="goal-ring" viewBox="0 0 44 44">
       <circle id="goal-ring-track" cx="22" cy="22" r="19"/>

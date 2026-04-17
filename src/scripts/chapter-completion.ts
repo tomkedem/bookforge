@@ -143,7 +143,15 @@ function injectStyles(): void {
       border-top: 1px solid var(--yuval-border, #e5e7eb);
       padding-top: 40px;
       animation: ccSlideUp 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      text-align: start;
     }
+    #chapter-completion[dir="ltr"] { direction: ltr; text-align: left; }
+    #chapter-completion[dir="rtl"] { direction: rtl; text-align: right; }
+    #chapter-completion[dir="ltr"] .cc-highlight-text,
+    #chapter-completion[dir="ltr"] .cc-next-title,
+    #chapter-completion[dir="ltr"] .cc-next-label,
+    #chapter-completion[dir="ltr"] .cc-highlights-title,
+    #chapter-completion[dir="ltr"] .cc-no-highlights { text-align: left; }
 
     .cc-badge {
       display: inline-flex;
@@ -383,5 +391,11 @@ export function initChapterCompletion(): void {
 
   window.addEventListener('chapter-content-swapped', () => {
     setTimeout(watchEnd, 200);
+  });
+
+  window.addEventListener('language-changed', () => {
+    if (document.getElementById('chapter-completion')) {
+      setTimeout(injectPanel, 0);
+    }
   });
 }

@@ -429,6 +429,29 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         margin-right: 0;
       }
 
+      /* Force content text to follow the container's direction.
+         Uses high-specificity selector + !important to defeat any inherited
+         text-align: center from legacy Word-ingest wrappers. */
+      :global([data-lang][dir="ltr"] .chapter-content),
+      :global([data-lang][dir="ltr"] .chapter-content *) {
+        text-align: start !important;
+        direction: ltr;
+      }
+      :global([data-lang][dir="rtl"] .chapter-content),
+      :global([data-lang][dir="rtl"] .chapter-content *) {
+        text-align: start !important;
+        direction: rtl;
+      }
+      /* Preserve intentional center/right in code, tables, figures */
+      :global([data-lang] .chapter-content pre),
+      :global([data-lang] .chapter-content code),
+      :global([data-lang] .chapter-content figure),
+      :global([data-lang] .chapter-content table),
+      :global([data-lang] .chapter-content .code-runner-wrapper),
+      :global([data-lang] .chapter-content .code-block-wrapper) {
+        text-align: initial !important;
+      }
+
       @media (min-width: 1024px) {
         .reading-article {
           margin-left: 320px;

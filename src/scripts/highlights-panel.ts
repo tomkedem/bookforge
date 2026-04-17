@@ -84,20 +84,30 @@ function getCurrentBook(): string {
   return document.getElementById('chapter-container')?.dataset.book || '';
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getAllHighlights(): ChapterHighlights[] {
   const book = getCurrentBook();
   if (!book) return [];
 
-  const prefix = `yuval_hl_${book}_ch`;
+  const lang = getLang();
+  // Legacy keys have no _lang suffix; new keys end with _<lang>.
+  const pattern = new RegExp(`^yuval_hl_${escapeRegex(book)}_ch([^_]+)(?:_(.+))?$`);
   const result: ChapterHighlights[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (!key?.startsWith(prefix)) continue;
+    if (!key) continue;
+    const m = key.match(pattern);
+    if (!m) continue;
 
-    const rest = key.slice(prefix.length);
-    const [chStr] = rest.split('_');
-    const chapterId = parseInt(chStr, 10);
+    const keyLang = m[2];
+    // If key is language-scoped, show only highlights for current language.
+    if (keyLang && keyLang !== lang) continue;
+
+    const chapterId = parseInt(m[1], 10);
     if (isNaN(chapterId)) continue;
 
     try {

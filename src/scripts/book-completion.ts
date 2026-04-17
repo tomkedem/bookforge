@@ -216,4 +216,12 @@ export function initBookCompletion() {
   window.addEventListener('chapter-content-swapped', () => {
     setTimeout(watchLastChapter, 200);
   });
+
+  window.addEventListener('language-changed', () => {
+    const existing = document.getElementById('book-completion-overlay');
+    if (existing) {
+      existing.remove();
+      show();
+    }
+  });
 }

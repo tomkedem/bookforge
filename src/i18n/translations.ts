@@ -205,6 +205,20 @@ export const translations: Translations = {
   'stats.streakDays':      { he: '{{n}} ימים',      en: '{{n}} days',       es: '{{n}} días' },
   'stats.close':           { he: 'סגור',            en: 'Close',            es: 'Cerrar' },
 
+  // ── Chapter / Book Completion ───────────────────────────────────────────────
+  'completion.chapterComplete': { he: 'פרק {{n}} הושלם ✓', en: 'Chapter {{n}} complete ✓', es: 'Capítulo {{n}} completado ✓' },
+  'completion.highlightsTitle': { he: 'ההדגשות שלך בפרק זה', en: 'Your highlights from this chapter', es: 'Tus resaltados de este capítulo' },
+  'completion.noHighlights': { he: 'לא סימנת שום דבר בפרק זה', en: "You didn't highlight anything in this chapter", es: 'No resaltaste nada en este capítulo' },
+  'completion.next':       { he: 'לפרק הבא',      en: 'Next chapter',     es: 'Siguiente capítulo' },
+  'completion.title':      { he: '🎉 סיימת את הספר!', en: '🎉 You finished the book!', es: '🎉 ¡Terminaste el libro!' },
+  'completion.subtitle':   { he: 'קוראים כמוך הופכים סופרים למורים.', en: 'Readers like you turn authors into teachers.', es: 'Lectores como tú convierten a los autores en maestros.' },
+  'completion.chapters':   { he: 'פרקים',         en: 'chapters',         es: 'capítulos' },
+  'completion.words':      { he: 'מילים',         en: 'words',            es: 'palabras' },
+  'completion.highlights': { he: 'הדגשות',        en: 'highlights',       es: 'resaltados' },
+  'completion.streak':     { he: 'ימי רצף',        en: 'day streak',       es: 'días de racha' },
+  'completion.share':      { he: 'שתף הישג',      en: 'Share achievement', es: 'Compartir logro' },
+  'completion.library':    { he: 'חזרה לספרייה',   en: 'Back to library',   es: 'Volver a la biblioteca' },
+
   // ── General / Shared ────────────────────────────────────────────────────────
   'general.close':         { he: 'סגור',            en: 'Close',            es: 'Cerrar' },
   'general.of':            { he: 'מתוך',            en: 'of',               es: 'de' },
