@@ -249,14 +249,14 @@ const categories = [
     const estPct = Math.min(95, Math.round((bestScroll / 3000) * 100));
 
     const bookCard = document.querySelector<HTMLElement>(`[data-book-slug="${bookSlug}"]`);
-    const titleEl = bookCard?.querySelector<HTMLElement>('[data-book-titles]');
+    const titleEl = bookCard?.querySelector<HTMLElement>('[data-book-title]');
     let bookTitle = bookSlug;
 
-    if (titleEl?.dataset.bookTitles) {
-      try {
-        const titles = JSON.parse(titleEl.dataset.bookTitles);
-        bookTitle = getLocalizedText(titles, lang);
-      } catch {}
+    if (titleEl) {
+      bookTitle =
+        titleEl.dataset[lang as keyof typeof titleEl.dataset] ||
+        titleEl.textContent?.trim() ||
+        bookSlug;
     }
 
     const url = `/read/${bookSlug}/${chapterId}`;
@@ -286,19 +286,31 @@ const categories = [
     banner.classList.remove('hidden');
   }
 
+  function updateBooksCountLabel() {
+    const el = document.getElementById('books-count-label');
+    if (!el) return;
+    const count = Number(el.dataset.bookCount || '0');
+    const lang = getLang();
+    const word = t(count === 1 ? 'home.bookAvailable' : 'home.booksAvailable', lang);
+    el.textContent = `${count} ${word}`;
+  }
+
   initCategoryFilter();
   updateCategoryLabels();
+  updateBooksCountLabel();
   buildContinueReading();
 
   document.addEventListener('astro:after-swap', () => {
     initCategoryFilter();
     updateCategoryLabels();
+    updateBooksCountLabel();
     buildContinueReading();
   });
 
   window.addEventListener('language-changed', (e: Event) => {
     const lang = (e as CustomEvent<{ language: string }>).detail?.language;
     updateCategoryLabels();
+    updateBooksCountLabel();
     buildContinueReading();
   });
 </script>
