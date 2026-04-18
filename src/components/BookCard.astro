@@ -117,12 +117,13 @@ const bookUrl = `/books/${slug}`;
   <div class="card-content p-3 flex flex-col justify-center">
     <!-- Continue reading indicator -->
     <span class="card-continue hidden text-[10px] text-indigo-500 dark:text-indigo-400 font-semibold uppercase tracking-wide" data-slug={slug}>
-      <span data-i18n="home.continueReading">Continue</span>
+      <span class="card-continue-label" data-i18n="home.continueShort">Continue</span>
       <span class="card-continue-chapter"></span>
     </span>
 
     <h3
       class="font-heading font-semibold text-sm leading-tight text-yuval-text line-clamp-2"
+      data-book-title
       {...titleAttrs}
     >
       {displayTitle}
@@ -131,6 +132,7 @@ const bookUrl = `/books/${slug}`;
     {hasSubtitle && (
       <p
         class="text-xs text-yuval-text-muted leading-snug line-clamp-2 mt-1"
+        data-book-subtitle
         {...subtitleAttrs}
       >
         {displaySubtitle}
@@ -196,15 +198,38 @@ const bookUrl = `/books/${slug}`;
 </style>
 
 <script>
-  function initBookCards() {
-    // Links no longer need ?lang= - language is determined by toggle position
+  import { t, resolveLanguage } from '../i18n';
+  import { SOURCE_LANGUAGE } from '../utils/language';
 
-    // Show reading progress on cards
+  function getLang(): string {
+    return resolveLanguage(localStorage.getItem('yuval_language') || SOURCE_LANGUAGE);
+  }
+
+  function localizeCardTexts() {
+    const lang = getLang();
+
+    document.querySelectorAll<HTMLElement>('[data-book-title]').forEach(el => {
+      const localized = el.dataset[lang as keyof typeof el.dataset];
+      if (localized) el.textContent = localized;
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-book-subtitle]').forEach(el => {
+      const localized = el.dataset[lang as keyof typeof el.dataset];
+      if (localized) el.textContent = localized;
+    });
+  }
+
+  function initBookCards() {
+    localizeCardTexts();
+
+    const lang = getLang();
+    const continueLabel = t('home.continueShort', lang);
+    const chapterShort = t('home.chapterShort', lang);
+
     document.querySelectorAll<HTMLElement>('.book-card[data-book-slug]').forEach(card => {
       const slug = card.dataset.bookSlug;
       if (!slug) return;
 
-      // Find all reading progress keys for this book
       const prefix = `yuval_reading_progress_${slug}_ch`;
       let lastChapter = 0;
       let hasProgress = false;
@@ -223,16 +248,15 @@ const bookUrl = `/books/${slug}`;
       }
 
       if (hasProgress) {
-        // Show "Continue reading" badge
         const badge = card.querySelector<HTMLElement>('.card-continue[data-slug="' + slug + '"]');
+        const labelEl = card.querySelector<HTMLElement>('.card-continue-label');
         const chapterSpan = card.querySelector<HTMLElement>('.card-continue-chapter');
         if (badge) badge.classList.remove('hidden');
-        if (chapterSpan) chapterSpan.textContent = ` · Ch. ${lastChapter}`;
+        if (labelEl) labelEl.textContent = continueLabel;
+        if (chapterSpan) chapterSpan.textContent = ` · ${chapterShort} ${lastChapter}`;
 
-        // Animate progress bar (chapter number as rough proxy)
         const fill = card.querySelector<HTMLElement>('.card-progress-fill[data-slug="' + slug + '"]');
         if (fill) {
-          // Use lastChapter as a fraction of likely total (rough visual only)
           const pct = Math.min(95, lastChapter * 15);
           requestAnimationFrame(() => { fill.style.width = `${pct}%`; });
         }

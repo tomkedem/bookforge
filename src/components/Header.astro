@@ -69,6 +69,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
     <div class="quote-container hidden sm:block">
       <p class="quote-text" id="header-quote"></p>
+      <cite class="quote-author" id="header-quote-author"></cite>
     </div>
 
     <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
@@ -86,8 +87,10 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 <div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar">
   <div class="mobile-quote-track">
     <span class="mobile-quote-text" id="mobile-quote"></span>
+    <span class="mobile-quote-author-inline" id="mobile-quote-author"></span>
     <span class="mobile-quote-separator">✦</span>
     <span class="mobile-quote-text" id="mobile-quote-duplicate"></span>
+    <span class="mobile-quote-author-inline" id="mobile-quote-author-duplicate"></span>
     <span class="mobile-quote-separator">✦</span>
   </div>
 </div>
@@ -258,16 +261,59 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   .quote-container {
     flex: 1;
     display: none;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 0 24px;
     max-width: 700px;
     margin: 0 auto;
+    gap: 2px;
   }
 
   @media (min-width: 640px) {
     .quote-container {
       display: flex;
+    }
+  }
+
+  .quote-author {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.78rem;
+    font-style: normal;
+    font-weight: 500;
+    color: #8b7355;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    transition: opacity 500ms var(--ease-standard);
+    text-align: center;
+  }
+
+  .quote-author:empty {
+    display: none;
+  }
+
+  .quote-author.fade-out {
+    opacity: 0;
+  }
+
+  .quote-author::before {
+    content: '— ';
+  }
+
+  :global(.dark) .quote-author {
+    color: #c9a96e;
+  }
+
+  @media (min-width: 768px) {
+    .quote-author {
+      font-size: 0.82rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .quote-author {
+      font-size: 0.88rem;
     }
   }
 
@@ -422,6 +468,30 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     color: #8b7355;
   }
 
+  .mobile-quote-author-inline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.68rem;
+    font-style: normal;
+    font-weight: 500;
+    color: #8b7355;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 4px;
+    opacity: 0.85;
+  }
+
+  .mobile-quote-author-inline:empty {
+    display: none;
+  }
+
+  .mobile-quote-author-inline::before {
+    content: '— ';
+  }
+
+  :global(.dark) .mobile-quote-author-inline {
+    color: #c9a96e;
+  }
+
   .mobile-quote-bar:hover .mobile-quote-track,
   .mobile-quote-bar:active .mobile-quote-track {
     animation-play-state: paused;
@@ -447,10 +517,27 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
   let lastQuoteIndex = -1;
 
+  const GENERIC_AUTHORS = new Set(['Original', 'מקורי', 'Original.', 'Anonymous']);
+
+  function normalizeQuote(raw: unknown): { text: string; author: string } {
+    if (typeof raw === 'string') {
+      return { text: raw, author: '' };
+    }
+    if (raw && typeof raw === 'object') {
+      const obj = raw as { text?: string; author?: string };
+      const author = obj.author && !GENERIC_AUTHORS.has(obj.author) ? obj.author : '';
+      return { text: obj.text ?? '', author };
+    }
+    return { text: '', author: '' };
+  }
+
   function showQuote() {
     const quoteEl = document.getElementById('header-quote');
+    const authorEl = document.getElementById('header-quote-author');
     const mobileQuote = document.getElementById('mobile-quote');
     const mobileQuoteDup = document.getElementById('mobile-quote-duplicate');
+    const mobileAuthor = document.getElementById('mobile-quote-author');
+    const mobileAuthorDup = document.getElementById('mobile-quote-author-duplicate');
     const mobileBar = document.getElementById('mobile-quote-bar');
     const logoLink = document.getElementById('site-logo-link');
 
@@ -466,8 +553,9 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
     lastQuoteIndex = newIndex;
 
-    const randomQuote = quotes[newIndex];
-    const quoteWithMarks = `"${randomQuote}"`;
+    const { text, author } = normalizeQuote(quotes[newIndex]);
+    const quoteWithMarks = `"${text}"`;
+    const isRtl = document.documentElement.dir === 'rtl';
 
     if (logoLink) {
       logoLink.setAttribute('aria-label', getHeaderAriaLabel(lang));
@@ -475,28 +563,31 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 
     if (quoteEl) {
       quoteEl.classList.add('fade-out');
+      if (authorEl) authorEl.classList.add('fade-out');
       setTimeout(() => {
         quoteEl.textContent = quoteWithMarks;
-        quoteEl.dir = document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr';
+        quoteEl.dir = isRtl ? 'rtl' : 'ltr';
         quoteEl.classList.remove('fade-out');
+        if (authorEl) {
+          authorEl.textContent = author;
+          authorEl.dir = isRtl ? 'rtl' : 'ltr';
+          authorEl.classList.remove('fade-out');
+        }
       }, 500);
     }
 
     if (mobileBar) {
-      if (document.documentElement.dir === 'rtl') {
+      if (isRtl) {
         mobileBar.classList.add('rtl');
       } else {
         mobileBar.classList.remove('rtl');
       }
     }
 
-    if (mobileQuote) {
-      mobileQuote.textContent = quoteWithMarks;
-    }
-
-    if (mobileQuoteDup) {
-      mobileQuoteDup.textContent = quoteWithMarks;
-    }
+    if (mobileQuote) mobileQuote.textContent = quoteWithMarks;
+    if (mobileQuoteDup) mobileQuoteDup.textContent = quoteWithMarks;
+    if (mobileAuthor) mobileAuthor.textContent = author;
+    if (mobileAuthorDup) mobileAuthorDup.textContent = author;
   }
 
   function initHeaderQuotes() {
@@ -508,7 +599,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     window.__yuvalHeaderQuotesInitialized = true;
 
     showQuote();
-    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 5000);
+    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 10000);
 
     window.addEventListener('language-changed', showQuote);
     document.addEventListener('astro:page-load', showQuote);

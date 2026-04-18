@@ -68,6 +68,8 @@ export const translations: Translations = {
   'home.all':              { he: 'הכל',            en: 'All',              es: 'Todos' },
   'home.continueReading':  { he: 'המשך קריאה',     en: 'Continue Reading', es: 'Continuar leyendo' },
   'home.chapter':          { he: 'פרק',            en: 'Chapter',          es: 'Capítulo' },
+  'home.chapterShort':     { he: 'פרק',            en: 'Ch.',              es: 'Cap.' },
+  'home.continueShort':    { he: 'המשך',           en: 'Continue',         es: 'Continuar' },
   'home.noBooks':          { he: 'אין ספרים זמינים כרגע', en: 'No books available yet', es: 'No hay libros disponibles aún' },
   'home.noBooksHint':      { he: 'הוסף ספרים לתיקיית output/ כדי להתחיל', en: 'Add books to the output/ folder to get started', es: 'Agrega libros a la carpeta output/ para comenzar' },
 

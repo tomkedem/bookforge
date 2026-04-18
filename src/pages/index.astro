@@ -78,10 +78,10 @@ const categories = [
   <div class="min-h-screen bg-yuval-bg px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <header class="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class:list={[isRtl && 'text-right']}>
-        <h1 class="font-heading font-bold text-2xl sm:text-3xl text-yuval-text">
+        <h1 class="font-heading font-bold text-2xl sm:text-3xl text-yuval-text" data-i18n="home.title">
           {t('home.title', language)}
         </h1>
-        <p class="text-sm text-yuval-text-secondary mt-1">
+        <p class="text-sm text-yuval-text-secondary mt-1" id="books-count-label" data-book-count={books.length}>
           {books.length} {books.length === 1 ? t('home.bookAvailable', language) : t('home.booksAvailable', language)}
         </p>
       </div>
