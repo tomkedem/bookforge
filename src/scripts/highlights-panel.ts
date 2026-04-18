@@ -1,14 +1,14 @@
-import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { t, getI18nDirection } from '../i18n';
+import {
+  getLang,
+  getCurrentBook,
+  getCurrentChapter,
+  getContentRoot,
+  resolveChapterTitleByTitles,
+  waitForContentReady,
+} from './reading-location';
 
 // ── Language ────────────────────────────────────────────────────────────────
-
-function getLang(): string {
-  return resolveLanguage(
-    new URLSearchParams(window.location.search).get('lang')
-      || localStorage.getItem('yuval_language')
-      || 'en'
-  );
-}
 
 function tr(key: string, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
@@ -34,11 +34,21 @@ interface HighlightData {
   color: string;
   timestamp: number;
   note?: string;
+  anchor?: string;
+  sectionHeading?: string;
 }
 
 interface ChapterHighlights {
   chapterId: number;
   highlights: HighlightData[];
+}
+
+const PENDING_HL_KEY = 'yuval_pending_highlight';
+
+declare global {
+  interface Window {
+    yuvalLoadChapter?: (url: string) => Promise<void> | void;
+  }
 }
 
 // ── Colors ──────────────────────────────────────────────────────────────────
@@ -80,12 +90,36 @@ const COLOR_DARK_TEXT: Record<HighlightColor, string> = {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function getCurrentBook(): string {
-  return document.getElementById('chapter-container')?.dataset.book || '';
-}
-
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showHlToast(msg: string): void {
+  const el = document.createElement('div');
+  el.className = 'bm-toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  setTimeout(() => {
+    el.classList.remove('visible');
+    setTimeout(() => el.remove(), 300);
+  }, 1800);
+}
+
+function countHighlights(): number {
+  return getAllHighlights().reduce((sum, c) => sum + c.highlights.length, 0);
+}
+
+function updateBadge(): void {
+  const badge = document.getElementById('highlights-fab-badge');
+  if (!badge) return;
+  const total = countHighlights();
+  badge.textContent = String(total);
+  badge.style.display = total > 0 ? '' : 'none';
 }
 
 function getAllHighlights(): ChapterHighlights[] {
@@ -117,6 +151,109 @@ function getAllHighlights(): ChapterHighlights[] {
   }
 
   return result.sort((a, b) => a.chapterId - b.chapterId);
+}
+
+// ── Chapter label ───────────────────────────────────────────────────────────
+
+function formatHighlightChapterLabel(chapterId: number): string {
+  if (!chapterId) return tr('bookmarks.chapterUnknown');
+
+  const sameBook = !!getCurrentBook();
+  const title = resolveChapterTitleByTitles(undefined, chapterId, sameBook);
+  const numberLabel = tr('highlights.chapter', { n: chapterId });
+  return title ? `${numberLabel} · ${title}` : numberLabel;
+}
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+
+function scrollToHighlightTarget(hl: HighlightData): boolean {
+  const root = getContentRoot() || document;
+
+  const byId = root.querySelector<HTMLElement>(`[data-hl-id="${CSS.escape(hl.id)}"]`);
+  if (byId) {
+    byId.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    byId.classList.add('hl-pulse');
+    setTimeout(() => byId.classList.remove('hl-pulse'), 1600);
+    return true;
+  }
+
+  if (hl.anchor) {
+    const byAnchor = root.querySelector<HTMLElement>(`[data-bm-anchor="${CSS.escape(hl.anchor)}"]`);
+    if (byAnchor) {
+      byAnchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      byAnchor.classList.add('hl-pulse');
+      setTimeout(() => byAnchor.classList.remove('hl-pulse'), 1600);
+      showHlToast(tr('bookmarks.approximate'));
+      return true;
+    }
+  }
+
+  const firstHead = (root as Document | HTMLElement)
+    .querySelector<HTMLElement>('#chapter-container h2, #chapter-container h3');
+  if (firstHead) {
+    firstHead.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showHlToast(tr('bookmarks.approximate'));
+    return true;
+  }
+
+  showHlToast(tr('bookmarks.approximate'));
+  return false;
+}
+
+async function navigateToHighlight(hl: HighlightData, chapterId: number): Promise<void> {
+  const book = getCurrentBook();
+  if (!chapterId) {
+    showHlToast(tr('bookmarks.chapterUnknown'));
+    return;
+  }
+
+  const sameChapter = chapterId === getCurrentChapter();
+
+  if (!sameChapter) {
+    const url = `/read/${book}/${chapterId}`;
+    if (typeof window.yuvalLoadChapter === 'function') {
+      await window.yuvalLoadChapter(url);
+    } else {
+      try {
+        sessionStorage.setItem(PENDING_HL_KEY, JSON.stringify({ id: hl.id, anchor: hl.anchor, chapterId, book }));
+      } catch {}
+      window.location.href = url;
+      return;
+    }
+  }
+
+  await waitForContentReady();
+  scrollToHighlightTarget(hl);
+  closePanel();
+}
+
+function consumePendingHighlight(): void {
+  let raw: string | null = null;
+  try {
+    raw = sessionStorage.getItem(PENDING_HL_KEY);
+    if (raw) sessionStorage.removeItem(PENDING_HL_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+
+  let pending: { id: string; anchor?: string; chapterId: number; book: string };
+  try {
+    pending = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!pending || pending.book !== getCurrentBook() || pending.chapterId !== getCurrentChapter()) return;
+
+  waitForContentReady().then(() => {
+    scrollToHighlightTarget({
+      id: pending.id,
+      text: '',
+      color: 'yellow',
+      timestamp: 0,
+      anchor: pending.anchor,
+    });
+  });
 }
 
 // ── Panel ───────────────────────────────────────────────────────────────────
@@ -170,7 +307,8 @@ function renderPanel(): void {
 
   chapters.forEach(({ chapterId, highlights }) => {
     const group = document.createElement('div');
-    group.innerHTML = `<div>${tr('highlights.chapter', { n: chapterId })}</div>`;
+    const chapterLabel = formatHighlightChapterLabel(chapterId);
+    group.innerHTML = `<div class="hl-chapter-label">${escapeHtml(chapterLabel)}</div>`;
 
     highlights.forEach(hl => {
       const color: HighlightColor = isHighlightColor(hl.color) ? hl.color : 'yellow';
@@ -180,15 +318,32 @@ function renderPanel(): void {
       const emoji = COLOR_EMOJI[color];
 
       const item = document.createElement('div');
+      item.className = 'hl-item';
       item.style.background = bg;
+      item.style.cursor = 'pointer';
+      item.setAttribute('role', 'button');
+      item.tabIndex = 0;
+
+      const meta = hl.sectionHeading
+        ? `${chapterLabel} › ${hl.sectionHeading}`
+        : chapterLabel;
 
       item.innerHTML = `
         <span>${emoji}</span>
         <div>
-          <div style="color:${text}">${hl.text}</div>
-          <div>${tr(`highlight.${color}`)}</div>
+          <div style="color:${text}">${escapeHtml(hl.text)}</div>
+          <div class="hl-item-meta">${escapeHtml(meta)}</div>
         </div>
       `;
+
+      const go = () => { navigateToHighlight(hl, chapterId); };
+      item.addEventListener('click', go);
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          go();
+        }
+      });
 
       group.appendChild(item);
     });
@@ -226,6 +381,13 @@ export function initHighlightsPanel(): void {
   btn.textContent = '💡';
   applyLabels(btn);
   btn.onclick = openPanel;
+
+  const badge = document.createElement('span');
+  badge.id = 'highlights-fab-badge';
+  badge.className = 'yuval-fab-badge';
+  badge.style.display = 'none';
+  btn.appendChild(badge);
+
   document.body.appendChild(btn);
 
   const overlay = document.createElement('div');
@@ -237,8 +399,28 @@ export function initHighlightsPanel(): void {
   panel.id = 'hl-panel';
   document.body.appendChild(panel);
 
+  updateBadge();
+
+  const onChange = () => {
+    updateBadge();
+    if (panel.classList.contains('open')) renderPanel();
+  };
+
+  window.addEventListener('yuval-highlights-changed', onChange);
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('yuval_hl_')) onChange();
+  });
+
   window.addEventListener('language-changed', () => {
     applyLabels(btn);
+    updateBadge();
     if (panel.classList.contains('open')) renderPanel();
   });
+
+  window.addEventListener('chapter-content-swapped', () => {
+    updateBadge();
+    consumePendingHighlight();
+  });
+
+  consumePendingHighlight();
 }

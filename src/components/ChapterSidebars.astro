@@ -1117,6 +1117,7 @@ function serializeTitles(chapter: Chapter): string {
   async function loadChapterContent(url) {
     const container = document.getElementById('chapter-container');
     const header = document.getElementById('chapter-header');
+    const topStrip = document.getElementById('chapter-top-strip');
 
     if (!container) {
       window.location.href = url;
@@ -1135,6 +1136,7 @@ function serializeTitles(chapter: Chapter): string {
 
       const newContainer = doc.getElementById('chapter-container');
       const newHeader = doc.getElementById('chapter-header');
+      const newTopStrip = doc.getElementById('chapter-top-strip');
 
       window.scrollTo({ top: 0, behavior: 'instant' });
 
@@ -1146,6 +1148,10 @@ function serializeTitles(chapter: Chapter): string {
 
       if (newHeader && header) {
         header.innerHTML = newHeader.innerHTML;
+      }
+
+      if (newTopStrip && topStrip) {
+        topStrip.innerHTML = newTopStrip.innerHTML;
       }
 
       applyLanguageVisibility(getCurrentLang());

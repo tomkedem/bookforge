@@ -15,11 +15,9 @@ function getLang(): string {
 // ── Init ────────────────────────────────────────────────────────────────────
 
 export function initStickyHeader(controller: AbortController) {
-  const headerEl = document.getElementById('chapter-header');
-  if (!headerEl) return;
+  const topStrip = document.getElementById('chapter-top-strip');
+  if (!topStrip) return;
 
-  const header = headerEl;
-  const stickyStack = document.getElementById('chapter-sticky-stack');
   const siteHeader = document.getElementById('site-header');
   const progressFill = document.getElementById('header-progress-fill');
   const progressBadges = Array.from(document.querySelectorAll<HTMLElement>('.progress-badge'));
@@ -27,6 +25,8 @@ export function initStickyHeader(controller: AbortController) {
   function updateStickyOffset(): void {
     const top = siteHeader?.offsetHeight ?? 64;
     document.documentElement.style.setProperty('--reading-sticky-top', `${top}px`);
+    const stripH = topStrip.offsetHeight;
+    document.documentElement.style.setProperty('--top-strip-h', `${stripH}px`);
   }
 
   function calcPct(): number {
@@ -73,11 +73,9 @@ export function initStickyHeader(controller: AbortController) {
 
   function onScroll() {
     if (window.scrollY > SCROLL_THRESHOLD) {
-      header.classList.add('scrolled');
-      stickyStack?.classList.add('scrolled');
+      topStrip.classList.add('scrolled');
     } else {
-      header.classList.remove('scrolled');
-      stickyStack?.classList.remove('scrolled');
+      topStrip.classList.remove('scrolled');
     }
 
     if (chapterCompleted) return;
@@ -167,6 +165,14 @@ export function initStickyHeader(controller: AbortController) {
     passive: true,
     signal: controller.signal,
   });
+
+  window.addEventListener('language-changed', updateStickyOffset, {
+    signal: controller.signal,
+  });
+
+  const stripObserver = new ResizeObserver(updateStickyOffset);
+  stripObserver.observe(topStrip);
+  controller.signal.addEventListener('abort', () => stripObserver.disconnect());
 
   updateStickyOffset();
   onScroll();

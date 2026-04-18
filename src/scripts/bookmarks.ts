@@ -2,17 +2,20 @@
  * Bookmarks — dynamic i18n version
  */
 
-import { t, getI18nDirection, resolveLanguage } from '../i18n';
+import { t, getI18nDirection } from '../i18n';
+import {
+  SOURCE_LANG,
+  getLang,
+  getCurrentBook,
+  getCurrentChapter,
+  getContentRoot,
+  getChapterTitlesForId,
+  resolveChapterTitleByTitles,
+  nearestSectionHeading,
+  waitForContentReady,
+} from './reading-location';
 
 // ── Language ────────────────────────────────────────────────────────────────
-
-function getLang(): string {
-  return resolveLanguage(
-    new URLSearchParams(window.location.search).get('lang')
-      || localStorage.getItem('yuval_language')
-      || 'en'
-  );
-}
 
 function tr(key: string, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
@@ -22,23 +25,16 @@ function getDir(): 'rtl' | 'ltr' {
   return getI18nDirection(getLang());
 }
 
-// ── Context ─────────────────────────────────────────────────────────────────
-
-function getCurrentBook(): string {
-  return document.getElementById('chapter-container')?.dataset.book || '';
-}
-
-function getCurrentChapter(): number {
-  return parseInt(
-    document.getElementById('chapter-container')?.dataset.chapterId || '0', 10
-  );
-}
-
 // ── Types ───────────────────────────────────────────────────────────────────
 
 interface Bookmark {
   id: string;
+  book: string;
   chapterId: number;
+  chapterTitles: Record<string, string>;
+  lang: string;
+  anchor: string;
+  sectionHeading?: string;
   text: string;
   paragraphIndex: number;
   textHash: string;
@@ -46,12 +42,13 @@ interface Bookmark {
   timestamp: number;
 }
 
-function getContentRoot(): HTMLElement | null {
-  const lang = getLang();
-  const container = document.getElementById('chapter-container');
-  if (!container) return null;
-  return (container.querySelector<HTMLElement>(`[data-lang="${lang}"]`) || container) as HTMLElement;
+declare global {
+  interface Window {
+    yuvalLoadChapter?: (url: string) => Promise<void> | void;
+  }
 }
+
+const PENDING_KEY = 'yuval_pending_bookmark';
 
 function getParagraphs(): HTMLElement[] {
   const root = getContentRoot();
@@ -93,6 +90,59 @@ function findParagraphFor(bm: Bookmark): HTMLElement | null {
   return paras.find(p => canonicalText(p.textContent || '').toLowerCase().includes(needle)) || null;
 }
 
+function ensureAnchor(el: HTMLElement): string {
+  const existing = el.dataset.bmAnchor;
+  if (existing) return existing;
+  const synthetic = `p-x-${paragraphIndexOf(el) + 1}`;
+  el.dataset.bmAnchor = synthetic;
+  return synthetic;
+}
+
+function resolveChapterTitle(bm: Bookmark): string {
+  return resolveChapterTitleByTitles(
+    bm.chapterTitles,
+    bm.chapterId,
+    !!bm.book && bm.book === getCurrentBook(),
+  );
+}
+
+function formatChapterLine(bm: Bookmark): string {
+  if (!bm.book || !bm.chapterId) {
+    return tr('bookmarks.chapterUnknown');
+  }
+  const title = resolveChapterTitle(bm);
+  const chapterLabel = tr('bookmarks.chapter', { n: bm.chapterId });
+  const base = title ? `${chapterLabel} · ${title}` : chapterLabel;
+  if (bm.sectionHeading) return `${base} › ${bm.sectionHeading}`;
+  return base;
+}
+
+function findTargetForBookmark(bm: Bookmark): { el: HTMLElement; exact: boolean } | null {
+  const root = getContentRoot();
+  if (!root) return null;
+
+  if (bm.anchor) {
+    const byAnchor = root.querySelector<HTMLElement>(`[data-bm-anchor="${CSS.escape(bm.anchor)}"]`);
+    if (byAnchor) return { el: byAnchor, exact: true };
+  }
+
+  const byTextMatch = findParagraphFor(bm);
+  if (byTextMatch) return { el: byTextMatch, exact: true };
+
+  if (bm.sectionHeading) {
+    const heads = Array.from(root.querySelectorAll<HTMLElement>('h2, h3'));
+    const byHeading = heads.find(h =>
+      canonicalText(h.textContent || '') === canonicalText(bm.sectionHeading || '')
+    );
+    if (byHeading) return { el: byHeading, exact: false };
+  }
+
+  const firstHeading = root.querySelector<HTMLElement>('h2, h3');
+  if (firstHeading) return { el: firstHeading, exact: false };
+
+  return null;
+}
+
 // ── Storage ─────────────────────────────────────────────────────────────────
 
 function storageKey(book: string): string {
@@ -109,6 +159,7 @@ function loadBookmarks(book: string): Bookmark[] {
 
 function saveBookmarks(book: string, list: Bookmark[]): void {
   localStorage.setItem(storageKey(book), JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('yuval-bookmarks-changed'));
 }
 
 // ── Core logic ──────────────────────────────────────────────────────────────
@@ -119,6 +170,11 @@ function addBookmark(el: Element): void {
   const canon = canonicalText(el.textContent || '');
   if (!canon) return;
 
+  if (!book || !chapterId) {
+    showToast(tr('bookmarks.chapterUnknown'));
+    return;
+  }
+
   const textHash = hashText(canon);
   const list = loadBookmarks(book);
 
@@ -128,9 +184,18 @@ function addBookmark(el: Element): void {
     return;
   }
 
+  const anchor = ensureAnchor(el as HTMLElement);
+  const chapterTitles = getChapterTitlesForId(chapterId);
+  const sectionHeading = nearestSectionHeading(el);
+
   const bm: Bookmark = {
     id: `bm_${Date.now()}`,
+    book,
     chapterId,
+    chapterTitles,
+    lang: getLang(),
+    anchor,
+    sectionHeading,
     text: canon.slice(0, 100),
     paragraphIndex: paragraphIndexOf(el),
     textHash,
@@ -209,17 +274,86 @@ function confirmAddBookmark(el: Element): void {
 }
 
 function restoreMarks(): void {
+  const book = getCurrentBook();
   const chapterId = getCurrentChapter();
-  const marks = loadBookmarks(getCurrentBook())
+  if (!book || !chapterId) return;
+
+  const marks = loadBookmarks(book)
     .filter(b => b.chapterId === chapterId);
 
-  document.querySelectorAll<HTMLElement>('#chapter-container p').forEach(p => {
-    p.classList.remove('bm-marked');
-  });
+  document.querySelectorAll<HTMLElement>('#chapter-container [data-bm-anchor], #chapter-container p')
+    .forEach(p => p.classList.remove('bm-marked'));
 
   marks.forEach(m => {
-    const el = findParagraphFor(m);
-    if (el) el.classList.add('bm-marked');
+    const resolved = findTargetForBookmark(m);
+    if (resolved?.exact) resolved.el.classList.add('bm-marked');
+  });
+}
+
+function scrollToTarget(el: HTMLElement): void {
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.add('bm-pulse');
+  setTimeout(() => el.classList.remove('bm-pulse'), 1600);
+}
+
+async function navigateToBookmark(bm: Bookmark): Promise<void> {
+  const currentBook = getCurrentBook();
+  const sameBook = !!bm.book && bm.book === currentBook;
+  const sameChapter = sameBook && bm.chapterId === getCurrentChapter();
+
+  if (!sameChapter) {
+    const url = `/read/${bm.book}/${bm.chapterId}`;
+    if (sameBook && typeof window.yuvalLoadChapter === 'function') {
+      await window.yuvalLoadChapter(url);
+    } else {
+      try {
+        sessionStorage.setItem(PENDING_KEY, JSON.stringify(bm));
+      } catch {}
+      window.location.href = url;
+      return;
+    }
+  }
+
+  await waitForContentReady();
+
+  const resolved = findTargetForBookmark(bm);
+  if (resolved) {
+    scrollToTarget(resolved.el);
+    if (!resolved.exact) showToast(tr('bookmarks.approximate'));
+  } else if (sameChapter && typeof bm.scrollY === 'number') {
+    window.scrollTo({ top: bm.scrollY, behavior: 'smooth' });
+    showToast(tr('bookmarks.approximate'));
+  } else {
+    showToast(tr('bookmarks.approximate'));
+  }
+
+  closePanel();
+}
+
+function consumePendingBookmark(): void {
+  let raw: string | null = null;
+  try {
+    raw = sessionStorage.getItem(PENDING_KEY);
+    if (raw) sessionStorage.removeItem(PENDING_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+
+  let bm: Bookmark;
+  try {
+    bm = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!bm || bm.book !== getCurrentBook() || bm.chapterId !== getCurrentChapter()) return;
+
+  waitForContentReady().then(() => {
+    const resolved = findTargetForBookmark(bm);
+    if (resolved) {
+      scrollToTarget(resolved.el);
+      if (!resolved.exact) showToast(tr('bookmarks.approximate'));
+    }
   });
 }
 
@@ -322,26 +456,19 @@ function renderPanel(): void {
     return;
   }
 
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
   bookmarks.forEach(bm => {
     const item = document.createElement('div');
     item.className = 'bm-item';
 
     item.innerHTML = `
-      <div>${bm.text}</div>
-      <div>${tr('bookmarks.chapter', { n: bm.chapterId })}</div>
+      <div class="bm-item-text">${escape(bm.text)}</div>
+      <div class="bm-item-meta">${escape(formatChapterLine(bm))}</div>
     `;
 
-    item.onclick = () => {
-      const target = findParagraphFor(bm);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        target.classList.add('bm-pulse');
-        setTimeout(() => target.classList.remove('bm-pulse'), 1600);
-      } else if (typeof bm.scrollY === 'number') {
-        window.scrollTo({ top: bm.scrollY, behavior: 'smooth' });
-      }
-      closePanel();
-    };
+    item.onclick = () => { navigateToBookmark(bm); };
 
     body.appendChild(item);
   });
@@ -356,6 +483,13 @@ export function initBookmarks(signal: AbortSignal): void {
   fab.setAttribute('aria-label', tr('aria.bookmarks'));
   fab.title = tr('aria.bookmarks');
   fab.textContent = '🔖';
+
+  const badge = document.createElement('span');
+  badge.id = 'bm-fab-badge';
+  badge.className = 'yuval-fab-badge';
+  badge.style.display = 'none';
+  fab.appendChild(badge);
+
   document.body.appendChild(fab);
 
   const overlay = document.createElement('div');
@@ -411,11 +545,30 @@ export function initBookmarks(signal: AbortSignal): void {
     fab.setAttribute('aria-label', tr('aria.bookmarks'));
     fab.title = tr('aria.bookmarks');
     restoreMarks();
+    updateBadge();
     if (document.getElementById('bm-panel')?.classList.contains('open')) {
       renderPanel();
     }
   }, { signal });
 
+  const onChange = () => {
+    updateBadge();
+    if (document.getElementById('bm-panel')?.classList.contains('open')) {
+      renderPanel();
+    }
+  };
+
+  window.addEventListener('yuval-bookmarks-changed', onChange, { signal });
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('yuval_bookmarks_')) onChange();
+  }, { signal });
+
+  window.addEventListener('chapter-content-swapped', () => {
+    restoreMarks();
+    updateBadge();
+  }, { signal });
+
   restoreMarks();
   updateBadge();
+  consumePendingBookmark();
 }

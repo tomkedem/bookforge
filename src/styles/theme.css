@@ -213,8 +213,21 @@ body.focus-mode::after {
 :root {
   --reading-font-size: 1.125rem;
   --reading-line-height: 1.8;
-  --reading-content-width: 720px;
+  --reading-content-width: 760px;
+  --reading-content-width-lg: 820px;
+  --reading-content-width-xl: 880px;
   --reading-font-family: 'Frank Ruhl Libre', serif;
+
+  --gold-300: #e8c547;
+  --gold-400: #ddb52f;
+  --gold-500: #c9a227;
+  --gold-600: #a8852a;
+  --gold-700: #8a6b1f;
+  --gold-tint-06: rgba(201, 162, 39, 0.06);
+  --gold-tint-12: rgba(201, 162, 39, 0.12);
+  --gold-tint-18: rgba(201, 162, 39, 0.18);
+  --gold-tint-25: rgba(201, 162, 39, 0.25);
+  --gold-tint-35: rgba(201, 162, 39, 0.35);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -265,6 +278,22 @@ body.focus-mode::after {
   font-family: var(--reading-font-family);
 }
 
+@media (min-width: 1024px) {
+  .reading-article .chapter-content {
+    max-width: min(100%, 1040px);
+  }
+}
+@media (min-width: 1280px) {
+  .reading-article .chapter-content {
+    max-width: min(100%, 1160px);
+  }
+}
+@media (min-width: 1536px) {
+  .reading-article .chapter-content {
+    max-width: min(100%, 1280px);
+  }
+}
+
 /* ═══════════════════════════════════════════════════
    TRANSITIONAL — scheduled for removal (Phase C).
    FAB STACK (stats, bookmarks, highlights, tts)
@@ -291,9 +320,9 @@ body.focus-mode::after {
   font-size: 1.1rem;
   cursor: pointer;
   z-index: 50;
-  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1),
-              box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
-              border-color 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 200ms var(--ease-standard),
+              box-shadow 200ms var(--ease-standard),
+              border-color 200ms var(--ease-standard);
 }
 
 #stats-fab-btn:hover,
@@ -310,7 +339,7 @@ body.focus-mode::after {
 #highlights-fab:active,
 #tts-fab:active {
   transform: translateY(0) scale(0.98);
-  transition: transform 80ms cubic-bezier(0.3, 0, 1, 1);
+  transition: transform 80ms var(--ease-accelerated);
 }
 
 #stats-fab-btn:focus-visible,
@@ -343,6 +372,133 @@ body.focus-mode::after {
   #highlights-fab{ bottom: 12.2rem; }
 }
 
+.yuval-fab-badge {
+  position: absolute;
+  top: -0.25rem;
+  inset-inline-end: -0.25rem;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.3125rem;
+  border-radius: 9999px;
+  background: var(--yuval-accent, #d97706);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.125rem;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════
+   READING STATS MODAL (#stats-overlay, #stats-modal)
+   ═══════════════════════════════════════════════════ */
+#stats-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 9997;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-standard);
+}
+
+#stats-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#stats-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -48%) scale(0.96);
+  width: min(480px, 92vw);
+  max-height: min(80vh, 640px);
+  background: var(--yuval-bg, #fff);
+  color: var(--yuval-text, #111);
+  border: 1px solid var(--yuval-border, #e5e7eb);
+  border-radius: 14px;
+  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.18), 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 200ms var(--ease-standard),
+              transform 280ms var(--ease-emphasized);
+}
+
+#stats-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#stats-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--yuval-border, #e5e7eb);
+  font-weight: 700;
+}
+
+#stats-close {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  color: var(--yuval-text-secondary, #555);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+#stats-close:hover {
+  background: var(--yuval-bg-secondary, #f3f4f6);
+  color: var(--yuval-text, #111);
+}
+
+#stats-modal .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+#stats-modal .stat-card {
+  background: var(--yuval-bg-secondary, #f9fafb);
+  border: 1px solid var(--yuval-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+#stats-modal .stat-card > div:first-child {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--yuval-text, #111);
+}
+
+#stats-modal .stat-card > div:last-child {
+  font-size: 0.8rem;
+  color: var(--yuval-text-secondary, #555);
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 639px) {
+  #stats-modal .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ═══════════════════════════════════════════════════
    TRANSITIONAL — scheduled for removal (Phase C).
    HIGHLIGHTS PANEL (#hl-overlay, #hl-panel, …)
@@ -359,7 +515,7 @@ body.focus-mode::after {
   z-index: 9997;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 200ms var(--ease-standard);
 }
 
 #hl-overlay.open {
@@ -379,7 +535,7 @@ body.focus-mode::after {
   box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.08);
   z-index: 9998;
   transform: translateX(100%);
-  transition: transform 320ms cubic-bezier(0.3, 0, 0, 1);
+  transition: transform 320ms var(--ease-emphasized);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -513,7 +669,7 @@ body.focus-mode::after {
   z-index: 9997;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 200ms var(--ease-standard);
 }
 
 #bm-overlay.open {
@@ -533,7 +689,7 @@ body.focus-mode::after {
   box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.08);
   z-index: 9998;
   transform: translateX(100%);
-  transition: transform 320ms cubic-bezier(0.3, 0, 0, 1);
+  transition: transform 320ms var(--ease-emphasized);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -588,7 +744,7 @@ body.focus-mode::after {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  animation: empty-fade-in 360ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: empty-fade-in 360ms var(--ease-standard) both;
 }
 
 .bm-empty .empty-illustration,
@@ -634,9 +790,9 @@ body.focus-mode::after {
   cursor: pointer;
   margin-bottom: 0.25rem;
   border: 1px solid transparent;
-  transition: background 200ms cubic-bezier(0.2, 0, 0, 1),
-              border-color 200ms cubic-bezier(0.2, 0, 0, 1),
-              transform 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background 200ms var(--ease-standard),
+              border-color 200ms var(--ease-standard),
+              transform 200ms var(--ease-standard);
 }
 
 .bm-item:hover {
@@ -676,7 +832,7 @@ body.focus-mode::after {
   font-size: 0.85rem;
   z-index: 10000;
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 200ms var(--ease-standard), transform 200ms var(--ease-standard);
   pointer-events: none;
 }
 
@@ -696,7 +852,7 @@ body.focus-mode::after {
   padding: 0.85rem 1rem;
   min-width: 220px;
   max-width: 90vw;
-  animation: bm-confirm-in 0.15s ease-out;
+  animation: bm-confirm-in 150ms var(--ease-accelerated);
 }
 
 @keyframes bm-confirm-in {
@@ -796,7 +952,18 @@ body.focus-mode::after {
 }
 
 #chapter-container p.bm-pulse {
-  animation: bm-pulse-anim 1.6s ease-out;
+  animation: bm-pulse-anim 1.6s var(--ease-accelerated);
+  border-radius: 0.25rem;
+}
+
+@keyframes hl-pulse-anim {
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.hl-pulse {
+  animation: hl-pulse-anim 1.6s var(--ease-accelerated);
   border-radius: 0.25rem;
 }
 
@@ -837,7 +1004,7 @@ body.focus-mode::after {
   justify-content: center;
   padding: 1rem;
   opacity: 0;
-  transition: opacity 220ms cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 220ms var(--ease-standard);
 }
 #ob-overlay.open { opacity: 1; }
 
@@ -859,7 +1026,7 @@ body.focus-mode::after {
   gap: 0.5rem;
   transform: translateY(12px) scale(0.98);
   opacity: 0;
-  animation: ob-enter 320ms cubic-bezier(0.3, 0, 0, 1) forwards;
+  animation: ob-enter 320ms var(--ease-emphasized) forwards;
 }
 
 @keyframes ob-enter {
@@ -872,7 +1039,7 @@ body.focus-mode::after {
 }
 
 #ob-tooltip > :is(.ob-illustration, #ob-title, #ob-body, .ob-counter) {
-  animation: ob-slide 280ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: ob-slide 280ms var(--ease-standard) both;
 }
 
 [dir="rtl"] #ob-tooltip > :is(.ob-illustration, #ob-title, #ob-body, .ob-counter) {
@@ -921,9 +1088,9 @@ body.focus-mode::after {
   height: 8px;
   border-radius: 9999px;
   background: var(--yuval-border, #e5e7eb);
-  transition: background 200ms cubic-bezier(0.2, 0, 0, 1),
-              transform 200ms cubic-bezier(0.2, 0, 0, 1),
-              width 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background 200ms var(--ease-standard),
+              transform 200ms var(--ease-standard),
+              width 200ms var(--ease-standard);
 }
 .ob-dot.done   { background: var(--yuval-accent, #d97706); opacity: 0.5; }
 .ob-dot.active { background: var(--yuval-accent, #d97706); width: 22px; border-radius: 9999px; }
@@ -947,8 +1114,8 @@ body.focus-mode::after {
   cursor: pointer;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
-  transition: background 200ms cubic-bezier(0.2, 0, 0, 1),
-              color 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: background 200ms var(--ease-standard),
+              color 200ms var(--ease-standard);
 }
 #ob-skip:hover { background: var(--yuval-bg-secondary, #f5f0e8); color: var(--yuval-text, #111); }
 
@@ -958,9 +1125,9 @@ body.focus-mode::after {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1),
-              box-shadow 200ms cubic-bezier(0.2, 0, 0, 1),
-              background 200ms cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 200ms var(--ease-standard),
+              box-shadow 200ms var(--ease-standard),
+              background 200ms var(--ease-standard);
 }
 
 #ob-next {

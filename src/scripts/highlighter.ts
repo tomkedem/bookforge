@@ -8,17 +8,10 @@
  *  - Click existing highlight → remove it
  */
 
-import { t, resolveLanguage } from '../i18n';
+import { t } from '../i18n';
+import { getLang, nearestSectionHeading, nearestBmAnchor } from './reading-location';
 
 // ── i18n helpers ─────────────────────────────────────────────────────────────
-
-function getLang(): string {
-  return resolveLanguage(
-    new URLSearchParams(window.location.search).get('lang')
-      || localStorage.getItem('yuval_language')
-      || 'en'
-  );
-}
 
 function tr(key: string, params?: Record<string, string | number>): string {
   return t(key, getLang(), params);
@@ -41,6 +34,8 @@ interface HighlightData {
   color: ColorKey;
   timestamp: number;
   note?: string;
+  anchor?: string;
+  sectionHeading?: string;
 }
 
 // ── Storage ──────────────────────────────────────────────────────────────────
@@ -59,6 +54,7 @@ function loadHighlights(book: string, chapter: string, lang: string): HighlightD
 
 function saveHighlights(book: string, chapter: string, lang: string, list: HighlightData[]): void {
   localStorage.setItem(storageKey(book, chapter, lang), JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('yuval-highlights-changed'));
 }
 
 // ── Context helpers ───────────────────────────────────────────────────────────
@@ -1180,11 +1176,22 @@ export function initHighlighter(signal: AbortSignal): void {
     if (!ctx) return;
 
     const color = btn.dataset.color as ColorKey;
+
+    const range = selection.getRangeAt(0);
+    const hostNode = range.commonAncestorContainer as Node;
+    const hostEl = hostNode.nodeType === Node.ELEMENT_NODE
+      ? (hostNode as Element)
+      : hostNode.parentElement;
+    const anchor = nearestBmAnchor(hostEl);
+    const sectionHeading = hostEl ? nearestSectionHeading(hostEl) : undefined;
+
     const hl: HighlightData = {
       id: `hl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       text,
       color,
       timestamp: Date.now(),
+      ...(anchor ? { anchor } : {}),
+      ...(sectionHeading ? { sectionHeading } : {}),
     };
 
     const contentEl = getContentEl();
@@ -1241,7 +1248,7 @@ export function initHighlighter(signal: AbortSignal): void {
     let longPressTimer: ReturnType<typeof setTimeout> | null = null;
     let touchMoved = false;
 
-    function showMobileColorPicker(text: string): void {
+    function showMobileColorPicker(text: string, sourceEl?: Element | null): void {
       document.getElementById('hl-mobile-picker')?.remove();
 
       const ctx = getPageContext();
@@ -1314,11 +1321,15 @@ export function initHighlighter(signal: AbortSignal): void {
 
         btn.addEventListener('click', () => {
           const color = key as ColorKey;
+          const anchor = nearestBmAnchor(sourceEl ?? null);
+          const sectionHeading = sourceEl ? nearestSectionHeading(sourceEl) : undefined;
           const hl: HighlightData = {
             id: `hl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
             text,
             color,
             timestamp: Date.now(),
+            ...(anchor ? { anchor } : {}),
+            ...(sectionHeading ? { sectionHeading } : {}),
           };
 
           const contentEl = getContentEl();
@@ -1368,7 +1379,7 @@ export function initHighlighter(signal: AbortSignal): void {
         if (text.length < 5) return;
 
         if ('vibrate' in navigator) navigator.vibrate(40);
-        showMobileColorPicker(text);
+        showMobileColorPicker(text, target);
       }, 600);
     }, { signal, passive: true });
 

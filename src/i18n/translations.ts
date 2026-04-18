@@ -123,6 +123,8 @@ export const translations: Translations = {
   'bookmarks.cancel':      { he: 'ביטול',          en: 'Cancel',           es: 'Cancelar' },
   'bookmarks.chapter':     { he: 'פרק {{n}}',      en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
   'bookmarks.chapterLabel': { he: 'פרק {{n}}',     en: 'Chapter {{n}}',    es: 'Capítulo {{n}}' },
+  'bookmarks.chapterUnknown': { he: 'פרק לא מזוהה', en: 'Unknown chapter', es: 'Capítulo desconocido' },
+  'bookmarks.approximate': { he: 'ניווט למיקום הקרוב ביותר', en: 'Jumped to the closest location', es: 'Saltó al lugar más cercano' },
   'bookmarks.step1':       { he: 'לחץ לחיצה ימנית על פסקה', en: 'Right-click any paragraph', es: 'Clic derecho en cualquier párrafo' },
   'bookmarks.step2':       { he: 'בחר "הוסף סימנייה"', en: 'Choose "Add bookmark"', es: 'Elige "Añadir marcador"' },
   'bookmarks.step3':       { he: 'לחץ על הסימנייה לקפיצה אליה', en: 'Click bookmark to jump there', es: 'Clic en el marcador para saltar' },

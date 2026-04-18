@@ -54,6 +54,20 @@ const supportedCodes = SUPPORTED_LANGUAGES.map(l => l.code);
 
 const langs = supportedCodes.filter(l => availableLangs.includes(l));
 
+function annotateBookmarkAnchors(html: string): string {
+  const counters = { p: 0, h: 0 };
+  return html.replace(/<(p|h2|h3)(\s[^>]*)?>/gi, (_, tagRaw: string, attrsRaw?: string) => {
+    const tag = tagRaw.toLowerCase();
+    const attrs = attrsRaw || '';
+    if (/\sdata-bm-anchor=/.test(attrs)) {
+      return `<${tag}${attrs}>`;
+    }
+    const key = tag === 'p' ? 'p' : 'h';
+    const n = ++counters[key];
+    return `<${tag}${attrs} data-bm-anchor="${key}-${n}">`;
+  });
+}
+
 async function loadContent(lang: string): Promise<string> {
   const filename =
     chapterId === 0
@@ -68,9 +82,10 @@ async function loadContent(lang: string): Promise<string> {
     html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
     // Remove leading <h1>...</h1> if present (to avoid duplicate chapter title)
     html = html.replace(/^<h1[^>]*>.*?<\/h1>/s, '');
+    html = annotateBookmarkAnchors(html);
     return html;
   } catch {
-    return `<h2>${getLocalized(current.titles, lang)}</h2>`;
+    return `<h2 data-bm-anchor="h-1">${getLocalized(current.titles, lang)}</h2>`;
   }
 }
 
@@ -96,24 +111,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     bookSlug={book || ''}
     language={language}
   />
-  <div id="chapter-sticky-stack" class="chapter-sticky-stack">
-    <div id="chapter-meta-bar" class="chapter-meta-bar">
-      {langs.map(l => (
-        <div
-          data-lang={l}
-          class={l === language ? 'visible' : 'hidden'}
-          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
-        >
-          <ChapterMeta
-            wordCount={current.word_count}
-            readingTimeMinutes={Math.ceil(current.word_count / 200)}
-            sections={current.sections}
-            language={l}
-          />
-        </div>
-      ))}
-    </div>
-
+  {/* Region 1 — Top strip: full-width band between the two sidebars.
+      Independent from the chapter title. Contains meta, breadcrumb,
+      chapter number eyebrow, and progress. */}
+  <div id="chapter-top-strip" class="chapter-top-strip">
+    {/* 1. Breadcrumb row */}
     <div id="breadcrumb-container" class="breadcrumb-container">
       {langs.map(l => (
         <div
@@ -133,37 +135,51 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
       ))}
     </div>
 
-    <div id="chapter-header" class="chapter-header">
-      <div class="chapter-header-card">
-        {langs.map(l => (
-          <div
-            data-lang={l}
-            class={l === language ? 'visible' : 'hidden'}
-            dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
-          >
-            <div class="header-title-row">
-              <div class="chapter-number-badge">
-                <span class="chapter-number">{chapterId}</span>
-              </div>
-
-              <div class="chapter-title-group">
-                <span class="chapter-label">
-                  {t('chapter.label', l) || 'Chapter'}
-                </span>
-                <h1 class="chapter-title">
-                  {getLocalized(current.titles, l)}
-                </h1>
-              </div>
-
-              <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
-            </div>
+    {/* 2. Metadata / reading stats row — full-width, stats on start side, progress at end */}
+    <div id="chapter-meta-bar" class="chapter-meta-bar">
+      {langs.map(l => (
+        <div
+          data-lang={l}
+          class={l === language ? 'visible meta-bar-row' : 'hidden meta-bar-row'}
+          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+        >
+          <div class="meta-bar-stats">
+            <ChapterMeta
+              wordCount={current.word_count}
+              readingTimeMinutes={Math.ceil(current.word_count / 200)}
+              sections={current.sections}
+              language={l}
+            />
           </div>
-        ))}
-      </div>
+          <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
+        </div>
+      ))}
     </div>
   </div>
 
-  <div id="chapter-container">
+  {/* Region 2 — Chapter title block: own component below the strip.
+      Only the title lives here. No shared container, no shared framing.
+      Retains id="chapter-header" as a stable contract for language-switcher,
+      highlighter, and client-side nav consumers. */}
+  <div id="chapter-header" class="chapter-title-block">
+    {langs.map(l => (
+      <div
+        data-lang={l}
+        class={l === language ? 'visible' : 'hidden'}
+        dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+      >
+        <h1 class="chapter-title">
+          <span class="chapter-number-stack" aria-hidden="true">
+            <span class="chapter-number-label">{t('chapter.label', l) || 'Chapter'}</span>
+            <span class="chapter-number-badge">{chapterId}</span>
+          </span>
+          <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
+        </h1>
+      </div>
+    ))}
+  </div>
+
+  <div id="chapter-container" data-book={book} data-chapter-id={chapterId}>
     {langs.map(l => (
       <div
         data-lang={l}
@@ -189,238 +205,279 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 .hidden { display: none !important; }
 .visible { display: block; }
 
-.chapter-sticky-stack {
+/* ─────────────────────────────────────────────────────────────
+   REGION 1 — TOP STRIP
+   Independent full-width band between sidebars. Not attached to,
+   not parent of, the chapter title. Sticky so it stays visible
+   while scrolling.
+   ───────────────────────────────────────────────────────────── */
+/* The article wraps content with px-4 / sm:px-6 / lg:px-8. The top strip
+   must escape that padding and sit edge-to-edge between sidebars. We cancel
+   the article's inline padding with equal negative margins, then zero our
+   own inline padding. */
+.chapter-top-strip {
   position: sticky;
   top: var(--reading-sticky-top, 4rem);
   z-index: 40;
+  width: auto;
+  max-width: none;
   margin-inline: -1rem;
-  padding: 0.2rem 0 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
+  padding: 0.35rem 0 0.5rem;
   background:
-    linear-gradient(to bottom, color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent), color-mix(in srgb, var(--yuval-reading-bg) 88%, transparent 12%));
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent),
+      color-mix(in srgb, var(--yuval-reading-bg) 88%, transparent 12%));
   backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 12%, var(--yuval-border));
 }
 
-.chapter-sticky-stack::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--yuval-border) 12%, var(--yuval-border) 88%, transparent 100%);
-  opacity: 0.85;
-  pointer-events: none;
+@media (min-width: 640px) {
+  .chapter-top-strip { margin-inline: -1.5rem; }
+}
+@media (min-width: 1024px) {
+  .chapter-top-strip { margin-inline: -2rem; }
 }
 
-.chapter-sticky-stack.scrolled {
-  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.08);
+.chapter-top-strip.scrolled {
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
 }
 
 .chapter-meta-bar,
-.breadcrumb-container,
-.chapter-header {
-  width: 100%;
-}
-
-.chapter-meta-bar {
-  margin-bottom: 0.125rem;
-}
-
 .breadcrumb-container {
-  margin-bottom: 0;
-  margin-top: 0;
-  padding-inline: 0.125rem;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.chapter-header {
+  width: 100%;
   margin: 0;
+  padding: 0;
 }
 
-.chapter-header-card {
-  padding: 0.9rem 1rem;
-  border-radius: 0;
-  border: 1px solid color-mix(in srgb, var(--yuval-border) 85%, transparent);
-  background: color-mix(in srgb, var(--yuval-bg) 92%, transparent 8%);
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+/* Meta row — full-width grid: stats centered, progress pinned to end */
+.meta-bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0;
 }
 
-.header-title-row {
+.meta-bar-row.hidden {
+  display: none !important;
+}
+
+.meta-bar-stats {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.meta-bar-row .progress-badge {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   REGION 2 — CHAPTER TITLE BLOCK
+   Own component below the strip. No shared wrapper, no shared
+   framing. Only the title lives here.
+   ───────────────────────────────────────────────────────────── */
+.chapter-title-block {
+  position: sticky;
+  top: calc(var(--reading-sticky-top, 4rem) + var(--top-strip-h, 0px));
+  z-index: 39;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 0 0.7rem;
+  background: var(--yuval-reading-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 10%, var(--yuval-border));
+}
+
+/* Title's inner wrapper mirrors .chapter-content exactly so the
+   title's end edge lines up with the body's end edge. Same width
+   tokens, same centered margin — title reads as the first element
+   of the content container, not a page-level heading. */
+.chapter-title-block > [data-lang] {
+  width: 100%;
+  max-width: var(--reading-content-width);
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .chapter-title-block > [data-lang] {
+    max-width: min(100%, 1040px);
+  }
+}
+@media (min-width: 1280px) {
+  .chapter-title-block > [data-lang] {
+    max-width: min(100%, 1160px);
+  }
+}
+@media (min-width: 1536px) {
+  .chapter-title-block > [data-lang] {
+    max-width: min(100%, 1280px);
+  }
+}
+
+/* Chapter title — lives only inside .chapter-title-block.
+   Number stack + title sit in the same flow as one unified
+   heading group, aligned to the content container's start edge. */
+.chapter-title {
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.875rem;
+  gap: 0.75em;
+  font-family: var(--reading-font-family);
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--yuval-chapter-title);
+  text-align: start;
+}
+
+.chapter-title-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Vertical micro-component: small label above the gold number
+   badge. Tight, compact, aligned with the title as one group. */
+.chapter-number-stack {
+  flex: 0 0 auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  line-height: 1;
+}
+
+.chapter-number-label {
+  font-size: 0.32em;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--gold-700) 75%, var(--yuval-text-tertiary));
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .chapter-number-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  flex-shrink: 0;
-  border-radius: 0;
-  background: color-mix(in srgb, var(--yuval-accent) 12%, var(--yuval-bg));
-  color: var(--yuval-chapter-title);
-  border: 1px solid color-mix(in srgb, var(--yuval-accent) 20%, transparent);
-}
-
-.chapter-number {
-  font-size: 1rem;
-  font-weight: 700;
+  width: 1.55em;
+  height: 1.55em;
+  font-size: 0.6em;
+  font-weight: 600;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-700);
+  background: color-mix(in srgb, var(--gold-500) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold-500) 35%, var(--yuval-border));
+  border-radius: 3px;
+  letter-spacing: 0;
 }
 
-.chapter-title-group {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: start;
-}
-
-.chapter-label {
-  display: block;
-  margin-bottom: 0.2rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--yuval-text-tertiary);
-  text-align: start;
-}
-
-.chapter-title {
-  margin: 0;
-  font-size: 1.15rem;
-  line-height: 1.25;
-  color: var(--yuval-chapter-title);
-  text-align: start;
-}
-
+/* Progress chip — sits in the top strip eyebrow row */
 .progress-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 3rem;
-  height: 2.25rem;
-  padding-inline: 0.75rem;
+  min-width: 2.5rem;
+  height: 1.5rem;
+  padding-inline: 0.55rem;
   flex-shrink: 0;
-  border-radius: 0;
-  background: var(--yuval-meta-bg);
-  border: 1px solid var(--yuval-meta-border);
-  color: var(--yuval-progress-badge);
-  font-size: 0.9rem;
-  font-weight: 700;
+  border-radius: 2px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--gold-500) 22%, var(--yuval-border));
+  color: var(--gold-700);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1;
 }
 
+/* Meta row stats — no pill, centered cluster */
 #chapter-meta-bar :global(.chapter-meta) {
-  margin-bottom: 0;
+  margin: 0;
+  padding: 0.4rem 0;
+  width: auto;
+  max-width: none;
+  background: transparent;
+  border: 0;
   justify-content: center;
+  flex-wrap: nowrap;
 }
 
+/* Breadcrumb row — full width, edge-flush */
 #breadcrumb-container :global(.breadcrumbs),
 #breadcrumb-container :global(.breadcrumbs-nav) {
-  margin-bottom: 0;
-  max-width: none;
-}
-
-@media (min-width: 640px) {
-  .chapter-sticky-stack {
-    margin-inline: -1.5rem;
-    padding-inline: 0;
-  }
-
-  .chapter-sticky-stack::after {
-    inset-inline: 0;
-  }
-
-  .chapter-header-card {
-    padding: 1rem 1.25rem;
-  }
-
-  .chapter-title {
-    font-size: 1.35rem;
-  }
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  width: 100%;
 }
 
 @media (min-width: 1024px) {
-  .chapter-sticky-stack {
-    margin-inline: -2rem;
-    padding-inline: 0;
+  .chapter-top-strip {
+    padding: 0.45rem 0 0.6rem;
   }
-
-  .chapter-sticky-stack::after {
-    inset-inline: 0;
-  }
-
-  .chapter-title {
-    font-size: 1.5rem;
+  .chapter-title-block {
+    margin: 0 0 1.5rem;
+    padding: 0.8rem 0 0.9rem;
   }
 }
 
 @media (max-width: 639px) {
-  .chapter-sticky-stack {
-    padding-top: 0.15rem;
-    padding-bottom: 0.6rem;
+  .chapter-top-strip {
+    padding: 0.3rem 0 0.4rem;
   }
 
   .breadcrumb-container {
     display: none !important;
   }
 
-  .header-title-row {
-    gap: 0.35rem;
-    flex-wrap: nowrap;
+  .meta-bar-row {
+    gap: 0.5rem;
   }
 
-  .chapter-title-group {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    gap: 0.3rem;
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
+  #chapter-meta-bar :global(.chapter-meta) {
+    font-size: 0.72rem;
+    gap: 0.35rem 0.5rem;
+    padding: 0.3rem 0;
   }
 
-  .chapter-number-badge {
-    width: 2.5rem;
-    height: 2.5rem;
+  #chapter-meta-bar :global(.meta-icon) {
+    width: 0.95rem;
+    height: 0.95rem;
   }
 
   .progress-badge {
-    min-width: 1.8rem;
-    height: 1.3rem;
-    padding-inline: 0.3rem;
-    font-size: 0.5rem;
+    min-width: 2.25rem;
+    height: 1.35rem;
+    padding-inline: 0.4rem;
+    font-size: 0.66rem;
   }
 
-  .chapter-number-badge {
-    width: 1.6rem;
-    height: 1.6rem;
-  }
-
-  .chapter-number {
-    font-size: 1rem;
+  .chapter-title-block {
+    margin: 0 0 0.85rem;
+    padding: 0.45rem 0 0.55rem;
   }
 
   .chapter-title {
-    font-size: 1rem;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    gap: 0.6em;
+    font-size: clamp(1.25rem, 0.9rem + 2vw, 1.6rem);
+    line-height: 1.25;
   }
 
-  .chapter-label {
-    font-size: 0.45rem;
-    margin-bottom: 0.05rem;
+  .chapter-number-label {
+    font-size: 0.36em;
+    letter-spacing: 0.14em;
   }
 
-  .chapter-header-card {
-    padding: 0.5rem 0.65rem;
+  .chapter-number-badge {
+    width: 1.5em;
+    height: 1.5em;
+    font-size: 0.64em;
   }
 }
 </style>
