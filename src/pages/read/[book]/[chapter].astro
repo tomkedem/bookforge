@@ -439,6 +439,51 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 }
 
+/* Mobile tap-to-top affordance on the chapter title block.
+   Subtle by design — no button styling, no background, no outline ring.
+   Just a whisper of interactivity: a gentle press-in on tap.
+   Activated only when JS has added .chapter-title-tap-enabled (mobile MQ). */
+@media (max-width: 1023px) {
+  .chapter-title-block.chapter-title-tap-enabled {
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      opacity 180ms var(--ease-standard, ease-out),
+      transform 180ms var(--ease-standard, ease-out);
+    will-change: opacity, transform;
+  }
+
+  /* Tap feedback — barely-there press-in. Opacity nudge + micro-scale.
+     No background, no border, no ring. Reads as a responsive surface,
+     not a button. */
+  .chapter-title-block.chapter-title-tap-enabled:active {
+    opacity: 0.72;
+    transform: scale(0.995);
+    transition-duration: 80ms;
+  }
+
+  /* Keyboard focus remains accessible but understated:
+     a thin gold underline on the title text, not a boxed outline. */
+  .chapter-title-block.chapter-title-tap-enabled:focus {
+    outline: none;
+  }
+  .chapter-title-block.chapter-title-tap-enabled:focus-visible .chapter-title-text {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--gold-500) 55%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chapter-title-block.chapter-title-tap-enabled {
+      transition: opacity 120ms linear;
+    }
+    .chapter-title-block.chapter-title-tap-enabled:active {
+      transform: none;
+    }
+  }
+}
+
 @media (max-width: 639px) {
   .chapter-top-strip {
     padding: 0.3rem 0 0.4rem;

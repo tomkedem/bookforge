@@ -22,11 +22,14 @@ function serializeTitles(chapter: Chapter): string {
 ---
 
 <div class="sidebars-container" transition:persist="sidebars">
-  <!-- Mobile TOC toggle button -->
+  <!-- Mobile TOC toggle button (kept in DOM for FAB delegation; never visible) -->
   <button
     id="mobile-toc-toggle"
     class="mobile-toc-btn"
     aria-expanded="false"
+    aria-hidden="true"
+    tabindex="-1"
+    hidden
   >
     <span class="sr-only" data-i18n="sidebar.openNavigation">Open navigation</span>
     <span class="mobile-toc-btn-glow"></span>
@@ -1005,11 +1008,8 @@ function serializeTitles(chapter: Chapter): string {
     50% { transform: scale(1.15); opacity: 0; }
   }
 
-  @media (max-width: 1023px) {
-    .mobile-toc-btn {
-      display: flex;
-    }
-  }
+  /* mobile-toc-btn is intentionally never displayed — the unified FAB's
+     Navigation sub-item delegates to this element's click handler. */
 
   :global(.dark) .mobile-toc-btn {
     background: linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);

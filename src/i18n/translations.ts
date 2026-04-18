@@ -20,6 +20,11 @@ export const translations: Translations = {
   'fab.theme':             { he: 'ערכת צבע',     en: 'Theme',            es: 'Tema' },
   'fab.typography':        { he: 'גופן',          en: 'Typography',       es: 'Tipografía' },
   'fab.focus':             { he: 'מיקוד',         en: 'Focus',            es: 'Enfoque' },
+  'fab.navigation':        { he: 'ניווט',         en: 'Navigation',       es: 'Navegación' },
+  'fab.highlights':        { he: 'הדגשות',        en: 'Highlights',       es: 'Resaltados' },
+  'fab.readAloud':         { he: 'הקראה',          en: 'Read aloud',       es: 'Leer en voz alta' },
+  'fab.readAloudPause':    { he: 'השהה הקראה',     en: 'Pause reading',    es: 'Pausar lectura' },
+  'chapter.scrollToTop':   { he: 'גלול למעלה',    en: 'Scroll to top',    es: 'Desplazar arriba' },
 
   // ── Display Settings Panel ──────────────────────────────────────────────────
   'display.settings':      { he: 'הגדרות תצוגה',  en: 'Display Settings', es: 'Configuración de pantalla' },

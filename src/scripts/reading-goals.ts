@@ -166,6 +166,9 @@ function injectStyles(): void {
     }
     :is(.dark) #goal-indicator { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
     [dir="rtl"] #goal-indicator { right: auto; left: 20px; }
+    @media (max-width: 1023px) {
+      #goal-indicator { display: none !important; }
+    }
 
     #goal-ring { position: absolute; inset: 0; }
     #goal-ring-track { fill: none; stroke: var(--yuval-border, #e5e7eb); stroke-width: 3; }

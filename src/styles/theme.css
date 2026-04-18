@@ -361,21 +361,17 @@ body.focus-mode::after {
 #bm-fab-btn    { bottom: 11.5rem; }
 #highlights-fab{ bottom: 14.75rem; }
 
-@media (max-width: 639px) {
+/* Mobile: the unified #reading-fab is the single floating entry point.
+   The individual FABs stay in the DOM so the unified menu can delegate
+   click events to them (for Highlights), but are never painted below
+   1024px. Desktop behavior unchanged. */
+@media (max-width: 1023px) {
   #stats-fab-btn,
   #bm-fab-btn,
   #highlights-fab,
   #tts-fab {
-    width: 2.25rem;
-    height: 2.25rem;
-    font-size: 0.9rem;
-    inset-inline-end: 0.75rem;
+    display: none !important;
   }
-
-  #tts-fab       { bottom: 4.25rem; }
-  #stats-fab-btn { bottom: 6.9rem; }
-  #bm-fab-btn    { bottom: 9.55rem; }
-  #highlights-fab{ bottom: 12.2rem; }
 }
 
 .yuval-fab-badge {

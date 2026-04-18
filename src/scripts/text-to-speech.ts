@@ -169,6 +169,57 @@ function stopAll(): void {
   currentParagraphIdx = 0;
   currentUtterance = null;
   clearHighlight();
+  notifyState();
+}
+
+function notifyState(): void {
+  document.dispatchEvent(new CustomEvent('tts:state', {
+    detail: { playing, paused },
+  }));
+}
+
+export function toggleTextToSpeech(): void {
+  if (!('speechSynthesis' in window)) return;
+  if (playing) {
+    pause();
+  } else {
+    play();
+  }
+  notifyState();
+}
+
+export function getTextToSpeechState(): { playing: boolean; paused: boolean } {
+  return { playing, paused };
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+
+const PLAY_ICON = '🔊';
+const PAUSE_ICON = '⏸';
+
+function buildWidget(): HTMLButtonElement | null {
+  const existing = document.getElementById('tts-fab') as HTMLButtonElement | null;
+  if (existing) return existing;
+
+  const btn = document.createElement('button');
+  btn.id = 'tts-fab';
+  btn.type = 'button';
+  btn.setAttribute('aria-label', tr('fab.readAloud') || 'Read aloud');
+  btn.setAttribute('aria-pressed', 'false');
+  btn.title = tr('fab.readAloud') || 'Read aloud';
+  btn.textContent = PLAY_ICON;
+  document.body.appendChild(btn);
+  return btn;
+}
+
+function syncWidgetState(btn: HTMLButtonElement): void {
+  const active = playing;
+  btn.textContent = active ? PAUSE_ICON : PLAY_ICON;
+  btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  const labelKey = active ? 'fab.readAloudPause' : 'fab.readAloud';
+  const label = tr(labelKey) || (active ? 'Pause reading' : 'Read aloud');
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -176,10 +227,16 @@ function stopAll(): void {
 export function initTextToSpeech(signal: AbortSignal): void {
   if (!('speechSynthesis' in window)) return;
 
+  playbackRate = getSavedSpeed() || 1;
+
   const loadVoices = () => {
     const voices = getVoicesForLang();
-    if (voices.length) {
-      selectedVoice = voices[0];
+    const savedName = getSavedVoiceName();
+    const saved = savedName ? voices.find(v => v.name === savedName) : null;
+    if (saved) {
+      selectedVoice = saved;
+    } else if (voices.length) {
+      selectedVoice = voices.find(v => v.localService) || voices[0];
     }
   };
 
@@ -189,7 +246,23 @@ export function initTextToSpeech(signal: AbortSignal): void {
     loadVoices();
   }
 
+  (window as unknown as { __ttsToggle?: () => void }).__ttsToggle = toggleTextToSpeech;
+  (window as unknown as { __ttsState?: () => { playing: boolean; paused: boolean } }).__ttsState = getTextToSpeechState;
+
+  const btn = buildWidget();
+  if (btn) {
+    syncWidgetState(btn);
+    btn.addEventListener('click', () => {
+      toggleTextToSpeech();
+    }, { signal });
+    const onStateChange = () => syncWidgetState(btn);
+    document.addEventListener('tts:state', onStateChange, { signal });
+  }
+
   signal.addEventListener('abort', () => {
     stopAll();
+    delete (window as unknown as { __ttsToggle?: () => void }).__ttsToggle;
+    delete (window as unknown as { __ttsState?: () => unknown }).__ttsState;
+    document.getElementById('tts-fab')?.remove();
   });
 }

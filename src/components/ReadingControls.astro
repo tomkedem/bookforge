@@ -51,6 +51,27 @@
       </button>
     </div>
 
+    <!-- Navigation (mobile only) -->
+    <div class="fab-item fab-item-mobile-only">
+      <span class="fab-label" data-i18n="fab.navigation">Navigation</span>
+      <button id="fab-nav-btn" class="fab-sub-btn" aria-label="Open navigation" title="Navigation">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Highlights (mobile only) -->
+    <div class="fab-item fab-item-mobile-only">
+      <span class="fab-label" data-i18n="fab.highlights">Highlights</span>
+      <button id="fab-highlights-btn" class="fab-sub-btn" aria-label="Open highlights" title="Highlights">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+    </div>
+
   </div><!-- /fab-actions -->
 
   <!-- Main FAB toggle -->
@@ -330,6 +351,13 @@
   .fab-actions.open .fab-item:nth-child(1) { transition-delay: 0ms; }
   .fab-actions.open .fab-item:nth-child(2) { transition-delay: 40ms; }
   .fab-actions.open .fab-item:nth-child(3) { transition-delay: 80ms; }
+  .fab-actions.open .fab-item:nth-child(4) { transition-delay: 120ms; }
+  .fab-actions.open .fab-item:nth-child(5) { transition-delay: 160ms; }
+
+  /* Mobile-only sub-items (Navigation): hidden on desktop */
+  @media (min-width: 1024px) {
+    .fab-item-mobile-only { display: none; }
+  }
 
   /* ══════════════════════════════════════
      TYPOGRAPHY PANEL
@@ -755,6 +783,18 @@
 
     $('typography-btn')?.addEventListener('click', () => {
       toggleTypoPanel();
+    });
+
+    /* Navigation (mobile-only): delegate to the hidden drawer toggle */
+    $('fab-nav-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      $('mobile-toc-toggle')?.click();
+    });
+
+    /* Highlights (mobile-only): delegate to the hidden highlights FAB */
+    $('fab-highlights-btn')?.addEventListener('click', () => {
+      toggleFab(false);
+      $('highlights-fab')?.click();
     });
 
     /* Close panel */
