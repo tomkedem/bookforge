@@ -233,6 +233,7 @@ def update_book_metadata(
     titles: dict[str, str],
     subtitles: dict[str, str],
     descriptions: dict[str, str],
+    credits: dict[str, dict[str, str]] | None = None,
 ) -> bool:
     """
     Update book-level metadata in content-structure.json.
@@ -241,6 +242,8 @@ def update_book_metadata(
     - titles
     - subtitles
     - descriptions
+    - credits: optional dict of {field_name: {lang: value}} where field_name
+      is "lecturer" | "editor" | "author". Each field stores a per-language map.
 
     Each key is a language code and each value is the translated text.
     """
@@ -261,6 +264,20 @@ def update_book_metadata(
 
     if descriptions:
         book_data["descriptions"] = {**book_data.get("descriptions", {}), **descriptions}
+
+    if credits:
+        existing_credits = book_data.get("credits", {}) or {}
+        for field, per_lang in credits.items():
+            if field not in ("lecturer", "editor", "author"):
+                continue
+            current_value = existing_credits.get(field)
+            # Promote legacy string -> { SOURCE_LANGUAGE: value }
+            if isinstance(current_value, str):
+                current_value = {SOURCE_LANGUAGE: current_value}
+            elif not isinstance(current_value, dict):
+                current_value = {}
+            existing_credits[field] = {**current_value, **per_lang}
+        book_data["credits"] = existing_credits
 
     data["book"] = book_data
     json_path.write_text(
