@@ -278,19 +278,25 @@ body.focus-mode::after {
   font-family: var(--reading-font-family);
 }
 
+/* Scoped breathing room between left sidebar and chapter content.
+   Applied only to the content container (body); the title block
+   mirrors this so its start edge stays aligned with the body. */
 @media (min-width: 1024px) {
   .reading-article .chapter-content {
     max-width: min(100%, 1040px);
+    padding-inline-start: 20px;
   }
 }
 @media (min-width: 1280px) {
   .reading-article .chapter-content {
     max-width: min(100%, 1160px);
+    padding-inline-start: 20px;
   }
 }
 @media (min-width: 1536px) {
   .reading-article .chapter-content {
     max-width: min(100%, 1280px);
+    padding-inline-start: 20px;
   }
 }
 
