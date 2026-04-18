@@ -419,7 +419,7 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
     
     # Step 4: Map images in paragraphs (with dimensions)
     for para_idx, para in enumerate(doc.paragraphs):
-        for run in para.runs:
+        for run_idx, run in enumerate(para.runs):
             run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
             if '<w:drawing' in run_xml or '<w:pict' in run_xml:
                 # Extract exact rel_id via regex (avoid substring false matches)
@@ -443,10 +443,10 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
                         cx, cy = int(extents[0][0]), int(extents[0][1])
                         w_px = round(cx / 914400 * 96)
                         h_px = round(cy / 914400 * 96)
-                    image_positions_temp.append((para_idx, matched_rel_id, w_px, h_px))
+                    image_positions_temp.append((para_idx, run_idx, matched_rel_id, w_px, h_px))
 
     # Step 5: Sort by paragraph position
-    image_positions_temp.sort(key=lambda x: x[0])
+    image_positions_temp.sort(key=lambda x: (x[0], x[1]))
 
     # Step 6: Determine if we have a cover image
     # Priority: Images at position -1 (SDT/cover page) > Early paragraph images
@@ -481,7 +481,7 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
     image_positions = []
     image_counter = 1  # Start from 1 for chapter images
     
-    for para_idx, rel_id, w_px, h_px in image_positions_temp:
+    for para_idx, run_idx, rel_id, w_px, h_px in image_positions_temp:
         img_info = image_data[rel_id]
         
         if has_cover and rel_id == cover_rel_id:
@@ -500,7 +500,7 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
             filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
             image_counter += 1
         
-        image_positions.append((para_idx, rel_id, filename, w_px, h_px))
+        image_positions.append((para_idx, run_idx, rel_id, filename, w_px, h_px))
 
     return {
         'files': image_files,
@@ -509,60 +509,6 @@ def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAUL
         'book_name': book_name  # For absolute URL paths
     }
 
-def _detect_code_block_start(text: str) -> str | None:
-    """
-    Detect the start of a fenced code block.
-
-    Supported formats:
-    - python```
-    - ```python
-    - Bash```
-    - ```Bash
-    - ```
-
-    Returns a normalized language name, or None if this is not a code block start.
-    """
-    if not text:
-        return None
-
-    stripped = text.strip()
-    lang = None
-
-    # Example: python``` / Bash```
-    match = re.match(r'^([A-Za-z0-9_+\-]+)```$', stripped)
-    if match:
-        lang = match.group(1)
-
-    # Example: ```python / ```Bash / ```
-    elif stripped.startswith("```"):
-        lang = stripped[3:].strip()
-
-    else:
-        return None
-
-    lang = (lang or "").lower()
-
-    aliases = {
-        "py": "python",
-        "python": "python",
-        "js": "javascript",
-        "javascript": "javascript",
-        "ts": "typescript",
-        "typescript": "typescript",
-        "sh": "bash",
-        "shell": "bash",
-        "bash": "bash",
-        "zsh": "bash",
-        "md": "markdown",
-        "markdown": "markdown",
-        "yml": "yaml",
-        "ps1": "powershell",
-    }
-
-    if not lang:
-        return "text"
-
-    return aliases.get(lang, lang)
 
 def _clean_markdown_preserving_code(text: str) -> str:
     """
@@ -610,67 +556,95 @@ def _preserve_soft_breaks(text: str) -> str:
         return text
     return text.replace("\n", "  \n")
 
+def _detect_code_block_start(text: str) -> str | None:
+    """
+    Detect standard fenced code block start only.
+
+    Supported:
+    - ```python
+    - ```bash
+    - ```javascript
+    - ```
+    """
+    if not text:
+        return None
+
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return None
+
+    lang = stripped[3:].strip().lower()
+
+    aliases = {
+        "py": "python",
+        "python": "python",
+        "sh": "bash",
+        "shell": "bash",
+        "bash": "bash",
+        "zsh": "bash",
+        "js": "javascript",
+        "javascript": "javascript",
+        "ts": "typescript",
+        "typescript": "typescript",
+        "md": "markdown",
+        "markdown": "markdown",
+        "yml": "yaml",
+        "yaml": "yaml",
+        "ps1": "powershell",
+        "powershell": "powershell",
+    }
+
+    if not lang:
+        return "text"
+
+    return aliases.get(lang, lang)
+
 def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: int = None, book_name: str = "") -> str:
-    """
-    Convert one parsed chapter into output content.
-
-    Current behavior:
-    1. Adds the chapter title as a Markdown H1.
-    2. Inserts chapter images in the correct position.
-    3. Converts headings, lists, spacing, and code blocks.
-    4. Converts explicit code fences from Word into <CodeRenderer ... />.
-    5. Preserves code block content exactly as-is.
-    6. Cleans final Markdown artifacts only outside code blocks / components.
-
-    IMPORTANT RULE:
-    A code block is created ONLY if the Word content explicitly contains
-    a supported opening fence marker, such as:
-        python```
-        ```python
-
-    and an explicit closing fence:
-        ```
-
-    If no explicit fence exists in the source, this function will NOT invent one.
-    """
-
-    # Start the chapter with a Markdown H1 title.
     lines = [f"# {chapter['title']}", ""]
 
     content = chapter["content"]
     if not content:
         return "\n".join(lines)
 
-    # Define the paragraph range that belongs to this chapter.
-    # This helps us attach only the images that belong to this chapter.
     ch_start = chapter.get("heading_doc_index", 0)
     ch_end = next_heading_idx if next_heading_idx is not None else float("inf")
 
-    # Collect images that belong to this chapter only.
-    # Each item becomes: (para_idx, filename, width_px, height_px)
+    # =========================
+    # Build chapter_images
+    # =========================
     chapter_images = []
     if image_positions:
         for item in image_positions:
             para_idx = item[0]
 
-            # Negative index means cover image. It should not appear inside the chapter body.
             if para_idx < 0:
                 continue
 
-            filename = item[2]
-            w_px = item[3] if len(item) > 3 else 0
-            h_px = item[4] if len(item) > 4 else 0
+            run_idx = item[1]
+            filename = item[3]
+            w_px = item[4] if len(item) > 4 else 0
+            h_px = item[5] if len(item) > 5 else 0
 
             if ch_start <= para_idx < ch_end:
-                chapter_images.append((para_idx, filename, w_px, h_px))
+                chapter_images.append((para_idx, run_idx, filename, w_px, h_px))
 
-    # Keep image order stable according to original document position.
-    chapter_images.sort(key=lambda x: x[0])
+    chapter_images.sort(key=lambda x: (x[0], x[1]))
 
-    # Build assets path once.
-    assets_path = f"/{book_name}/assets" if book_name else "../assets"
+    assets_path = f"/{book_name}/assets"
 
-    img_cursor = 0
+    # =========================
+    # Build images_by_para_run (correct)
+    # =========================
+    images_by_para_run = {}
+
+    for p_idx, r_idx, filename, w_px, h_px in chapter_images:
+        images_by_para_run.setdefault(p_idx, {}).setdefault(r_idx, []).append(
+            (filename, w_px, h_px)
+        )
+
+    # =========================
+    # Main loop
+    # =========================
     i = 0
 
     while i < len(content):
@@ -680,34 +654,20 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         para_idx = item.get("para_index", -1)
         indent_level = item.get("indent_level", 0)
 
-        # Detect explicit code-block opening marker once per paragraph.
-        # This avoids duplicate calls and keeps the control flow easier to read.
         lang_marker = _detect_code_block_start(text)
 
-        # Insert all images whose original position is before or equal to this paragraph.
-        while img_cursor < len(chapter_images) and chapter_images[img_cursor][0] <= para_idx:
-            _, img_filename, w_px, h_px = chapter_images[img_cursor]
-
-            if w_px > 0 and h_px > 0:
-                lines.append(
-                    f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />'
-                )
-            else:
-                lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
-
-            lines.append("")
-            img_cursor += 1
-
-        # Case 1: spacing paragraph from Word
+        # =========================
+        # Spacing
+        # =========================
         if style == "Spacing":
-            # This paragraph already represents an intentional blank line.
             lines.append("")
             i += 1
             continue
 
-        # Case 2: explicit fenced code block start
+        # =========================
+        # Code blocks
+        # =========================
         elif lang_marker:
-            # We only create a code block if we also find an explicit closing fence.
             code_lines = []
             j = i + 1
             closing_found = False
@@ -715,119 +675,104 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             while j < len(content):
                 next_text = content[j]["text"]
 
-                # Only a clean standalone ``` line closes the block.
                 if next_text.strip() == "```":
                     closing_found = True
                     j += 1
                     break
 
-                # Preserve code exactly as it appears in the source.
                 code_lines.append(next_text)
                 j += 1
 
             if closing_found:
-                # Emit regular fenced markdown instead of CodeRenderer.
                 lines.append(f"```{lang_marker}")
                 lines.extend(code_lines)
                 lines.append("```")
                 lines.append("")
 
-                # Skip the whole block, because we already consumed it.
                 i = j
                 continue
+            else:
+                lines.append(_preserve_soft_breaks(text))
+                lines.append("")
+                i += 1
+                continue
 
-    else:
-        # No closing fence was found.
-        # Do NOT convert the rest of the chapter into code.
-        # Do NOT invent a closing fence.
-        # Treat the opening marker as regular text and continue normally.
-        lines.append(_preserve_soft_breaks(text))
-        lines.append("")
-        i += 1
-        continue
-
-        # Case 3: inline code or old legacy code-like paragraph
+        # =========================
+        # Inline code
+        # =========================
         elif style == "code" or (text.startswith("`") and not lang_marker):
-            # This is not a fenced block.
-            # Keep it as regular text exactly as parsed.
             lines.append(text)
             lines.append("")
             i += 1
             continue
 
-        # Case 4: heading level 2
+        # =========================
+        # Headings
+        # =========================
         elif "Heading 2" in style:
             lines.append(f"## {text}")
 
-        # Case 5: heading level 3
         elif "Heading 3" in style:
             lines.append(f"### {text}")
 
-        # Case 6: list item
+        # =========================
+        # Lists
+        # =========================
         elif "List" in style:
-            """
-            Preserve list hierarchy from Word.
-
-            indent_level comes from ingest.py:
-            0 = top-level list
-            1+ = nested list levels
-            """
             stripped = text.lstrip()
-
-            # Normalize common visible bullets if they already exist at the start
             normalized_text = re.sub(r'^[•\-\*]\s*', '', stripped)
-
-            # Detect if the text already starts with explicit numbering like:
-            # 1) item
-            # 1. item
             has_number_prefix = bool(re.match(r'^\d+[\)\.]\s', stripped))
-
-            # Markdown nesting: 2 spaces per level is fine for readability
             prefix_indent = "  " * indent_level
 
             if has_number_prefix:
-                # Keep numbered item text exactly as-is, but respect nesting level
                 lines.append(f"{prefix_indent}{stripped}")
             else:
-                # Normalize all bullet-like list items to standard Markdown bullet
                 lines.append(f"{prefix_indent}- {normalized_text}")
 
+        # =========================
+        # Tables
+        # =========================
         elif style == "Table":
-            # Tables are already converted to markdown in ingest.py.
-            # Do not apply soft-break conversion here.
             lines.append(text)
-        # Case 7: regular paragraph
+
+        # =========================
+        # Paragraph + images (INLINE)
+        # =========================
         else:
+            para_images = images_by_para_run.get(para_idx, {})
+
+            # Images BEFORE text (run 0)
+            if 0 in para_images:
+                for img_filename, w_px, h_px in para_images[0]:
+                    if w_px > 0 and h_px > 0:
+                        lines.append(
+                            f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />'
+                        )
+                    else:
+                        lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
+                    lines.append("")
+
+            # Text
             lines.append(_preserve_soft_breaks(text))
 
-        # Add a blank line between output blocks.
+            # Images AFTER text (run order)
+            for r_idx in sorted(para_images.keys()):
+                if r_idx == 0:
+                    continue
+
+                for img_filename, w_px, h_px in para_images[r_idx]:
+                    if w_px > 0 and h_px > 0:
+                        lines.append(
+                            f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />'
+                        )
+                    else:
+                        lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
+                    lines.append("")
+
         lines.append("")
         i += 1
 
-    # Append any images that were not inserted yet.
-    while img_cursor < len(chapter_images):
-        _, img_filename, w_px, h_px = chapter_images[img_cursor]
-
-        if w_px > 0 and h_px > 0:
-            lines.append(
-                f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />'
-            )
-        else:
-            lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
-
-        lines.append("")
-        img_cursor += 1
-
-    # Join final content.
     result = "\n".join(lines)
-
-    # IMPORTANT:
-    # We still avoid full cleanup on code content.
-    # Since code is now wrapped inside <CodeRenderer ... />,
-    # this cleanup should ideally avoid touching those tags too.
-    # If your _clean_markdown_preserving_code currently protects only ``` blocks,
-    # it is still OK here in most cases, but the best next step is to make it
-    # also preserve <CodeRenderer ... /> blocks.
     result = _clean_markdown_preserving_code(result)
 
     return result

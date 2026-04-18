@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pipeline.ingest import ingest
 from pipeline.parse import parse, extract_images, to_markdown, extract_book_info, DEFAULT_ASSETS_DIR
 from pipeline.organize import organize
-from pipeline.translate import get_chapters_to_translate, build_translation_prompt, build_batch_prompt, fix_all_hebrew_files, update_content_structure_titles
+from pipeline.translate import get_chapters_to_translate, build_batch_prompt, fix_all_hebrew_files, update_content_structure_titles
 from pipeline.languages import (
     SUPPORTED_LANGUAGES,
     LANGUAGE_CODES,
@@ -39,80 +39,6 @@ from pipeline.languages import (
     get_language_meta,
     parse_languages_arg,
 )
-
-
-def sync_images_to_translations(book_dir: Path, book_name: str, languages: list[str] = None):
-    """
-    Copy correct image references from source language chapters to all translated chapters.
-    Translated files keep their text but get the same images
-    at the same positions as the source file.
-    
-    Supports: intro.{lang}.md, chapter-XX.{lang}.md
-    Languages: All configured languages.
-    Uses absolute paths: /{book_name}/assets/
-    """
-    if languages is None:
-        languages = LANGUAGE_CODES
-    
-    target_languages = [l for l in languages if l != SOURCE_LANGUAGE]
-    
-    img_pattern = re.compile(r'(<img [^>]+/>|!\[[^\]]*\]\([^)]+\))')
-    
-    synced_count = 0
-    
-    # Collect all source language files (intro + chapters)
-    source_files = []
-    intro_path = book_dir / f"intro.{SOURCE_LANGUAGE}.md"
-    if intro_path.exists():
-        source_files.append(intro_path)
-    source_files.extend(sorted(book_dir.glob(f"chapter-*.{SOURCE_LANGUAGE}.md")))
-    
-    for source_path in source_files:
-        source_content = source_path.read_text(encoding="utf-8")
-        source_images = img_pattern.findall(source_content)
-        
-        # Sync to all target languages
-        for lang_code in target_languages:
-            target_path = source_path.with_name(source_path.name.replace(f".{SOURCE_LANGUAGE}.md", f".{lang_code}.md"))
-            
-            if not target_path.exists():
-                continue
-            
-            target_content = target_path.read_text(encoding="utf-8")
-            target_images = img_pattern.findall(target_content)
-            
-            if source_images == target_images:
-                continue  # Already in sync
-            
-            # Remove old images
-            clean_content = target_content
-            for old_img in target_images:
-                clean_content = clean_content.replace(old_img + "\n\n", "")
-                clean_content = clean_content.replace(old_img + "\n", "")
-                clean_content = clean_content.replace(old_img, "")
-            
-            # Insert correct images after title line
-            if source_images:
-                lines = clean_content.split("\n")
-                insert_idx = 2  # After "# Title" and blank line
-                for img in reversed(source_images):
-                    if "../assets/" in img:
-                        img = img.replace("../assets/", f"/{book_name}/assets/")
-                    lines.insert(insert_idx, "")
-                    lines.insert(insert_idx, img)
-                clean_content = "\n".join(lines)
-            
-            target_path.write_text(clean_content, encoding="utf-8")
-            print(f"  [SYNC] {target_path.name}: {len(target_images)} → {len(source_images)} images")
-            synced_count += 1
-    
-    return synced_count
-
-
-# Backward compatibility alias
-def sync_images_to_english(book_dir: Path, book_name: str):
-    """Deprecated: Use sync_images_to_translations instead."""
-    return sync_images_to_translations(book_dir, book_name)
 
 
 def copy_assets_to_public(book_slug: str, output_dir: str = "output"):
@@ -193,7 +119,7 @@ def run_pipeline(docx_path: str, book_name: str,
             "content": md,
             "type": ch.get("type", "content")  # intro, cover, or content
         })
-        img_count = md.count("<img ") + md.count("![")
+        img_count = md.count("<img ")
         total_images += img_count
     print(f"  {total_images} images placed across {len(chapters_md)} chapters")
 
@@ -240,7 +166,7 @@ def run_pipeline(docx_path: str, book_name: str,
 
     # Step 7: Sync images to all translations
     print("\n[7/7] Sync & finalize...")
-    sync_images_to_translations(book_dir, book_name, languages)
+   
     # Assets already in public/{book}/assets/ - no copy needed
 
     print(f"\n{'=' * 60}")

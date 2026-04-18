@@ -224,9 +224,9 @@ def _generate_content_structure(book_dir: Path, chapters_md: list[dict],
         }
     }
 
-    json_path = book_dir / "content-structure.json"
+    json_path = book_dir / "book-manifest.json"
     json_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"  [OK] content-structure.json: {len(chapters_json)} chapters, {len(languages)} languages")
+    print(f"  [OK] book-manifest.json: {len(chapters_json)} chapters, {len(languages)} languages")
 
 
 def _format_title(slug: str) -> str:
