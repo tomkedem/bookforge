@@ -1535,7 +1535,7 @@ video {
 		height: 1px;
 	}</style>
 <style data-vite-dev-id="D:/2025 Stu/AI Engineer/AllBooks2026/Claude Code - Book/bookforge/src/styles/theme.css">/* ═══════════════════════════════════════════════════════════
-   YUVAL THEME — Single Source of Truth
+   YUVAL THEME - Single Source of Truth
    All light/dark color definitions live here.
    Components use CSS variables via Tailwind tokens or var().
    ═══════════════════════════════════════════════════════════ */
@@ -1546,7 +1546,7 @@ video {
   --yuval-bg-secondary: #ede8df;
   --yuval-surface: #ffffff;               /* cards, header, sidebars */
   --yuval-header-bg: rgba(255, 255, 255, 0.95);
-  --yuval-reading-bg: #faf7f2;            /* warm paper — easiest on the eyes */
+  --yuval-reading-bg: #faf7f2;            /* warm paper - easiest on the eyes */
 
   /* ── Text ── */
   --yuval-text: #1a1a1a;
@@ -1596,7 +1596,7 @@ video {
 }
 
 .dark {
-  /* ── Page backgrounds — true neutral dark, no color cast ── */
+  /* ── Page backgrounds - true neutral dark, no color cast ── */
   --yuval-bg: #111111;
   --yuval-bg-secondary: #191919;
   --yuval-surface: #1e1e1e;
@@ -1617,7 +1617,7 @@ video {
   --yuval-link: #ededed;
   --yuval-link-hover: #aaaaaa;
 
-  /* ── Buttons & accents — off-white, mirrors light mode logic ── */
+  /* ── Buttons & accents - off-white, mirrors light mode logic ── */
   --yuval-accent: #ededed;
   --yuval-accent-hover: #cccccc;
   --yuval-accent-text: #111111;
@@ -1651,7 +1651,7 @@ video {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SEPIA THEME — Warm paper-like appearance
+   SEPIA THEME - Warm paper-like appearance
    ═══════════════════════════════════════════════════════ */
 .sepia {
   /* ── Page backgrounds ── */
@@ -1709,7 +1709,7 @@ video {
 }
 
 /* ═══════════════════════════════════════════════════════
-   FOCUS MODE — Immersive distraction-free reading
+   FOCUS MODE - Immersive distraction-free reading
    ═══════════════════════════════════════════════════════ */
 body.focus-mode .toc-sidebar,
 body.focus-mode .outline-sidebar,
@@ -1744,7 +1744,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════════
-   TYPOGRAPHY CONTROLS — CSS Variables
+   TYPOGRAPHY CONTROLS - CSS Variables
    ═══════════════════════════════════════════════════════ */
 :root {
   --reading-font-size: 1.125rem;
@@ -1784,7 +1784,7 @@ body.focus-mode::after {
     color: #000 !important;
   }
 
-  /* Chapter content — clean black on white */
+  /* Chapter content - clean black on white */
   .chapter-content {
     max-width: 100% !important;
     font-size: 11pt !important;
@@ -1804,13 +1804,13 @@ body.focus-mode::after {
   /* No orphan paragraphs */
   .chapter-content p { orphans: 3; widows: 3; }
 
-  /* Highlights — keep background, add print-friendly label */
+  /* Highlights - keep background, add print-friendly label */
   .yuval-hl[data-color="yellow"] { background: #fef9c3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .yuval-hl[data-color="blue"]   { background: #dbeafe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .yuval-hl[data-color="green"]  { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .yuval-hl[data-color="pink"]   { background: #fce7f3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Links — show URL */
+  /* Links - show URL */
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
 
   /* Page break before new chapters */
@@ -1826,7 +1826,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CHAPTER TRANSITIONS — Instant swap, no animation
+   CHAPTER TRANSITIONS - Instant swap, no animation
    ═══════════════════════════════════════════════════════ */
 .reading-article {
   min-height: 100vh;

@@ -3,7 +3,7 @@
  *
  * HOW TO ADD A NEW LANGUAGE:
  *   1. Add it to SUPPORTED_LANGUAGES in src/utils/language.ts
- *   2. Add its translations here — any missing key falls back to English.
+ *   2. Add its translations here - any missing key falls back to English.
  *
  * HOW TO ADD A NEW STRING:
  *   1. Add a key here with at least an `en` value.

@@ -191,7 +191,7 @@ markdown content loading עובד דרך fetch() ל-public files.
 או למטמון בבנייה כחלק של content collection.
 
 ### 2026-04-12
-**Em dash (—) ו-en dash (–) אסורים בקבצי MD.**
+**Em dash (-) ו-en dash (–) אסורים בקבצי MD.**
 הבעיה: Claude מייצר em/en dashes בתרגום, וקבצי Word מכילים אותם.
 זה נראה לא נקי ולא עקבי עם רוב הקוד.
 

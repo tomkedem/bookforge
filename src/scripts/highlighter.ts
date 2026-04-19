@@ -1075,7 +1075,7 @@ function openQuoteCard(markEl: HTMLElement): void {
     });
   }
 
-  const shareText = `"${text}" — ${title}`;
+  const shareText = `"${text}" - ${title}`;
 
   overlay.querySelector('#qc-share-whatsapp')!.addEventListener('click', () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');

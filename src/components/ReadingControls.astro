@@ -1,5 +1,5 @@
 ---
-// Reading Controls — FAB that expands to reveal: Focus Mode, Typography, Theme
+// Reading Controls - FAB that expands to reveal: Focus Mode, Typography, Theme
 // Mobile: typography opens as bottom sheet. Desktop: floating card.
 ---
 
@@ -155,16 +155,38 @@
       </div>
     </div>
 
-    <!-- Font Family -->
+    <!-- Font Family (Typography Mode) -->
     <div class="setting-row">
       <label data-i18n="display.font">Font</label>
-      <select id="font-family-select" aria-label="Font family">
-        <option value="'Frank Ruhl Libre', serif">Frank Ruhl</option>
-        <option value="'Heebo', sans-serif">Heebo</option>
-        <option value="Georgia, serif">Georgia</option>
-        <option value="system-ui, sans-serif">System</option>
-      </select>
+      <div class="seg-control">
+        <button class="seg-btn typography-mode-btn" data-mode="modern" type="button" aria-pressed="true" data-i18n="display.fontModern">Modern</button>
+        <button class="seg-btn typography-mode-btn" data-mode="clean" type="button" aria-pressed="false" data-i18n="display.fontClean">Clean</button>
+      </div>
     </div>
+<script is:inline>
+  // Typography mode toggle logic
+  const STORAGE_KEY = 'typography-mode';
+  function setTypographyMode(mode) {
+    window.dispatchEvent(new CustomEvent('typography-mode-change', { detail: { mode } }));
+  }
+  function updateTypographyButtons(mode) {
+    document.querySelectorAll('.typography-mode-btn').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.mode === mode ? 'true' : 'false');
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+  }
+  document.querySelectorAll('.typography-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      setTypographyMode(mode);
+      updateTypographyButtons(mode);
+      localStorage.setItem(STORAGE_KEY, mode);
+    });
+  });
+  // On load: set active button
+  const saved = localStorage.getItem(STORAGE_KEY);
+  updateTypographyButtons(saved === 'clean' ? 'clean' : 'modern');
+</script>
 
     <button id="reset-typography" class="reset-btn" data-i18n="display.reset">
       Reset defaults
@@ -757,30 +779,28 @@
   }
 
   /* ── Typography settings ── */
-  const DEFAULTS = { fontSize: 18, lineHeight: 1.8, contentWidth: 720, fontFamily: "'Frank Ruhl Libre', serif" };
+  const DEFAULTS = { fontSize: 18, lineHeight: 1.8, contentWidth: 720 };
 
   function loadTypo() {
     try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('yuval-typography') || '{}') }; }
     catch { return { ...DEFAULTS }; }
   }
 
-  function saveTypo(s: typeof DEFAULTS) {
+  function saveTypo(s) {
     localStorage.setItem('yuval-typography', JSON.stringify(s));
   }
 
-  function applyTypo(s: typeof DEFAULTS) {
+  function applyTypo(s) {
     const root = document.documentElement;
     root.style.setProperty('--reading-font-size', `${s.fontSize}px`);
     root.style.setProperty('--reading-line-height', String(s.lineHeight));
     root.style.setProperty('--reading-content-width', `${s.contentWidth}px`);
-    root.style.setProperty('--reading-font-family', s.fontFamily);
+    // font-family is now handled by the typography mode system only
 
     const fsEl = $('font-size-display');    if (fsEl) fsEl.textContent = `${s.fontSize}px`;
     const lhEl = $('line-height-display');  if (lhEl) lhEl.textContent = s.lineHeight.toFixed(1);
     const slider = $('line-height-slider') as HTMLInputElement | null;
     if (slider) slider.value = String(s.lineHeight);
-    const sel = $('font-family-select') as HTMLSelectElement | null;
-    if (sel) sel.value = s.fontFamily;
 
     document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach(btn => {
       btn.classList.toggle('active', parseInt(btn.dataset.width || '0') === s.contentWidth);
@@ -862,10 +882,7 @@
       });
     });
 
-    $('font-family-select')?.addEventListener('change', (e) => {
-      const s = loadTypo(); s.fontFamily = (e.target as HTMLSelectElement).value;
-      saveTypo(s); applyTypo(s);
-    });
+
 
     $('reset-typography')?.addEventListener('click', () => {
       saveTypo(DEFAULTS); applyTypo(DEFAULTS);

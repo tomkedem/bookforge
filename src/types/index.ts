@@ -166,16 +166,14 @@ export interface Book {
 }
 
 export interface Chapter {
-  id: number;
+  id: number | string;
+  file_slug?: string;
+  type?: 'intro' | 'content' | 'cover';
   titles: Record<string, string>;      // { he: '...', en: '...', fr: '...' }
   sections: number;
   has_images: boolean;
   word_count: number;
   topics: string[];
-  // Legacy support - kept for backwards compatibility
-  title_he?: string;
-  title_en?: string;
-  title_es?: string;
 }
 
 // Application Types

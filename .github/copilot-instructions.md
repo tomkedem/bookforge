@@ -1,4 +1,4 @@
-# Copilot & AI Assistant Instructions — BookForge / Yuval
+# Copilot & AI Assistant Instructions - BookForge / Yuval
 
 This file is binding on GitHub Copilot, Claude Code, and any other AI code assistant acting inside this repository. The project's design brief lives in [`.impeccable.md`](../.impeccable.md); this file contains the **hard constraints** derived from that brief that must be enforced on every generated suggestion, completion, or refactor.
 
@@ -9,10 +9,10 @@ A suggestion that violates any constraint below is wrong, even if it compiles, e
 ## Project Orientation
 
 - **Framework:** Astro 5 with `@astrojs/tailwind` and `@astrojs/node`. TypeScript throughout. Vitest for units.
-- **Product:** Yuval — a bilingual (Hebrew RTL / English LTR) digital reading sanctuary built on top of a BookForge pipeline.
+- **Product:** Yuval - a bilingual (Hebrew RTL / English LTR) digital reading sanctuary built on top of a BookForge pipeline.
 - **i18n:** every user-facing string goes through [`src/i18n/translations.ts`](../src/i18n/translations.ts). Zero hardcoded user-facing strings in components or pages. Zero exceptions.
 - **Design system:** single source of truth for visual tokens is [`src/styles/theme.css`](../src/styles/theme.css). All color, type, spacing, and motion decisions reference `--yuval-*` custom properties. If a value is not a token, it is a bug.
-- **Brief:** before generating any component, page, or visual change, read [`.impeccable.md`](../.impeccable.md). The five principles in that file have order of precedence — principle 1 wins over principle 5 in conflict.
+- **Brief:** before generating any component, page, or visual change, read [`.impeccable.md`](../.impeccable.md). The five principles in that file have order of precedence - principle 1 wins over principle 5 in conflict.
 
 ---
 
@@ -48,7 +48,7 @@ These six prohibitions are derived from the `Sanctuary, not Browser` directive i
 ### 4. No generic drop shadows.
 
 - **Forbidden patterns:**
-  - `box-shadow: 0 Npx Npx -Npx rgba(0, 0, 0, 0.N)` — the classic "soft black blur" elevation.
+  - `box-shadow: 0 Npx Npx -Npx rgba(0, 0, 0, 0.N)` - the classic "soft black blur" elevation.
   - Tailwind's `shadow`, `shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl`, `shadow-2xl` on cards, panels, FABs, tooltips, or modals without a brief-justified reason.
   - Stacking two shadows for a "layered" elevation effect on UI surfaces.
 - **Instead:** elevation is expressed through paper. A slight warm underlay tied to the atmosphere, a hairline border that tracks `--yuval-border`, or a subtle grain offset. Not a blur.
@@ -61,16 +61,16 @@ These six prohibitions are derived from the `Sanctuary, not Browser` directive i
   - `border-inline-start: Npx solid …` with `N > 1`.
   - `border-inline-end: Npx solid …` with `N > 1`.
   - Applies whether the color is a hex literal, a CSS variable, an OKLCH value, or any other form. The *pattern* is forbidden regardless of color.
-  - This is already flagged by the `/impeccable` skill as `BAN 1` — it is the most recognizable AI design tell in admin / medical / dashboard UIs.
-- **Instead:** use a full hairline border, a background tint that tracks the atmosphere, a leading number or glyph, or no visual indicator at all. See `p.bm-marked` in `src/styles/theme.css` — that rule is scheduled for removal, do not add more like it.
+  - This is already flagged by the `/impeccable` skill as `BAN 1` - it is the most recognizable AI design tell in admin / medical / dashboard UIs.
+- **Instead:** use a full hairline border, a background tint that tracks the atmosphere, a leading number or glyph, or no visual indicator at all. See `p.bm-marked` in `src/styles/theme.css` - that rule is scheduled for removal, do not add more like it.
 
 ### 6. No gradient text and no gradient decoration as UI language.
 
 - **Forbidden patterns:**
   - `background-clip: text` / `-webkit-background-clip: text` combined with a `linear-gradient`, `radial-gradient`, or `conic-gradient` background.
-  - Gradients as the visual language for "this paragraph is bookmarked / highlighted" (the current `linear-gradient(to right, #fbbf24…, transparent)` on `p.bm-marked` is being removed — do not regenerate it).
+  - Gradients as the visual language for "this paragraph is bookmarked / highlighted" (the current `linear-gradient(to right, #fbbf24…, transparent)` on `p.bm-marked` is being removed - do not regenerate it).
   - Purple-to-blue gradients. Cyan-on-dark. Neon accents on dark. These are the 2024–2025 AI palette and are disqualified on sight.
-- **Instead:** the highlight / bookmark / annotation system uses an SVG `<filter>` composition (`feTurbulence` + `feDisplacementMap` + `feGaussianBlur` at ≤ 1.5px displacement) to bleed ink into paper. Solid color only for text — emphasis comes from weight and size, not from gradient fill.
+- **Instead:** the highlight / bookmark / annotation system uses an SVG `<filter>` composition (`feTurbulence` + `feDisplacementMap` + `feGaussianBlur` at ≤ 1.5px displacement) to bleed ink into paper. Solid color only for text - emphasis comes from weight and size, not from gradient fill.
 
 ---
 
@@ -78,7 +78,7 @@ These six prohibitions are derived from the `Sanctuary, not Browser` directive i
 
 - There is no `light / dark / sepia` class swap. All themeable surfaces derive from a single scalar custom property, `--yuval-atmosphere` (range 0 → 1, where 0 = First Light paper and 1 = Midnight ink). Intermediate values are real interpolated states, not crossfades.
 - Color tokens use **OKLCH**, not HSL, not hex. Neutrals are tinted toward the First Light hue (approximately `oklch(… … 75deg)`); they are never pure gray.
-- Surface colors are computed from the scalar via `color-mix(in oklch, var(--first-light), var(--midnight) calc(var(--yuval-atmosphere) * 100%))` or equivalent. Do not hardcode `#f5f0e8` / `#111111` in component CSS when generating new code — reference the atmosphere-derived tokens.
+- Surface colors are computed from the scalar via `color-mix(in oklch, var(--first-light), var(--midnight) calc(var(--yuval-atmosphere) * 100%))` or equivalent. Do not hardcode `#f5f0e8` / `#111111` in component CSS when generating new code - reference the atmosphere-derived tokens.
 - Literal hex colors not present in the atmosphere system (`#fbbf24`, `#ef4444`, `#2563eb`, `#fef9c3`, `#dbeafe`, `#dcfce7`, `#fce7f3`, etc.) are disqualified in new code. The existing occurrences in `theme.css` are transitional and scheduled for removal.
 
 ---
@@ -86,10 +86,10 @@ These six prohibitions are derived from the `Sanctuary, not Browser` directive i
 ## Motion System (Binding)
 
 - One motion language. Four named curves. Every transition and animation in the project references exactly one of:
-  - `--ease-standard` — `cubic-bezier(0.2, 0, 0, 1)` — default for state changes.
-  - `--ease-emphasized` — `cubic-bezier(0.3, 0, 0, 1)` — larger, more deliberate movements (panel reveals, drawer slides).
-  - `--ease-accelerated` — `cubic-bezier(0.3, 0, 1, 1)` — exits and dismissals.
-  - `--ease-spring` — a `linear(…)` easing sampled from a critically-damped spring. Used for the atmosphere drift. Never bouncy, never elastic.
+  - `--ease-standard` - `cubic-bezier(0.2, 0, 0, 1)` - default for state changes.
+  - `--ease-emphasized` - `cubic-bezier(0.3, 0, 0, 1)` - larger, more deliberate movements (panel reveals, drawer slides).
+  - `--ease-accelerated` - `cubic-bezier(0.3, 0, 1, 1)` - exits and dismissals.
+  - `--ease-spring` - a `linear(…)` easing sampled from a critically-damped spring. Used for the atmosphere drift. Never bouncy, never elastic.
 - **Forbidden:** `transition-timing-function: ease` (the browser default), `transition-timing-function: linear` outside of the spring token, inline `cubic-bezier(…)` expressions, Tailwind `ease-in / ease-out / ease-in-out` utilities, any `bounce` or `elastic` keyword.
 - **Layout properties (`width`, `height`, `padding`, `margin`) are not animated.** Use `transform` and `opacity`. For height reveals, animate `grid-template-rows: 0fr → 1fr`.
 - `prefers-reduced-motion` disables animation, not atmosphere. Reduced-motion users still see the correct atmosphere value for the current time-of-day; they do not see it drift.
@@ -100,7 +100,7 @@ These six prohibitions are derived from the `Sanctuary, not Browser` directive i
 
 - **Hebrew display face:** Narkisim Ultra. Loaded with `font-display: block` (not `swap`). Fallback stack while files are absent: `'Frank Ruhl Libre', Georgia, serif`.
 - **Latin display face:** Editorial New. `font-display: block`. Fallback: `'Bodoni Moda', Georgia, serif`.
-- **Hebrew body:** Frank Ruhl Libre **at weight 500**, tracking +0.005em, line-height 1.75. Never 400 — 400 reads as timid.
+- **Hebrew body:** Frank Ruhl Libre **at weight 500**, tracking +0.005em, line-height 1.75. Never 400 - 400 reads as timid.
 - **Latin body:** a refined, non-reflex serif (Tiempos Text / Canela Text / Editorial New Regular). Not Lora, not Crimson, not Source Serif, not any font in the `/impeccable` skill's banned list.
 - **Scale:** 1.25 modular ratio, five steps. Fluid `clamp()` on display, fixed `rem` on body. Named by role (`--type-display`, `--type-h1`, `--type-h2`, `--type-body`, `--type-caption`), never by size.
 - **Numerals:** old-style figures (`font-feature-settings: 'onum'`) in prose; lining figures (`'lnum'`) only in tabular UI.
@@ -126,8 +126,8 @@ These six prohibitions are derived from the `Sanctuary, not Browser` directive i
 
 ## Files That Embody the Standard
 
-- [`.impeccable.md`](../.impeccable.md) — the brief.
-- [`src/pages/compare.astro`](../src/pages/compare.astro) — canonical asymmetric chapter header, dual-atmosphere, no chrome.
-- [`src/styles/theme.css`](../src/styles/theme.css) — transitional token file. Several entries are scheduled for removal; see `.impeccable.md` § Execution Notes for the audit list.
+- [`.impeccable.md`](../.impeccable.md) - the brief.
+- [`src/pages/compare.astro`](../src/pages/compare.astro) - canonical asymmetric chapter header, dual-atmosphere, no chrome.
+- [`src/styles/theme.css`](../src/styles/theme.css) - transitional token file. Several entries are scheduled for removal; see `.impeccable.md` § Execution Notes for the audit list.
 
 When in doubt, match the standard set by `compare.astro`. Not the standard set by the current `ReadingLayout`.

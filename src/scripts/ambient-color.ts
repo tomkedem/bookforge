@@ -3,7 +3,7 @@
  *
  * Applies a very subtle tinted glow to the reading background,
  * derived from the book's dominantColor.
- * Only in dark mode, very low opacity — creates a "mood" without distraction.
+ * Only in dark mode, very low opacity - creates a "mood" without distraction.
  * Inspired by Spotify's album ambient glow.
  */
 

@@ -163,7 +163,7 @@ function getContentContainer(): HTMLElement | null {
   // <div data-lang="..."> carries .visible on the active language only.
   // Older .chapter-content.visible selector never matched (the class is on
   // the wrapper, not the content itself) and fell back to the first
-  // .chapter-content — which on LTR books was the English copy regardless
+  // .chapter-content - which on LTR books was the English copy regardless
   // of the UI language.
   const lang = getLang();
   const active = document.querySelector<HTMLElement>(`[data-lang="${lang}"].visible .chapter-content`);
@@ -237,11 +237,11 @@ export function getVoicesForLang(): SpeechSynthesisVoice[] {
 /**
  * Score a voice for quality. Higher is better.
  * Preference order:
- *   1. Cloud/network voices from major vendors (Google, Microsoft, Apple) — natural prosody.
+ *   1. Cloud/network voices from major vendors (Google, Microsoft, Apple) - natural prosody.
  *   2. Voices explicitly marked "Natural", "Neural", "Online", "Enhanced", "Premium".
  *   3. Named flagship voices (Samantha, Karen, Daniel, Serena, Alex on Apple; Aria, Jenny, Guy on MS).
  *   4. Remote (non-localService) voices.
- *   5. Local SAPI / eSpeak fallbacks — last resort.
+ *   5. Local SAPI / eSpeak fallbacks - last resort.
  * Localized (en-US / en-GB) preferred over generic "en".
  */
 function scoreVoice(v: SpeechSynthesisVoice): number {
@@ -258,7 +258,7 @@ function scoreVoice(v: SpeechSynthesisVoice): number {
   // Flagship named voices
   if (/\b(samantha|karen|daniel|serena|alex|aria|jenny|guy|emma|ryan|libby|sonia|davis)\b/.test(name)) score += 40;
 
-  // Prefer network (cloud) over local for English specifically — local SAPI is robotic
+  // Prefer network (cloud) over local for English specifically - local SAPI is robotic
   if (!v.localService) score += 30;
 
   // Localized lang tag beats bare "en"
@@ -383,7 +383,7 @@ function renderParagraphHighlight(pIdx: number, sentenceInParagraph: Sentence, _
 
   // Re-read the element's current (pre-highlight) text via the normalized cache.
   // The sentence offsets were computed against paragraphTexts[pIdx], so splicing
-  // must happen against the same string — NOT against el.textContent, which may
+  // must happen against the same string - NOT against el.textContent, which may
   // already contain a sibling highlight's spans or the original raw whitespace.
   const fullText = paragraphTexts[pIdx] || '';
   const { charStart, charEnd } = sentenceInParagraph;

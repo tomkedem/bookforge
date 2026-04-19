@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-/** Centralized paths — single source of truth for all file-system locations */
+/** Centralized paths - single source of truth for all file-system locations */
 export const PATHS = {
   OUTPUT_DIR: resolve('output'),
   PUBLIC_DIR: resolve('public'),

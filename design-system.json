@@ -168,9 +168,9 @@
     "Reading comes first. UI chrome defers to content.",
     "Mobile-first. Every component works at 320px before it works at 1920px.",
     "RTL is a first-class citizen. Use CSS logical properties (inset-inline-*, margin-inline-*), never right/left.",
-    "Motion conveys meaning. Respect prefers-reduced-motion — never decorate; always inform.",
+    "Motion conveys meaning. Respect prefers-reduced-motion - never decorate; always inform.",
     "Accessibility is the floor, not the ceiling. Min 4.5:1 contrast, keyboard-first, screen-reader honest.",
     "Empty states are opportunities. Every empty surface gets an illustration + CTA, never a dead blank.",
-    "Dark mode is not an afterthought. Every color and shadow has a dark counterpart, authored — not inverted."
+    "Dark mode is not an afterthought. Every color and shadow has a dark counterpart, authored - not inverted."
   ]
 }

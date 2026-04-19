@@ -111,7 +111,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     bookSlug={book || ''}
     language={language}
   />
-  {/* Region 1 — Top strip: full-width band between the two sidebars.
+  {/* Region 1 - Top strip: full-width band between the two sidebars.
       Independent from the chapter title. Contains meta, breadcrumb,
       chapter number eyebrow, and progress. */}
   <div id="chapter-top-strip" class="chapter-top-strip">
@@ -135,7 +135,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
       ))}
     </div>
 
-    {/* 2. Metadata / reading stats row — full-width, stats on start side, progress at end */}
+    {/* 2. Metadata / reading stats row - full-width, stats on start side, progress at end */}
     <div id="chapter-meta-bar" class="chapter-meta-bar">
       {langs.map(l => (
         <div
@@ -157,7 +157,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     </div>
   </div>
 
-  {/* Region 2 — Chapter title block: own component below the strip.
+  {/* Region 2 - Chapter title block: own component below the strip.
       Only the title lives here. No shared container, no shared framing.
       Retains id="chapter-header" as a stable contract for language-switcher,
       highlighter, and client-side nav consumers. */}
@@ -206,7 +206,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 .visible { display: block; }
 
 /* ─────────────────────────────────────────────────────────────
-   REGION 1 — TOP STRIP
+   REGION 1 - TOP STRIP
    Independent full-width band between sidebars. Not attached to,
    not parent of, the chapter title. Sticky so it stays visible
    while scrolling.
@@ -250,7 +250,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   padding: 0;
 }
 
-/* Meta row — full-width grid: stats centered, progress pinned to end */
+/* Meta row - full-width grid: stats centered, progress pinned to end */
 .meta-bar-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -275,7 +275,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 }
 
 /* ─────────────────────────────────────────────────────────────
-   REGION 2 — CHAPTER TITLE BLOCK
+   REGION 2 - CHAPTER TITLE BLOCK
    Own component below the strip. No shared wrapper, no shared
    framing. Only the title lives here.
    ───────────────────────────────────────────────────────────── */
@@ -293,7 +293,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 
 /* Title's inner wrapper mirrors .chapter-content exactly so the
    title's end edge lines up with the body's end edge. Same width
-   tokens, same centered margin — title reads as the first element
+   tokens, same centered margin - title reads as the first element
    of the content container, not a page-level heading. */
 .chapter-title-block > [data-lang] {
   width: 100%;
@@ -320,7 +320,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 }
 
-/* Chapter title — lives only inside .chapter-title-block.
+/* Chapter title - lives only inside .chapter-title-block.
    Number stack + title sit in the same flow as one unified
    heading group, aligned to the content container's start edge. */
 .chapter-title {
@@ -389,7 +389,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   text-shadow: 0 1px 0 color-mix(in srgb, var(--gold-300) 45%, transparent);
 }
 
-/* Progress chip — sits in the top strip eyebrow row */
+/* Progress chip - sits in the top strip eyebrow row */
 .progress-badge {
   display: inline-flex;
   align-items: center;
@@ -408,7 +408,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   line-height: 1;
 }
 
-/* Meta row stats — no pill, centered cluster */
+/* Meta row stats - no pill, centered cluster */
 #chapter-meta-bar :global(.chapter-meta) {
   margin: 0;
   padding: 0.4rem 0;
@@ -420,7 +420,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   flex-wrap: nowrap;
 }
 
-/* Breadcrumb row — full width, edge-flush */
+/* Breadcrumb row - full width, edge-flush */
 #breadcrumb-container :global(.breadcrumbs),
 #breadcrumb-container :global(.breadcrumbs-nav) {
   margin: 0 !important;
@@ -440,7 +440,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 }
 
 /* Mobile tap-to-top affordance on the chapter title block.
-   Subtle by design — no button styling, no background, no outline ring.
+   Subtle by design - no button styling, no background, no outline ring.
    Just a whisper of interactivity: a gentle press-in on tap.
    Activated only when JS has added .chapter-title-tap-enabled (mobile MQ). */
 @media (max-width: 1023px) {
@@ -453,7 +453,7 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     will-change: opacity, transform;
   }
 
-  /* Tap feedback — barely-there press-in. Opacity nudge + micro-scale.
+  /* Tap feedback - barely-there press-in. Opacity nudge + micro-scale.
      No background, no border, no ring. Reads as a responsive surface,
      not a button. */
   .chapter-title-block.chapter-title-tap-enabled:active {

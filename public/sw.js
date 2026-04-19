@@ -1,5 +1,5 @@
 /**
- * Yuval Service Worker — Cache-first for pages, network-first for API.
+ * Yuval Service Worker - Cache-first for pages, network-first for API.
  * Version bump triggers cache refresh.
  */
 
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (e) => {
   // Only handle GET requests
   if (request.method !== 'GET') return;
 
-  // Handle Pyodide CDN requests — cache-first for faster subsequent loads
+  // Handle Pyodide CDN requests - cache-first for faster subsequent loads
   if (url.hostname.includes(PYODIDE_CDN) || url.href.includes('pyodide')) {
     e.respondWith(cacheFirst(request, PYODIDE_CACHE));
     return;
@@ -55,16 +55,16 @@ self.addEventListener('fetch', (e) => {
   // Only handle same-origin for other requests
   if (url.origin !== self.location.origin) return;
 
-  // Skip search-index and API calls — network only
+  // Skip search-index and API calls - network only
   if (url.pathname.includes('search-index') || url.pathname.startsWith('/api/')) return;
 
-  // Reading pages and book pages — cache-first with network fallback
+  // Reading pages and book pages - cache-first with network fallback
   if (url.pathname.startsWith('/read/') || url.pathname.startsWith('/books/')) {
     e.respondWith(cacheFirst(request, PAGES_CACHE));
     return;
   }
 
-  // Static assets (JS, CSS, images, fonts) — cache-first
+  // Static assets (JS, CSS, images, fonts) - cache-first
   if (
     url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|woff2?|ttf)$/)
   ) {
@@ -72,7 +72,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Everything else — network-first
+  // Everything else - network-first
   e.respondWith(networkFirst(request, PAGES_CACHE));
 });
 
@@ -87,7 +87,7 @@ async function cacheFirst(request, cacheName) {
     }
     return response;
   } catch {
-    return new Response('Offline — page not cached yet.', {
+    return new Response('Offline - page not cached yet.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain' },
     });

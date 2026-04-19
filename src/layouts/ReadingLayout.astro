@@ -2,6 +2,7 @@
 import type { Language } from '../types/index';
 import BaseLayout from './BaseLayout.astro';
 import ReadingControls from '../components/ReadingControls.astro';
+import '../styles/reading-typography.css';
 import { SOURCE_LANGUAGE, getLanguageDirection } from '../utils/language';
 
 interface Props {
@@ -45,11 +46,35 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
   >
     <!-- Chapter content -->
     <div
-      class="prose prose-invert max-w-none space-y-6"
+      class="reading-content prose prose-invert max-w-none space-y-6"
       data-language={language}
     >
       <slot />
     </div>
+    <!-- Typography mode persistence and toggle logic -->
+    <script is:inline>
+      // Typography mode: 'modern' (Assistant) or 'clean' (Heebo)
+      const STORAGE_KEY = 'typography-mode';
+      const root = document.documentElement;
+      function applyTypographyMode(mode) {
+        if (mode === 'clean') {
+          root.setAttribute('data-typography', 'clean');
+        } else {
+          root.setAttribute('data-typography', 'modern');
+        }
+      }
+      // On load: apply saved mode or default
+      const saved = localStorage.getItem(STORAGE_KEY);
+      applyTypographyMode(saved === 'clean' ? 'clean' : 'modern');
+      // Listen for custom event from ReadingControls
+      window.addEventListener('typography-mode-change', (e) => {
+        const mode = e.detail?.mode;
+        if (mode === 'clean' || mode === 'modern') {
+          applyTypographyMode(mode);
+          localStorage.setItem(STORAGE_KEY, mode);
+        }
+      });
+    </script>
 
     <!-- Custom prose styles for reading -->
     <style>
@@ -444,7 +469,7 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         vertical-align: top;
       }
 
-      /* Header row — refined gold tone, stronger hierarchy */
+      /* Header row - refined gold tone, stronger hierarchy */
       :global(article thead th) {
         background:
           linear-gradient(180deg,
@@ -462,12 +487,12 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         position: relative;
       }
 
-      /* Vertical dividers inside header — keep gold, slightly stronger */
+      /* Vertical dividers inside header - keep gold, slightly stronger */
       :global(article thead th + th) {
         border-inline-start: 1px solid var(--gold-tint-35);
       }
 
-      /* Row-header cells (th inside tbody) — slightly emphasised */
+      /* Row-header cells (th inside tbody) - slightly emphasised */
       :global(article tbody th) {
         background: color-mix(in srgb, var(--gold-500) 6%, var(--yuval-bg));
         font-weight: 700;

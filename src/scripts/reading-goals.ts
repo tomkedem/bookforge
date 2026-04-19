@@ -1,5 +1,5 @@
 /**
- * Reading Goals — daily reading target with streak tracking.
+ * Reading Goals - daily reading target with streak tracking.
  * Shows a small goal indicator that fills as you read.
  * Stored in localStorage per book.
  */

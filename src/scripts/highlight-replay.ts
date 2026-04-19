@@ -1,5 +1,5 @@
 /**
- * Highlight Replay — dynamic i18n version
+ * Highlight Replay - dynamic i18n version
  */
 
 import { t, getI18nDirection, resolveLanguage } from '../i18n';

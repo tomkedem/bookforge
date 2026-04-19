@@ -20,7 +20,7 @@ class LanguageMeta:
 
 
 # Master list of supported languages
-# To add a new language: append one entry here — nothing else in the codebase needs to change
+# To add a new language: append one entry here - nothing else in the codebase needs to change
 SUPPORTED_LANGUAGES: List[LanguageMeta] = [
     LanguageMeta(code='he', label='עברית',   label_en='Hebrew',  dir='rtl', locale='he-IL'),
     LanguageMeta(code='en', label='English', label_en='English', dir='ltr', locale='en-US'),

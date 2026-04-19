@@ -65,7 +65,7 @@ def fix_rtl_text(content: str) -> str:
     )
 
     # Replace long dashes with regular hyphen
-    content = content.replace('—', '-')
+    content = content.replace('-', '-')
     content = content.replace('–', '-')
 
     # Fix inline backticks inside code blocks
@@ -142,7 +142,7 @@ def fix_dashes_in_file(filepath: str) -> bool:
         return False
 
     original = path.read_text(encoding='utf-8')
-    fixed = original.replace('—', '-').replace('–', '-')
+    fixed = original.replace('-', '-').replace('–', '-')
 
     if fixed != original:
         path.write_text(fixed, encoding='utf-8')
@@ -196,7 +196,7 @@ def process_file_by_language(filepath: str, lang: str) -> bool:
     if lang in RTL_LANGS:
         fixed = fix_rtl_text(fixed)
 
-    fixed = fixed.replace("—", "-").replace("–", "-")
+    fixed = fixed.replace("-", "-").replace("–", "-")
 
     if fixed != original:
         path.write_text(fixed, encoding="utf-8")

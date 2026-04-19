@@ -14,32 +14,32 @@
 
 ### שלבים שהושלמו
 
-#### שלב 0 — Pre-flight ✅
+#### שלב 0 - Pre-flight ✅
 - [x] קובץ קיים: D:\Books\Practical Python for AI Engineering.docx (4.7MB)
 - [x] lessons.md נקרא
 - [x] git status נקי, branch created
 
-#### שלב 1 — Pipeline Execution ✅
+#### שלב 1 - Pipeline Execution ✅
 - [x] הרץ run_pipeline.py בהצלחה
 - [x] פלטים נוצרו:
   - [x] `output/practical-python-for-ai-engineering/chapter-*.he.md` (19 files)
   - [x] `output/practical-python-for-ai-engineering/content-structure.json`
   - [x] `public/practical-python-for-ai-engineering/assets/` (2 images)
 
-#### שלב 2 — Code Block Verification ✅
+#### שלב 2 - Code Block Verification ✅
 - [x] Python code blocks תוקנו (removed backtick wrapping)
 - [x] Format: `\`\`\`python ... \`\`\`` ✅
 - [x] כל 19 פרקים verified
 
-#### שלב 3 — Translation (Skipped for now)
+#### שלב 3 - Translation (Skipped for now)
 - [ ] תרגום ל-EN ו-ES (דחוי - בחרת option C)
 
-#### שלב 4 — Build ✅
+#### שלב 4 - Build ✅
 - [x] `npm run build` → success, zero errors
 - [x] Build output: dist/
 - [x] TypeScript errors בPyodide קיימים (pre-existing), לא blocking
 
-#### שלב 5 — QA ✅
+#### שלב 5 - QA ✅
 - [x] `npm run dev` → server running on port 4329
 - [x] `npx astro check` → 4 warnings, 0 errors
 - [x] Vitest quality gate → 4 tests passed
@@ -77,12 +77,12 @@
 
 ## מה שעבד בצורה מעולה:
 
-✅ **Font Detection** — 6131 paragraphs parsed correctly  
-✅ **Code Block Handling** — Python, Bash, Plaintext detected  
-✅ **Image Extraction** — Cover detected, 2 images saved  
-✅ **RTL Support** — Hebrew text formatted correctly  
-✅ **Chapter Splitting** — 19 chapters extracted from headings  
-✅ **Build Pipeline** — Zero errors, production-ready  
+✅ **Font Detection** - 6131 paragraphs parsed correctly  
+✅ **Code Block Handling** - Python, Bash, Plaintext detected  
+✅ **Image Extraction** - Cover detected, 2 images saved  
+✅ **RTL Support** - Hebrew text formatted correctly  
+✅ **Chapter Splitting** - 19 chapters extracted from headings  
+✅ **Build Pipeline** - Zero errors, production-ready  
 
 ---
 

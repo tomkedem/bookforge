@@ -5,7 +5,7 @@ import { discoverAllBooks } from '../utils/book-discovery';
 const books = discoverAllBooks();
 ---
 
-<BaseLayout title="Admin — Yuval" showLanguageToggle={false}>
+<BaseLayout title="Admin - Yuval" showLanguageToggle={false}>
   <div class="admin-wrap">
     <h1 class="admin-title">Admin Panel</h1>
     <p class="admin-subtitle">Manage local reader data stored in the browser.</p>
@@ -304,7 +304,7 @@ const books = discoverAllBooks();
 <script>
   const BOOK_PREFIXES = (slug: string) => [
     `yuval_bookmarks_${slug}`,
-    `yuval_highlights_${slug}`,   // prefix — will match all chapters
+    `yuval_highlights_${slug}`,   // prefix - will match all chapters
     `yuval_reading_progress_${slug}`,
     `yuval_reading_stats_${slug}`,
     `yuval_reading_goals_${slug}`,

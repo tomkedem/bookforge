@@ -36,7 +36,7 @@ function removeDim(): void {
   currentFocused = null;
 }
 
-// ── IntersectionObserver — pick the topmost visible paragraph ─────────────────
+// ── IntersectionObserver - pick the topmost visible paragraph ─────────────────
 
 function buildObserver(): IntersectionObserver {
   return new IntersectionObserver(
@@ -47,7 +47,7 @@ function buildObserver(): IntersectionObserver {
       const visible: { el: Element; top: number }[] = [];
       document.querySelectorAll<HTMLElement>(SELECTOR).forEach(el => {
         const rect = el.getBoundingClientRect();
-        // Is it in the "reading zone" — top third of viewport
+        // Is it in the "reading zone" - top third of viewport
         if (rect.top >= 0 && rect.top < window.innerHeight * 0.55) {
           visible.push({ el, top: rect.top });
         }
@@ -114,7 +114,7 @@ function disable(): void {
   removeDim();
 }
 
-// ── MutationObserver — re-observe on chapter swap ────────────────────────────
+// ── MutationObserver - re-observe on chapter swap ────────────────────────────
 
 function watchFocusClass(): void {
   // Watch body class for focus-mode toggle

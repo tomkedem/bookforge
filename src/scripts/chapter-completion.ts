@@ -1,5 +1,5 @@
 /**
- * Chapter Completion — dynamic i18n version
+ * Chapter Completion - dynamic i18n version
  */
 
 import { t, getI18nDirection, resolveLanguage } from '../i18n';

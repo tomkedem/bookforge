@@ -20,7 +20,7 @@ import { initTextToSpeech } from './text-to-speech';
 import { initChapterTitleTap } from './chapter-title-tap';
 
 /**
- * Main initialization — wires up all reading-page modules.
+ * Main initialization - wires up all reading-page modules.
  * Each module handles a single responsibility.
  */
 function initializeReadingPage() {

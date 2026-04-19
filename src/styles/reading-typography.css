@@ -1,0 +1,19 @@
+/* Global typography system for reading content */
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&display=swap');
+
+:root {
+  --font-reading: 'Assistant', sans-serif;
+}
+
+[data-typography="clean"] {
+  --font-reading: 'Heebo', sans-serif;
+}
+
+.reading-content, .reading-content *:not(code):not(pre):not(.hljs):not(.code-block-pro):not(.code-runner-wrapper) {
+  font-family: var(--font-reading) !important;
+  font-size: var(--reading-font-size, 18px);
+  line-height: var(--reading-line-height, 1.7);
+  letter-spacing: 0.01em;
+  transition: font-family 0.2s ease;
+}

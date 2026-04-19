@@ -1,9 +1,9 @@
 /**
- * Search — chapter mode and book-wide mode
+ * Search - chapter mode and book-wide mode
  *
  * / to open, Escape to close
  * Toggle: "Chapter" | "Book"
- * Enter / Shift+Enter — next / previous match (chapter mode)
+ * Enter / Shift+Enter - next / previous match (chapter mode)
  * Dynamic language support via central i18n + search-index.json
  */
 

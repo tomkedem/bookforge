@@ -1,5 +1,5 @@
 /**
- * Reading Stats Panel — dynamic i18n version
+ * Reading Stats Panel - dynamic i18n version
  */
 
 import { t, getI18nDirection, resolveLanguage } from '../i18n';

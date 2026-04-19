@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Text-to-speech — panel, mini-player, highlight, FAB icon host.
+   Text-to-speech - panel, mini-player, highlight, FAB icon host.
    Namespaced via #tts-* IDs; no selector leaks.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -79,7 +79,7 @@
   transform: translate3d(0, 0, 0);
 }
 
-/* Desktop — popover anchored above-right of #tts-fab */
+/* Desktop - popover anchored above-right of #tts-fab */
 @media (min-width: 1024px) {
   #tts-panel {
     width: 320px;
@@ -89,7 +89,7 @@
   }
 }
 
-/* Mobile — bottom sheet */
+/* Mobile - bottom sheet */
 @media (max-width: 1023px) {
   #tts-panel {
     inset-inline: 0;

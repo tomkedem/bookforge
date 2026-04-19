@@ -2,7 +2,7 @@
  * Book Discovery - auto-discovers books and chapters from output/ folder.
  *
  * Priority:
- * 1. content-structure.json if present
+ * 1. book-manifest.json if present
  * 2. MD files scanned directly
  *
  * Dynamic language support is derived from SUPPORTED_LANGUAGES.
@@ -132,15 +132,19 @@ function discoverChaptersFromFiles(bookDir: string): Chapter[] {
     });
   }
 
-  return chapters.sort((a, b) => a.id - b.id);
+  return chapters.sort((a, b) => {
+    if (a.type === 'intro') return -1;
+    if (b.type === 'intro') return 1;
+    return Number(a.id) - Number(b.id);
+  });
 }
 
 /**
- * Load chapters from content-structure.json if available.
+ * Load chapters from book-manifest.json if available.
  * Titles are always refreshed from actual MD files when possible.
  */
 function loadFromContentStructure(bookDir: string): Chapter[] | null {
-  const jsonPath = join(bookDir, 'content-structure.json');
+  const jsonPath = join(bookDir, 'book-manifest.json');
   if (!existsSync(jsonPath)) return null;
 
   try {
@@ -167,7 +171,9 @@ function loadFromContentStructure(bookDir: string): Chapter[] | null {
       }
 
       return {
-        id: typeof chId === 'string' ? 0 : chId,
+        id: chId, // 🔥 חשוב: לא לגעת!
+        file_slug: fileSlug, // 🔥 קריטי
+        type: typeof chId === 'string' ? 'intro' : 'content',
         titles,
         sections: ch.sections,
         has_images: ch.has_images,
@@ -193,7 +199,7 @@ function loadBookMeta(bookDir: string, slug: string): {
 } {
   const formatted = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  const jsonPath = join(bookDir, 'content-structure.json');
+  const jsonPath = join(bookDir, 'book-manifest.json');
   if (existsSync(jsonPath)) {
     try {
       const data: ContentStructure = JSON.parse(readFileSync(jsonPath, 'utf-8'));

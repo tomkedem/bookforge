@@ -121,7 +121,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
               window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
             }
           } else if (!allowClientLanguageOverride && storedLang && valid.indexOf(storedLang) !== -1 && storedLang !== serverLang && allowed.indexOf(storedLang) !== -1) {
-            // No URL override, but stored preference differs from what server rendered — redirect
+            // No URL override, but stored preference differs from what server rendered - redirect
             params.set('lang', storedLang);
             window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
           } else if (storedLang && valid.indexOf(storedLang) !== -1 && allowed.indexOf(storedLang) === -1) {

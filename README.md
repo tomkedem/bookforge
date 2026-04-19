@@ -3,28 +3,28 @@
 מערכת להפקת ספרים דיגיטליים מקבצי Word.  
 מקבלת `.docx` בעברית → מפרקת לפרקים → מתרגמת לשפות מרובות → בונה פלטפורמת קריאה מודרנית.
 
-**Yuval** — פלטפורמת הקריאה שנבנית מהתוכן.
+**Yuval** - פלטפורמת הקריאה שנבנית מהתוכן.
 
 ---
 
 ## ✨ תכונות עיקריות
 
 ### קריאה
-- **רב-לשוני** — עברית, אנגלית, ספרדית + הוספת שפות בשורה אחת
-- **RTL/LTR** — תמיכה מלאה בכיווניות
-- **Reading Progress** — מעקב התקדמות עם שמירה מקומית
-- **Bookmarks** — סימניות וסימון טקסט
-- **Text-to-Speech** — הקראה אוטומטית
+- **רב-לשוני** - עברית, אנגלית, ספרדית + הוספת שפות בשורה אחת
+- **RTL/LTR** - תמיכה מלאה בכיווניות
+- **Reading Progress** - מעקב התקדמות עם שמירה מקומית
+- **Bookmarks** - סימניות וסימון טקסט
+- **Text-to-Speech** - הקראה אוטומטית
 
 ### עיצוב
-- **Dark/Light Mode** — מצב כהה עם שמירת העדפה
-- **Mobile-first** — רספונסיבי מלא (sm, md, lg, xl)
-- **View Transitions** — מעברים חלקים בין דפים
-- **Focus Mode** — פרגרף מודגש בזמן קריאה
+- **Dark/Light Mode** - מצב כהה עם שמירת העדפה
+- **Mobile-first** - רספונסיבי מלא (sm, md, lg, xl)
+- **View Transitions** - מעברים חלקים בין דפים
+- **Focus Mode** - פרגרף מודגש בזמן קריאה
 
 ### קוד
-- **Code Blocks** — הדגשת תחביר עם העתקה בלחיצה
-- **Code Runner** — הרצת קוד Python בדפדפן (Pyodide)
+- **Code Blocks** - הדגשת תחביר עם העתקה בלחיצה
+- **Code Runner** - הרצת קוד Python בדפדפן (Pyodide)
 
 ### נגישות
 - Skip-to-content, focus-visible, ARIA labels
@@ -95,7 +95,7 @@ python src/pipeline/translate.py output/my-book --languages en,es
 @translator תרגם את my-book לאנגלית וספרדית
 ```
 
-> ⚠️ **חשוב:** הפייפליין ב-build.py לא מתרגם אוטומטית — הוא רק מכין את הקבצים לתרגום.
+> ⚠️ **חשוב:** הפייפליין ב-build.py לא מתרגם אוטומטית - הוא רק מכין את הקבצים לתרגום.
 
 ### שימוש עם מספר שפות
 
@@ -103,7 +103,7 @@ python src/pipeline/translate.py output/my-book --languages en,es
 python -m pipeline.build "D:\Books\MyBook.docx" my-book --languages he,en,es,fr,de
 ```
 
-### TL;DR — הזרימה המלאה
+### TL;DR - הזרימה המלאה
 
 ```bash
 # שלב 1: עיבוד Word → קבצי MD בעברית
@@ -158,12 +158,12 @@ public/my-book/assets/
 
 שורה אחת בכל קובץ קונפיג:
 
-**TypeScript** — `src/utils/language.ts`:
+**TypeScript** - `src/utils/language.ts`:
 ```typescript
 { code: 'fr', label: 'Français', labelEn: 'French', dir: 'ltr', locale: 'fr-FR' },
 ```
 
-**Python** — `src/pipeline/languages.py`:
+**Python** - `src/pipeline/languages.py`:
 ```python
 LanguageMeta(code='fr', label='Français', label_en='French', dir='ltr', locale='fr-FR'),
 ```
@@ -235,7 +235,7 @@ docs/               # Project documentation
 | **Claude Code CLI** | `CLAUDE_SESSION_ID` | תרגום מקבילי עם 3 subagents |
 | **VS Code Copilot** | `VSCODE_PID` | תרגום ישיר על ידי הסוכן הראשי |
 
-**למה?** — ב-VS Code Copilot, subagents לא מקבלים גישה לקבצים.
+**למה?** - ב-VS Code Copilot, subagents לא מקבלים גישה לקבצים.
 המערכת מזהה זאת אוטומטית ועוברת למצב תרגום ישיר.
 
 ```python

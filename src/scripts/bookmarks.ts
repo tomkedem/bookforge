@@ -1,5 +1,5 @@
 /**
- * Bookmarks — dynamic i18n version
+ * Bookmarks - dynamic i18n version
  */
 
 import { t, getI18nDirection } from '../i18n';

@@ -1,5 +1,5 @@
 /**
- * Book Completion — fully dynamic i18n version
+ * Book Completion - fully dynamic i18n version
  */
 
 import { t, getI18nDirection, resolveLanguage } from '../i18n';

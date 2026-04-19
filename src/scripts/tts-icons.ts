@@ -1,5 +1,5 @@
 /**
- * TTS icon system — 2026 unified visual language.
+ * TTS icon system - 2026 unified visual language.
  * All icons: 24×24 canvas, 1.75 stroke, rounded caps/joins, currentColor.
  * No fills, no gradients, no baked colors. Active state driven by parent class.
  */
@@ -28,7 +28,7 @@ export const ICON_PATHS: Record<IconName, string> = {
     <path d="M15.5 9.5a3.5 3.5 0 0 1 0 5" />
     <path d="M18 7a7 7 0 0 1 0 10" />
   `,
-  // Rounded triangle — not sharp
+  // Rounded triangle - not sharp
   play: `
     <path d="M9 5.5v13a1 1 0 0 0 1.54.84l9.5-6.5a1 1 0 0 0 0-1.68l-9.5-6.5A1 1 0 0 0 9 5.5z" />
   `,

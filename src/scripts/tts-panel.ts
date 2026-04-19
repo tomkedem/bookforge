@@ -1,7 +1,7 @@
 /**
  * TTS control panel + mini-player.
  * Subscribes to the store in text-to-speech.ts. All rendering is imperative
- * string + DOM updates — no framework.
+ * string + DOM updates - no framework.
  */
 
 import { t } from '../i18n';
@@ -160,8 +160,8 @@ function cleanVoiceName(name: string): string {
   let out = name;
   // Drop leading vendor prefix (Microsoft, Google, Apple)
   out = out.replace(/^\s*(Microsoft|Google|Apple)\s+/iu, '');
-  // Drop anything after " - " or " – " (em-dash variants) — typically the language tail
-  out = out.replace(/\s*[–—-]\s*.*$/u, '');
+  // Drop anything after " - " or " – " (em-dash variants) - typically the language tail
+  out = out.replace(/\s*[–--]\s*.*$/u, '');
   // Drop trailing parenthesized language/region tag, e.g. "Samantha (English US)"
   out = out.replace(/\s*\([^)]*\)\s*$/u, '');
   // Drop common language words if they're what's left
@@ -230,7 +230,7 @@ export function openTtsPanel(): void {
     primary?.focus();
   }, 50);
 
-  // Subscribe to store — re-render on state changes
+  // Subscribe to store - re-render on state changes
   void getApi().then(ttsApi => {
     unsubscribePanel?.();
     unsubscribePanel = ttsApi.subscribe(state => updatePanelState(state));
@@ -322,7 +322,7 @@ function updatePanelState(s: TtsState): void {
     p.setAttribute('aria-checked', String(isActive));
   });
 
-  // Voices — update active markers only (avoid re-render)
+  // Voices - update active markers only (avoid re-render)
   panelEl.querySelectorAll<HTMLElement>('.tts-voice-row').forEach(row => {
     const name = row.dataset.voice;
     const isActive = name === s.voiceName;

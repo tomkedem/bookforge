@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   YUVAL THEME — Single Source of Truth
+   YUVAL THEME - Single Source of Truth
    All light/dark color definitions live here.
    Components use CSS variables via Tailwind tokens or var().
    ═══════════════════════════════════════════════════════════ */
@@ -10,7 +10,7 @@
   --yuval-bg-secondary: #ede8df;
   --yuval-surface: #ffffff;               /* cards, header, sidebars */
   --yuval-header-bg: rgba(255, 255, 255, 0.95);
-  --yuval-reading-bg: #faf7f2;            /* warm paper — easiest on the eyes */
+  --yuval-reading-bg: #faf7f2;            /* warm paper - easiest on the eyes */
 
   /* ── Text ── */
   --yuval-text: #1a1a1a;
@@ -60,7 +60,7 @@
 }
 
 .dark {
-  /* ── Page backgrounds — true neutral dark, no color cast ── */
+  /* ── Page backgrounds - true neutral dark, no color cast ── */
   --yuval-bg: #111111;
   --yuval-bg-secondary: #191919;
   --yuval-surface: #1e1e1e;
@@ -81,7 +81,7 @@
   --yuval-link: #ededed;
   --yuval-link-hover: #aaaaaa;
 
-  /* ── Buttons & accents — off-white, mirrors light mode logic ── */
+  /* ── Buttons & accents - off-white, mirrors light mode logic ── */
   --yuval-accent: #ededed;
   --yuval-accent-hover: #cccccc;
   --yuval-accent-text: #111111;
@@ -115,7 +115,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   SEPIA THEME — Warm paper-like appearance
+   SEPIA THEME - Warm paper-like appearance
    ═══════════════════════════════════════════════════════ */
 .sepia {
   /* ── Page backgrounds ── */
@@ -173,7 +173,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   FOCUS MODE — Immersive distraction-free reading
+   FOCUS MODE - Immersive distraction-free reading
    ═══════════════════════════════════════════════════════ */
 body.focus-mode .toc-sidebar,
 body.focus-mode .outline-sidebar,
@@ -208,7 +208,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════════
-   TYPOGRAPHY CONTROLS — CSS Variables
+   TYPOGRAPHY CONTROLS - CSS Variables
    ═══════════════════════════════════════════════════════ */
 :root {
   --reading-font-size: 1.125rem;
@@ -233,7 +233,7 @@ body.focus-mode::after {
 /* ═══════════════════════════════════════════════════════════
    MOTION, TYPE, AND SPACE TOKENS
    Structural tokens only. Color tokens are intentionally NOT
-   modified in this pass — the existing hex palette stays
+   modified in this pass - the existing hex palette stays
    exactly as it is, because it was tuned against real content
    images. Color architecture (atmosphere scalar, OKLCH) will
    be addressed separately with a /compare-images workbench.
@@ -242,7 +242,7 @@ body.focus-mode::after {
    to work unchanged.
    ═══════════════════════════════════════════════════════════ */
 :root {
-  /* ─ Motion — one language, four curves ─
+  /* ─ Motion - one language, four curves ─
      Every transition/animation in new code references one of these.
      No raw `ease`, no raw `linear`, no inline cubic-bezier. */
   --ease-standard:    cubic-bezier(0.2, 0, 0, 1);      /* default state changes */
@@ -250,7 +250,7 @@ body.focus-mode::after {
   --ease-accelerated: cubic-bezier(0.3, 0, 1, 1);      /* exits, dismissals */
   --ease-spring:      cubic-bezier(0.22, 1, 0.36, 1);  /* atmosphere drift */
 
-  /* ─ Type scale — 5 steps, 1.25 ratio, role-named ─
+  /* ─ Type scale - 5 steps, 1.25 ratio, role-named ─
      Fluid on display (clamp), fixed rem on body/UI. */
   --type-display: clamp(3.75rem, 2.4rem + 5.6vw, 6.5rem);
   --type-h1:      clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
@@ -258,7 +258,7 @@ body.focus-mode::after {
   --type-body:    clamp(1.0625rem, 0.98rem + 0.35vw, 1.1875rem);
   --type-caption: 0.8125rem;
 
-  /* ─ Space scale — 4pt grid, semantic names ─
+  /* ─ Space scale - 4pt grid, semantic names ─
      Use for gap and padding. No magic numbers at component level. */
   --space-xs:  0.25rem;   /*  4px */
   --space-sm:  0.5rem;    /*  8px */
@@ -301,7 +301,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   TRANSITIONAL — scheduled for removal (Phase C).
+   TRANSITIONAL - scheduled for removal (Phase C).
    FAB STACK (stats, bookmarks, highlights, tts)
    Conflicts with .impeccable.md § Sanctuary, not Browser:
    no FAB as primary navigation. Each action is to be
@@ -502,7 +502,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   TRANSITIONAL — scheduled for removal (Phase C).
+   TRANSITIONAL - scheduled for removal (Phase C).
    HIGHLIGHTS PANEL (#hl-overlay, #hl-panel, …)
    Uses backdrop-blur + generic drop shadows (Ban #4). To
    be rebuilt as a Living-Margin SVG filter composition per
@@ -654,7 +654,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   TRANSITIONAL — scheduled for removal (Phase C).
+   TRANSITIONAL - scheduled for removal (Phase C).
    BOOKMARKS PANEL (#bm-overlay, #bm-panel, #bm-confirm, …)
    Uses backdrop-blur, drop shadows (Ban #4), and hex
    literals #fbbf24 / #ef4444 / #2563eb foreign to the
@@ -987,7 +987,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   TRANSITIONAL — scheduled for removal (Phase C).
+   TRANSITIONAL - scheduled for removal (Phase C).
    ONBOARDING TOUR OVERLAY (#ob-overlay, #ob-tooltip, …)
    Conflicts with .impeccable.md § Sanctuary, not Browser:
    full-screen interrupt for non-critical content. Replace
@@ -1186,7 +1186,7 @@ body.focus-mode::after {
     color: #000 !important;
   }
 
-  /* Chapter content — clean black on white */
+  /* Chapter content - clean black on white */
   .chapter-content {
     max-width: 100% !important;
     font-size: 11pt !important;
@@ -1206,13 +1206,13 @@ body.focus-mode::after {
   /* No orphan paragraphs */
   .chapter-content p { orphans: 3; widows: 3; }
 
-  /* Highlights — keep background, add print-friendly label */
+  /* Highlights - keep background, add print-friendly label */
   .yuval-hl[data-color="yellow"] { background: #fef9c3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .yuval-hl[data-color="blue"]   { background: #dbeafe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .yuval-hl[data-color="green"]  { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .yuval-hl[data-color="pink"]   { background: #fce7f3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Links — show URL */
+  /* Links - show URL */
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
 
   /* Page break before new chapters */
@@ -1228,7 +1228,7 @@ body.focus-mode::after {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CHAPTER TRANSITIONS — Instant swap, no animation
+   CHAPTER TRANSITIONS - Instant swap, no animation
    ═══════════════════════════════════════════════════════ */
 .reading-article {
   min-height: 100vh;
@@ -1264,7 +1264,7 @@ body.focus-mode::after {
   animation: fade-in-up 400ms var(--ease-standard);
 }
 
-/* Interactive elements transition by default — one motion language. */
+/* Interactive elements transition by default - one motion language. */
 a, button {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-duration: 200ms;

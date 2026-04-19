@@ -1,5 +1,5 @@
 /**
- * Reading hints — dynamic i18n version
+ * Reading hints - dynamic i18n version
  */
 
 import { t, getI18nDirection, resolveLanguage } from '../i18n';
