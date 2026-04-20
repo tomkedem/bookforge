@@ -1,0 +1,58 @@
+/* ═══════════════════════════════════════════════════════════
+   CHAPTER LISTS - Bullet spacing and hanging indent
+   
+   Problem observed: default ul/li rendering left bullets
+   glued to text with no breathing room, and wrapped lines
+   started at the content's outer edge instead of aligning
+   with the first line of text (no hanging indent).
+   
+   Two fixes:
+   1. padding-inline-start on the list creates room for
+      the marker box itself. list-style-position: outside
+      ensures the marker lives in that space, not inside
+      the text flow.
+   2. The combination above gives wrapped lines the
+      hanging indent automatically: each li's text area
+      starts where the first line's text started, not at
+      the list's outer edge.
+   
+   RTL-safe: padding-inline-start respects writing direction,
+   so the reserved marker space is on the right in Hebrew
+   content and on the left in LTR content.
+   ═══════════════════════════════════════════════════════════ */
+
+.reading-article .chapter-content ul,
+.reading-article .chapter-content ol {
+  /* Room for the marker glyph + breathing space between
+     marker and text. 1.75em is roughly "bullet + 1 space"
+     at the current line-height. */
+  padding-inline-start: 1.75em;
+  margin-block: 0.75em;
+  /* Keep the marker outside the text flow so wrapped lines
+     align with the first line of text (hanging indent). */
+  list-style-position: outside;
+}
+
+.reading-article .chapter-content li {
+  /* Per-item vertical rhythm. Matches the paragraph rhythm
+     in the surrounding prose without compressing visually. */
+  margin-block: 0.4em;
+  /* A nudge so text does not sit immediately against the
+     marker column. Combined with the parent's
+     padding-inline-start, this gives the final spacing. */
+  padding-inline-start: 0.25em;
+}
+
+/* Nested lists: slightly tighter but still breathable. */
+.reading-article .chapter-content li > ul,
+.reading-article .chapter-content li > ol {
+  margin-block: 0.25em;
+  padding-inline-start: 1.5em;
+}
+
+/* Marker color follows the body text, not the default
+   browser black, so it reads correctly across light,
+   dark, and sepia themes. */
+.reading-article .chapter-content li::marker {
+  color: var(--yuval-text);
+}

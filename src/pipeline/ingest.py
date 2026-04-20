@@ -34,6 +34,12 @@ except ImportError:
         + "=" * 60 + "\n"
     )
 
+# lxml is a transitive dependency of python-docx, but we import it
+# explicitly because _extract_images_from_paragraph uses
+# etree.tostring() to serialize a single run element for regex
+# inspection of its drawing/embed attributes.
+from lxml import etree
+
 
 W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 R_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
@@ -983,6 +989,102 @@ def _extract_document_metadata(doc, path: Path) -> dict:
     }
 
 
+def _extract_images_from_paragraph(p_element, doc_index: int) -> List[dict]:
+    """
+    Find images embedded in a paragraph element and return positional data.
+
+    Each image gets a record with:
+      - doc_index: same counter used by blocks, so parse.py can match
+        images to the paragraph they appear in.
+      - run_index: position within the paragraph's runs, useful for
+        deciding whether the image appears before or after text.
+      - rel_id: the relationship id (rId...) pointing to the image
+        file in the docx zip; parse.py uses this to locate and save
+        the actual bytes.
+
+    Dimensions (width/height in EMU) are read from <wp:extent> so
+    parse.py can convert to pixels for the <img> tag.
+    """
+    images: List[dict] = []
+
+    try:
+        # Enumerate runs inside the paragraph
+        runs = p_element.findall(f"{W_NS}r")
+        for run_idx, r in enumerate(runs):
+            try:
+                run_xml_bytes = etree.tostring(r)
+                run_xml = run_xml_bytes.decode("utf-8") if isinstance(run_xml_bytes, bytes) else run_xml_bytes
+            except Exception:
+                run_xml = ""
+
+            if not run_xml:
+                continue
+
+            if "<w:drawing" not in run_xml and "<w:pict" not in run_xml and "r:embed=" not in run_xml:
+                continue
+
+            # Find the relationship id(s) for embedded images
+            embeds = re.findall(r'r:embed="(rId\d+)"', run_xml)
+            if not embeds:
+                continue
+
+            # Try to read display size from <wp:extent cx="..." cy="...">
+            w_emu, h_emu = 0, 0
+            extents = re.findall(r'<wp:extent\s+cx="(\d+)"\s+cy="(\d+)"', run_xml)
+            if extents:
+                w_emu, h_emu = int(extents[0][0]), int(extents[0][1])
+
+            for rel_id in embeds:
+                images.append({
+                    "doc_index": doc_index,
+                    "run_index": run_idx,
+                    "rel_id": rel_id,
+                    "width_emu": w_emu,
+                    "height_emu": h_emu,
+                    "source": "paragraph",
+                })
+    except Exception:
+        pass
+
+    return images
+
+
+def _extract_images_from_sdt(sdt_element, doc_index: int) -> List[dict]:
+    """
+    Find images inside an SDT (Structured Document Tag), which Word
+    typically uses for cover-page content. Returns records using the
+    same doc_index as the surrounding block loop, so parse.py sees
+    a consistent indexing scheme across paragraph and SDT images.
+    """
+    images: List[dict] = []
+
+    try:
+        # Look for <a:blip> anywhere inside the SDT
+        blips = sdt_element.xpath(
+            ".//a:blip",
+            namespaces={"a": "http://schemas.openxmlformats.org/drawingml/2006/main"},
+        )
+        for blip in blips:
+            embed_id = blip.get(
+                "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+            )
+            if not embed_id:
+                continue
+
+            images.append({
+                "doc_index": doc_index,
+                "run_index": 0,
+                "rel_id": embed_id,
+                "width_emu": 0,
+                "height_emu": 0,
+                "source": "sdt",
+            })
+    except Exception:
+        pass
+
+    return images
+
+
 def _ingest_docx(path: Path, language: str = "he") -> dict:
     doc = Document(path)
     paragraph_map = _build_paragraph_element_map(doc)
@@ -993,6 +1095,12 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
     metadata = _extract_document_metadata(doc, path)
 
     blocks: List[dict] = []
+    # Image records gathered during the same body walk used for blocks.
+    # This guarantees that image doc_index values match the block
+    # doc_index values; previously parse.py computed image positions
+    # separately over doc.paragraphs, which skipped SDT and table
+    # elements and drifted out of sync with the block indexing.
+    images: List[dict] = []
     body = doc._element.body
     doc_index = 0
 
@@ -1018,6 +1126,14 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
                 indent = "  " * int(list_data["ilvl"] or 0)
                 markdown_text = f"{indent}{list_data['prefix']} {markdown_text}"
 
+            # Collect any images embedded in this paragraph. We extract
+            # image records *before* deciding whether to skip the block,
+            # because a paragraph may contain only an image (no text)
+            # and we still need a positional anchor so parse.py can
+            # place the image in the output at the right point.
+            para_images = _extract_images_from_paragraph(element, doc_index)
+            images.extend(para_images)
+
             if raw_text.strip() or runs_data:
                 block = {
                     "id": f"p-{doc_index}",
@@ -1035,6 +1151,24 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
                     block["language"] = _detect_code_language(raw_text)
 
                 blocks.append(block)
+            elif para_images:
+                # Empty paragraph that holds an image. Emit a minimal
+                # block so that parse.py sees a content item at this
+                # doc_index and can inject the image inline at the
+                # correct position within the chapter. Without this
+                # block, the image would be filtered out in to_markdown
+                # because no content item matches its para_index.
+                blocks.append({
+                    "id": f"p-{doc_index}",
+                    "type": "image",
+                    "text": "",
+                    "raw_text": "",
+                    "style": style_name,
+                    "doc_index": doc_index,
+                    "runs": [],
+                    "layout": layout,
+                    "list": list_data,
+                })
 
             doc_index += 1
             continue
@@ -1046,6 +1180,15 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
             doc_index += 1
             continue
 
+        if tag == "sdt":
+            # SDT elements carry cover-page images in this document family.
+            # We do not currently extract SDT text into blocks (see the
+            # --title CLI flag and extract_book_info stub), but we do
+            # want to capture cover images.
+            images.extend(_extract_images_from_sdt(element, doc_index))
+            doc_index += 1
+            continue
+
         doc_index += 1
 
     return {
@@ -1054,6 +1197,7 @@ def _ingest_docx(path: Path, language: str = "he") -> dict:
         "language": language,
         "metadata": metadata,
         "blocks": blocks,
+        "images": images,
         "footnotes": footnotes,
         "total_blocks": len(blocks),
     }

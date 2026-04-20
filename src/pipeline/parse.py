@@ -413,6 +413,21 @@ def parse(ingested: dict) -> list[dict]:
                 })
             continue
 
+        # Image-only paragraphs: ingest.py emits these as minimal blocks
+        # with empty text so that downstream layout can still anchor
+        # the image at the correct doc_index inside the chapter's
+        # content list. to_markdown() recognises style="ImageAnchor"
+        # and renders only the image, no paragraph text.
+        if block_type == "image":
+            if current:
+                current["content"].append({
+                    "text": "",
+                    "style": "ImageAnchor",
+                    "para_index": doc_idx,
+                    "indent_level": 0,
+                })
+            continue
+
         # We only process paragraph/code/heading-like blocks here
         if block_type not in {"paragraph", "heading", "code"}:
             continue
@@ -472,171 +487,152 @@ _PROJECT_ROOT = _Path(__file__).resolve().parent.parent.parent
 DEFAULT_ASSETS_DIR = str(_PROJECT_ROOT / "public")
 
 
-def extract_images(docx_path: str, book_name: str, assets_base_dir: str = DEFAULT_ASSETS_DIR) -> dict:
+def extract_images(
+    docx_path: str,
+    book_name: str,
+    ingested: dict,
+    assets_base_dir: str = DEFAULT_ASSETS_DIR,
+) -> dict:
     """
-    Extracts images from a Word document and maps them to paragraph positions.
-    
-    Images are saved directly to public/{book_name}/assets/ for web serving.
-    No duplicate copies in output/ folder.
-    
+    Save images from a Word document and map them to block positions.
+
+    Image positions now come from ingest.py, which enumerates the same
+    body elements that produce the blocks. That guarantees the doc_index
+    on each image matches the doc_index on the neighboring paragraph
+    block. Previously this function computed positions independently
+    over doc.paragraphs, which does not include SDT or table elements,
+    so the indexing drifted by +1 per SDT and +1 per preceding table
+    and images ended up assigned to the wrong chapter (or lost).
+
     Cover image detection logic:
-    - If an image exists BEFORE the first Heading 1 → that's the cover
-    - Otherwise, no cover.png is created (all images numbered sequentially)
-    
+      - If any image appears in an SDT element (Word's cover-page
+        container), that one wins and becomes cover.png.
+      - Otherwise, if the first image appears before doc_index 15,
+        it is treated as the cover.
+      - Otherwise, there is no cover; all images are numbered.
+
     Returns a dict with:
-      - 'files': mapping rel_id to file path
-      - 'positions': list of (paragraph_index, rel_id, filename, width_px, height_px)
-      - 'has_cover': boolean indicating if cover was found
-      - 'book_name': slug for URL paths
+      - 'files': mapping rel_id -> saved file path
+      - 'positions': list of tuples
+          (doc_index, run_idx, rel_id, filename, width_px, height_px)
+        The first element is doc_index (NOT paragraph index). Downstream
+        code in to_markdown() reads this list keyed by doc_index.
+      - 'has_cover': True if a cover was detected and saved as cover.png
+      - 'book_name': slug used for building asset URLs
     """
     try:
         from docx import Document
-        from docx.oxml import parse_xml
     except ImportError:
         raise ImportError("pip install python-docx")
-
-    import re
 
     doc = Document(docx_path)
     assets_dir = Path(assets_base_dir) / book_name / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 1: Find first TWO Heading 1 positions
-    # (to handle cases like "פתיחה" + cover image + "Chapter 1")
-    first_heading_idx = None
-    second_heading_idx = None
-    heading_count = 0
-    for idx, para in enumerate(doc.paragraphs):
-        if para.style and "Heading 1" in para.style.name:
-            heading_count += 1
-            if heading_count == 1:
-                first_heading_idx = idx
-            elif heading_count == 2:
-                second_heading_idx = idx
-                break
-    
-    # Step 2: Build rel_id to image data mapping
+    # Build rel_id -> {data, ext} map. We still need the docx doc object
+    # here because ingest does not ship image bytes across to parse.
     image_data = {}
     for rel_id, rel in doc.part.rels.items():
         if "image" not in rel.reltype:
             continue
         try:
-            img_data = rel.target_part.blob
+            img_bytes = rel.target_part.blob
             content_type = rel.target_part.content_type
             ext = content_type.split("/")[-1]
             if ext == "jpeg":
                 ext = "jpg"
-            image_data[rel_id] = {"data": img_data, "ext": ext}
+            image_data[rel_id] = {"data": img_bytes, "ext": ext}
         except Exception:
             continue
 
-       # Step 3: Check for images in SDT elements (before paragraphs - cover page)
-    # Keep tuple shape consistent: (para_idx, run_idx, rel_id, w_px, h_px)
-    image_positions_temp = []
+    # Pull the pre-computed image records from ingest. Each record is a
+    # dict with doc_index, run_index, rel_id, width_emu, height_emu,
+    # source ("paragraph" or "sdt").
+    raw_images = ingested.get("images", []) if isinstance(ingested, dict) else []
 
-    body = doc.element.body
-    for element in body:
-        tag_name = element.tag.split('}')[-1] if '}' in element.tag else element.tag
-        if tag_name == 'sdt':
-            blips = element.xpath('.//a:blip', namespaces={
-                'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'
-            })
-            for blip in blips:
-                embed_id = blip.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
-                if embed_id and embed_id in image_data:
-                    image_positions_temp.append((-1, 0, embed_id, 0, 0))
+    # Sort by document position so the cover (if any) comes first and
+    # sequential numbering matches reading order.
+    raw_images_sorted = sorted(raw_images, key=lambda x: (x.get("doc_index", 0), x.get("run_index", 0)))
 
-    # Step 4: Map images in paragraphs (with dimensions)
-    for para_idx, para in enumerate(doc.paragraphs):
-        for run_idx, run in enumerate(para.runs):
-            run_xml = run._element.xml.decode('utf-8') if isinstance(run._element.xml, bytes) else run._element.xml
-
-            if '<w:drawing' in run_xml or '<w:pict' in run_xml or 'r:embed=' in run_xml:
-                embeds = re.findall(r'r:embed="(rId\d+)"', run_xml)
-                matched_rel_id = None
-
-                for eid in embeds:
-                    if eid in image_data:
-                        matched_rel_id = eid
-                        break
-
-                if not matched_rel_id:
-                    for rel_id in image_data.keys():
-                        if rel_id in run_xml:
-                            matched_rel_id = rel_id
-                            break
-
-                if matched_rel_id:
-                    w_px, h_px = 0, 0
-                    extents = re.findall(r'<wp:extent\s+cx="(\d+)"\s+cy="(\d+)"', run_xml)
-                    if extents:
-                        cx, cy = int(extents[0][0]), int(extents[0][1])
-                        w_px = round(cx / 914400 * 96)
-                        h_px = round(cy / 914400 * 96)
-
-                    image_positions_temp.append((para_idx, run_idx, matched_rel_id, w_px, h_px))
-
-    # Step 5: Sort consistently by paragraph + run
-    image_positions_temp.sort(key=lambda x: (x[0], x[1]))
-
-    # Step 6: Determine cover image
+    # Decide which rel_id is the cover image, if any.
     has_cover = False
     cover_rel_id = None
 
-    if image_positions_temp:
-        first_img_para_idx = image_positions_temp[0][0]
-
-        # SDT cover page image
-        if first_img_para_idx == -1:
-            sdt_images = [img for img in image_positions_temp if img[0] == -1]
-            cover_rel_id = sdt_images[-1][2]
+    if raw_images_sorted:
+        first = raw_images_sorted[0]
+        if first.get("source") == "sdt":
+            # SDT-sourced image: treat the last SDT image as the cover.
+            # (Some cover pages contain multiple images; the final one
+            # is typically the hero image.)
+            sdt_imgs = [img for img in raw_images_sorted if img.get("source") == "sdt"]
+            if sdt_imgs:
+                cover_rel_id = sdt_imgs[-1]["rel_id"]
+                has_cover = True
+                print("[OK] Cover image found: SDT image (cover page)")
+        elif first.get("doc_index", 999) < 15:
+            cover_rel_id = first["rel_id"]
             has_cover = True
-            print(f"[OK] Cover image found: SDT image (cover page)")
-
-        # Otherwise, first image early in the document is treated as cover
-        elif first_img_para_idx < 15:
-            cover_rel_id = image_positions_temp[0][2]
-            has_cover = True
-            print(f"[OK] Cover image found: first image at paragraph {first_img_para_idx}")
-
+            print(f"[OK] Cover image found: first image at doc_index {first['doc_index']}")
         else:
-            print(f"[WARN] No cover: First image at para {first_img_para_idx} (too late in document)")
+            print(f"[WARN] No cover: first image at doc_index {first.get('doc_index')} (too late)")
             print("  All images will be numbered sequentially (no cover.png)")
 
-    # DEBUG
     print(f"  [DEBUG] rel images found: {len(image_data)}")
-    print(f"  [DEBUG] positioned images found: {len(image_positions_temp)}")
+    print(f"  [DEBUG] positioned images found: {len(raw_images_sorted)}")
     print(f"  [DEBUG] has_cover: {has_cover}, cover_rel_id: {cover_rel_id}")
 
-    # Step 7: Save images
+    # Save images to disk and build the positions list.
+    #
+    # Positions tuple shape stays compatible with existing consumers
+    # in to_markdown():
+    #   (doc_index, run_idx, rel_id, filename, width_px, height_px)
+    # The first element is now doc_index rather than the old
+    # paragraph index; to_markdown()'s per-chapter filtering uses
+    # the same doc_index range, so the meaning is the same.
     image_files = {}
     image_positions = []
     image_counter = 1
 
-    for para_idx, run_idx, rel_id, w_px, h_px in image_positions_temp:
-        img_info = image_data[rel_id]
+    for img in raw_images_sorted:
+        rel_id = img.get("rel_id")
+        if rel_id not in image_data:
+            # Defensive: an embed referencing a missing image part.
+            continue
+
+        info = image_data[rel_id]
 
         if has_cover and rel_id == cover_rel_id:
             filename = "cover.png"
-            img_path = assets_dir / filename
         else:
-            filename = f"image-{str(image_counter).zfill(2)}.{img_info['ext']}"
-            img_path = assets_dir / filename
+            filename = f"image-{str(image_counter).zfill(2)}.{info['ext']}"
             image_counter += 1
 
+        img_path = assets_dir / filename
         with open(img_path, "wb") as f:
-            f.write(img_info["data"])
+            f.write(info["data"])
+
+        # Convert EMU (English Metric Units) to pixels for the
+        # rendered <img> tag. 914400 EMU per inch, 96 px per inch.
+        w_px = round(img.get("width_emu", 0) / 914400 * 96) if img.get("width_emu") else 0
+        h_px = round(img.get("height_emu", 0) / 914400 * 96) if img.get("height_emu") else 0
 
         image_files[rel_id] = str(img_path)
-        image_positions.append((para_idx, run_idx, rel_id, filename, w_px, h_px))
+        image_positions.append((
+            img.get("doc_index", 0),
+            img.get("run_index", 0),
+            rel_id,
+            filename,
+            w_px,
+            h_px,
+        ))
 
     print(f"  [DEBUG] saved images: {[p[3] for p in image_positions]}")
 
     return {
-        'files': image_files,
-        'positions': image_positions,
-        'has_cover': has_cover,
-        'book_name': book_name
+        "files": image_files,
+        "positions": image_positions,
+        "has_cover": has_cover,
+        "book_name": book_name,
     }
 
 
@@ -871,6 +867,25 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
         # =========================
         elif style == "Table":
             lines.append(text)
+
+        # =========================
+        # Image-only anchors
+        # =========================
+        # These content items come from paragraphs in the source docx
+        # that contained only an image (no text). ingest.py emits
+        # them so parse.py preserves the positional slot; to_markdown
+        # renders only the image here, with no paragraph text.
+        elif style == "ImageAnchor":
+            para_images = images_by_para_run.get(para_idx, {})
+            for r_idx in sorted(para_images.keys()):
+                for img_filename, w_px, h_px in para_images[r_idx]:
+                    if w_px > 0 and h_px > 0:
+                        lines.append(
+                            f'<img src="{assets_path}/{img_filename}" alt="{img_filename}" width="{w_px}" height="{h_px}" />'
+                        )
+                    else:
+                        lines.append(f"![{img_filename}]({assets_path}/{img_filename})")
+                    lines.append("")
 
         # =========================
         # Paragraph + images (INLINE)

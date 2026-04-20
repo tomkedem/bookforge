@@ -123,8 +123,13 @@ def run_pipeline(docx_path: str, book_name: str,
     print(f"  Chapters: {len(chapters)}")
 
     # Step 3: Extract images (saved directly to public/{book}/assets/)
+    # extract_images now consumes the image records already collected
+    # during ingestion, so image doc_index values line up with the
+    # block doc_index values. This eliminates the old offset bug where
+    # images drifted to the wrong chapter because the old code counted
+    # doc.paragraphs and skipped SDT / table elements.
     print("\n[3/7] Extract images...")
-    images = extract_images(docx_path, book_name, DEFAULT_ASSETS_DIR)
+    images = extract_images(docx_path, book_name, ingested, DEFAULT_ASSETS_DIR)
     chapter_images = [p for p in images["positions"] if p[3] != "cover.png"]
     cover_text = "1 cover" if images.get("has_cover") else "no cover"
     print(f"  Images: {len(chapter_images)} chapter + {cover_text}")
