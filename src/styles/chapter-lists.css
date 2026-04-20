@@ -1,58 +1,61 @@
 /* ═══════════════════════════════════════════════════════════
-   CHAPTER LISTS - Bullet spacing and hanging indent
-   
-   Problem observed: default ul/li rendering left bullets
-   glued to text with no breathing room, and wrapped lines
-   started at the content's outer edge instead of aligning
-   with the first line of text (no hanging indent).
-   
-   Two fixes:
-   1. padding-inline-start on the list creates room for
-      the marker box itself. list-style-position: outside
-      ensures the marker lives in that space, not inside
-      the text flow.
-   2. The combination above gives wrapped lines the
-      hanging indent automatically: each li's text area
-      starts where the first line's text started, not at
-      the list's outer edge.
-   
-   RTL-safe: padding-inline-start respects writing direction,
-   so the reserved marker space is on the right in Hebrew
-   content and on the left in LTR content.
+   CHAPTER BULLET LISTS - Spacing and hanging indent
+
+   This file only touches <ul> (bulleted lists). Numbered
+   lists (<ol>) were already rendering correctly in the
+   reading view and are intentionally left alone here so
+   we don't accidentally shift their existing indentation.
+
+   Problem observed on bulleted lists:
+   - The bullet glyph was glued to the text with no
+     breathing room.
+   - When a list item wrapped to a second line, that
+     second line started at the outer edge of the content
+     column instead of aligning under the first line's
+     text (no hanging indent).
+
+   The fix uses two standard mechanics:
+   1. padding-inline-start on <ul> reserves space for
+      the marker column.
+   2. list-style-position: outside places the marker in
+      that reserved space and, as a side effect, makes
+      wrapped lines align with the first line of text.
+
+   RTL-safe: padding-inline-start respects writing
+   direction, so the marker column sits on the right for
+   Hebrew content and on the left for LTR content.
    ═══════════════════════════════════════════════════════════ */
 
-.reading-article .chapter-content ul,
-.reading-article .chapter-content ol {
-  /* Room for the marker glyph + breathing space between
-     marker and text. 1.75em is roughly "bullet + 1 space"
-     at the current line-height. */
+.reading-article .chapter-content ul {
+  /* Room for the bullet + breathing space between bullet
+     and text. 1.75em is roughly "bullet + one space" at
+     the current reading line-height. */
   padding-inline-start: 1.75em;
   margin-block: 0.75em;
-  /* Keep the marker outside the text flow so wrapped lines
-     align with the first line of text (hanging indent). */
+  /* Marker lives outside the text flow so wrapped lines
+     hang-indent to align with the first line. */
   list-style-position: outside;
 }
 
-.reading-article .chapter-content li {
+.reading-article .chapter-content ul > li {
   /* Per-item vertical rhythm. Matches the paragraph rhythm
-     in the surrounding prose without compressing visually. */
+     in surrounding prose without feeling cramped. */
   margin-block: 0.4em;
-  /* A nudge so text does not sit immediately against the
-     marker column. Combined with the parent's
-     padding-inline-start, this gives the final spacing. */
+  /* Small nudge so text does not sit immediately against
+     the marker column. Combined with the parent's
+     padding-inline-start, this produces the final gap. */
   padding-inline-start: 0.25em;
 }
 
-/* Nested lists: slightly tighter but still breathable. */
-.reading-article .chapter-content li > ul,
-.reading-article .chapter-content li > ol {
+/* Nested bulleted lists: slightly tighter rhythm. */
+.reading-article .chapter-content ul ul {
   margin-block: 0.25em;
   padding-inline-start: 1.5em;
 }
 
-/* Marker color follows the body text, not the default
-   browser black, so it reads correctly across light,
-   dark, and sepia themes. */
-.reading-article .chapter-content li::marker {
+/* Bullet color follows body text so it reads correctly
+   across light, dark, and sepia themes. Scoped to ul so
+   ordered-list numbers are not touched. */
+.reading-article .chapter-content ul > li::marker {
   color: var(--yuval-text);
 }

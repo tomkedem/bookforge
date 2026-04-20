@@ -712,7 +712,23 @@ def _extract_list_data(para, numbering_counters, numbering_formats) -> dict:
         lvl_text = fmt_info["lvlText"]
 
         if num_fmt == "bullet":
-            prefix = _get_bullet_char(lvl_text)
+            # Emit a standard markdown bullet marker ("-") instead of
+            # the original Unicode glyph from Word (•, ◆, ►, ...).
+            #
+            # The reason: downstream the text is rendered by Astro's
+            # markdown pipeline. When a line starts with "• text",
+            # markdown treats it as a plain paragraph that happens to
+            # begin with a bullet glyph, producing a flat <p> element.
+            # When a line starts with "- text", markdown recognises a
+            # list item and produces <ul><li>...</li></ul>. Only the
+            # HTML-list form benefits from the reading view's list
+            # styles (spacing, hanging indent) and from assistive
+            # technology treating it as a list.
+            #
+            # We keep Word's original bullet shape in list_data for
+            # any downstream tooling that wants to inspect it, but
+            # the emitted markdown prefix is always "-".
+            prefix = "-"
         elif num_fmt == "decimal":
             prefix = lvl_text.replace("%1", str(current_num))
         elif num_fmt == "lowerLetter":
