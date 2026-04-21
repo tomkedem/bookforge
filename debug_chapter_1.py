@@ -3,7 +3,7 @@
 
 import sys
 from pathlib import Path
-from src.pipeline.ingest import ingest
+from pipeline.ingest import ingest
 
 # Read the document
 book_path = Path(r"D:\Books\Practical Python for AI Engineering.docx")
