@@ -217,17 +217,6 @@ def _clean_markdown_final(text: str) -> str:
     """
     # Block-level (whole-text) patterns
     # ---------------------------------
-    # 01. Trailing " **" at end of line (Word users often add a space
-    # before closing a bold run; that space survives ingest and looks
-    # like "word **" in the output).
-    text = _counted_sub(
-        "01_space_before_close_eol",
-        r' \*\*$',
-        '**',
-        text,
-        flags=re.MULTILINE,
-    )
-
     # 02. ": **" -> ":** " (move the space outside the bold run so the
     # colon reads as part of the label, not as content). Highest firing
     # rule in practice because authors commonly write "Label: **value**"
@@ -860,6 +849,18 @@ def to_markdown(chapter: dict, image_positions: list = None, next_heading_idx: i
             # Trim trailing blank lines inside the block (cosmetic)
             while code_lines and not code_lines[-1].strip():
                 code_lines.pop()
+
+            # Skip the entire fenced block if nothing remains after
+            # trimming. This happens when a single empty paragraph in
+            # the source was styled as Code-* by mistake (for example,
+            # an empty line between a Python block and a Hebrew
+            # paragraph that the author accidentally marked as
+            # Code Bash while tagging the surrounding code). Emitting
+            # an empty ```bash\n``` in that case produces a visible,
+            # useless empty code block in the reader.
+            if not code_lines:
+                i = j
+                continue
 
             lines.append(f"```{lang}")
             lines.extend(code_lines)
