@@ -3,7 +3,7 @@ import type { Language, Chapter } from '../types/index';
 import { getLanguageDirection } from '../utils/language';
 
 interface Props {
-  currentChapterId: number;
+  currentChapterId: number | string;
   chapters: Chapter[];
   bookSlug: string;
   language?: Language;
@@ -18,9 +18,11 @@ const {
   class: className,
 } = Astro.props;
 
-const currentChapter = chapters.find((ch) => ch.id === currentChapterId);
-const previousChapter = chapters.find((ch) => ch.id === currentChapterId - 1);
-const nextChapter = chapters.find((ch) => ch.id === currentChapterId + 1);
+const currentIndex = chapters.findIndex((ch) => String(ch.id) === String(currentChapterId));
+const currentChapter = currentIndex >= 0 ? chapters[currentIndex] : undefined;
+const previousChapter = currentIndex > 0 ? chapters[currentIndex - 1] : undefined;
+const nextChapter =
+  currentIndex >= 0 && currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : undefined;
 
 const getPreviousUrl = () =>
   previousChapter ? `/read/${bookSlug}/${previousChapter.id}` : '';

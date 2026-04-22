@@ -29,7 +29,10 @@ export async function getStaticPaths() {
 }
 
 const { book, chapter: chapterIdStr } = Astro.params;
-const chapterId = parseInt(chapterIdStr || '0', 10);
+const rawChapterId = chapterIdStr || '0';
+const parsedNum = parseInt(rawChapterId, 10);
+const chapterId: number | string =
+  !Number.isNaN(parsedNum) && String(parsedNum) === rawChapterId ? parsedNum : rawChapterId;
 
 const books = discoverAllBooks();
 const bookData = books.find(b => b.slug === book);
@@ -39,7 +42,7 @@ if (!bookData) {
 }
 
 const chapters: Chapter[] = bookData.chapters ?? [];
-const current = chapters.find(ch => ch.id === chapterId);
+const current = chapters.find(ch => String(ch.id) === String(chapterId));
 
 if (!current) {
   return new Response('Chapter not found', { status: 404 });
@@ -69,10 +72,12 @@ function annotateBookmarkAnchors(html: string): string {
 }
 
 async function loadContent(lang: string): Promise<string> {
-  const filename =
-    chapterId === 0
-      ? `intro.${lang}.md`
-      : `chapter-${String(chapterId).padStart(2, '0')}.${lang}.md`;
+  const fileSlug =
+    (current as any).file_slug ||
+    (typeof chapterId === 'string'
+      ? chapterId
+      : `chapter-${String(chapterId).padStart(2, '0')}`);
+  const filename = `${fileSlug}.${lang}.md`;
 
   const path = resolve(`output/${book}`, filename);
 

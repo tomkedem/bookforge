@@ -37,13 +37,13 @@ function creditDataAttr(value: string | Record<string, string> | undefined): str
   return JSON.stringify(value);
 }
 
+function formatWordCount(count: number, lang: string): string {
+  return t('book.words', lang, { n: count.toString() });
+}
+
 function formatChapterCount(count: number, lang: string): string {
   if (count === 1) return t('book.chapterOne', lang);
   return t('book.chapters', lang, { n: count.toString() });
-}
-
-function formatWordCount(count: number, lang: string): string {
-  return t('book.words', lang, { n: count.toString() });
 }
 
 // Reading time estimate at ~200 wpm; min 1 minute.
@@ -58,6 +58,37 @@ function formatSectionsLabel(sections: number, lang: string): string {
   return sections === 1
     ? t('book.sectionOne', lang)
     : t('book.sections', lang, { n: sections.toString() });
+}
+
+/**
+ * Convert a small subset of inline markdown to safe HTML.
+ *
+ * Supports the markers that show up in book descriptions written in Word:
+ *   **text**  ->  <strong>text</strong>
+ *   *text*    ->  <em>text</em>
+ *   `text`    ->  <code>text</code>
+ *
+ * Everything else is escaped so there's no risk of injecting arbitrary
+ * HTML from manifest data. The pattern order matters — ** must be
+ * processed before * so "*" inside "**...**" isn't consumed first.
+ */
+function renderInlineMarkdown(text: string): string {
+  // Escape HTML first so user content can't break out. We intentionally
+  // do NOT escape backticks, asterisks, or underscores here — they're
+  // markdown syntax we'll consume in the next step.
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  return escaped
+    // Bold: **text**
+    .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
+    // Italic: *text* (single asterisks, not consumed by bold)
+    .replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>')
+    // Inline code: `text`
+    .replace(/`([^`\n]+?)`/g, '<code>$1</code>');
 }
 
 export async function getStaticPaths() {
@@ -115,7 +146,6 @@ const book = {
 
 const title = getLocalizedText(book.titles, language);
 const description = getLocalizedText(book.descriptions, language);
-const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.word_count ?? 0), 0);
 ---
 
 <BaseLayout
@@ -183,9 +213,19 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
           'lg:top-4',
           isRtl && 'text-right',
         ]}>
-          <h2 class="font-heading font-bold text-xl sm:text-2xl mb-3 sm:mb-4 text-yuval-text">
-            {t('sidebar.chapters', language)}
-          </h2>
+          <!-- Gold-accented chapters header to match the reading pane's
+               "CHAPTERS" typography. Thin bar underneath echoes the
+               accent line used in ReadingLayout. -->
+          <div class="mb-3 sm:mb-4 flex items-center gap-3">
+            <h2 class="font-heading font-bold text-xl sm:text-2xl text-yuval-text">
+              {t('sidebar.chapters', language)}
+            </h2>
+            <span
+              class="flex-1 h-px"
+              style="background: linear-gradient(to left, rgba(201,162,39,0.5), transparent);"
+              aria-hidden="true"
+            ></span>
+          </div>
 
           <div class="space-y-2 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
             {
@@ -204,8 +244,8 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
                       'rounded-lg',
                       'border',
                       'border-yuval-border',
-                      'hover:bg-yuval-bg-secondary',
-                      'hover:border-yuval-border-secondary',
+                      'hover:border-[rgba(201,162,39,0.55)]',
+                      'hover:shadow-sm',
                       'transition-all',
                       'duration-200',
                       'focus:outline-none',
@@ -214,6 +254,7 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
                       'focus:ring-yuval-highlight',
                       'relative',
                       'overflow-hidden',
+                      'bg-yuval-surface',
                     ]}
                     data-chapter-id={chapter.id}
                     data-book-slug={slug}
@@ -235,11 +276,16 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
                       ]}
                     >
                       <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0', 'flex', 'items-start', 'gap-3']}>
+                        <!-- Gold-tinted chapter number badge matching the
+                             reading pane style. Uses static hex values
+                             rather than a yuval token so the color reads
+                             correctly in both light and dark themes. -->
                         <span
-                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md bg-yuval-bg-secondary text-yuval-text-tertiary font-semibold text-xs tabular-nums"
+                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md font-semibold text-xs tabular-nums"
+                          style="background-color: rgba(201, 162, 39, 0.12); color: #8a6a15; border: 1px solid rgba(201, 162, 39, 0.25);"
                           aria-hidden="true"
                         >
-                          #{chapterNum}
+                          {chapterNum.toString().padStart(2, '0')}
                         </span>
 
                         <div class="flex-1 min-w-0">
@@ -334,45 +380,68 @@ const totalWords = book.chapters.reduce((sum: number, ch: Chapter) => sum + (ch.
             {book.credits && (
               <figcaption class="mt-2 text-sm text-yuval-text-secondary">
                 {book.credits.type === 'lecture_summary' ? (
-                  <div class="space-y-1">
-                    <p>
-                      <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
-                      <span data-credit-localized={creditDataAttr(book.credits.lecturer)}>{getCreditText(book.credits.lecturer, language)}</span>
+                  <div class="space-y-1.5">
+                    <!-- Lecturer — person-outline icon -->
+                    <p class="inline-flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4" stroke-width="1.8" />
+                        <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                      </svg>
+                      <span>
+                        <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
+                        <span data-credit-localized={creditDataAttr(book.credits.lecturer)}>{getCreditText(book.credits.lecturer, language)}</span>
+                      </span>
                     </p>
-                    <p>
-                      <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
-                      <span data-credit-localized={creditDataAttr(book.credits.editor)}>{getCreditText(book.credits.editor, language)}</span>
+                    <!-- Editor — pencil/edit icon -->
+                    <p class="inline-flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                      </svg>
+                      <span>
+                        <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
+                        <span data-credit-localized={creditDataAttr(book.credits.editor)}>{getCreditText(book.credits.editor, language)}</span>
+                      </span>
                     </p>
                   </div>
                 ) : (
-                  <p>
-                    <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(book.credits.author)}>{getCreditText(book.credits.author, language)}</span>
+                  <!-- Author — person-outline icon -->
+                  <p class="inline-flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="8" r="4" stroke-width="1.8" />
+                      <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                    </svg>
+                    <span>
+                      <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(book.credits.author)}>{getCreditText(book.credits.author, language)}</span>
+                    </span>
                   </p>
                 )}
               </figcaption>
             )}
+
+            <!-- Chapter count with book icon — mirrors Goodreads/LeanPub
+                 style of placing book-level metadata right under the
+                 cover. Sits outside the credits conditional so it always
+                 appears, even for books without an author field. -->
+            <p class="mt-2 inline-flex items-center gap-1.5 text-sm text-yuval-text-tertiary">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+              <span>{formatChapterCount(book.chapters.length, language)}</span>
+            </p>
           </figure>
 
           <div class="space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
             {description.split(/\n\s*\n/).filter((p: string) => p.trim()).map((para: string) => (
-              <p class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed">
-                {para.trim()}
-              </p>
+              <p
+                class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
+                set:html={renderInlineMarkdown(para.trim())}
+              />
             ))}
           </div>
 
-          <!-- Clear the float so meta stats sit below image+text -->
+          <!-- Clear the float so anything below sits after image+text -->
           <div class="lg:clear-both"></div>
-
-          <div class="space-y-2 mt-4">
-            <p class="text-sm text-yuval-text-tertiary">
-              {formatChapterCount(book.chapters.length, language)}
-            </p>
-
-            <p class="text-sm text-yuval-text-tertiary">
-              {formatWordCount(totalWords, language)}
-            </p>
-          </div>
         </div>
       </div>
     </div>
