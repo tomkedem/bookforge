@@ -74,15 +74,16 @@ list, dict, set, tuple, ו-collections
 
 **איך יוצרים רשימה**
 
-`numbers = [1, 2, 3, 4, 5]`
+```python
+numbers = [1, 2, 3, 4, 5]
+names = ["Tamar", "Noam", "Tomer"]
+mixed = [1, "AI", True, None]
+```
 
-`names = ["Tamar", "Noam", "Tomer"]`
+רשימה יכולה להכיל ערכים מטיפוסים שונים, וזו אחת הסיבות שפייתון כל כך גמישה.
 
-`mixed = [1, "AI", True, None]`
+מהנדס טוב יודע להשתמש בזה בזהירות:
 
-רשימה יכולה להכיל ערכים מטיפוסים שונים 
-וזו אחת הסיבות שפייתון כל כך גמישה. 
-מהנדס טוב יודע להשתמש בזה בזהירות: 
 אם כל איבר שונה לגמרי, כנראה שהנתונים עצמם לא מאורגנים היטב.
 
 **פעולות נפוצות**
@@ -489,11 +490,10 @@ Set **אינו שומר על סדר**.
 point = (10, 20)
 print(point[0]) # 10
 print(point[1]) # 20
+
+# Note: Tuples are immutable, meaning you cannot change their values 
+# after creation (e.g., point[0] = 15 would raise a TypeError).
 ```
-
-`# Note: Tuples are immutable, meaning you cannot change their values `
-
-`# after creation (e.g., point[0] = 15 would raise a TypeError).`
 
 התחביר כמעט זהה לרשימה. רק עם סוגריים עגולים במקום מרובעים. 
 מה שמייחד את tuple הוא העובדה שלא ניתן לשנות אותו:

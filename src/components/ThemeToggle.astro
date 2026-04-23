@@ -400,10 +400,12 @@ const { class: className } = Astro.props;
   }
 
   /* ─── Birds ─────────────────────────────────────────────────────────
-     Birds appear only in the day (light) sky. Each bird is a single
-     emoji span that flies across the window — emoji rendering is
-     guaranteed on every OS, so we avoid the fragile SVG-mask approach
-     and Astro's scoped-class issue for JS-created nodes. */
+     Birds are real inline-SVG silhouettes, not emoji — each species has
+     a distinct wing profile (eagle/seagull/dove/sparrow) and two path
+     frames (wings-up / wings-down) that alternate to flap. Colors use
+     currentColor, so species color is controlled via the `.bird` `color`
+     property. Birds appear only while the day sky is visible, which on
+     this preview-of-opposite toggle is when the site is in dark mode. */
   .birds {
     position: absolute;
     inset: 0;
@@ -411,9 +413,6 @@ const { class: className } = Astro.props;
     overflow: hidden;
   }
 
-  /* The toggle shows the DAY sky (sun + clouds) only when the site is in
-     dark mode — it's a preview-of-the-opposite design. Birds belong in
-     that day sky, so we hide them whenever the site is NOT dark. */
   :global(html:not(.dark)) .birds {
     display: none !important;
   }
@@ -422,16 +421,48 @@ const { class: className } = Astro.props;
     position: absolute;
     top: var(--bird-y, 8px);
     left: var(--bird-start-x, -20px);
-    font-size: var(--bird-size, 11px);
-    line-height: 1;
+    width: var(--bird-size, 14px);
+    height: calc(var(--bird-size, 14px) * 0.5);
     opacity: var(--bird-opacity, 0.9);
     pointer-events: none;
     will-change: transform;
     animation: bird-fly var(--bird-dur, 8s) linear forwards;
-    /* Make emoji render as plain silhouettes on systems that support
-       it — preserves the natural shape but keeps the tone consistent
-       with the day sky. Falls back to full-color emoji elsewhere. */
-    filter: saturate(0.92);
+    /* The transform in bird-fly already owns scaleX for direction; we
+       keep the bird group itself untransformed here. */
+  }
+
+  :global(.bird svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  /* Species palette — silhouette color. Kept slightly lighter than pure
+     black so the bird reads against the cyan day-sky gradient without
+     looking pasted on. */
+  :global(.bird-eagle)   { color: #1d1208; }
+  :global(.bird-seagull) { color: #2a2a34; }
+  :global(.bird-dove)    { color: #4a4e5a; }
+  :global(.bird-sparrow) { color: #2b1f14; }
+
+  /* Wing-flap: two path groups per bird, swapped rapidly via opacity.
+     steps(1) gives a snap between poses (no crossfade), which reads as
+     a genuine flap. The duration is set per-species via --flap-dur. */
+  :global(.bird .wings-up) {
+    animation: bird-flap-up var(--flap-dur, 320ms) steps(1, end) infinite;
+  }
+  :global(.bird .wings-down) {
+    animation: bird-flap-down var(--flap-dur, 320ms) steps(1, end) infinite;
+  }
+
+  @keyframes bird-flap-up {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes bird-flap-down {
+    0%, 49%   { opacity: 0; }
+    50%, 100% { opacity: 1; }
   }
 
   @keyframes bird-fly {
@@ -1011,23 +1042,76 @@ const { class: className } = Astro.props;
   */
   type BirdSpecies = {
     name: string;
-    glyph: string;
     size: [number, number];
     opacity: [number, number];
     altitude: [number, number];
     duration: [number, number];
+    /* Wing-flap cycle in ms. Smaller birds flap faster than raptors. */
+    flap: [number, number];
+    /* SVG markup: a single <svg> with two path groups, .wings-up and
+       .wings-down, swapped via the flap animation. viewBox is 40x20 for
+       every species so the sizing math in spawnBird() stays uniform. */
+    svg: string;
   };
 
-  // Four common silhouettes, each a single emoji:
-  //   🦅 eagle (the closest thing to "crow" in Unicode)
-  //   🕊️ dove
-  //   🐦 generic small songbird (sparrow)
-  //   🦆 duck (stands in for the seagull — a broad-winged water bird)
+  /*
+    Four silhouettes, each with two hand-tuned wing poses. Uses
+    stroke="currentColor" with fill="none" so the species `color`
+    defined in CSS paints the bird. The body dot is a filled circle
+    near the center; head is a small bump just in front of it.
+  */
+  const EAGLE_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 13 Q 10 2 20 10 Q 30 2 38 13"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 7 Q 10 18 20 10 Q 30 18 38 7"/>' +
+      '</g>' +
+      '<circle cx="20" cy="10" r="1.5" fill="currentColor"/>' +
+      '<path d="M 21 9.5 Q 23 9 23.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
+    '</svg>';
+
+  // Seagull: sharp angular M, pointed wingtips.
+  const SEAGULL_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 12 L 10 3 L 20 10 L 30 3 L 38 12"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 2 8 L 10 17 L 20 10 L 30 17 L 38 8"/>' +
+      '</g>' +
+    '</svg>';
+
+  // Dove: rounded, softer arcs.
+  const DOVE_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 5 12 Q 12 4 20 10 Q 28 4 35 12"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 5 9 Q 12 16 20 10 Q 28 16 35 9"/>' +
+      '</g>' +
+      '<circle cx="20" cy="10" r="1.2" fill="currentColor"/>' +
+    '</svg>';
+
+  // Sparrow: compact, short wingspan, fast flap.
+  const SPARROW_SVG =
+    '<svg viewBox="0 0 40 20" preserveAspectRatio="xMidYMid meet">' +
+      '<g class="wings-up" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 10 12 Q 14 6 20 10 Q 26 6 30 12"/>' +
+      '</g>' +
+      '<g class="wings-down" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M 10 9 Q 14 14 20 10 Q 26 14 30 9"/>' +
+      '</g>' +
+      '<circle cx="20" cy="10" r="1.1" fill="currentColor"/>' +
+    '</svg>';
+
   const BIRD_SPECIES: BirdSpecies[] = [
-    { name: 'eagle',   glyph: '🦅', size: [11, 14], opacity: [0.85, 0.95], altitude: [2, 10], duration: [6.5, 9.5] },
-    { name: 'dove',    glyph: '🕊️', size: [10, 13], opacity: [0.88, 0.98], altitude: [3, 12], duration: [5.5, 8.5] },
-    { name: 'sparrow', glyph: '🐦', size: [9,  12], opacity: [0.8,  0.92], altitude: [4, 14], duration: [5.0, 7.5] },
-    { name: 'duck',    glyph: '🦆', size: [11, 14], opacity: [0.85, 0.95], altitude: [3, 11], duration: [7.0, 10.0] },
+    { name: 'eagle',   size: [18, 24], opacity: [0.82, 0.92], altitude: [2,  9],  duration: [7.0, 10.0], flap: [480, 620], svg: EAGLE_SVG },
+    { name: 'seagull', size: [16, 22], opacity: [0.85, 0.95], altitude: [1,  8],  duration: [6.0, 8.5],  flap: [360, 460], svg: SEAGULL_SVG },
+    { name: 'dove',    size: [13, 17], opacity: [0.85, 0.95], altitude: [3, 11],  duration: [5.5, 7.5],  flap: [260, 340], svg: DOVE_SVG },
+    { name: 'sparrow', size: [10, 14], opacity: [0.8,  0.92], altitude: [4, 14],  duration: [4.5, 6.5],  flap: [160, 220], svg: SPARROW_SVG },
   ];
 
   function spawnBird(host: HTMLElement) {
@@ -1050,7 +1134,7 @@ const { class: className } = Astro.props;
 
     const bird = document.createElement('span');
     bird.className = `bird bird-${species.name}`;
-    bird.textContent = species.glyph;
+    bird.innerHTML = species.svg;
 
     bird.style.setProperty('--bird-size', `${size.toFixed(1)}px`);
     bird.style.setProperty('--bird-y', `${randomInRange(species.altitude[0], species.altitude[1]).toFixed(1)}px`);
@@ -1064,7 +1148,10 @@ const { class: className } = Astro.props;
     bird.style.setProperty('--bird-x-100', `${dx.toFixed(1)}px`);
     bird.style.setProperty('--bird-dur', `${randomInRange(species.duration[0], species.duration[1]).toFixed(2)}s`);
     bird.style.setProperty('--bird-opacity', randomInRange(species.opacity[0], species.opacity[1]).toFixed(2));
-    // Emoji glyphs typically face right. Flip only when flying R→L.
+    // Wing-flap rate — faster for small birds, slower for raptors.
+    bird.style.setProperty('--flap-dur', `${Math.round(randomInRange(species.flap[0], species.flap[1]))}ms`);
+    // SVGs face right by convention; flip when flying R→L so the head
+    // and body point the right way.
     bird.style.setProperty('--bird-dir', dir === 1 ? '1' : '-1');
 
     bird.addEventListener('animationend', () => bird.remove(), { once: true });
