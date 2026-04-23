@@ -611,198 +611,158 @@ function serializeTitles(chapter: Chapter): string {
     background: linear-gradient(to right, rgba(139, 115, 85, 0.4), transparent 80%);
   }
 
-  .outline-list ul {
+  /* ─── In-this-chapter outline — slim rail style ─────────────────────
+     Deliberately plain so it reads as a different kind of list from the
+     heavy gold "chapters" cards on the other side. The <li> elements are
+     created dynamically in JS at runtime, so they don't receive Astro's
+     data-astro-cid scope attribute — every rule that targets them must
+     be wrapped in :global() or it won't match. */
+  :global(.outline-list ul) {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .outline-list li {
-    margin-bottom: 0;
-    border-bottom: none;
-    border-radius: 12px;
-    transition:
-      background 200ms var(--ease-standard),
-      border-color 200ms var(--ease-standard),
-      color 200ms var(--ease-standard),
-      transform 200ms var(--ease-standard),
-      box-shadow 200ms var(--ease-standard);
+    gap: 1px;
     position: relative;
-    background: linear-gradient(145deg, #fefefe, #f3f3f3) !important;
-    border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
-    box-shadow:
-      0 3px 8px rgba(0, 0, 0, 0.08),
-      0 1px 3px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-    cursor: pointer;
   }
 
-  :global(.dark) .outline-list li {
-    background: linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98)) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow:
-      0 3px 8px rgba(0, 0, 0, 0.25),
-      0 1px 3px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-  }
-
-  .outline-list li:hover {
-    background: linear-gradient(145deg, #fffbf0, #f8f2e0) !important;
-    border-color: rgba(201, 162, 39, 0.5) !important;
-    transform: translateY(-3px) scale(1.02);
-    box-shadow:
-      0 10px 25px rgba(201, 162, 39, 0.2),
-      0 6px 12px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-  }
-
-  :global(.dark) .outline-list li:hover {
-    background: linear-gradient(145deg, rgba(80, 75, 65, 0.9), rgba(60, 55, 50, 0.95));
-    border-color: rgba(139, 115, 85, 0.45);
-    box-shadow:
-      0 8px 20px rgba(139, 115, 85, 0.2),
-      0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .outline-list li:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow:
-      0 2px 4px rgba(201, 162, 39, 0.1),
-      inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: transform 80ms var(--ease-accelerated);
-  }
-
-  :global(.dark) .outline-list li:active {
-    box-shadow:
-      0 2px 4px rgba(139, 115, 85, 0.15),
-      inset 0 1px 3px rgba(0, 0, 0, 0.15);
-  }
-
-  .outline-list li.active {
-    background: linear-gradient(145deg, #fdf8e8, #f9f0d8);
-    border: 2px solid #c9a227;
-    box-shadow:
-      0 4px 16px rgba(201, 162, 39, 0.25),
-      0 2px 6px rgba(201, 162, 39, 0.15),
-      inset 0 0 0 1px rgba(201, 162, 39, 0.1);
-  }
-
-  :global(.dark) .outline-list li.active {
-    background: linear-gradient(145deg, rgba(90, 80, 65, 0.95), rgba(70, 60, 50, 0.98));
-    border: 2px solid #8b7355;
-    box-shadow:
-      0 4px 16px rgba(139, 115, 85, 0.3),
-      0 2px 6px rgba(139, 115, 85, 0.2),
-      inset 0 0 0 1px rgba(139, 115, 85, 0.15);
-  }
-
-  .outline-list a {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px 18px;
-    color: var(--yuval-text-secondary);
-    text-decoration: none;
-    font-size: 13.5px;
-    font-weight: 480;
-    word-break: break-word;
-    transition: all 200ms var(--ease-standard);
-    line-height: 1.55;
-  }
-
-  .outline-list li:hover a {
-    color: var(--yuval-text);
-  }
-
-  .outline-list li.active a {
-    color: var(--yuval-text);
-    font-weight: 550;
-  }
-
-  .outline-list a::before {
+  /* Vertical guide rail on the leading edge (flips with RTL). */
+  :global(.outline-list ul::before) {
     content: '';
-    width: 10px;
-    height: 10px;
-    margin-top: 4px;
-    background: linear-gradient(145deg, #e0e0e0, #c8c8c8);
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    inset-inline-start: 5px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.12);
+    opacity: 0.6;
+  }
+
+  :global(.dark .outline-list ul::before) {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  :global(.outline-list li) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 140ms ease;
+  }
+
+  :global(.outline-list li:hover) {
+    background: rgba(201, 162, 39, 0.06);
     border-radius: 4px;
-    flex-shrink: 0;
-    transition:
-      background 200ms var(--ease-standard),
-      border-color 200ms var(--ease-standard),
-      color 200ms var(--ease-standard),
-      transform 200ms var(--ease-standard),
-      box-shadow 200ms var(--ease-standard);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
-  :global(.dark) .outline-list a::before {
-    background: linear-gradient(145deg, rgba(100, 100, 105, 0.8), rgba(70, 70, 75, 0.9));
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  :global(.dark .outline-list li:hover) {
+    background: rgba(201, 162, 39, 0.08);
   }
 
-  .outline-list li:hover a::before {
-    background: linear-gradient(145deg, #c9a227, #b8921f);
-    transform: rotate(45deg) scale(1.1);
-    border-radius: 3px;
-    box-shadow: 0 2px 6px rgba(201, 162, 39, 0.4);
+  :global(.outline-list li.active) {
+    background: transparent;
   }
 
-  :global(.dark) .outline-list li:hover a::before {
-    background: linear-gradient(145deg, #8b7355, #7a644a);
-    box-shadow: 0 2px 6px rgba(139, 115, 85, 0.5);
+  :global(.outline-list a) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px 5px 14px;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    word-break: break-word;
+    transition: color 140ms ease;
   }
 
-  .outline-list li.active a::before {
-    background: linear-gradient(145deg, #c9a227, #ddb52f);
-    width: 12px;
-    height: 12px;
-    margin-top: 3px;
+  :global(.dark .outline-list a) {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* RTL: flip the padding so the dot sits at the start. */
+  :global([dir="rtl"] .outline-list a),
+  :global(.outline-sidebar-rtl .outline-list a) {
+    padding: 5px 14px 5px 10px;
+  }
+
+  :global(.outline-list li:hover a) {
+    color: #111827;
+  }
+
+  :global(.dark .outline-list li:hover a) {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  :global(.outline-list li.active a) {
+    color: #c9a227;
+    font-weight: 600;
+  }
+
+  :global(.outline-list a::before) {
+    content: '';
+    width: 5px;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.28);
     border-radius: 50%;
-    box-shadow:
-      0 0 0 3px rgba(201, 162, 39, 0.2),
-      0 2px 8px rgba(201, 162, 39, 0.4);
-    animation: pulse-dot 2s var(--ease-standard) infinite;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--yuval-reading-bg, #fff);
+    transition: background 140ms ease, transform 140ms ease;
+    position: relative;
+    z-index: 1;
   }
 
-  @keyframes pulse-dot {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.2), 0 2px 8px rgba(201, 162, 39, 0.4); }
-    50% { box-shadow: 0 0 0 5px rgba(201, 162, 39, 0.1), 0 2px 12px rgba(201, 162, 39, 0.5); }
+  :global(.dark .outline-list a::before) {
+    background: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 0 0 3px var(--yuval-reading-bg, #1a1a1a);
   }
 
-  :global(.dark) .outline-list li.active a::before {
-    background: linear-gradient(145deg, #8b7355, #9d8463);
-    box-shadow:
-      0 0 0 3px rgba(139, 115, 85, 0.25),
-      0 2px 8px rgba(139, 115, 85, 0.5);
+  :global(.outline-list li:hover a::before) {
+    background: #c9a227;
+    transform: scale(1.2);
   }
 
-  .outline-list li[data-level="h3"] {
-    margin-inline-start: 20px;
-    background: linear-gradient(145deg, #fafafa, #f4f4f4);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  :global(.dark .outline-list li:hover a::before) {
+    background: #a8956d;
   }
 
-  :global(.dark) .outline-list li[data-level="h3"] {
-    background: linear-gradient(145deg, rgba(50, 50, 55, 0.7), rgba(40, 40, 45, 0.8));
-    border: 1px solid rgba(255, 255, 255, 0.04);
-  }
-
-  .outline-list li[data-level="h3"] a {
-    padding: 12px 14px;
-    font-size: 12.5px;
-    color: var(--yuval-text-muted);
-  }
-
-  .outline-list li[data-level="h3"] a::before {
+  :global(.outline-list li.active a::before) {
+    background: #c9a227;
     width: 7px;
     height: 7px;
-    margin-top: 5px;
-    border-radius: 2px;
+    box-shadow:
+      0 0 0 3px var(--yuval-reading-bg, #fff),
+      0 0 0 4px rgba(201, 162, 39, 0.3);
+  }
+
+  :global(.dark .outline-list li.active a::before) {
+    background: #a8956d;
+    box-shadow:
+      0 0 0 3px var(--yuval-reading-bg, #1a1a1a),
+      0 0 0 4px rgba(168, 149, 109, 0.35);
+  }
+
+  /* H3 items: indented slightly, even smaller and lighter. */
+  :global(.outline-list li[data-level="h3"]) {
+    margin-inline-start: 14px;
+  }
+
+  :global(.outline-list li[data-level="h3"] a) {
+    padding-block: 4px;
+    font-size: 11.5px;
+    color: #9ca3af;
+    opacity: 0.9;
+  }
+
+  :global(.outline-list li[data-level="h3"] a::before) {
+    width: 3px;
+    height: 3px;
   }
 
   .toc-sidebar {
@@ -1238,17 +1198,7 @@ function serializeTitles(chapter: Chapter): string {
     if (!outline) return;
 
     const ul = outline.querySelector('ul');
-    if (ul) {
-      ul.innerHTML = '';
-      ul.style.cssText = `
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      `;
-    }
+    if (ul) ul.innerHTML = '';
 
     const contentDiv = getVisibleContentDiv();
     if (!contentDiv) return;
@@ -1272,72 +1222,9 @@ function serializeTitles(chapter: Chapter): string {
       const li = document.createElement('li');
       li.setAttribute('data-level', level);
 
-      const isDark = document.documentElement.classList.contains('dark');
-      li.style.cssText = `
-        margin-bottom: 0;
-        border-radius: 12px;
-        transition: all 250ms var(--ease-standard);
-        position: relative;
-        background: ${isDark
-          ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))'
-          : 'linear-gradient(145deg, #fefefe, #f3f3f3)'};
-        border: 1.5px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'};
-        box-shadow: ${isDark
-          ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)'
-          : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)'};
-        cursor: pointer;
-        ${level === 'h3' ? 'margin-inline-start: 20px;' : ''}
-      `;
-
-      li.addEventListener('mouseenter', () => {
-        const dark = document.documentElement.classList.contains('dark');
-        li.style.background = dark
-          ? 'linear-gradient(145deg, rgba(90, 85, 75, 0.95), rgba(70, 65, 60, 0.98))'
-          : 'linear-gradient(145deg, #fffbf0, #f8f2e0)';
-        li.style.borderColor = dark ? 'rgba(139, 115, 85, 0.5)' : 'rgba(201, 162, 39, 0.5)';
-        li.style.transform = 'translateY(-3px) scale(1.02)';
-        li.style.boxShadow = dark
-          ? '0 10px 25px rgba(139, 115, 85, 0.25), 0 6px 12px rgba(0, 0, 0, 0.12)'
-          : '0 10px 25px rgba(201, 162, 39, 0.2), 0 6px 12px rgba(0, 0, 0, 0.08)';
-      });
-
-      li.addEventListener('mouseleave', () => {
-        const dark = document.documentElement.classList.contains('dark');
-        li.style.background = dark
-          ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))'
-          : 'linear-gradient(145deg, #fefefe, #f3f3f3)';
-        li.style.borderColor = dark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
-        li.style.transform = 'translateY(0) scale(1)';
-        li.style.boxShadow = dark
-          ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)'
-          : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)';
-      });
-
-      li.addEventListener('mousedown', () => {
-        li.style.transform = 'translateY(0) scale(0.98)';
-      });
-
-      li.addEventListener('mouseup', () => {
-        li.style.transform = 'translateY(-3px) scale(1.02)';
-      });
-
       const link = document.createElement('a');
       link.href = `#${id}`;
       link.textContent = text;
-
-      link.style.cssText = `
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: ${level === 'h3' ? '12px 14px' : '16px 18px'};
-        color: ${isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.7)'};
-        text-decoration: none;
-        font-size: ${level === 'h3' ? '12.5px' : '13.5px'};
-        font-weight: 480;
-        word-break: break-word;
-        transition: all 200ms var(--ease-standard);
-        line-height: 1.55;
-      `;
 
       link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1351,40 +1238,6 @@ function serializeTitles(chapter: Chapter): string {
       if (ul) ul.appendChild(li);
     });
   }
-
-  function updateOutlineTheme() {
-    const isDark = document.documentElement.classList.contains('dark');
-    const ul = document.getElementById('chapter-outline');
-    if (!ul) return;
-
-    ul.querySelectorAll('li[data-level]').forEach(li => {
-      li.style.background = isDark
-        ? 'linear-gradient(145deg, rgba(70, 70, 75, 0.95), rgba(50, 50, 55, 0.98))'
-        : 'linear-gradient(145deg, #fefefe, #f3f3f3)';
-      li.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
-      li.style.boxShadow = isDark
-        ? '0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15)'
-        : '0 3px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)';
-
-      const link = li.querySelector('a');
-      if (link) {
-        link.style.color = isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.7)';
-      }
-    });
-  }
-
-  const themeObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-        updateOutlineTheme();
-      }
-    });
-  });
-
-  themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['class']
-  });
 
   function updateTocLinks() {
     // clean URLs only
