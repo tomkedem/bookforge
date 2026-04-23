@@ -258,9 +258,11 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    framing. Only the title lives here.
    ───────────────────────────────────────────────────────────── */
 .chapter-title-block {
-  /* Title scrolls away with the content. The top strip above it (stats
-     + progress) remains sticky as the reader's permanent reference. */
-  position: relative;
+  /* Title stays pinned below the top strip. Both remain visible during
+     scroll. The offset (--reading-sticky-top + 2.5rem) accounts for the
+     strip's height so the title tucks right under it without overlap. */
+  position: sticky;
+  top: calc(var(--reading-sticky-top, 4rem) + 2.5rem);
   z-index: 45;
   width: 100%;
   max-width: 100%;
