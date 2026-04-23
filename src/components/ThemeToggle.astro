@@ -411,7 +411,10 @@ const { class: className } = Astro.props;
     overflow: hidden;
   }
 
-  :global(.dark) .birds { opacity: 0; }
+  :global(html.dark) .birds,
+  :global(.dark) .birds {
+    display: none !important;
+  }
 
   :global(.bird) {
     position: absolute;
@@ -1126,6 +1129,18 @@ const { class: className } = Astro.props;
       const newTheme = isDark ? 'light' : 'dark';
       try { localStorage.setItem('yuval-theme', newTheme); } catch { /* */ }
       applyTheme(newTheme);
+
+      // When switching to dark, immediately clear any birds mid-flight so
+      // they don't linger as silhouettes in the night sky. When coming
+      // back to light, kick off a quick first bird so the day sky feels
+      // populated again right away.
+      if (newTheme === 'dark') {
+        if (birdHost) birdHost.replaceChildren();
+      } else {
+        if (birdHost) {
+          window.setTimeout(() => spawnBird(birdHost), randomInRange(600, 1400));
+        }
+      }
     });
   }
 
