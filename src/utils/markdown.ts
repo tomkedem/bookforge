@@ -139,6 +139,10 @@ function renderCodeRunner(text: string, lang: string, encodedCode: string, highl
     <span class="cr-label">${filename}</span>
     <span class="cr-lang-badge">${label}</span>
     <span class="cr-spacer"></span>
+    <button class="cr-btn cr-theme-btn" type="button" title="Toggle code theme" data-code-theme-toggle aria-label="Toggle code theme">
+      <svg class="cr-theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#cr-sun"/></svg>
+      <svg class="cr-theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#cr-moon"/></svg>
+    </button>
     <button class="cr-btn cr-copy-btn" type="button" title="Copy" data-code="${encodedCode}">
       <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -192,6 +196,10 @@ function renderCodeBlock(text: string, lang: string, encodedCode: string, highli
     <span class="cr-label">${filename}</span>
     <span class="cr-lang-badge">${label}</span>
     <span class="cr-spacer"></span>
+    <button class="cr-btn cr-theme-btn" type="button" title="Toggle code theme" data-code-theme-toggle aria-label="Toggle code theme">
+      <svg class="cr-theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#cr-sun"/></svg>
+      <svg class="cr-theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><use href="#cr-moon"/></svg>
+    </button>
     <button class="cr-btn cr-copy-btn" type="button" title="Copy" data-code="${encodedCode}">
       <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

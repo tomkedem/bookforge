@@ -374,7 +374,7 @@ const description = getLocalizedText(book.descriptions, language);
               alt={title}
               loading="lazy"
               decoding="async"
-              class="w-full h-auto rounded-lg shadow-lg bg-yuval-bg-secondary object-contain"
+              class="book-cover-img w-full h-auto rounded-lg shadow-lg object-contain"
             />
 
             {book.credits && (
@@ -431,7 +431,10 @@ const description = getLocalizedText(book.descriptions, language);
             </p>
           </figure>
 
-          <div class="space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
+          <div class="chapter-content space-y-2 sm:space-y-2.5 mb-3 sm:mb-4">
+            {getLocalizedText(book.subtitles, language) && (
+              <p class="sr-only">{getLocalizedText(book.subtitles, language)}</p>
+            )}
             {description.split(/\n\s*\n/).filter((p: string) => p.trim()).map((para: string) => (
               <p
                 class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
@@ -536,4 +539,42 @@ const description = getLocalizedText(book.descriptions, language);
     updateChapterLinks();
     updateChapterProgress();
   });
+
+  // Text-to-Speech on the book landing page: reads the description
+  // aloud. The TTS module finds .chapter-content and collects its
+  // paragraphs; the landing page description block is marked with
+  // that class so the same engine works here without changes.
+  import('../../scripts/text-to-speech').then(({ initTextToSpeech }) => {
+    let currentController: AbortController | null = null;
+
+    const boot = () => {
+      currentController?.abort();
+      const ctrl = new AbortController();
+      currentController = ctrl;
+      initTextToSpeech(ctrl.signal);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot, { once: true });
+    } else {
+      boot();
+    }
+
+    document.addEventListener('astro:after-swap', boot);
+  });
 </script>
+
+<style is:global>
+  /* Book cover blends into the page background: the common white/cream
+     padding around cover artwork disappears against the reading bg.
+     Matches the treatment applied to article images in ReadingLayout. */
+  .book-cover-img {
+    background-color: transparent;
+  }
+  html:not(.dark) .book-cover-img {
+    mix-blend-mode: multiply;
+  }
+  html.dark .book-cover-img {
+    mix-blend-mode: screen;
+  }
+</style>

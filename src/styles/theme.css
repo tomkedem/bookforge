@@ -4,13 +4,21 @@
    Components use CSS variables via Tailwind tokens or var().
    ═══════════════════════════════════════════════════════════ */
 
+/* Reserve space for the vertical scrollbar even when the page does
+   not overflow. Prevents the viewport from widening/narrowing (and
+   centered content from shifting) as content grows past one screen
+   or the scrollbar appears/disappears on route changes. */
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   /* ── Page backgrounds ── */
   --yuval-bg: #f5f0e8;
   --yuval-bg-secondary: #ede8df;
   --yuval-surface: #ffffff;               /* cards, header, sidebars */
   --yuval-header-bg: rgba(255, 255, 255, 0.95);
-  --yuval-reading-bg: #faf7f2;            /* warm paper - easiest on the eyes */
+  --yuval-reading-bg: #f7f1e3;            /* Kindle Paperwhite cream - industry standard for long reading */
 
   /* ── Text ── */
   --yuval-text: #1a1a1a;

@@ -216,6 +216,55 @@
   cursor: wait;
 }
 
+/*
+ * Theme toggle button — shows a realistic sun or moon icon.
+ * The SVGs are <use href="#cr-sun"/> and <use href="#cr-moon"/>
+ * references to symbols defined once in ReadingLayout.astro, which
+ * keeps gradient ids unique even with many blocks on a page.
+ *
+ *   When current theme is dark  → show sun icon  (click to go Light)
+ *   When current theme is light → show moon icon (click to go Dark)
+ */
+.coderunner .cr-theme-btn {
+  padding: 4px 7px;
+}
+
+.coderunner .cr-theme-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/*
+ * Theme toggle icon visibility.
+ *
+ * Important: use attribute selectors with stars and !important because
+ * Tailwind's and reading-typography's global rules may force display
+ * on SVGs. We also use the svg.classname form (not just .classname)
+ * so the specificity tops Tailwind's .* rules.
+ */
+.coderunner .cr-theme-btn svg.cr-theme-icon-sun,
+.coderunner .cr-theme-btn svg.cr-theme-icon-moon {
+  display: none !important;
+}
+
+/* Dark theme (default): show sun icon = "click to switch to Light" */
+html[data-code-theme="dark"] .coderunner .cr-theme-btn svg.cr-theme-icon-sun {
+  display: inline-block !important;
+}
+
+/* Light theme: show moon icon = "click to switch to Dark" */
+html[data-code-theme="light"] .coderunner .cr-theme-btn svg.cr-theme-icon-moon {
+  display: inline-block !important;
+}
+
+/* Fallback — if no [data-code-theme] is set at all (first paint before
+   applyStoredCodeTheme runs, or JS blocked), show sun as the default
+   since Dark is the default theme. */
+html:not([data-code-theme]) .coderunner .cr-theme-btn svg.cr-theme-icon-sun {
+  display: inline-block !important;
+}
+
 /* Copy feedback */
 .coderunner .cr-copied-label,
 .coderunner .cr-running-label {

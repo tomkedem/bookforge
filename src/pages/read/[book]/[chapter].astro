@@ -5,6 +5,7 @@ import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
 import type { Language, Chapter } from '../../../types/index';
 import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../../../utils/language';
+import { t } from '../../../i18n';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { marked } from '../../../utils/markdown';
@@ -144,20 +145,33 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
       Retains id="chapter-header" as a stable contract for language-switcher,
       highlighter, and client-side nav consumers. */}
   <div id="chapter-header" class="chapter-title-block">
-    {langs.map(l => (
-      <div
-        data-lang={l}
-        class={l === language ? 'visible' : 'hidden'}
-        dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
-      >
-        <h1 class="chapter-title">
-          {typeof chapterId === 'number' && (
-            <span class="chapter-number-badge" aria-hidden="true">{chapterId}</span>
-          )}
-          <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
-        </h1>
-      </div>
-    ))}
+    {langs.map(l => {
+      const hasNumber = typeof chapterId === 'number';
+      const chapterWord = t('chapter.label', l);
+      return (
+        <div
+          data-lang={l}
+          class={l === language ? 'visible' : 'hidden'}
+          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+        >
+          <div class="chapter-title-card">
+            {hasNumber && (
+              <div class="chapter-title-pill" aria-hidden="true">
+                <span class="pill-number">{String(chapterId).padStart(2, '0')}</span>
+              </div>
+            )}
+            <div class="chapter-title-body">
+              {hasNumber && (
+                <span class="chapter-eyebrow-text" aria-hidden="true">{chapterWord}</span>
+              )}
+              <h1 class="chapter-title">
+                <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
+              </h1>
+            </div>
+          </div>
+        </div>
+      );
+    })}
   </div>
 
   <div id="chapter-container" data-book={book} data-chapter-id={chapterId}>
@@ -228,14 +242,17 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   padding: 0;
 }
 
-/* Meta row - full-width grid: stats centered, progress pinned to end */
+/* Meta row — mobile-first flex:
+   stats take remaining width and are allowed to shrink/wrap,
+   progress badge is pinned to the end (logical: inline-end in RTL/LTR).
+   On wider screens we upgrade to a centered grid (see 768px block). */
 .meta-bar-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   width: 100%;
   padding: 0;
+  min-width: 0;
 }
 
 .meta-bar-row.hidden {
@@ -243,13 +260,34 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 }
 
 .meta-bar-stats {
-  grid-column: 2;
+  flex: 1 1 auto;
   min-width: 0;
+  /* Allow the inner .chapter-meta (flex-wrap: wrap) to spill over
+     to a second line on cramped viewports instead of crashing into
+     the progress badge. */
 }
 
 .meta-bar-row .progress-badge {
-  grid-column: 3;
-  justify-self: end;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+/* ≥ sm: restore the centered-stats grid so desktop layout is unchanged. */
+@media (min-width: 768px) {
+  .meta-bar-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.75rem;
+  }
+  .meta-bar-stats {
+    grid-column: 2;
+    flex: initial;
+  }
+  .meta-bar-row .progress-badge {
+    grid-column: 3;
+    justify-self: end;
+    margin-inline-start: 0;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -258,18 +296,18 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    framing. Only the title lives here.
    ───────────────────────────────────────────────────────────── */
 .chapter-title-block {
-  /* Title stays pinned below the top strip. Both remain visible during
-     scroll. The offset (--reading-sticky-top + 2.5rem) accounts for the
-     strip's height so the title tucks right under it without overlap. */
+  /* Title stays pinned below the top strip. The block itself is
+     invisible chrome — the visible presence comes from .chapter-title-card
+     inside, which mirrors the TOC's "active chapter" card styling so
+     the reading page reads as a zoomed-in continuation of the menu. */
   position: sticky;
   top: calc(var(--reading-sticky-top, 4rem) + 2.5rem);
   z-index: 45;
   width: 100%;
   max-width: 100%;
-  margin: 0 0 1.25rem;
-  padding: 0.6rem 0 0.7rem;
+  margin: 0 0 1.5rem;
+  padding: 0.6rem 0 0.75rem;
   background: var(--yuval-reading-bg);
-  border-bottom: 1px solid color-mix(in srgb, var(--gold-500) 10%, var(--yuval-border));
 }
 
 /* Title's inner wrapper mirrors .chapter-content exactly so the
@@ -301,19 +339,121 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 }
 
-/* Chapter title - the page's single visual anchor.
-   Large, confident, with generous breathing room on either side.
-   The number badge is a slim gold monogram to the side of the text. */
+/* Chapter title card — a zoomed-in version of the TOC sidebar's
+   "active chapter" card. Same gold-tinted gradient, same 3px gold
+   accent bar, same rounded-rect gradient number pill. The page
+   becomes a continuation of the menu rather than a different world. */
+.chapter-title-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg,
+    rgba(201, 162, 39, 0.12) 0%,
+    rgba(201, 162, 39, 0.06) 100%
+  );
+  box-shadow:
+    0 2px 12px rgba(201, 162, 39, 0.15),
+    inset 0 0 0 1px rgba(201, 162, 39, 0.25);
+  overflow: hidden;
+}
+
+/* 3px gold accent bar mirrors .toc-item-active::before. Lives on the
+   inline-start edge so it flips automatically for RTL/LTR. */
+.chapter-title-card::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #e8c547, #c9a227, #a8852a);
+}
+
+:global(.dark) .chapter-title-card {
+  background: linear-gradient(145deg, rgba(90, 80, 65, 0.95), rgba(70, 60, 50, 0.98));
+  box-shadow:
+    0 4px 16px rgba(139, 115, 85, 0.3),
+    inset 0 0 0 1px #8b7355;
+}
+
+:global(.dark) .chapter-title-card::before {
+  background: linear-gradient(to bottom, #a8956d, #8b7355, #6d5a42);
+}
+
+/* Number pill — large version of .toc-number active state (same
+   145deg gold gradient, same ring-shadow, white numerals).
+   Reads as the twin sibling of the sidebar's active number pill. */
+.chapter-title-pill {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #c9a227, #ddb52f);
+  box-shadow:
+    0 0 0 3px rgba(201, 162, 39, 0.2),
+    0 3px 10px rgba(201, 162, 39, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+:global(.dark) .chapter-title-pill {
+  background: linear-gradient(145deg, #8b7355, #9d8463);
+  box-shadow:
+    0 0 0 3px rgba(139, 115, 85, 0.25),
+    0 3px 10px rgba(139, 115, 85, 0.45),
+    inset 0 1px 2px rgba(255, 255, 255, 0.12);
+}
+
+.pill-number {
+  font-family: var(--reading-font-family);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  direction: ltr;
+}
+
+/* Text column: small eyebrow label + title, stacked. */
+.chapter-title-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.chapter-eyebrow-text {
+  font-family: var(--reading-font-family);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--gold-700) 85%, var(--yuval-text-tertiary));
+  line-height: 1;
+  user-select: none;
+}
+
+:global(.dark) .chapter-eyebrow-text {
+  color: color-mix(in srgb, #a8956d 80%, var(--yuval-text-tertiary));
+}
+
+/* Chapter title itself — tightened typography to sit beside the pill
+   without the line-height dominating the card height. */
 .chapter-title {
   margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 0.55em;
+  display: block;
   font-family: var(--reading-font-family);
-  font-size: clamp(1.85rem, 1.3rem + 2vw, 2.85rem);
-  font-weight: 600;
-  line-height: 1.18;
-  letter-spacing: -0.018em;
+  font-size: clamp(1.55rem, 1.15rem + 1.6vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   color: var(--yuval-chapter-title);
   text-align: start;
   text-wrap: balance;
@@ -322,25 +462,6 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 .chapter-title-text {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.chapter-number-badge {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  font-size: 0.62em;
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--gold-700) 70%, var(--yuval-text-tertiary));
-  letter-spacing: 0.02em;
-}
-
-.chapter-number-badge::after {
-  content: "·";
-  margin-inline-start: 0.35em;
-  color: color-mix(in srgb, var(--gold-500) 45%, var(--yuval-text-tertiary));
 }
 
 /* Progress chip - sits in the top strip eyebrow row */
@@ -462,13 +583,29 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 
   .chapter-title {
-    gap: 0.45em;
-    font-size: clamp(1.45rem, 1rem + 2.2vw, 1.85rem);
+    font-size: clamp(1.3rem, 0.95rem + 1.8vw, 1.7rem);
     line-height: 1.22;
   }
 
-  .chapter-number-badge {
-    font-size: 0.68em;
+  .chapter-title-card {
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 12px;
+  }
+
+  .chapter-title-pill {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 10px;
+  }
+
+  .pill-number {
+    font-size: 1.05rem;
+  }
+
+  .chapter-eyebrow-text {
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
   }
 }
 </style>
