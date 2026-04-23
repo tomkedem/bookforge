@@ -115,63 +115,54 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     bookSlug={book || ''}
     language={language}
   />
-  {/* Region 1 - Top strip: slim band between the two sidebars.
-      Breadcrumb is intentionally hidden (readers arrive from TOC and
-      know the context). Only a lightweight meta row remains. */}
+  {/* Unified top strip: sticky band between the sidebars that merges what
+      used to be three stacked regions — title card, meta stats, progress
+      chip — into a single compact row. Nested IDs are preserved so every
+      consumer keeps working:
+        #chapter-top-strip  → sticky shadow + ResizeObserver (sticky-header.ts)
+        #chapter-header     → language-switcher + tap-to-top (chapter-title-tap.ts)
+        #chapter-meta-bar   → language-switcher
+      All [data-lang] blocks live once inside the same DOM subtree; the
+      switcher toggles them once per ID it scans, which is idempotent. */}
   <div id="chapter-top-strip" class="chapter-top-strip">
-    <div id="chapter-meta-bar" class="chapter-meta-bar">
-      {langs.map(l => (
-        <div
-          data-lang={l}
-          class={l === language ? 'visible meta-bar-row' : 'hidden meta-bar-row'}
-          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
-        >
-          <div class="meta-bar-stats">
-            <ChapterMeta
-              wordCount={current.word_count}
-              readingTimeMinutes={Math.ceil(current.word_count / 200)}
-              sections={current.sections}
-              language={l}
-            />
-          </div>
-          <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  {/* Region 2 - Chapter title block: own component below the strip.
-      Only the title lives here. No shared container, no shared framing.
-      Retains id="chapter-header" as a stable contract for language-switcher,
-      highlighter, and client-side nav consumers. */}
-  <div id="chapter-header" class="chapter-title-block">
-    {langs.map(l => {
-      const hasNumber = typeof chapterId === 'number';
-      const chapterWord = t('chapter.label', l);
-      return (
-        <div
-          data-lang={l}
-          class={l === language ? 'visible' : 'hidden'}
-          dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
-        >
-          <div class="chapter-title-card">
-            {hasNumber && (
-              <div class="chapter-title-pill" aria-hidden="true">
-                <span class="pill-number">{String(chapterId).padStart(2, '0')}</span>
-              </div>
-            )}
-            <div class="chapter-title-body">
+    <div id="chapter-header" class="chapter-strip-inner">
+      <div id="chapter-meta-bar" class="chapter-strip-rows">
+        {langs.map(l => {
+          const hasNumber = typeof chapterId === 'number';
+          const chapterWord = t('chapter.label', l);
+          return (
+            <div
+              data-lang={l}
+              class={l === language ? 'visible strip-row' : 'hidden strip-row'}
+              dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
+            >
               {hasNumber && (
-                <span class="chapter-eyebrow-text" aria-hidden="true">{chapterWord}</span>
+                <div class="strip-pill" aria-hidden="true">
+                  <span class="pill-number">{String(chapterId).padStart(2, '0')}</span>
+                </div>
               )}
-              <h1 class="chapter-title">
-                <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
-              </h1>
+              <div class="strip-title-wrap">
+                {hasNumber && (
+                  <span class="strip-eyebrow" aria-hidden="true">{chapterWord}</span>
+                )}
+                <h1 class="chapter-title strip-title">
+                  <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
+                </h1>
+              </div>
+              <div class="strip-meta">
+                <ChapterMeta
+                  wordCount={current.word_count}
+                  readingTimeMinutes={Math.ceil(current.word_count / 200)}
+                  sections={current.sections}
+                  language={l}
+                />
+              </div>
+              <span class="progress-badge" id={`progress-badge-${l}`}>0%</span>
             </div>
-          </div>
-        </div>
-      );
-    })}
+          );
+        })}
+      </div>
+    </div>
   </div>
 
   <div id="chapter-container" data-book={book} data-chapter-id={chapterId}>
@@ -201,29 +192,19 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 .visible { display: block; }
 
 /* ─────────────────────────────────────────────────────────────
-   REGION 1 - TOP STRIP
-   Independent full-width band between sidebars. Not attached to,
-   not parent of, the chapter title. Sticky so it stays visible
-   while scrolling.
+   UNIFIED TOP STRIP
+   Sticky band between sidebars that holds chapter number + title
+   + meta stats + progress badge in a single row. Replaces what
+   used to be a separate large title card sitting below the strip.
    ───────────────────────────────────────────────────────────── */
-/* The article wraps content with px-4 / sm:px-6 / lg:px-8. The top strip
-   must escape that padding and sit edge-to-edge between sidebars. We cancel
-   the article's inline padding with equal negative margins, then zero our
-   own inline padding. */
 .chapter-top-strip {
-  /* Sticky so stats + progress badge stay on-screen while the reader
-     scrolls. Stack above the title block (z-index 46 > title's 45) so
-     the strip wins the overlap zone. No negative inline margin — the
-     strip stays inside the article's padded area, which already sits
-     between the fixed sidebars, so the progress badge can't slip
-     under the outline card. */
   position: sticky;
   top: var(--reading-sticky-top, 4rem);
   z-index: 46;
   width: 100%;
   max-width: 100%;
-  margin: 0;
-  padding: 0.35rem 0 0.5rem;
+  margin: 0 0 1.25rem;
+  padding: 0.4rem 0 0.5rem;
   background:
     linear-gradient(to bottom,
       color-mix(in srgb, var(--yuval-reading-bg) 96%, transparent),
@@ -236,133 +217,42 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
 }
 
-.chapter-meta-bar {
+.chapter-strip-inner,
+.chapter-strip-rows {
   width: 100%;
+  max-width: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* Meta row — mobile-first flex:
-   stats take remaining width and are allowed to shrink/wrap,
-   progress badge is pinned to the end (logical: inline-end in RTL/LTR).
-   On wider screens we upgrade to a centered grid (see 768px block). */
-.meta-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0;
-  min-width: 0;
-}
-
-.meta-bar-row.hidden {
-  display: none !important;
-}
-
-.meta-bar-stats {
-  flex: 1 1 auto;
-  min-width: 0;
-  /* Allow the inner .chapter-meta (flex-wrap: wrap) to spill over
-     to a second line on cramped viewports instead of crashing into
-     the progress badge. */
-}
-
-.meta-bar-row .progress-badge {
-  flex: 0 0 auto;
-  margin-inline-start: auto;
-}
-
-/* ≥ sm: restore the centered-stats grid so desktop layout is unchanged. */
-@media (min-width: 768px) {
-  .meta-bar-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0.75rem;
-  }
-  .meta-bar-stats {
-    grid-column: 2;
-    flex: initial;
-  }
-  .meta-bar-row .progress-badge {
-    grid-column: 3;
-    justify-self: end;
-    margin-inline-start: 0;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────
-   REGION 2 - CHAPTER TITLE BLOCK
-   Own component below the strip. No shared wrapper, no shared
-   framing. Only the title lives here.
-   ───────────────────────────────────────────────────────────── */
-.chapter-title-block {
-  /* Title stays pinned below the top strip. The block itself is
-     invisible chrome — the visible presence comes from .chapter-title-card
-     inside, which mirrors the TOC's "active chapter" card styling so
-     the reading page reads as a zoomed-in continuation of the menu. */
-  position: sticky;
-  top: calc(var(--reading-sticky-top, 4rem) + 2.5rem);
-  z-index: 45;
-  width: 100%;
-  max-width: 100%;
-  margin: 0 0 1.5rem;
-  padding: 0.6rem 0 0.75rem;
-  background: var(--yuval-reading-bg);
-}
-
-/* Title's inner wrapper mirrors .chapter-content exactly so the
-   title's end edge lines up with the body's end edge. Same width
-   tokens, same centered margin - title reads as the first element
-   of the content container, not a page-level heading. */
-.chapter-title-block > [data-lang] {
-  width: 100%;
-  max-width: var(--reading-content-width);
-  margin: 0 auto;
-}
-
-@media (min-width: 1024px) {
-  .chapter-title-block > [data-lang] {
-    max-width: min(100%, 1040px);
-    padding-inline-start: 20px;
-  }
-}
-@media (min-width: 1280px) {
-  .chapter-title-block > [data-lang] {
-    max-width: min(100%, 1160px);
-    padding-inline-start: 20px;
-  }
-}
-@media (min-width: 1536px) {
-  .chapter-title-block > [data-lang] {
-    max-width: min(100%, 1280px);
-    padding-inline-start: 20px;
-  }
-}
-
-/* Chapter title card — a zoomed-in version of the TOC sidebar's
-   "active chapter" card. Same gold-tinted gradient, same 3px gold
-   accent bar, same rounded-rect gradient number pill. The page
-   becomes a continuation of the menu rather than a different world. */
-.chapter-title-card {
+/* One row per language (language-switcher toggles .hidden/.visible).
+   Gold-tinted surface with a 3px inline-start accent — a compressed
+   echo of the TOC sidebar's "active chapter" card so the reading page
+   reads as a continuation of the menu. */
+.strip-row {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.95rem 1.1rem;
-  border-radius: 14px;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.9rem 0.55rem;
+  padding-inline-start: 1rem;
+  border-radius: 12px;
   background: linear-gradient(135deg,
-    rgba(201, 162, 39, 0.12) 0%,
-    rgba(201, 162, 39, 0.06) 100%
+    rgba(201, 162, 39, 0.10) 0%,
+    rgba(201, 162, 39, 0.04) 100%
   );
   box-shadow:
-    0 2px 12px rgba(201, 162, 39, 0.15),
-    inset 0 0 0 1px rgba(201, 162, 39, 0.25);
+    0 1px 8px rgba(201, 162, 39, 0.12),
+    inset 0 0 0 1px rgba(201, 162, 39, 0.22);
   overflow: hidden;
 }
 
-/* 3px gold accent bar mirrors .toc-item-active::before. Lives on the
-   inline-start edge so it flips automatically for RTL/LTR. */
-.chapter-title-card::before {
+.strip-row.hidden {
+  display: none !important;
+}
+
+.strip-row::before {
   content: '';
   position: absolute;
   inset-inline-start: 0;
@@ -372,46 +262,46 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   background: linear-gradient(to bottom, #e8c547, #c9a227, #a8852a);
 }
 
-:global(.dark) .chapter-title-card {
-  background: linear-gradient(145deg, rgba(90, 80, 65, 0.95), rgba(70, 60, 50, 0.98));
+:global(.dark) .strip-row {
+  background: linear-gradient(145deg, rgba(90, 80, 65, 0.9), rgba(70, 60, 50, 0.95));
   box-shadow:
-    0 4px 16px rgba(139, 115, 85, 0.3),
+    0 3px 12px rgba(139, 115, 85, 0.25),
     inset 0 0 0 1px #8b7355;
 }
 
-:global(.dark) .chapter-title-card::before {
+:global(.dark) .strip-row::before {
   background: linear-gradient(to bottom, #a8956d, #8b7355, #6d5a42);
 }
 
-/* Number pill — large version of .toc-number active state (same
-   145deg gold gradient, same ring-shadow, white numerals).
-   Reads as the twin sibling of the sidebar's active number pill. */
-.chapter-title-pill {
+/* Compact number pill — small version of the old 3.25rem title pill.
+   Keeps the 145deg gold gradient and ring-shadow so the visual link to
+   the TOC active-chapter pill is preserved. */
+.strip-pill {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 12px;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9px;
   background: linear-gradient(145deg, #c9a227, #ddb52f);
   box-shadow:
-    0 0 0 3px rgba(201, 162, 39, 0.2),
-    0 3px 10px rgba(201, 162, 39, 0.4),
-    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    0 0 0 2px rgba(201, 162, 39, 0.22),
+    0 2px 6px rgba(201, 162, 39, 0.35),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
 }
 
-:global(.dark) .chapter-title-pill {
+:global(.dark) .strip-pill {
   background: linear-gradient(145deg, #8b7355, #9d8463);
   box-shadow:
-    0 0 0 3px rgba(139, 115, 85, 0.25),
-    0 3px 10px rgba(139, 115, 85, 0.45),
-    inset 0 1px 2px rgba(255, 255, 255, 0.12);
+    0 0 0 2px rgba(139, 115, 85, 0.25),
+    0 2px 6px rgba(139, 115, 85, 0.45),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.12);
 }
 
 .pill-number {
   font-family: var(--reading-font-family);
-  font-size: 1.35rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #fff;
   line-height: 1;
@@ -420,18 +310,20 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   direction: ltr;
 }
 
-/* Text column: small eyebrow label + title, stacked. */
-.chapter-title-body {
-  flex: 1 1 auto;
+/* Eyebrow + title stacked vertically; takes the remaining row width. */
+.strip-title-wrap {
+  flex: 1 1 12rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  justify-content: center;
+  gap: 0.05rem;
+  line-height: 1.15;
 }
 
-.chapter-eyebrow-text {
+.strip-eyebrow {
   font-family: var(--reading-font-family);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -440,23 +332,26 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   user-select: none;
 }
 
-:global(.dark) .chapter-eyebrow-text {
+:global(.dark) .strip-eyebrow {
   color: color-mix(in srgb, #a8956d 80%, var(--yuval-text-tertiary));
 }
 
-/* Chapter title itself — tightened typography to sit beside the pill
-   without the line-height dominating the card height. */
-.chapter-title {
+/* Title — the class .chapter-title is preserved (highlighter depends on
+   it at highlighter.ts:820). Typography compressed for inline use. */
+.strip-title {
   margin: 0;
   display: block;
   font-family: var(--reading-font-family);
-  font-size: clamp(1.55rem, 1.15rem + 1.6vw, 2.4rem);
+  font-size: clamp(1rem, 0.85rem + 0.55vw, 1.2rem);
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   color: var(--yuval-chapter-title);
   text-align: start;
   text-wrap: balance;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chapter-title-text {
@@ -464,53 +359,74 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   min-width: 0;
 }
 
-/* Progress chip - sits in the top strip eyebrow row */
+/* Meta stats pushed to the trailing edge; ChapterMeta's own styles are
+   overridden in this context so it renders as a thin icon+text row. */
+.strip-meta {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+
+#chapter-meta-bar :global(.chapter-meta) {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-size: 0.72rem;
+  gap: 0.25rem 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  color: var(--yuval-text-secondary);
+}
+
+#chapter-meta-bar :global(.meta-icon) {
+  width: 0.9rem;
+  height: 0.9rem;
+  opacity: 0.85;
+}
+
+#chapter-meta-bar :global(.meta-dot) {
+  font-size: 0.9rem;
+  opacity: 0.5;
+}
+
+/* Progress chip — pinned to the trailing edge of the strip row. */
 .progress-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.5rem;
-  height: 1.5rem;
-  padding-inline: 0.55rem;
+  min-width: 2.4rem;
+  height: 1.4rem;
+  padding-inline: 0.5rem;
   flex-shrink: 0;
-  border-radius: 2px;
+  border-radius: 3px;
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--gold-500) 22%, var(--yuval-border));
+  border: 1px solid color-mix(in srgb, var(--gold-500) 25%, var(--yuval-border));
   color: var(--gold-700);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Meta row stats - no pill, centered cluster */
-#chapter-meta-bar :global(.chapter-meta) {
-  margin: 0;
-  padding: 0.4rem 0;
-  width: auto;
-  max-width: none;
-  background: transparent;
-  border: 0;
-  justify-content: center;
-  flex-wrap: nowrap;
+:global(.dark) .progress-badge {
+  border-color: color-mix(in srgb, #a8956d 40%, var(--yuval-border));
+  color: #d4c098;
 }
 
 @media (min-width: 1024px) {
   .chapter-top-strip {
-    padding: 0.45rem 0 0.6rem;
-  }
-  .chapter-title-block {
-    margin: 0 0 1.5rem;
-    padding: 0.8rem 0 0.9rem;
+    padding: 0.5rem 0 0.6rem;
+    margin-bottom: 1.5rem;
   }
 }
 
-/* Mobile tap-to-top affordance on the chapter title block.
-   Subtle by design - no button styling, no background, no outline ring.
-   Just a whisper of interactivity: a gentle press-in on tap.
-   Activated only when JS has added .chapter-title-tap-enabled (mobile MQ). */
+/* Mobile tap-to-top affordance — chapter-title-tap.ts adds the
+   .chapter-title-tap-enabled class to #chapter-header (our strip inner),
+   so we target that. Subtle press-in feedback, no button chrome. */
 @media (max-width: 1023px) {
-  .chapter-title-block.chapter-title-tap-enabled {
+  #chapter-header.chapter-title-tap-enabled {
     cursor: default;
     -webkit-tap-highlight-color: transparent;
     transition:
@@ -519,21 +435,16 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     will-change: opacity, transform;
   }
 
-  /* Tap feedback - barely-there press-in. Opacity nudge + micro-scale.
-     No background, no border, no ring. Reads as a responsive surface,
-     not a button. */
-  .chapter-title-block.chapter-title-tap-enabled:active {
-    opacity: 0.72;
-    transform: scale(0.995);
+  #chapter-header.chapter-title-tap-enabled:active {
+    opacity: 0.82;
+    transform: scale(0.997);
     transition-duration: 80ms;
   }
 
-  /* Keyboard focus remains accessible but understated:
-     a thin gold underline on the title text, not a boxed outline. */
-  .chapter-title-block.chapter-title-tap-enabled:focus {
+  #chapter-header.chapter-title-tap-enabled:focus {
     outline: none;
   }
-  .chapter-title-block.chapter-title-tap-enabled:focus-visible .chapter-title-text {
+  #chapter-header.chapter-title-tap-enabled:focus-visible .chapter-title-text {
     text-decoration: underline;
     text-decoration-color: color-mix(in srgb, var(--gold-500) 55%, transparent);
     text-decoration-thickness: 1px;
@@ -541,71 +452,85 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .chapter-title-block.chapter-title-tap-enabled {
+    #chapter-header.chapter-title-tap-enabled {
       transition: opacity 120ms linear;
     }
-    .chapter-title-block.chapter-title-tap-enabled:active {
+    #chapter-header.chapter-title-tap-enabled:active {
       transform: none;
     }
   }
 }
 
-@media (max-width: 639px) {
-  .chapter-top-strip {
-    padding: 0.3rem 0 0.4rem;
-  }
-
-  .meta-bar-row {
-    gap: 0.5rem;
-  }
-
-  #chapter-meta-bar :global(.chapter-meta) {
-    font-size: 0.72rem;
-    gap: 0.35rem 0.5rem;
-    padding: 0.3rem 0;
-  }
-
-  #chapter-meta-bar :global(.meta-icon) {
-    width: 0.95rem;
-    height: 0.95rem;
-  }
-
-  .progress-badge {
-    min-width: 2.25rem;
-    height: 1.35rem;
-    padding-inline: 0.4rem;
-    font-size: 0.66rem;
-  }
-
-  .chapter-title-block {
-    margin: 0 0 0.85rem;
-    padding: 0.5rem 0 0.6rem;
-  }
-
-  .chapter-title {
-    font-size: clamp(1.3rem, 0.95rem + 1.8vw, 1.7rem);
-    line-height: 1.22;
-  }
-
-  .chapter-title-card {
-    gap: 0.75rem;
-    padding: 0.7rem 0.85rem;
-    border-radius: 12px;
-  }
-
-  .chapter-title-pill {
-    width: 2.6rem;
-    height: 2.6rem;
+/* Narrow tablets and below: meta and progress wrap below the title
+   so the title has room to breathe. The strip stays one sticky band. */
+@media (max-width: 767px) {
+  .strip-row {
+    padding: 0.45rem 0.7rem 0.5rem;
+    padding-inline-start: 0.85rem;
+    gap: 0.3rem 0.5rem;
     border-radius: 10px;
   }
 
-  .pill-number {
-    font-size: 1.05rem;
+  .strip-pill {
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 8px;
   }
 
-  .chapter-eyebrow-text {
-    font-size: 0.62rem;
+  .pill-number {
+    font-size: 0.8rem;
+  }
+
+  .strip-title-wrap {
+    flex: 1 1 calc(100% - 2.5rem);
+  }
+
+  .strip-title {
+    font-size: clamp(0.92rem, 0.8rem + 0.8vw, 1.05rem);
+  }
+
+  .strip-eyebrow {
+    font-size: 0.55rem;
     letter-spacing: 0.18em;
+  }
+
+  /* Meta and progress drop to a second line under the title, aligned
+     to the trailing edge for a clean right/left rag in RTL/LTR. */
+  .strip-meta {
+    flex: 1 1 auto;
+    margin-inline-start: 0;
+    order: 2;
+  }
+
+  .progress-badge {
+    order: 3;
+    min-width: 2.2rem;
+    height: 1.25rem;
+    padding-inline: 0.4rem;
+    font-size: 0.64rem;
+  }
+
+  #chapter-meta-bar :global(.chapter-meta) {
+    font-size: 0.68rem;
+    gap: 0.2rem 0.4rem;
+    justify-content: flex-start;
+  }
+
+  #chapter-meta-bar :global(.meta-icon) {
+    width: 0.82rem;
+    height: 0.82rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Ultra-narrow: allow title to wrap to two lines and hide meta dots
+     so the icon+value groups pack tighter. */
+  .strip-title {
+    white-space: normal;
+    line-height: 1.2;
+  }
+  #chapter-meta-bar :global(.meta-dot) {
+    display: none;
   }
 }
 </style>
