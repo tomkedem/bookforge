@@ -137,14 +137,14 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
               dir={SUPPORTED_LANGUAGES.find(x => x.code === l)?.dir || 'ltr'}
             >
               {hasNumber && (
-                <div class="strip-pill" aria-hidden="true">
-                  <span class="pill-number">{String(chapterId).padStart(2, '0')}</span>
+                <div class="strip-num-cluster" aria-hidden="true">
+                  <span class="strip-eyebrow">{chapterWord}</span>
+                  <div class="strip-pill">
+                    <span class="pill-number">{String(chapterId).padStart(2, '0')}</span>
+                  </div>
                 </div>
               )}
               <div class="strip-title-wrap">
-                {hasNumber && (
-                  <span class="strip-eyebrow" aria-hidden="true">{chapterWord}</span>
-                )}
                 <h1 class="chapter-title strip-title">
                   <span class="chapter-title-text">{getLocalized(current.titles, l)}</span>
                 </h1>
@@ -277,6 +277,16 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
 
 :global(.dark) .strip-row::before {
   background: linear-gradient(to bottom, #a8956d, #8b7355, #6d5a42);
+}
+
+/* "Chapter NN" cluster — groups the localized label with the gold
+   number pill so they read as one unit, mirroring the pattern used on
+   the book landing page. The inner pill keeps its own styling. */
+.strip-num-cluster {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 /* Compact number pill — small version of the old 3.25rem title pill.

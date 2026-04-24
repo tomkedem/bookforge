@@ -619,10 +619,16 @@ export function play(opts?: { fromSentence?: number }): void {
   buildIndex();
   if (!sentences.length) return;
 
-  if (state.status === 'paused') {
-    window.speechSynthesis.resume();
-    state.status = 'playing';
-    notify();
+  // Resume after pause: speechSynthesis.resume() is unreliable on Chrome
+  // desktop — the audio often stays silent after pause/resume. Instead
+  // we cancel and restart from the sentence we were on. The cost is a
+  // single repeated sentence; the gain is that pause → play actually
+  // continues reading on every browser we support.
+  if (state.status === 'paused' && opts?.fromSentence === undefined) {
+    const sIdx = state.sentenceIdx;
+    window.speechSynthesis.cancel();
+    state.status = 'idle';
+    play({ fromSentence: sIdx });
     return;
   }
 
@@ -845,8 +851,15 @@ export function initTextToSpeech(signal: AbortSignal, opts: TtsInitOptions = {})
 
   syncTriggerState();
   trigger.addEventListener('click', () => {
-    if (state.status === 'idle') openPanel();
-    else togglePanel();
+    // Unified bar: no separate settings panel — first click starts playback,
+    // subsequent clicks toggle pause/resume. Speed + voice live inside the
+    // mini-player itself.
+    if (state.status === 'idle') {
+      play();
+      return;
+    }
+    if (state.status === 'playing') pause();
+    else play();
   }, { signal });
 
   // Double-click-to-jump: while TTS is playing or paused, a dblclick on

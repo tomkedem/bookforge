@@ -276,12 +276,12 @@ const description = getLocalizedText(book.descriptions, language);
                       ]}
                     >
                       <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0', 'flex', 'items-start', 'gap-3']}>
-                        <!-- Gold-tinted chapter number badge matching the
-                             reading pane style. Uses static hex values
-                             rather than a yuval token so the color reads
-                             correctly in both light and dark themes. -->
+                        <!-- Gold-tinted chapter number badge. No "Chapter"
+                             label here — the list sits under a "Chapters"
+                             header so repeating the word on every row is
+                             just noise. -->
                         <span
-                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[36px] h-7 px-2 rounded-md font-semibold text-xs tabular-nums"
+                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[44px] h-9 px-2.5 rounded-md font-bold text-base tabular-nums"
                           aria-hidden="true"
                         >
                           {chapterNum.toString().padStart(2, '0')}
@@ -633,6 +633,7 @@ const description = getLocalizedText(book.descriptions, language);
      doesn't justify a persistent floating control, and the role is
      clearer when the button is adjacent to what it reads. */
   .tts-inline-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -685,11 +686,47 @@ const description = getLocalizedText(book.descriptions, language);
     width: 18px;
     height: 18px;
   }
+
+  /* Live-playback waves — two staggered rings expanding outward from the
+     pill border give a clear "now reading" affordance. Rendered as
+     pseudo-elements so they sit behind the button's real shadow without
+     disturbing layout; pointer-events disabled so the button still
+     receives clicks. Gold/amber tones match the platform accent. */
+  .tts-inline-btn::before,
+  .tts-inline-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .tts-inline-btn.is-active::before,
+  .tts-inline-btn.is-active::after {
+    opacity: 1;
+    border: 2px solid rgba(232, 197, 71, 0.55);
+    animation: ttsInlineWave 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .tts-inline-btn.is-active::after {
+    border-color: rgba(255, 180, 64, 0.5);
+    animation-delay: 1.2s;
+  }
+  @keyframes ttsInlineWave {
+    0%   { transform: scale(1);    opacity: 0.85; }
+    70%  { transform: scale(1.32); opacity: 0; }
+    100% { transform: scale(1.32); opacity: 0; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tts-inline-btn,
     .tts-inline-btn:hover {
       transition: none;
       transform: none;
+    }
+    .tts-inline-btn.is-active::before,
+    .tts-inline-btn.is-active::after {
+      animation: none;
+      opacity: 0;
     }
   }
 

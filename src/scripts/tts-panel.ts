@@ -347,13 +347,61 @@ function updatePanelState(s: TtsState): void {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Mini-player
+// Mini-player (unified: includes speed + voice controls inline, no separate panel)
 // ═══════════════════════════════════════════════════════════════════════════
 
 let miniEl: HTMLElement | null = null;
 let unsubscribeMini: (() => void) | null = null;
+let voicePopOutsideHandler: ((e: MouseEvent) => void) | null = null;
 
 const RATE_CYCLE: TtsRate[] = [0.8, 1, 1.3];
+
+function renderMiniSpeedPill(labelKey: 'slow' | 'normal' | 'fast', rate: TtsRate, active: TtsRate): string {
+  const isActive = rate === active;
+  return `
+    <button type="button" class="tts-mini-speed-pill ${isActive ? 'is-active' : ''}"
+            role="radio" aria-checked="${isActive}"
+            data-act="rate" data-rate="${rate}">
+      ${tr(`tts.${labelKey}`)}
+    </button>
+  `;
+}
+
+function renderMiniVoiceRow(v: SpeechSynthesisVoice, activeName: string | null): string {
+  const isActive = v.name === activeName;
+  return `
+    <div class="tts-mini-voice-row ${isActive ? 'is-active' : ''}" role="option"
+         aria-selected="${isActive}" data-voice="${escapeAttr(v.name)}">
+      <button type="button" class="tts-mini-voice-pick" data-act="pick-voice" data-voice="${escapeAttr(v.name)}">
+        <span class="tts-mini-voice-check">${isActive ? icon('check', 16) : ''}</span>
+        <span class="tts-mini-voice-label">${escapeHTML(cleanVoiceName(v.name))}</span>
+      </button>
+      <button type="button" class="tts-mini-voice-preview" data-act="preview-voice"
+              data-voice="${escapeAttr(v.name)}" aria-label="${tr('tts.preview')}">
+        ${icon('preview', 16)}
+      </button>
+    </div>
+  `;
+}
+
+function renderMiniVoicePop(voices: SpeechSynthesisVoice[], activeName: string | null): string {
+  if (!voices.length) {
+    return `<div class="tts-mini-voices-empty">${tr('tts.noVoices')}</div>`;
+  }
+  return voices.map(v => renderMiniVoiceRow(v, activeName)).join('');
+}
+
+function closeVoicePop(): void {
+  if (!miniEl) return;
+  const pop = miniEl.querySelector<HTMLElement>('.tts-mini-voice-pop');
+  const btn = miniEl.querySelector<HTMLElement>('[data-act="voice-toggle"]');
+  if (pop) pop.hidden = true;
+  btn?.setAttribute('aria-expanded', 'false');
+  if (voicePopOutsideHandler) {
+    document.removeEventListener('click', voicePopOutsideHandler, { capture: true });
+    voicePopOutsideHandler = null;
+  }
+}
 
 export function mountMiniPlayer(): void {
   if (miniEl && miniEl.isConnected) return;
@@ -390,64 +438,112 @@ export function mountMiniPlayer(): void {
       <div class="tts-mini-progress-fill"></div>
       <div class="tts-mini-progress-thumb" aria-hidden="true"></div>
     </div>
-    <div class="tts-mini-actions">
-      <button type="button" class="tts-mini-rate" data-act="rate-cycle" aria-label="${tr('tts.rateCycle')}">
-        <span class="tts-mini-rate-value">1.0×</span>
-      </button>
-      <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="expand" aria-label="${tr('tts.expand')}">
-        ${icon('expand', 18)}
-      </button>
-      <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="stop" aria-label="${tr('tts.stop')}">
-        ${icon('close', 18)}
-      </button>
+    <div class="tts-mini-speed" role="radiogroup" aria-label="${tr('tts.speed')}">
+      ${renderMiniSpeedPill('slow', 0.8, 1)}
+      ${renderMiniSpeedPill('normal', 1, 1)}
+      ${renderMiniSpeedPill('fast', 1.3, 1)}
     </div>
+    <button type="button" class="tts-mini-rate" data-act="rate-cycle" aria-label="${tr('tts.rateCycle')}">
+      <span class="tts-mini-rate-value">1.0×</span>
+    </button>
+    <div class="tts-mini-voice-wrap">
+      <button type="button" class="tts-mini-voice-btn" data-act="voice-toggle"
+              aria-haspopup="listbox" aria-expanded="false" aria-label="${tr('tts.voice')}">
+        ${icon('voice', 16)}
+        <span class="tts-mini-voice-current">—</span>
+        <span class="tts-mini-voice-chevron" aria-hidden="true">▾</span>
+      </button>
+      <div class="tts-mini-voice-pop" role="listbox" aria-label="${tr('tts.voice')}" hidden></div>
+    </div>
+    <button type="button" class="tts-mini-btn tts-mini-btn-sm" data-act="stop" aria-label="${tr('tts.stop')}">
+      ${icon('close', 18)}
+    </button>
   `;
   document.body.appendChild(miniEl);
 
-  miniEl.querySelectorAll<HTMLElement>('[data-act]').forEach(b => {
-    b.addEventListener('click', async (ev) => {
-      const ttsApi = await getApi();
-      const s = ttsApi.getState();
-      const act = b.dataset.act;
-      switch (act) {
-        case 'play-toggle': {
-          if (s.status === 'playing') ttsApi.pause();
-          else ttsApi.play();
-          break;
-        }
-        case 'stop': ttsApi.stop(); break;
-        case 'prev': {
-          const target = Math.max(0, s.sentenceIdx - 1);
-          ttsApi.play({ fromSentence: target });
-          break;
-        }
-        case 'next': {
-          const total = s.totalSentences || 1;
-          const target = Math.min(total - 1, s.sentenceIdx + 1);
-          ttsApi.play({ fromSentence: target });
-          break;
-        }
-        case 'rate-cycle': {
-          const i = RATE_CYCLE.indexOf(s.rate);
-          const next = RATE_CYCLE[(i + 1) % RATE_CYCLE.length];
-          ttsApi.setRate(next);
-          break;
-        }
-        case 'expand': ttsApi.openPanel(); break;
-        case 'seek': {
-          if (!(ev instanceof MouseEvent)) break;
-          const bar = b.getBoundingClientRect();
-          const isRtl = document.documentElement.dir === 'rtl';
-          let ratio = (ev.clientX - bar.left) / bar.width;
-          if (isRtl) ratio = 1 - ratio;
-          ratio = Math.max(0, Math.min(1, ratio));
-          const total = s.totalSentences || 1;
-          const target = Math.max(0, Math.min(total - 1, Math.round(ratio * total)));
-          ttsApi.play({ fromSentence: target });
-          break;
-        }
+  miniEl.addEventListener('click', async (ev) => {
+    const b = (ev.target as HTMLElement | null)?.closest<HTMLElement>('[data-act]');
+    if (!b || !miniEl?.contains(b)) return;
+    const ttsApi = await getApi();
+    const s = ttsApi.getState();
+    const act = b.dataset.act;
+    switch (act) {
+      case 'play-toggle': {
+        if (s.status === 'playing') ttsApi.pause();
+        else ttsApi.play();
+        break;
       }
-    });
+      case 'stop': ttsApi.stop(); break;
+      case 'prev': {
+        const target = Math.max(0, s.sentenceIdx - 1);
+        ttsApi.play({ fromSentence: target });
+        break;
+      }
+      case 'next': {
+        const total = s.totalSentences || 1;
+        const target = Math.min(total - 1, s.sentenceIdx + 1);
+        ttsApi.play({ fromSentence: target });
+        break;
+      }
+      case 'rate': {
+        const r = parseFloat(b.dataset.rate || '1') as TtsRate;
+        ttsApi.setRate(r);
+        break;
+      }
+      case 'rate-cycle': {
+        const i = RATE_CYCLE.indexOf(s.rate);
+        const next = RATE_CYCLE[(i + 1) % RATE_CYCLE.length];
+        ttsApi.setRate(next);
+        break;
+      }
+      case 'voice-toggle': {
+        const pop = miniEl!.querySelector<HTMLElement>('.tts-mini-voice-pop');
+        if (!pop) break;
+        const isOpen = !pop.hidden;
+        if (isOpen) {
+          closeVoicePop();
+        } else {
+          const voices = ttsApi.getVoicesForLang();
+          pop.innerHTML = renderMiniVoicePop(voices, s.voiceName);
+          pop.hidden = false;
+          b.setAttribute('aria-expanded', 'true');
+          // Outside-click closes pop. Delay so the opening click itself doesn't trip it.
+          setTimeout(() => {
+            voicePopOutsideHandler = (e: MouseEvent) => {
+              const t = e.target as Node;
+              if (pop.contains(t) || b.contains(t)) return;
+              closeVoicePop();
+            };
+            document.addEventListener('click', voicePopOutsideHandler, { capture: true });
+          }, 0);
+        }
+        break;
+      }
+      case 'pick-voice': {
+        const name = b.dataset.voice;
+        if (name) ttsApi.setVoice(name);
+        closeVoicePop();
+        break;
+      }
+      case 'preview-voice': {
+        ev.stopPropagation();
+        const name = b.dataset.voice;
+        if (name) ttsApi.previewVoice(name);
+        break;
+      }
+      case 'seek': {
+        if (!(ev instanceof MouseEvent)) break;
+        const bar = b.getBoundingClientRect();
+        const isRtl = document.documentElement.dir === 'rtl';
+        let ratio = (ev.clientX - bar.left) / bar.width;
+        if (isRtl) ratio = 1 - ratio;
+        ratio = Math.max(0, Math.min(1, ratio));
+        const total = s.totalSentences || 1;
+        const target = Math.max(0, Math.min(total - 1, Math.round(ratio * total)));
+        ttsApi.play({ fromSentence: target });
+        break;
+      }
+    }
   });
 
   // Keyboard seek on progress bar
@@ -489,9 +585,35 @@ export function mountMiniPlayer(): void {
         toggle.setAttribute('aria-label', s.status === 'playing' ? tr('tts.pause') : tr('tts.play'));
       }
 
-      // Rate
+      // Rate badge (mobile cycle)
       const rateVal = miniEl.querySelector<HTMLElement>('.tts-mini-rate-value');
       if (rateVal) rateVal.textContent = `${s.rate.toFixed(1)}×`;
+
+      // Speed pills (desktop segmented control)
+      miniEl.querySelectorAll<HTMLElement>('.tts-mini-speed-pill').forEach(p => {
+        const r = parseFloat(p.dataset.rate || '1');
+        const isActive = r === s.rate;
+        p.classList.toggle('is-active', isActive);
+        p.setAttribute('aria-checked', String(isActive));
+      });
+
+      // Voice button label
+      const voiceCurrent = miniEl.querySelector<HTMLElement>('.tts-mini-voice-current');
+      if (voiceCurrent) {
+        voiceCurrent.textContent = s.voiceName ? cleanVoiceName(s.voiceName) : '—';
+      }
+      // Voice popover: if open, refresh active markers without re-rendering
+      const pop = miniEl.querySelector<HTMLElement>('.tts-mini-voice-pop');
+      if (pop && !pop.hidden) {
+        pop.querySelectorAll<HTMLElement>('.tts-mini-voice-row').forEach(row => {
+          const name = row.dataset.voice;
+          const isActive = name === s.voiceName;
+          row.classList.toggle('is-active', isActive);
+          row.setAttribute('aria-selected', String(isActive));
+          const check = row.querySelector<HTMLElement>('.tts-mini-voice-check');
+          if (check) check.innerHTML = isActive ? icon('check', 16) : '';
+        });
+      }
 
       // Counter (sentence position)
       const counter = miniEl.querySelector<HTMLElement>('.tts-mini-counter');
@@ -514,6 +636,7 @@ export function mountMiniPlayer(): void {
 
 export function unmountMiniPlayer(): void {
   if (!miniEl) return;
+  closeVoicePop();
   miniEl.classList.remove('is-mounted');
   unsubscribeMini?.();
   unsubscribeMini = null;
