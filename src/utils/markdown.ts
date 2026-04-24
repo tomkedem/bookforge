@@ -29,6 +29,19 @@ const TERMINAL_LANGS = new Set([
 // Languages with in-browser execution support (Pyodide).
 const RUNNABLE_LANGS = new Set(['python', 'py']);
 
+// Custom fence labels that map to a canonical language but keep a distinct
+// header label/filename. Used when authors write ```Code Json / ```Code Markdown
+// / ```Code Yaml — they get the standard non-runnable CodeBlock chrome but
+// with the exact label requested.
+const FENCE_ALIASES: Record<string, { lang: string; label: string; filename: string }> = {
+  'code json':     { lang: 'json',     label: 'Json',     filename: 'data.json' },
+  'code markdown': { lang: 'markdown', label: 'Markdown', filename: 'readme.md' },
+  'code md':       { lang: 'markdown', label: 'Markdown', filename: 'readme.md' },
+  'code yaml':     { lang: 'yaml',     label: 'Yaml',     filename: 'config.yml' },
+  'code yml':      { lang: 'yaml',     label: 'Yaml',     filename: 'config.yml' },
+  'code nginx':    { lang: 'nginx',    label: 'Nginx',    filename: 'nginx.conf' },
+};
+
 // Suggested filenames per language, shown in the header.
 // Purely aesthetic — gives the block the feel of a real source file.
 function defaultFilename(lang: string): string {
@@ -204,11 +217,17 @@ function renderCodeRunner(text: string, lang: string, encodedCode: string, highl
  * Used for non-runnable languages (YAML, JSON, JS, TS, SQL, ...).
  * Uses the same theming as CodeRunner so they look like siblings.
  */
-function renderCodeBlock(text: string, lang: string, encodedCode: string, highlightedCode: string): string {
+function renderCodeBlock(
+  text: string,
+  lang: string,
+  encodedCode: string,
+  highlightedCode: string,
+  overrides?: { label?: string; filename?: string },
+): string {
   const lineCount = text.split('\n').length;
   const lineNumbers = generateLineNumbers(lineCount);
-  const filename = defaultFilename(lang);
-  const label = languageLabel(lang);
+  const filename = overrides?.filename ?? defaultFilename(lang);
+  const label = overrides?.label ?? languageLabel(lang);
 
   return `
 <div class="coderunner codeblock" data-lang="${lang}" dir="ltr" data-code="${encodedCode}">
@@ -242,8 +261,7 @@ function renderCodeBlock(text: string, lang: string, encodedCode: string, highli
 }
 
 renderer.code = ({ text, lang }) => {
-  const rawLang = (lang || '').toLowerCase();
-  const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+  const rawLang = (lang || '').toLowerCase().trim();
   const encodedCode = encodeURIComponent(text);
 
   // Route 1: terminal/shell languages → Stripe-inspired BashBlock.
@@ -251,9 +269,22 @@ renderer.code = ({ text, lang }) => {
     return renderBashBlock(text, rawLang, encodedCode);
   }
 
+  // Route 2a: "Code Json" / "Code Markdown" / "Code Yaml" aliases → non-runnable
+  // CodeBlock with a custom label/filename while still using the canonical
+  // language for syntax highlighting.
+  const alias = FENCE_ALIASES[rawLang];
+  if (alias) {
+    const highlighted = hljs.highlight(text, { language: alias.lang }).value;
+    return renderCodeBlock(text, alias.lang, encodedCode, highlighted, {
+      label: alias.label,
+      filename: alias.filename,
+    });
+  }
+
+  const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
   const highlightedCode = hljs.highlight(text, { language }).value;
 
-  // Route 2: Python → CodeRunner (IDE chrome + Run button).
+  // Route 2b: Python → CodeRunner (IDE chrome + Run button).
   if (RUNNABLE_LANGS.has(rawLang)) {
     return renderCodeRunner(text, rawLang, encodedCode, highlightedCode);
   }
