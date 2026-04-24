@@ -562,6 +562,28 @@ const description = getLocalizedText(book.descriptions, language);
 
     document.addEventListener('astro:after-swap', boot);
   });
+
+  // Image lightbox on the book landing page — lets readers click the
+  // cover to view it full-size. Same module used in the reading view;
+  // its click handler matches .book-cover-img via ZOOM_SELECTOR.
+  import('../../scripts/image-lightbox').then(({ initImageLightbox }) => {
+    let lbController: AbortController | null = null;
+
+    const boot = () => {
+      lbController?.abort();
+      const ctrl = new AbortController();
+      lbController = ctrl;
+      initImageLightbox(ctrl);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot, { once: true });
+    } else {
+      boot();
+    }
+
+    document.addEventListener('astro:after-swap', boot);
+  });
 </script>
 
 <style is:global>
