@@ -146,19 +146,14 @@ Request 2 of Session 1 → Instance B ✗ (state not found)
 
 **Sticky Sessions:** ה-Load Balancer מוודא שכל הבקשות של Session מסוים תמיד מגיעות לאותו Instance. זה פותר את הבעיה אבל יוצר תלות: אם ה-Instance נופל, ה-Session אובד.
 
-nginx
-
+```nginx
 upstream mcp_servers {
-
-ip_hash; # Sticky sessions based on client IP
-
-server instance_a:8080;
-
-server instance_b:8080;
-
-server instance_c:8080;
-
+    ip_hash;  # Sticky sessions based on client IP
+    server instance_a:8080;
+    server instance_b:8080;
+    server instance_c:8080;
 }
+```
 
 **External State Store:** ה-State לא נשמר ב-Instance אלא בשכבת אחסון חיצונית כמו Redis. כל Instance יכול לגשת ל-State של כל Session.
 
@@ -807,77 +802,43 @@ GET /.well-known/mcp-server-card.json
 
 **מה Server Card כולל**
 
-json
-
+```json
 {
-
-"name": "mcp-engineering-lab",
-
-"version": "1.0.0",
-
-"description": "MCP server for the book MCP Systems Engineering",
-
-"transport": {
-
-"type": "streamable-http",
-
-"endpoint": "/mcp"
-
-},
-
-"capabilities": {
-
-"tools": true,
-
-"resources": true,
-
-"prompts": false
-
-},
-
-"tools": [
-
-{
-
-"name": "search_documents",
-
-"description": "Search documents by a text query",
-
-"version": "2"
-
-},
-
-{
-
-"name": "get_server_metrics",
-
-"description": "Returns server metrics summary"
-
+  "name": "mcp-engineering-lab",
+  "version": "1.0.0",
+  "description": "MCP server for the book MCP Systems Engineering",
+  "transport": {
+    "type": "streamable-http",
+    "endpoint": "/mcp"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": false
+  },
+  "tools": [
+    {
+      "name": "search_documents",
+      "description": "Search documents by a text query",
+      "version": "2"
+    },
+    {
+      "name": "get_server_metrics",
+      "description": "Returns server metrics summary"
+    }
+  ],
+  "resources": [
+    {
+      "uri_prefix": "document://",
+      "description": "Read documents by ID"
+    }
+  ],
+  "contact": {
+    "name": "Tomer Kedem",
+    "url": "https://github.com/tomerkedem/mcp-engineering-lab"
+  }
 }
-
-],
-
-"resources": [
-
-{
-
-"uri_prefix": "document://",
-
-"description": "Read documents by ID"
-
-}
-
-],
-
-"contact": {
-
-"name": "Tomer Kedem",
-
-"url": "https://github.com/tomerkedem/mcp-engineering-lab"
-
-}
-
-}
+```
 
 
 

@@ -1,8 +1,8 @@
 {
-  "total_substitutions": 14,
+  "total_substitutions": 13,
   "rules_fired": 4,
   "by_rule": {
-    "09_multiple_spaces": 11,
+    "09_multiple_spaces": 10,
     "04_bold_dot_eol": 1,
     "08_close_trailing_unbalanced": 1,
     "05_bold_space_bold": 1
