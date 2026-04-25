@@ -14,6 +14,7 @@ import { join } from 'path';
 import type { Chapter } from '../types/index';
 import { PATHS } from '../config';
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE, SOURCE_LANGUAGE } from './language';
+import { t } from '../i18n';
 
 const OUTPUT_DIR = PATHS.OUTPUT_DIR;
 const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((l) => l.code);
@@ -30,17 +31,99 @@ export interface BookCredits {
   author?: LocalizedOrPlain;
 }
 
+export type ContentType = 'book' | 'course_lesson';
+
 export interface DiscoveredBook {
   slug: string;
   titles: Record<string, string>;
   subtitles: Record<string, string>;
   descriptions: Record<string, string>;
   category: Record<string, string>;
+  /** Machine-readable category key from _catalog.json (e.g. 'foundations'). */
+  categoryKey?: string;
   coverImage: string;
   dominantColor: string;
   chapters: Chapter[];
   languages: string[];
   credits?: BookCredits;
+  contentType: ContentType;
+  /** Present when contentType === 'course_lesson'. */
+  courseSlug?: string;
+  lessonNumber?: number;
+}
+
+export interface DiscoveredCourse {
+  slug: string;
+  titles: Record<string, string>;
+  descriptions: Record<string, string>;
+  lecturer?: Record<string, string>;
+  summaryAuthor?: Record<string, string>;
+  totalLessons: number;
+  availableLessons: number;
+  lessons: DiscoveredBook[];
+  coverImage: string;
+}
+
+interface CatalogBookEntry {
+  contentType?: ContentType;
+  category?: string;
+  course?: string;
+  lessonNumber?: number;
+}
+
+interface CatalogCourseEntry {
+  titles?: Record<string, string>;
+  descriptions?: Record<string, string>;
+  totalLessons?: number;
+  lecturer?: Record<string, string>;
+  /** Person who authored the lesson summaries (separate from the course lecturer). */
+  summaryAuthor?: Record<string, string>;
+  /** Category key for the course; inherited by its lessons when they don't declare their own. */
+  category?: string;
+}
+
+interface Catalog {
+  courses: Record<string, CatalogCourseEntry>;
+  books: Record<string, CatalogBookEntry>;
+}
+
+/**
+ * Build a Record<lang, label> for a category key, sourced from i18n.
+ * This is the single source of truth for category display labels — adding
+ * a language is one entry in translations.ts, not two files.
+ */
+function categoryLabelsFromI18n(key: string): Record<string, string> {
+  const labels: Record<string, string> = {};
+  for (const lang of LANGUAGE_CODES) {
+    labels[lang] = t(`library.category.${key}`, lang);
+  }
+  return labels;
+}
+
+let cachedCatalog: Catalog | null = null;
+
+function loadCatalog(): Catalog {
+  if (cachedCatalog) return cachedCatalog;
+
+  const empty: Catalog = { courses: {}, books: {} };
+  const catalogPath = join(OUTPUT_DIR, '_catalog.json');
+  if (!existsSync(catalogPath)) {
+    cachedCatalog = empty;
+    return empty;
+  }
+
+  try {
+    const raw = readFileSync(catalogPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    cachedCatalog = {
+      courses: parsed.courses || {},
+      books: parsed.books || {},
+    };
+    return cachedCatalog;
+  } catch {
+    cachedCatalog = empty;
+    return empty;
+  }
 }
 
 interface ContentStructure {
@@ -283,6 +366,9 @@ export function discoverBook(slug: string): DiscoveredBook | null {
   const bookDir = join(OUTPUT_DIR, slug);
   if (!existsSync(bookDir) || !statSync(bookDir).isDirectory()) return null;
 
+  // Skip catalog/control files at the top level of output/
+  if (slug.startsWith('_') || slug.startsWith('.')) return null;
+
   const meta = loadBookMeta(bookDir, slug);
   const chapters = loadFromContentStructure(bookDir) || discoverChaptersFromFiles(bookDir);
 
@@ -299,18 +385,81 @@ export function discoverBook(slug: string): DiscoveredBook | null {
   const existingCover = coverCandidates.find((c) => existsSync(join(publicDir, c.slice(1))));
   const coverImage = existingCover || '/covers/placeholder.svg';
 
+  // Catalog overrides: structural classification only (machine-readable
+  // categoryKey + contentType). Display labels live in i18n — see
+  // categoryLabelsFromI18n() below.
+  const catalog = loadCatalog();
+  const entry = catalog.books[slug];
+
+  // Course lessons inherit their category from the parent course so the
+  // unified "all content" view can place them in the right bucket.
+  const inheritedCourseCategory =
+    entry?.contentType === 'course_lesson' && entry.course
+      ? catalog.courses[entry.course]?.category
+      : undefined;
+  const categoryKey = entry?.category || inheritedCourseCategory;
+  const categoryFromI18n = categoryKey ? categoryLabelsFromI18n(categoryKey) : undefined;
+
+  // i18n labels win over manifest. Books that aren't in the catalog keep
+  // whatever the manifest had (or the default "כללי") so the homepage
+  // doesn't silently drop unmapped content during a partial migration.
+  const category = categoryFromI18n || meta.category;
+
+  const contentType: ContentType = entry?.contentType || 'book';
+  const courseSlug = contentType === 'course_lesson' ? entry?.course : undefined;
+  const lessonNumber = contentType === 'course_lesson' ? entry?.lessonNumber : undefined;
+
   return {
     slug,
     titles: meta.titles,
     subtitles: meta.subtitles,
     descriptions: meta.descriptions,
-    category: meta.category,
+    category,
+    categoryKey,
     coverImage,
     dominantColor: '#1a1a1a',
     chapters,
     languages: meta.languages,
     credits: meta.credits,
+    contentType,
+    courseSlug,
+    lessonNumber,
   };
+}
+
+/**
+ * Discover all courses by grouping course_lesson books from the catalog.
+ * Returns one DiscoveredCourse per course slug, with lessons sorted by
+ * lessonNumber. Lessons that haven't been authored yet are reflected in
+ * the gap between `availableLessons` and `totalLessons`.
+ */
+export function discoverCourses(): DiscoveredCourse[] {
+  const catalog = loadCatalog();
+  const allBooks = discoverAllBooks();
+
+  const courses: DiscoveredCourse[] = [];
+
+  for (const [courseSlug, courseMeta] of Object.entries(catalog.courses)) {
+    const lessons = allBooks
+      .filter((b) => b.contentType === 'course_lesson' && b.courseSlug === courseSlug)
+      .sort((a, b) => (a.lessonNumber ?? 0) - (b.lessonNumber ?? 0));
+
+    if (lessons.length === 0 && !courseMeta.totalLessons) continue;
+
+    courses.push({
+      slug: courseSlug,
+      titles: courseMeta.titles || {},
+      descriptions: courseMeta.descriptions || {},
+      lecturer: courseMeta.lecturer,
+      summaryAuthor: courseMeta.summaryAuthor,
+      totalLessons: courseMeta.totalLessons ?? lessons.length,
+      availableLessons: lessons.length,
+      lessons,
+      coverImage: lessons[0]?.coverImage || '/covers/placeholder.svg',
+    });
+  }
+
+  return courses;
 }
 
 /**

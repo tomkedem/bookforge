@@ -170,30 +170,29 @@ const bookUrl = `/books/${slug}`;
 </article>
 
 <style>
-  /* ── Card base - fixed aspect ratio with 50/50 split ── */
+  /* ── Card base — cover is the only fixed-ratio element; content grows ── */
   .book-card {
     display: flex;
     flex-direction: column;
-    aspect-ratio: 3 / 4;
     border: 1.5px solid #c9a227;
-    box-shadow: 
+    box-shadow:
       0 4px 12px rgba(0, 0, 0, 0.06),
       0 1px 3px rgba(0, 0, 0, 0.04),
       inset 0 0 0 1px rgba(201, 162, 39, 0.15);
     transition: transform 250ms var(--ease-standard), box-shadow 250ms var(--ease-standard);
   }
 
-  /* Cover takes exactly 50% */
+  /* Cover keeps a portrait proportion regardless of card width */
   .card-cover {
-    flex: 1 1 50%;
+    aspect-ratio: 3 / 4;
     min-height: 0;
     overflow: hidden;
     background: linear-gradient(135deg, var(--yuval-bg-secondary) 0%, var(--yuval-border) 100%);
   }
 
-  /* Content takes exactly 50% */
+  /* Content grows to fit title + subtitle + author without clipping */
   .card-content {
-    flex: 1 1 50%;
+    flex: 1 1 auto;
     min-height: 0;
     background: var(--yuval-surface);
   }

@@ -1,0 +1,64 @@
+{
+  "$schema_version": 1,
+  "$comment": "Content catalog. Maps content to structural keys only (categoryKey, courseSlug). All UI/chrome labels (category names, status badges, CTAs) live in src/i18n/translations.ts — adding a language is one file, not two.",
+
+  "$categoryKeys": [
+    "foundations",
+    "ai-systems",
+    "ai-engineering"
+  ],
+  "$categoryKeysComment": "Display labels live at translations.ts under 'library.category.<key>'. Add a new key here AND a translation entry there.",
+
+  "courses": {
+    "ai-engineering": {
+      "$comment": "Course content (titles/descriptions/lecturer) lives here because it is per-course content metadata, similar to book-manifest.json — not platform chrome.",
+      "category": "ai-engineering",
+      "titles": {
+        "he": "AI Engineering",
+        "en": "AI Engineering",
+        "es": "AI Engineering"
+      },
+      "descriptions": {
+        "he": "קורס AI Engineering בהנחיית ערן סלע — מיסודות ML ועד בנייה מעשית של מערכות הסתברותיות.",
+        "en": "AI Engineering course with Eran Sela — from ML foundations to practical probabilistic system design.",
+        "es": "Curso de AI Engineering con Eran Sela — desde los fundamentos de ML hasta el diseño práctico de sistemas."
+      },
+      "totalLessons": 12,
+      "lecturer": {
+        "he": "ערן סלע",
+        "en": "Eran Sela",
+        "es": "Eran Sela"
+      },
+      "summaryAuthor": {
+        "he": "תומר קדם",
+        "en": "Tomer Kedem",
+        "es": "Tomer Kedem"
+      }
+    }
+  },
+
+  "books": {
+    "practical-python-for-ai-engineering": {
+      "contentType": "book",
+      "category": "foundations"
+    },
+    "AI-Developer-Fitness": {
+      "contentType": "book",
+      "category": "ai-engineering"
+    },
+    "Building-AI-Systems-with-MCP": {
+      "contentType": "book",
+      "category": "ai-systems"
+    },
+    "Lesson-1-Introduction-To-AI-Engineering-and-Generative-AI": {
+      "contentType": "course_lesson",
+      "course": "ai-engineering",
+      "lessonNumber": 1
+    },
+    "Lesson-2-Machine-Learning": {
+      "contentType": "course_lesson",
+      "course": "ai-engineering",
+      "lessonNumber": 2
+    }
+  }
+}

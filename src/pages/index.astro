@@ -1,24 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
+import CourseCard from '../components/CourseCard.astro';
 import type { Language } from '../types/index';
-import { DEFAULT_LANGUAGE, SOURCE_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
-import { discoverAllBooks } from '../utils/book-discovery';
+import { DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
+import { discoverAllBooks, discoverCourses } from '../utils/book-discovery';
 import { t } from '../i18n';
 
 interface Props {
   language?: Language;
-}
-
-type LocalizedMap = Record<string, string | undefined>;
-
-function getLocalizedText(
-  value: LocalizedMap | undefined,
-  lang: string,
-  fallback = SOURCE_LANGUAGE
-): string {
-  if (!value) return '';
-  return value[lang] ?? value[fallback] ?? Object.values(value).find(Boolean) ?? '';
 }
 
 const { language: propLanguage } = Astro.props;
@@ -33,40 +23,70 @@ const requestedLanguage =
 const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
-const books = discoverAllBooks();
+const allBooks = discoverAllBooks();
+const courses = discoverCourses();
 
-// Detect available languages (languages that have at least one book)
-const availableLanguagesSet = new Set<Language>();
-books.forEach(book => {
-  const bookLangs = book.languages?.length
-    ? book.languages
-    : Object.keys(book.titles || {});
-  bookLangs.forEach(lang => {
-    if (lang) availableLanguagesSet.add(lang as Language);
+// Library = original books only. Course-lesson entries are surfaced
+// through their parent course card and shouldn't double-appear here.
+const libraryBooks = allBooks.filter((b) => b.contentType === 'book');
+
+// Stable, intentional order — display reflects learning progression.
+const categoryOrder = ['foundations', 'ai-systems', 'ai-engineering'] as const;
+
+const booksByCategory: Record<string, typeof libraryBooks> = {};
+for (const key of categoryOrder) booksByCategory[key] = [];
+const uncategorized: typeof libraryBooks = [];
+
+for (const book of libraryBooks) {
+  const key = book.categoryKey;
+  if (key && key in booksByCategory) {
+    booksByCategory[key].push(book);
+  } else {
+    uncategorized.push(book);
+  }
+}
+
+// Unified "all content" grouping — both books and course lessons, bucketed
+// by the same category keys. Course lessons inherit their category from
+// the parent course (see book-discovery.ts).
+const allByCategory: Record<string, typeof allBooks> = {};
+for (const key of categoryOrder) allByCategory[key] = [];
+const allUncategorized: typeof allBooks = [];
+
+for (const item of allBooks) {
+  const key = item.categoryKey;
+  if (key && key in allByCategory) {
+    allByCategory[key].push(item);
+  } else {
+    allUncategorized.push(item);
+  }
+}
+
+// Sort each bucket: books first, then lessons in lesson-number order.
+for (const key of Object.keys(allByCategory)) {
+  allByCategory[key].sort((a, b) => {
+    if (a.contentType !== b.contentType) {
+      return a.contentType === 'book' ? -1 : 1;
+    }
+    if (a.contentType === 'course_lesson') {
+      return (a.lessonNumber ?? 0) - (b.lessonNumber ?? 0);
+    }
+    return 0;
   });
+}
+
+// Detect available languages from all content (books + course lessons)
+const availableLanguagesSet = new Set<Language>();
+allBooks.forEach((book) => {
+  const bookLangs = book.languages?.length ? book.languages : Object.keys(book.titles || {});
+  bookLangs.forEach((lang) => { if (lang) availableLanguagesSet.add(lang as Language); });
 });
 const availableLanguages = Array.from(availableLanguagesSet);
 
-const categoryMap = new Map<string, Record<string, string>>();
-books.forEach(book => {
-  if (book.category && typeof book.category === 'object') {
-    const key = book.category[SOURCE_LANGUAGE] || Object.values(book.category)[0] || 'General';
-    if (!categoryMap.has(key)) {
-      categoryMap.set(key, book.category);
-    }
-  }
-});
-
-const sortedCategoryKeys = Array.from(categoryMap.keys()).sort();
-
-const allLabel = t('home.all', language);
-const categories = [
-  { key: 'All', labels: { [SOURCE_LANGUAGE]: allLabel, en: 'All', es: 'Todos' } },
-  ...sortedCategoryKeys.map(key => ({
-    key,
-    labels: categoryMap.get(key)!,
-  })),
-];
+// Count every individual piece of content — books + course lessons —
+// not courses-as-single-items. Matches what the user actually sees on
+// the unified "all content" section.
+const totalContentCount = allBooks.length;
 ---
 
 <BaseLayout
@@ -76,138 +96,357 @@ const categories = [
   availableLanguages={availableLanguages}
 >
   <div class="min-h-screen bg-yuval-bg px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-    <header class="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div class:list={[isRtl && 'text-right']}>
-        <h1 class="font-heading font-bold text-2xl sm:text-3xl text-yuval-text" data-i18n="home.title">
-          {t('home.title', language)}
-        </h1>
-        <p class="text-sm text-yuval-text-secondary mt-1" id="books-count-label" data-book-count={books.length}>
-          {books.length} {books.length === 1 ? t('home.bookAvailable', language) : t('home.booksAvailable', language)}
-        </p>
-      </div>
+
+    <!-- Page heading + continue-reading -->
+    <header class:list={['max-w-7xl mx-auto mb-8', isRtl && 'text-right']}>
+      <h1 class="font-heading font-bold text-2xl sm:text-3xl text-yuval-text" data-i18n="home.title">
+        {t('home.title', language)}
+      </h1>
+      <p class="text-sm text-yuval-text-secondary mt-1" id="content-count-label" data-content-count={totalContentCount}>
+        {totalContentCount} {totalContentCount === 1 ? t('home.bookAvailable', language) : t('home.booksAvailable', language)}
+      </p>
     </header>
 
-    <div id="continue-reading-banner" class="max-w-7xl mx-auto mb-6 hidden"></div>
+    <div id="continue-reading-banner" class="max-w-7xl mx-auto mb-8 hidden"></div>
 
-    {categories.length > 1 && (
-      <div class="max-w-7xl mx-auto mb-6 flex flex-wrap gap-2" id="category-filters">
-        {categories.map((cat) => (
-          <button
-            type="button"
-            class:list={[
-              'category-filter-btn',
-              'px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200',
-              'border border-yuval-border text-yuval-text-secondary',
-              'hover:bg-yuval-surface hover:text-yuval-text',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yuval-highlight',
-            ]}
-            data-category={cat.key}
-            data-active={cat.key === 'All' ? 'true' : 'false'}
-            data-label={JSON.stringify(cat.labels)}
-          >
-            {getLocalizedText(cat.labels, language)}
-          </button>
-        ))}
-      </div>
-    )}
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TOP ROW — Library (left) + Courses (right), side-by-side on wide.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto mb-16 top-row">
 
-    <div
-      class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5"
-      id="books-grid"
-    >
-      {
-        books.map((book) => (
-          <BookCard
-            slug={book.slug}
-            titles={book.titles}
-            subtitles={book.subtitles}
-            descriptions={book.descriptions}
-            authors={book.credits?.author}
-            coverImage={book.coverImage}
-            dominantColor={book.dominantColor}
-            category={book.category}
-          />
-        ))
-      }
+      {libraryBooks.length > 0 && (
+        <section class="top-col" aria-labelledby="library-heading">
+          <div class="section-header">
+            <div class="section-marker section-marker-library"></div>
+            <div>
+              <h2 id="library-heading" class="section-title" data-i18n="library.title">
+                {t('library.title', language)}
+              </h2>
+              <p class="section-subtitle" data-i18n="library.subtitle">
+                {t('library.subtitle', language)}
+              </p>
+            </div>
+          </div>
+
+          {categoryOrder.map((key) => {
+            const books = booksByCategory[key];
+            if (books.length === 0) return null;
+            return (
+              <div class="category-group">
+                <h3 class="category-heading" data-i18n={`library.category.${key}`}>
+                  {t(`library.category.${key}` as any, language)}
+                </h3>
+                <div class="books-grid books-grid-narrow">
+                  {books.map((book) => (
+                    <BookCard
+                      slug={book.slug}
+                      titles={book.titles}
+                      subtitles={book.subtitles}
+                      descriptions={book.descriptions}
+                      authors={book.credits?.author}
+                      coverImage={book.coverImage}
+                      dominantColor={book.dominantColor}
+                      category={book.category}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {uncategorized.length > 0 && (
+            <div class="category-group">
+              <h3 class="category-heading text-yuval-text-tertiary">
+                {t('home.all', language)}
+              </h3>
+              <div class="books-grid books-grid-narrow">
+                {uncategorized.map((book) => (
+                  <BookCard
+                    slug={book.slug}
+                    titles={book.titles}
+                    subtitles={book.subtitles}
+                    descriptions={book.descriptions}
+                    authors={book.credits?.author}
+                    coverImage={book.coverImage}
+                    dominantColor={book.dominantColor}
+                    category={book.category}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {courses.length > 0 && (
+        <section class="top-col" aria-labelledby="courses-heading">
+          <div class="section-header">
+            <div class="section-marker section-marker-courses"></div>
+            <div>
+              <h2 id="courses-heading" class="section-title" data-i18n="courses.title">
+                {t('courses.title', language)}
+              </h2>
+              <p class="section-subtitle" data-i18n="courses.subtitle">
+                {t('courses.subtitle', language)}
+              </p>
+            </div>
+          </div>
+
+          <div class="courses-stack">
+            {courses.map((course) => (
+              <CourseCard course={course} language={language} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
 
-    {
-      books.length === 0 && (
-        <div class:list={['max-w-md mx-auto py-16 text-center', isRtl && 'text-right']}>
-          <svg class="mx-auto w-16 h-16 text-yuval-text-muted mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <p class="text-lg text-yuval-text-secondary font-medium">
-            {t('home.noBooks', language)}
-          </p>
-          <p class="mt-2 text-sm text-yuval-text-tertiary">
-            {t('home.noBooksHint', language)}
-          </p>
+    <!-- ═══════════════════════════════════════════════════════════════════
+         UNIFIED — every piece of content (books + lessons) by category.
+         ═══════════════════════════════════════════════════════════════════ -->
+    {allBooks.length > 0 && (
+      <section class="max-w-7xl mx-auto mb-16" aria-labelledby="all-heading">
+        <div class="section-header">
+          <div class="section-marker section-marker-all"></div>
+          <div>
+            <h2 id="all-heading" class="section-title" data-i18n="all.title">
+              {t('all.title', language)}
+            </h2>
+            <p class="section-subtitle" data-i18n="all.subtitle">
+              {t('all.subtitle', language)}
+            </p>
+          </div>
         </div>
-      )
-    }
+
+        {categoryOrder.map((key) => {
+          const items = allByCategory[key];
+          if (items.length === 0) return null;
+          return (
+            <div class="category-group">
+              <h3 class="category-heading" data-i18n={`library.category.${key}`}>
+                {t(`library.category.${key}` as any, language)}
+              </h3>
+              <div class="books-grid">
+                {items.map((item) => (
+                  <BookCard
+                    slug={item.slug}
+                    titles={item.titles}
+                    subtitles={item.subtitles}
+                    descriptions={item.descriptions}
+                    authors={item.credits?.author}
+                    coverImage={item.coverImage}
+                    dominantColor={item.dominantColor}
+                    category={item.category}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {allUncategorized.length > 0 && (
+          <div class="category-group">
+            <h3 class="category-heading text-yuval-text-tertiary">
+              {t('home.all', language)}
+            </h3>
+            <div class="books-grid">
+              {allUncategorized.map((item) => (
+                <BookCard
+                  slug={item.slug}
+                  titles={item.titles}
+                  subtitles={item.subtitles}
+                  descriptions={item.descriptions}
+                  authors={item.credits?.author}
+                  coverImage={item.coverImage}
+                  dominantColor={item.dominantColor}
+                  category={item.category}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+    )}
+
+    {totalContentCount === 0 && (
+      <div class:list={['max-w-md mx-auto py-16 text-center', isRtl && 'text-right']}>
+        <svg class="mx-auto w-16 h-16 text-yuval-text-muted mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        <p class="text-lg text-yuval-text-secondary font-medium">{t('home.noBooks', language)}</p>
+        <p class="mt-2 text-sm text-yuval-text-tertiary">{t('home.noBooksHint', language)}</p>
+      </div>
+    )}
   </div>
 </BaseLayout>
 
 <style>
-  .category-filter-btn[data-active="true"] {
-    background: var(--yuval-text);
-    color: var(--yuval-bg);
-    border-color: var(--yuval-text);
+  /* ── Section headers ─────────────────────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--yuval-border);
   }
+
+  .section-marker {
+    width: 5px;
+    border-radius: 99px;
+    align-self: stretch;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+
+  .section-marker-library {
+    background: linear-gradient(to bottom, #c9a227, #e8c547);
+    box-shadow: 0 0 12px rgba(201, 162, 39, 0.35);
+  }
+
+  :global(.dark) .section-marker-library {
+    background: linear-gradient(to bottom, #8b7355, #a8956d);
+    box-shadow: 0 0 12px rgba(139, 115, 85, 0.4);
+  }
+
+  .section-marker-courses {
+    background: linear-gradient(to bottom, #6366f1, #a78bfa);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+  }
+
+  .section-marker-all {
+    background: linear-gradient(to bottom, #10b981, #34d399);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+  }
+
+  :global(.dark) .section-marker-all {
+    background: linear-gradient(to bottom, #059669, #10b981);
+    box-shadow: 0 0 12px rgba(5, 150, 105, 0.45);
+  }
+
+  /* ── Top row: Library + Courses side-by-side on wide screens ───── */
+  .top-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .top-row {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 2rem;
+    }
+  }
+
+  .top-col { min-width: 0; }
+
+  /* Narrow variant — single column of horizontal cards so title + author
+     are visible at a glance without scrolling. Used inside the 2-col top
+     row where library has limited horizontal space. */
+  .books-grid-narrow {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Horizontal card: cover left, content right. Applied via :global()
+     because .book-card is scoped to BookCard.astro. */
+  .books-grid-narrow :global(.book-card) {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .books-grid-narrow :global(.card-cover) {
+    flex: 0 0 110px;
+    width: 110px;
+    aspect-ratio: 3 / 4;
+  }
+
+  .books-grid-narrow :global(.card-content) {
+    flex: 1 1 auto;
+    padding: 12px 14px;
+    justify-content: center;
+  }
+
+  /* Author icon/text should align to start (not center) in horizontal mode */
+  .books-grid-narrow :global(.card-content > p:last-child) {
+    justify-content: flex-start !important;
+    text-align: start;
+  }
+
+  /* On phones keep single column (same layout, full width) */
+  @media (min-width: 640px) {
+    .books-grid-narrow { grid-template-columns: 1fr; }
+  }
+
+  /* Courses stack: single column inside its own top-row col */
+  .courses-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .section-title {
+    font-family: var(--yuval-font-heading, inherit);
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--yuval-text);
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  @media (min-width: 640px) {
+    .section-title { font-size: 1.875rem; }
+  }
+
+  .section-subtitle {
+    font-size: 0.8125rem;
+    color: var(--yuval-text-tertiary);
+    margin-top: 4px;
+  }
+
+  /* ── Category grouping inside Library ────────────────────────────── */
+  .category-group {
+    margin-bottom: 36px;
+  }
+
+  .category-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .category-heading {
+    font-family: var(--yuval-font-heading, inherit);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--yuval-text-secondary);
+    margin: 0 0 14px;
+    padding-inline-start: 12px;
+    border-inline-start: 3px solid rgba(201, 162, 39, 0.4);
+    line-height: 1.3;
+  }
+
+  :global(.dark) .category-heading {
+    border-inline-start-color: rgba(168, 137, 42, 0.5);
+  }
+
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) { .books-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; } }
+  @media (min-width: 768px) { .books-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .books-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  @media (min-width: 1280px) { .books-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
 </style>
 
 <script>
   import { t, resolveLanguage, getI18nDirection } from '../i18n';
   import { SOURCE_LANGUAGE } from '../utils/language';
 
-  type LocalizedMap = Record<string, string | undefined>;
-
   function getLang(): string {
     return resolveLanguage(localStorage.getItem('yuval_language') || SOURCE_LANGUAGE);
-  }
-
-  function getLocalizedText(value: LocalizedMap | undefined, lang: string, fallback = SOURCE_LANGUAGE): string {
-    if (!value) return '';
-    return value[lang] ?? value[fallback] ?? Object.values(value)[0] ?? '';
-  }
-
-  function parseLabel(raw: string | undefined): LocalizedMap {
-    if (!raw) return {};
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return {};
-    }
-  }
-
-  function initCategoryFilter() {
-    const btns = document.querySelectorAll<HTMLButtonElement>('.category-filter-btn');
-    const cards = document.querySelectorAll<HTMLElement>('[data-book-category]');
-
-    btns.forEach(btn => {
-      btn.onclick = () => {
-        const selected = btn.dataset.category || 'All';
-
-        btns.forEach(b => {
-          b.dataset.active = b.dataset.category === selected ? 'true' : 'false';
-        });
-
-        cards.forEach(card => {
-          const cat = card.dataset.bookCategory || '';
-          card.style.display = selected === 'All' || cat === selected ? '' : 'none';
-        });
-      };
-    });
-  }
-
-  function updateCategoryLabels() {
-    const lang = getLang();
-
-    document.querySelectorAll<HTMLButtonElement>('.category-filter-btn').forEach(btn => {
-      const labels = parseLabel(btn.dataset.label);
-      btn.textContent = getLocalizedText(labels, lang);
-    });
   }
 
   function buildContinueReading() {
@@ -287,31 +526,25 @@ const categories = [
     banner.classList.remove('hidden');
   }
 
-  function updateBooksCountLabel() {
-    const el = document.getElementById('books-count-label');
+  function updateContentCountLabel() {
+    const el = document.getElementById('content-count-label');
     if (!el) return;
-    const count = Number(el.dataset.bookCount || '0');
+    const count = Number(el.dataset.contentCount || '0');
     const lang = getLang();
     const word = t(count === 1 ? 'home.bookAvailable' : 'home.booksAvailable', lang);
     el.textContent = `${count} ${word}`;
   }
 
-  initCategoryFilter();
-  updateCategoryLabels();
-  updateBooksCountLabel();
+  updateContentCountLabel();
   buildContinueReading();
 
   document.addEventListener('astro:after-swap', () => {
-    initCategoryFilter();
-    updateCategoryLabels();
-    updateBooksCountLabel();
+    updateContentCountLabel();
     buildContinueReading();
   });
 
-  window.addEventListener('language-changed', (e: Event) => {
-    const lang = (e as CustomEvent<{ language: string }>).detail?.language;
-    updateCategoryLabels();
-    updateBooksCountLabel();
+  window.addEventListener('language-changed', () => {
+    updateContentCountLabel();
     buildContinueReading();
   });
 </script>
@@ -346,10 +579,7 @@ const categories = [
     color: var(--yuval-bg);
   }
 
-  .continue-content {
-    flex: 1;
-    min-width: 0;
-  }
+  .continue-content { flex: 1; min-width: 0; }
 
   .continue-label {
     display: block;
@@ -384,8 +614,5 @@ const categories = [
     border-radius: 99px;
   }
 
-  .continue-arrow {
-    flex-shrink: 0;
-    color: var(--yuval-text-muted);
-  }
+  .continue-arrow { flex-shrink: 0; color: var(--yuval-text-muted); }
 </style>

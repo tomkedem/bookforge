@@ -73,6 +73,32 @@ export const translations: Translations = {
   'home.noBooks':          { he: 'אין ספרים זמינים כרגע', en: 'No books available yet', es: 'No hay libros disponibles aún' },
   'home.noBooksHint':      { he: 'הוסף ספרים לתיקיית output/ כדי להתחיל', en: 'Add books to the output/ folder to get started', es: 'Agrega libros a la carpeta output/ para comenzar' },
 
+  // ── Library (books) section ─────────────────────────────────────────────────
+  'library.title':         { he: 'ספריה',           en: 'Library',          es: 'Biblioteca' },
+  'library.subtitle':      { he: 'תוכן מקורי — ספרים מלאים', en: 'Original content — full books', es: 'Contenido original — libros completos' },
+  'library.category.foundations': { he: 'יסודות',   en: 'Foundations',      es: 'Fundamentos' },
+  'library.category.ai-systems':  { he: 'מערכות AI', en: 'AI Systems',      es: 'Sistemas de IA' },
+  'library.category.ai-engineering': { he: 'הנדסת מערכות AI', en: 'AI Systems Engineering', es: 'Ingeniería de Sistemas de IA' },
+
+  // ── Courses (learning) section ──────────────────────────────────────────────
+  'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },
+  'courses.subtitle':      { he: 'סיכומי שיעורים בתהליך', en: 'Lecture summaries in progress', es: 'Resúmenes de clases en curso' },
+  'courses.inProgress':    { he: 'בתהליך',          en: 'In progress',      es: 'En curso' },
+  'courses.available':     { he: '{{n}} מתוך {{total}} זמינים', en: '{{n}} of {{total}} available', es: '{{n}} de {{total}} disponibles' },
+  'courses.continueLearning': { he: 'המשך למידה',   en: 'Continue Learning', es: 'Continuar aprendizaje' },
+  'courses.startLearning': { he: 'התחל למידה',      en: 'Start Learning',   es: 'Comenzar aprendizaje' },
+  'courses.lessonBadge':   { he: 'סיכום שיעור',     en: 'Lecture Summary',  es: 'Resumen de clase' },
+  'courses.lessonNumber':  { he: 'שיעור {{n}}',     en: 'Lesson {{n}}',     es: 'Clase {{n}}' },
+  'courses.lessons':       { he: 'שיעורים',         en: 'Lessons',          es: 'Clases' },
+  'courses.lecturer':      { he: 'מרצה',            en: 'Lecturer',         es: 'Profesor' },
+  'courses.summaryBy':     { he: 'סיכומים',          en: 'Summaries by',     es: 'Resúmenes por' },
+  'courses.notAvailableYet': { he: 'טרם זמין',      en: 'Not available yet', es: 'Aún no disponible' },
+  'courses.viewAllLessons': { he: 'לכל השיעורים',    en: 'View all lessons',  es: 'Ver todas las clases' },
+
+  // ── Unified "all content" section — books + lessons grouped by category ────
+  'all.title':             { he: 'כל הספרים',        en: 'All Content',       es: 'Todo el contenido' },
+  'all.subtitle':          { he: 'ספרים וסיכומי שיעורים, ממוינים לפי קטגוריה', en: 'Books and lecture summaries, grouped by category', es: 'Libros y resúmenes, agrupados por categoría' },
+
   // ── Search ──────────────────────────────────────────────────────────────────
   'search.placeholderChapter': { he: 'חפש בפרק...', en: 'Search chapter...', es: 'Buscar en el capítulo...' },
   'search.placeholderBook': { he: 'חפש בספר...', en: 'Search book...', es: 'Buscar en el libro...' },
