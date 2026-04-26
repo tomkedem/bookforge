@@ -147,13 +147,11 @@ function renderBashBlock(text: string, lang: string, encodedCode: string): strin
 function renderCodeRunner(text: string, lang: string, encodedCode: string, highlightedCode: string): string {
   const lineCount = text.split('\n').length;
   const lineNumbers = generateLineNumbers(lineCount);
-  const filename = defaultFilename(lang);
   const label = languageLabel(lang);
 
   return `
 <div class="coderunner" data-lang="${lang}" dir="ltr" data-code="${encodedCode}">
   <div class="cr-header">
-    <span class="cr-label">${filename}</span>
     <span class="cr-lang-badge">${label}</span>
     <span class="cr-spacer"></span>
     <button class="cr-btn cr-theme-btn" type="button" title="Toggle code theme" data-code-theme-toggle aria-label="Toggle code theme">
@@ -226,13 +224,11 @@ function renderCodeBlock(
 ): string {
   const lineCount = text.split('\n').length;
   const lineNumbers = generateLineNumbers(lineCount);
-  const filename = overrides?.filename ?? defaultFilename(lang);
   const label = overrides?.label ?? languageLabel(lang);
 
   return `
 <div class="coderunner codeblock" data-lang="${lang}" dir="ltr" data-code="${encodedCode}">
   <div class="cr-header">
-    <span class="cr-label">${filename}</span>
     <span class="cr-lang-badge">${label}</span>
     <span class="cr-spacer"></span>
     <button class="cr-btn cr-theme-btn" type="button" title="Toggle code theme" data-code-theme-toggle aria-label="Toggle code theme">
@@ -260,13 +256,24 @@ function renderCodeBlock(
 </div>`;
 }
 
+
+// Remove lines starting with '# Output:' (optionally with leading spaces) from code blocks
+function stripOutputComments(code: string): string {
+  return code
+    .split('\n')
+    .filter(line => !/^\s*# Output:/.test(line))
+    .join('\n');
+}
+
 renderer.code = ({ text, lang }) => {
   const rawLang = (lang || '').toLowerCase().trim();
-  const encodedCode = encodeURIComponent(text);
+  // Remove output comments before rendering
+  const cleanedText = stripOutputComments(text);
+  const encodedCode = encodeURIComponent(cleanedText);
 
   // Route 1: terminal/shell languages → Stripe-inspired BashBlock.
   if (TERMINAL_LANGS.has(rawLang)) {
-    return renderBashBlock(text, rawLang, encodedCode);
+    return renderBashBlock(cleanedText, rawLang, encodedCode);
   }
 
   // Route 2a: "Code Json" / "Code Markdown" / "Code Yaml" aliases → non-runnable
@@ -274,23 +281,23 @@ renderer.code = ({ text, lang }) => {
   // language for syntax highlighting.
   const alias = FENCE_ALIASES[rawLang];
   if (alias) {
-    const highlighted = hljs.highlight(text, { language: alias.lang }).value;
-    return renderCodeBlock(text, alias.lang, encodedCode, highlighted, {
+    const highlighted = hljs.highlight(cleanedText, { language: alias.lang }).value;
+    return renderCodeBlock(cleanedText, alias.lang, encodedCode, highlighted, {
       label: alias.label,
       filename: alias.filename,
     });
   }
 
   const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
-  const highlightedCode = hljs.highlight(text, { language }).value;
+  const highlightedCode = hljs.highlight(cleanedText, { language }).value;
 
   // Route 2b: Python → CodeRunner (IDE chrome + Run button).
   if (RUNNABLE_LANGS.has(rawLang)) {
-    return renderCodeRunner(text, rawLang, encodedCode, highlightedCode);
+    return renderCodeRunner(cleanedText, rawLang, encodedCode, highlightedCode);
   }
 
   // Route 3: everything else → CodeBlock (IDE chrome, no Run).
-  return renderCodeBlock(text, language, encodedCode, highlightedCode);
+  return renderCodeBlock(cleanedText, language, encodedCode, highlightedCode);
 };
 
 marked.use({ renderer });
