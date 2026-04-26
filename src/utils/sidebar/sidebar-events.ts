@@ -33,6 +33,7 @@ import {
   syncStripCompletion,
 } from './sidebar-progress';
 import { loadChapterContent } from './sidebar-navigation';
+import { clearActiveSectionMarks } from './sidebar-outline';
 import { AUTO_COMPLETE_THRESHOLD } from './sidebar-constants';
 import { setActiveTubePct } from './sidebar-particle-tube';
 
@@ -97,22 +98,66 @@ export function initSidebarNavigation(): void {
         invalidateScrollCache(chId);
 
         if (String(chId) === String(getCurrentChapterId() || '')) {
+          /* Reset is on the chapter the reader is currently viewing.
+             unmarkChapterComplete already wiped the read-sections
+             storage; clear the in-memory Set + the .section-completed
+             DOM marks too so the outline visually resets immediately
+             (otherwise the ✓ glyphs persist until the user navigates
+             away and back). */
+          clearActiveSectionMarks();
+
           const container = document.getElementById('chapter-container');
           const top = container ? container.offsetTop : 0;
           window.scrollTo({ top, behavior: 'instant' as ScrollBehavior });
         }
 
         syncChapterStates();
+        /* Refresh the in-page chapter strip ("הקריאה הושלמה" pill +
+           progress fill) so the completion pill disappears immediately.
+           syncChapterStates only refreshes the sidebar — the page's
+           top strip is owned by sidebar-progress and needs its own
+           sync call. */
+        syncStripCompletion();
       }
       return;
     }
 
-    /* Chapter row navigation. */
+    /* Chapter row click.
+       For chapters with sections, the card behaves like the toggle
+       button: first click expands the section list, second click
+       collapses it. Navigation to such chapters happens by clicking a
+       section in the expanded list (or by clicking the caret toggle
+       button explicitly, which also expands).
+       For chapters with no sections there's nothing to expand, so the
+       card click falls through to the original navigation behavior. */
     const link = target.closest<HTMLAnchorElement>('a.usb-chapter-link');
     if (!link) return;
 
     e.preventDefault();
     e.stopImmediatePropagation();
+
+    const chId = link.dataset.chapterId || '';
+    const li = chId
+      ? document.querySelector<HTMLElement>(`.usb-chapter[data-chapter-id="${chId}"]`)
+      : null;
+    const sectionCount = li
+      ? parseInt(li.dataset.sectionCount || '0', 10) || 0
+      : 0;
+
+    if (li && sectionCount > 0) {
+      const isExpanded = li.dataset.expanded === 'true';
+      const toggleBtn = li.querySelector<HTMLElement>('.usb-toggle-btn');
+      if (isExpanded) {
+        li.dataset.expanded = 'false';
+        toggleBtn?.setAttribute('aria-expanded', 'false');
+      } else {
+        li.dataset.expanded = 'true';
+        toggleBtn?.setAttribute('aria-expanded', 'true');
+        void renderChapterSections(chId);
+      }
+      return;
+    }
+
     const url = link.getAttribute('href')?.split('?')[0] || '';
     await loadChapterContent(url);
   }, true);
@@ -124,9 +169,14 @@ export function initSidebarNavigation(): void {
   sidebar.addEventListener('pointerover', (e) => {
     const target = e.target as HTMLElement | null;
     if (!target) return;
+    /* Hovering the toggle caret OR the chapter card itself warms the
+       cache — the card is now also a toggle, so both should prefetch. */
     const toggleBtn = target.closest<HTMLElement>('[data-action="toggle-sections"]');
-    if (!toggleBtn) return;
-    const chId = toggleBtn.dataset.chapterId || '';
+    const link = target.closest<HTMLElement>('a.usb-chapter-link');
+    const chId =
+      toggleBtn?.dataset.chapterId ||
+      link?.dataset.chapterId ||
+      '';
     if (!chId) return;
     /* Fire and forget. Errors are swallowed inside loadChapterSections. */
     void loadChapterSections(chId);

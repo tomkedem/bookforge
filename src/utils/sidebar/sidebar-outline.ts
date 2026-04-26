@@ -11,11 +11,62 @@
  * setters everywhere would just add ceremony.
  */
 
+import { getBookSlug, getCurrentChapterId } from './sidebar-helpers';
+import { getReadSections, setReadSections } from './sidebar-storage';
+
 let outlineSpyObserver: IntersectionObserver | null = null;
 let outlineHeadingOrder: HTMLElement[] = [];
 const outlineHeadingMap = new Map<string, HTMLElement>();
 const outlineVisibleIds = new Set<string>();
 let activeOutlineId: string | null = null;
+
+/** Sections the reader has scrolled past in the current chapter.
+ *  Once a heading has been the active outline item, every prior
+ *  heading gets recorded here. The set is hydrated from localStorage
+ *  on each chapter switch (see setupOutlineScrollSpy) so reopening a
+ *  chapter immediately re-decorates already-read sections — and
+ *  every new addition is persisted (see persistReadSections).
+ *  Drives the .section-completed CSS class for "already read" rows. */
+const sectionsRead = new Set<string>();
+
+/** Write the current sectionsRead set to localStorage under the
+ *  active book + chapter. Called whenever a new heading id joins the
+ *  set. Best-effort — quota/private-mode failures are swallowed. */
+function persistReadSections(): void {
+  const book = getBookSlug();
+  const chapterId = getCurrentChapterId();
+  if (!book || chapterId == null) return;
+  setReadSections(book, chapterId, sectionsRead);
+}
+
+/** Apply `.section-completed` to every outline `<li>` that matches the
+ *  given heading id, both desktop and mobile. Idempotent — re-adding
+ *  a class that's already present is a no-op. */
+function markSectionRead(headingId: string): void {
+  document.querySelectorAll(
+    `.usb-sections li[data-heading-id="${headingId}"], #mobile-chapter-outline li[data-heading-id="${headingId}"]`,
+  ).forEach(li => li.classList.add('section-completed'));
+}
+
+/** Strip every `.section-completed` mark from both desktop + mobile
+ *  outlines. Called when the chapter (and therefore the section list)
+ *  changes so completion marks don't bleed across chapters. */
+function resetReadSections(): void {
+  sectionsRead.clear();
+  document.querySelectorAll(
+    '.usb-sections li.section-completed, #mobile-chapter-outline li.section-completed',
+  ).forEach(li => li.classList.remove('section-completed'));
+}
+
+/** External-facing reset for callers like the chapter reset button —
+ *  clears in-memory state + DOM marks immediately. Storage is wiped
+ *  separately by unmarkChapterComplete in sidebar-storage. The caller
+ *  is expected to verify this is indeed the active chapter being
+ *  reset; resetting marks for a non-active chapter would be a no-op
+ *  in DOM but would still incorrectly clear our in-memory cache. */
+export function clearActiveSectionMarks(): void {
+  resetReadSections();
+}
 
 /** Register an outline `<li>` for a heading id so scroll-spy knows
  *  which row to highlight. Render code calls this once per section. */
@@ -24,9 +75,11 @@ export function registerOutlineEntry(headingId: string, li: HTMLElement): void {
 }
 
 /** Drop all heading registrations. Called before re-rendering an
- *  outline so stale entries don't survive. */
+ *  outline so stale entries don't survive. Also wipes the read-section
+ *  marks since they're keyed by heading id of the previous chapter. */
 export function clearOutlineRegistry(): void {
   outlineHeadingMap.clear();
+  resetReadSections();
 }
 
 /**
@@ -46,6 +99,26 @@ export function setActiveOutlineItem(id: string | null): void {
   document.querySelectorAll(
     `.usb-sections li[data-heading-id="${id}"], #mobile-chapter-outline li[data-heading-id="${id}"]`,
   ).forEach(li => li.classList.add('active'));
+
+  /* Mark every heading BEFORE the new active one as read. We don't
+     mark the current active itself — "you're reading it now" is a
+     separate signal — but the moment activity moves to the next
+     heading this one will be backfilled on the next call. We don't
+     unmark when scrolling back up: once you've passed a section,
+     you've read it for the rest of the session. */
+  const activeIdx = outlineHeadingOrder.findIndex(h => h.id === id);
+  if (activeIdx > 0) {
+    let added = false;
+    for (let i = 0; i < activeIdx; i++) {
+      const headingId = outlineHeadingOrder[i].id;
+      if (!sectionsRead.has(headingId)) {
+        sectionsRead.add(headingId);
+        markSectionRead(headingId);
+        added = true;
+      }
+    }
+    if (added) persistReadSections();
+  }
 
   /* Auto-scroll the sidebar's own container so the active row stays
      visible during scroll-spy updates. We deliberately don't scroll
@@ -114,6 +187,21 @@ export function setupOutlineScrollSpy(headings: HTMLElement[]): void {
   outlineVisibleIds.clear();
   outlineHeadingOrder = headings;
   activeOutlineId = null;
+  resetReadSections();
+
+  /* Hydrate from localStorage so previously-read sections of THIS
+     chapter are marked immediately on chapter open, before the user
+     scrolls anything. This is what makes clicking a chapter card
+     feel "remembered" rather than starting fresh every visit. */
+  const book = getBookSlug();
+  const chapterId = getCurrentChapterId();
+  if (book && chapterId != null) {
+    const persisted = getReadSections(book, chapterId);
+    persisted.forEach(headingId => {
+      sectionsRead.add(headingId);
+      markSectionRead(headingId);
+    });
+  }
 
   if (!('IntersectionObserver' in window) || headings.length === 0) return;
 

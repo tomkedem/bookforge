@@ -21,7 +21,11 @@ import {
   chapterContentUrl,
   getVisibleContentDiv,
 } from './sidebar-helpers';
-import { getCompletedChapters, getChapterScrollPercent } from './sidebar-storage';
+import {
+  getCompletedChapters,
+  getChapterScrollPercent,
+  getReadSections,
+} from './sidebar-storage';
 import {
   computeTimeRemaining,
   formatTimeRemaining,
@@ -58,41 +62,23 @@ function getOrCreateNeuronBar(initialPct: number): NeuronBar | null {
 }
 
 /**
- * Repaint the vertical thread gradient based on current chapter
- * states. Each chapter occupies an equal vertical band; the band is
- * painted green for completed, purple for active, gray otherwise.
+ * Reset the vertical thread to its single uniform color.
  *
- * We build a sharp-stop gradient (each band has a hard edge) so the
- * thread reads as a series of states rather than a smooth fade.
+ * Earlier this function painted a per-chapter gradient (green for
+ * completed, red for active, peach for in-progress, gray otherwise).
+ * Per design feedback the thread should be one solid color along its
+ * entire length, varying ONLY between day and night mode — not by
+ * chapter state. We leave the function as a no-op-style reset so all
+ * existing call sites still work; visual color comes from the CSS
+ * rule `.usb-thread { background: var(--usb-thread-inactive); }`,
+ * whose variable is defined per theme in chapter-sidebar.css.
  */
 export function renderThreadGradient(): void {
   const thread = document.querySelector<HTMLElement>('.usb-thread');
   if (!thread) return;
-
-  const list = document.querySelectorAll<HTMLElement>('.usb-chapter');
-  if (list.length === 0) return;
-
-  const book = getBookSlug();
-  const completed = new Set(getCompletedChapters(book));
-  const total = list.length;
-
-  const stops: string[] = [];
-  list.forEach((li, idx) => {
-    const id = li.dataset.chapterId || '';
-    const isActive = li.classList.contains('usb-chapter-active');
-    const isComplete = completed.has(id);
-
-    let color: string;
-    if (isComplete) color = '#1f8a4d';
-    else if (isActive) color = '#7c5cf0';
-    else color = 'rgba(127, 127, 127, 0.18)';
-
-    const top = (idx / total) * 100;
-    const bottom = ((idx + 1) / total) * 100;
-    stops.push(`${color} ${top}%`, `${color} ${bottom}%`);
-  });
-
-  thread.style.background = `linear-gradient(180deg, ${stops.join(', ')})`;
+  /* Clear any previously-set inline gradient so the static CSS var
+     takes over. Setting to '' (empty string) removes the property. */
+  thread.style.background = '';
 }
 
 /**
@@ -121,17 +107,27 @@ export function syncChapterStates(): void {
     li.classList.toggle('usb-chapter-completed', isComplete);
     if (isComplete) doneCount++;
 
+    /* Per-chapter scroll progress is rendered by the particle tube.
+       Completed chapters: full ring + green palette; in-progress:
+       partial ring + orange palette. */
+    const stored = getChapterScrollPercent(book, id);
+    const pct = isComplete ? 100 : stored;
+
+    /* In-progress = the chapter has scroll progress but isn't done.
+       Drives a tinted badge background in the CSS so the disc reads
+       as "active" against a white sidebar surface (the orange arc
+       alone is too thin to carry the visual weight). */
+    li.classList.toggle(
+      'usb-chapter-in-progress',
+      !isComplete && stored > 0.5,
+    );
+
     const timeEl = li.querySelector<HTMLElement>('.usb-card-time');
     if (timeEl) {
       const words = parseInt(timeEl.dataset.wordCount || '0', 10) || 0;
       timeEl.textContent = formatChapterTime(words);
     }
 
-    /* Per-chapter scroll progress is rendered by the particle tube.
-       Completed chapters: full ring + green palette; in-progress:
-       partial ring + purple palette. */
-    const stored = getChapterScrollPercent(book, id);
-    const pct = isComplete ? 100 : stored;
     const tube = particleTubes.get(id);
     if (tube) {
       tube.setCompleted(isComplete);
@@ -228,6 +224,19 @@ export async function renderChapterSections(chapterId: string | number): Promise
   let h2Counter = 0;
   let h3Counter = 0;
 
+  /* Pre-load the persisted "read sections" for this chapter so we
+     can stamp .section-completed on each <li> as we create it. This
+     covers both flavors: clicking the active chapter's caret expands
+     a section list that should immediately show ✓s for what was
+     already read (without waiting for setupOutlineScrollSpy's
+     hydration), and clicking a NON-active chapter's caret expands a
+     section list with no scroll-spy at all — read marks would never
+     appear without this pass. */
+  const bookSlug = getBookSlug();
+  const persistedReadSections = bookSlug
+    ? new Set(getReadSections(bookSlug, id))
+    : new Set<string>();
+
   /* Section minutes — distributed proportionally so the sum equals
      the chapter card's reading time. Falls back to direct estimate
      if chapter words are missing from cache. */
@@ -261,6 +270,9 @@ export async function renderChapterSections(chapterId: string | number): Promise
     const liEl = document.createElement('li');
     liEl.setAttribute('data-level', h.level);
     liEl.setAttribute('data-heading-id', h.id);
+    if (persistedReadSections.has(h.id)) {
+      liEl.classList.add('section-completed');
+    }
 
     const link = document.createElement('a');
     /* Anchor href differs by chapter type: for active chapter, plain

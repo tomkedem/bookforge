@@ -69,8 +69,10 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     </a>
 
     <div class="quote-container hidden sm:block">
-      <p class="quote-text" id="header-quote"></p>
-      <cite class="quote-author" id="header-quote-author"></cite>
+      <div class="quote-stack">
+        <p class="quote-text" id="header-quote"></p>
+        <cite class="quote-author" id="header-quote-author"></cite>
+      </div>
     </div>
 
     <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
@@ -298,13 +300,24 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   .quote-container {
     flex: 1;
     display: none;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 0 24px;
     max-width: 700px;
     margin: 0 auto;
-    gap: 8px;
+  }
+
+  /* Inner stack sized to the quote text's width — that way the
+     author's `align-self: flex-end` puts its end UNDER the quote's
+     visual end (not under the wide outer container's edge). */
+  .quote-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: max-content;
+    max-width: 100%;
+    /* Author is positioned via align-self + transform, not gap. */
+    gap: 0;
   }
 
   @media (min-width: 640px) {
@@ -323,7 +336,22 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     text-transform: uppercase;
     opacity: 1;
     transition: opacity 500ms var(--ease-standard);
-    text-align: center;
+    /* Inline-end edge of the inner .quote-stack — the stack is
+       sized to the quote text, so this is the visual end of the
+       quote, not the wide outer container's edge. */
+    align-self: flex-end;
+    /* Negative margin-inline-end lets the author's tail stick OUT
+       past the inline-end of the quote stack by about half a word —
+       a deliberate "signature flowing past the edge" overhang.
+       Negative on inline-end = leftward in RTL, rightward in LTR. */
+    margin-inline-end: -1.5ch;
+    /* Tight to the quote line above + half of the author's height
+       protrudes below the quote container — the "signature
+       straddling the bottom edge" effect requested. line-height: 1
+       keeps the protrusion clean (no extra ascender padding). */
+    line-height: 1;
+    margin-top: -0.15em;
+    transform: translateY(50%);
   }
 
   .quote-author:empty {

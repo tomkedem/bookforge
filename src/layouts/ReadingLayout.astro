@@ -544,7 +544,12 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         color: #484f58; margin-bottom: 8px;
       }
 
-      /* ── Premium data-grid tables: visible grid + gold header ── */
+      /* ── Quiet data-grid tables: neutral translucent palette ──
+         Gold is gone; the table now uses translucent slate-gray tints
+         that adapt automatically to light and dark backgrounds (since
+         rgba over a white surface reads as cool gray, and over a near-
+         black surface reads as soft slate). The chrome stays out of
+         the way so the data leads. */
       :global(article .table-wrapper),
       :global(article table) {
         @apply my-6;
@@ -557,13 +562,11 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         -webkit-overflow-scrolling: touch;
         max-width: 100%;
         border-collapse: collapse;
-        border: 1px solid color-mix(in srgb, var(--gold-500) 28%, var(--yuval-border-secondary));
-        border-radius: 3px;
+        border: 1px solid rgba(127, 127, 140, 0.18);
+        border-radius: 6px;
         font-size: 0.95rem;
         line-height: 1.55;
-        box-shadow:
-          0 1px 0 var(--gold-tint-18) inset,
-          0 10px 24px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       }
 
       @media (min-width: 768px) {
@@ -574,52 +577,55 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         }
       }
 
-      /* Every cell gets a visible grid border */
+      /* Every cell gets a faint grid border. Vertical-align: middle so
+         single-line cells read as centered, and multi-line cells still
+         baseline-align across the row. */
       :global(article th),
       :global(article td) {
-        border: 1px solid color-mix(in srgb, var(--gold-500) 16%, var(--yuval-border-secondary));
+        border: 1px solid rgba(127, 127, 140, 0.12);
         padding: 0.7rem 1rem;
         text-align: start;
-        vertical-align: top;
+        vertical-align: middle;
       }
 
-      /* Header row - refined gold tone, stronger hierarchy */
+      /* Header row — same row height as body (matched padding), text
+         vertically centered inside its cell. Tone is a barely-there
+         slate wash; only weight + a 2px under-rule signal hierarchy. */
       :global(article thead th) {
-        background:
-          linear-gradient(180deg,
-            color-mix(in srgb, var(--gold-500) 14%, var(--yuval-bg)) 0%,
-            color-mix(in srgb, var(--gold-500) 8%, var(--yuval-bg)) 100%);
+        background: rgba(127, 127, 140, 0.06);
         color: var(--yuval-chapter-title);
         font-weight: 700;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.03em;
         font-size: 0.95rem;
         text-transform: uppercase;
-        padding: 1rem 1.1rem;
-        border-color: var(--gold-tint-35);
-        border-bottom: 2px solid color-mix(in srgb, var(--gold-600) 85%, var(--gold-500));
-        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold-300) 28%, transparent);
+        padding: 0.7rem 1rem;
+        border-color: rgba(127, 127, 140, 0.16);
+        border-bottom: 2px solid rgba(127, 127, 140, 0.32);
         position: relative;
       }
 
-      /* Vertical dividers inside header - keep gold, slightly stronger */
+      /* Vertical dividers inside header — same neutral tone, slightly
+         stronger than body cell borders so the header reads as a unit. */
       :global(article thead th + th) {
-        border-inline-start: 1px solid var(--gold-tint-35);
+        border-inline-start: 1px solid rgba(127, 127, 140, 0.16);
       }
 
-      /* Row-header cells (th inside tbody) - slightly emphasised */
+      /* Row-header cells (th inside tbody) — quiet emphasis without
+         pulling color attention. */
       :global(article tbody th) {
-        background: color-mix(in srgb, var(--gold-500) 6%, var(--yuval-bg));
+        background: rgba(127, 127, 140, 0.04);
         font-weight: 700;
         color: var(--yuval-chapter-title);
       }
 
-      /* Subtle zebra for scanning, kept under the grid */
+      /* Zebra striping for scan rhythm — translucent so it tints both
+         light and dark backgrounds without picking a side. */
       :global(article tbody tr:nth-child(even) td) {
-        background: color-mix(in srgb, var(--yuval-bg-secondary, var(--yuval-bg)) 55%, transparent);
+        background: rgba(127, 127, 140, 0.025);
       }
 
       :global(article tbody tr:hover td) {
-        background: color-mix(in srgb, var(--gold-500) 7%, var(--yuval-bg));
+        background: rgba(127, 127, 140, 0.06);
       }
 
       /* RTL */
@@ -638,8 +644,9 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
 
         :global(article thead th) {
           font-size: 0.82rem;
-          padding: 0.8rem 0.85rem;
-          letter-spacing: 0.03em;
+          /* Match body cell padding so header row height = body row height on mobile too. */
+          padding: 0.6rem 0.8rem;
+          letter-spacing: 0.025em;
         }
 
         :global(article th:first-child),
@@ -648,19 +655,16 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           inset-inline-start: 0;
           background: var(--yuval-bg);
           z-index: 1;
-          box-shadow: 1px 0 0 var(--gold-tint-25);
+          box-shadow: 1px 0 0 rgba(127, 127, 140, 0.18);
         }
 
         :global(article [dir="rtl"] th:first-child),
         :global(article [dir="rtl"] td:first-child) {
-          box-shadow: -1px 0 0 var(--gold-tint-25);
+          box-shadow: -1px 0 0 rgba(127, 127, 140, 0.18);
         }
 
         :global(article thead th:first-child) {
-          background:
-            linear-gradient(180deg,
-              color-mix(in srgb, var(--gold-500) 18%, var(--yuval-bg)) 0%,
-              color-mix(in srgb, var(--gold-500) 10%, var(--yuval-bg)) 100%);
+          background: rgba(127, 127, 140, 0.06);
         }
       }
 
@@ -684,6 +688,16 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
 
       /* Phone: remove cap so the full viewport is used (minus px-4 padding) */
       @media (max-width: 639px) {
+        .reading-article {
+          max-width: none;
+        }
+      }
+
+      /* Tablet (sm–md): both desktop sidebars are hidden in this range,
+         so the reading column should fill the viewport instead of
+         sitting in a centered 760px well with empty gutters. The lg
+         block below takes over once the sidebars reappear. */
+      @media (min-width: 640px) and (max-width: 1023px) {
         .reading-article {
           max-width: none;
         }
@@ -730,26 +744,27 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         unicode-bidi: isolate;
       }
 
-      /* Desktop: fill the entire space between the two 320px sidebars.
-         No width cap — the reading column spans edge-to-edge between them.
-         padding-inline-end reserves clearance for the 76px left activity
-         bar (which sits on inline-end — visual left in RTL, visual right
-         in LTR). Existing 320px margin already covers it, but the padding
-         makes the dependency explicit and survives margin tweaks. */
+      /* Desktop: reading column fills the full horizontal space between
+         the two fixed sidebars. Asymmetric reservations using logical
+         properties — 320px for the unified sidebar on inline-start,
+         76px for the LeftSidebar activity rail on inline-end. The
+         lg:px-8 utility (2rem) supplies inner breathing room on both
+         sides. The strip header above the column has its own geometry
+         and is unaffected. */
       @media (min-width: 1024px) {
         .reading-article {
           max-width: none;
-          margin-left: 320px;
-          margin-right: 320px;
-          padding-inline-end: calc(76px + 2rem);
-        }
-
-        /* Immersive: article expands to full width — but still must not
-           overlap the activity bar. Keep the inline-end inset. */
-        :global(body.reading-immersive) .reading-article {
           margin-left: 0;
           margin-right: 0;
-          padding-inline-end: calc(76px + 2rem);
+          margin-inline-start: 320px;
+          margin-inline-end: 76px;
+        }
+
+        /* Immersive: hides the unified sidebar, so we drop the
+           inline-start reservation and only keep the LeftSidebar gap. */
+        :global(body.reading-immersive) .reading-article {
+          margin-inline-start: 0;
+          margin-inline-end: 76px;
         }
       }
 

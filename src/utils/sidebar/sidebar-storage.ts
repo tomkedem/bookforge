@@ -41,8 +41,9 @@ export function markChapterComplete(book: string, chapterId: string | number): v
 
 /**
  * Remove a chapter from completed list AND wipe its scroll-progress
- * record. Both are needed so the chapter resets to a clean 0% state,
- * not "94% — almost there".
+ * record AND wipe its read-sections record. All three are needed so
+ * the chapter resets to a fully clean state — not "94% with five
+ * sections still ✓-marked".
  */
 export function unmarkChapterComplete(book: string, chapterId: string | number): void {
   const ids = getCompletedChapters(book);
@@ -56,6 +57,45 @@ export function unmarkChapterComplete(book: string, chapterId: string | number):
       try { localStorage.removeItem(k); } catch {}
     }
   });
+  try {
+    localStorage.removeItem(`yuval_sections_read_${book}_ch${id}`);
+  } catch {}
+}
+
+/**
+ * Persisted set of section/heading IDs the reader has scrolled past
+ * in a specific chapter. Marks survive page reloads and chapter
+ * switches so reopening a chapter immediately re-decorates the
+ * already-read sections without requiring a re-scroll.
+ *
+ * Storage key: `yuval_sections_read_<book>_ch<chapterId>` → JSON array.
+ */
+export function getReadSections(book: string, chapterId: string | number): string[] {
+  if (!book) return [];
+  try {
+    const raw = localStorage.getItem(`yuval_sections_read_${book}_ch${chapterId}`);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function setReadSections(
+  book: string,
+  chapterId: string | number,
+  ids: Iterable<string>,
+): void {
+  if (!book) return;
+  const unique = Array.from(new Set(Array.from(ids, String)));
+  try {
+    localStorage.setItem(
+      `yuval_sections_read_${book}_ch${chapterId}`,
+      JSON.stringify(unique),
+    );
+  } catch {
+    /* Quota / private mode — silent fail keeps reading flow alive. */
+  }
 }
 
 /**

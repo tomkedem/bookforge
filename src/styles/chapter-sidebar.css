@@ -76,17 +76,17 @@
   pointer-events: none;
 }
 
-/* Plasma-glass scrollbar — 3px hair-thin capsule with a vertical
-   purple→pink gradient thumb and a permanent soft halo so it reads
-   as "lit glass" rather than a flat line. The gradient does double
-   duty as the "two-color" shading that gives the capsule depth at
-   sub-pixel-border sizes where inset shadows can't fit.
+/* Polished-graphite scrollbar — 3px hair-thin capsule with a vertical
+   gunmetal gradient thumb. Top edge picks up a thin cool highlight,
+   body fades into deeper graphite — reads as a brushed metal sliver
+   rather than a flat line. Halo is neutral white at low opacity so it
+   doesn't pull a color cast onto the surrounding text.
 
    Firefox: scrollbar-color only accepts two flat colors, so we pick
-   the gradient's midpoint (a lavender-rose blend) for the thumb. */
+   the gradient's midpoint as a single graphite tone. */
 .unified-sidebar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(207, 126, 211, 0.7) rgba(20, 18, 32, 0.25);
+  scrollbar-color: rgba(95, 102, 118, 0.85) rgba(20, 18, 32, 0.25);
 }
 
 .unified-sidebar::-webkit-scrollbar {
@@ -100,36 +100,58 @@
 .unified-sidebar::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(167, 139, 250, 0.9) 0%,
-    rgba(207, 126, 211, 0.85) 50%,
-    rgba(248, 113, 113, 0.8) 100%
+    rgba(180, 188, 205, 0.95) 0%,
+    rgba(120, 128, 145, 0.9) 35%,
+    rgba(70, 75, 90, 0.9) 100%
   );
   border-radius: 99px;
-  /* Permanent halo — the "glass" effect at this size. Subtle enough
-     to not bloom against text, persistent enough to make the line
-     feel lit rather than painted. */
+  /* Neutral halo — keeps the "lit metal" feel without tinting nearby
+     text. Two layers: a tight white edge + a wider cool falloff. */
   box-shadow:
-    0 0 3px rgba(167, 139, 250, 0.5),
-    0 0 6px rgba(207, 126, 211, 0.25);
+    0 0 2px rgba(255, 255, 255, 0.18),
+    0 0 6px rgba(120, 128, 145, 0.28);
 }
 .unified-sidebar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(167, 139, 250, 1) 0%,
-    rgba(207, 126, 211, 1) 50%,
-    rgba(248, 113, 113, 0.95) 100%
+    rgba(210, 218, 232, 1) 0%,
+    rgba(150, 158, 175, 1) 35%,
+    rgba(85, 90, 105, 1) 100%
   );
   box-shadow:
-    0 0 4px rgba(167, 139, 250, 0.7),
-    0 0 10px rgba(207, 126, 211, 0.5);
+    0 0 3px rgba(255, 255, 255, 0.28),
+    0 0 10px rgba(150, 158, 175, 0.45);
 }
 
-/* Light mode: lighter track recess, same gradient thumb. */
+/* Light mode: lighter track recess + slightly darker graphite thumb so
+   it stays visible against a near-white sidebar background. */
 :root:not(.dark) .unified-sidebar {
-  scrollbar-color: rgba(207, 126, 211, 0.65) rgba(60, 50, 90, 0.06);
+  scrollbar-color: rgba(85, 92, 108, 0.75) rgba(60, 50, 90, 0.06);
 }
 :root:not(.dark) .unified-sidebar::-webkit-scrollbar-track {
   background: rgba(60, 50, 90, 0.06);
+}
+:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(140, 148, 165, 0.95) 0%,
+    rgba(95, 102, 118, 0.92) 35%,
+    rgba(55, 60, 75, 0.9) 100%
+  );
+  box-shadow:
+    0 0 2px rgba(255, 255, 255, 0.5),
+    0 0 6px rgba(95, 102, 118, 0.22);
+}
+:root:not(.dark) .unified-sidebar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(160, 168, 185, 1) 0%,
+    rgba(110, 118, 135, 1) 35%,
+    rgba(65, 70, 85, 1) 100%
+  );
+  box-shadow:
+    0 0 3px rgba(255, 255, 255, 0.6),
+    0 0 10px rgba(110, 118, 135, 0.35);
 }
 
 /* ─── Header ───────────────────────────────────────────────────────── */
@@ -143,8 +165,8 @@
   top: 0;
   z-index: 5;
   background: var(--yuval-surface, #fff);
-  margin: 0 -16px 18px;
-  padding: 18px 16px 14px;
+  margin: 0 -16px 8px;
+  padding: 8px 16px 6px;
   border-bottom: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
 }
 
@@ -160,9 +182,9 @@
 }
 
 .usb-title {
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #7c5cf0;
 }
@@ -172,7 +194,7 @@
 }
 
 .usb-completion-count {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--yuval-text-muted, #6b7280);
   display: inline-flex;
   align-items: baseline;
@@ -181,35 +203,143 @@
 }
 
 .usb-completion-done {
-  color: #1f8a4d;
+  color: #2e7a4d;
   font-weight: 600;
 }
 
 .dark .usb-completion-done {
-  color: #4ade80;
+  color: #65b889;
 }
 
 .usb-completion-sep {
   opacity: 0.6;
 }
 
-/* Glass-tube container for the neuron particles. The inset shadow
-   on top + faint highlight on bottom imply concave depth ("the
-   particles live inside the tube"); the hairline border defines the
-   rim. Tuned so the effect reads at 14px height without competing
-   with the particle glow inside. */
+/* Pencil-shaped progress track: sharpened lead point on the LEFT,
+   silver ferrule + red rubber eraser cap on the RIGHT, dark "tube"
+   body with floating math particles in the middle.
+
+   Layered build:
+   - Track itself (this rule) provides the polygon outline + dark
+     particle background. clip-path replaces the symmetric 99px
+     capsule with a pointed-left silhouette and squared right end.
+   - .usb-progress-track::before paints the wood wedge over the left
+     V of the polygon with a graphite-to-tan horizontal gradient
+     (graphite at the very tip, lighter wood toward the body).
+   - .usb-progress-track::after stacks two background layers on the
+     right end: an 8px brushed-silver ferrule on the inside, a 10px
+     cherry-red eraser cap on the outside. */
 .usb-progress-track {
   position: relative;
   height: 21px;
   background: rgba(20, 18, 32, 0.55);
   border: 1px solid rgba(127, 127, 127, 0.22);
-  border-radius: 99px;
+  border-radius: 0;
+  clip-path: polygon(
+    0 50%,
+    16px 0,
+    100% 0,
+    100% 100%,
+    16px 100%
+  );
   overflow: hidden;
-  margin-top: 10px;
-  margin-bottom: 6px;
+  margin-top: 5px;
+  margin-bottom: 3px;
   box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.35),
     inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ── Pencil tip (left): graphite lead on a sharpened wood wedge ───
+   The clip-path on the parent shapes this rectangle into a V.
+   Horizontal gradient: pure black graphite at x=0 (the writing
+   point) → warm tan wood by the time we hit the body, with a
+   midline lacquer band (#1f8a4d-ish? no — natural wood) suggesting
+   sharpener strokes. */
+.usb-progress-track::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 18px;
+  background: linear-gradient(
+    90deg,
+    #0d0d10 0%,
+    #1c1410 6%,
+    #6b3d1f 12%,
+    #d8a86a 22%,
+    #c8924f 60%,
+    #8a5a2a 100%
+  );
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Dark mode: the original graphite-black tip (#0d0d10) blends into
+   the near-black sidebar surface (#1a1a1a), making the V-tip look
+   invisible. Lift the tip's starting colors and warm the wood so the
+   sharpened wedge reads as a distinct silhouette against the dark
+   header background. */
+.dark .usb-progress-track::before {
+  /* ::before is 18px wide. The actual graphite tip is only the
+     leftmost ~3px (~17% of the wedge); everything past that is the
+     wooden shaft. White only at the tip, then back to the wood
+     gradient from the original dark-mode rule. */
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #f0f0f4 14%,
+    #5a3a28 18%,
+    #9a5a30 24%,
+    #f0c084 32%,
+    #e0a868 64%,
+    #a06d34 100%
+  );
+}
+
+/* Dark mode: brighter rim along the polygon outline so the pencil
+   silhouette (especially the V tip) reads against the dark surface. */
+.dark .usb-progress-track {
+  border-color: rgba(200, 200, 215, 0.35);
+}
+
+/* ── Pencil cap (right): brushed-silver ferrule + red eraser ──────
+   Two background layers on a single pseudo so we don't burn the
+   ::before slot. Layer order is topmost-first: red eraser paints
+   over the right 10px, silver ferrule paints over the left 8px,
+   no overlap. The thin dark border-left + box-shadow inset gives
+   the metal a "stamped, clamping the eraser" feel. */
+.usb-progress-track::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      #ff8a8a 0%,
+      #e84a4a 30%,
+      #b81e1e 70%,
+      #6e0e0e 100%
+    ) right / 10px 100% no-repeat,
+    linear-gradient(
+      180deg,
+      #c8ccd4 0%,
+      #ffffff 18%,
+      #aab0bc 48%,
+      #ffffff 78%,
+      #6c7382 100%
+    ) left / 8px 100% no-repeat;
+  border-left: 1px solid rgba(35, 40, 50, 0.55);
+  box-shadow:
+    inset 8px 0 0 -7px rgba(35, 40, 50, 0.55),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  z-index: 4;
+  pointer-events: none;
 }
 
 /* Light mode: lighter tube interior, darker rim, subtler shadows. */
@@ -266,13 +396,33 @@
 /* The continuous vertical thread. Sits at a fixed inline-start
    offset so all node circles can center on it. The gradient is
    rebuilt at runtime based on chapter states. */
+/* Inactive (untouched) chapter color tokens for the timeline thread
+   and the per-node track ring. Read from JS too — see
+   sidebar-render.ts (thread gradient) and sidebar-particle-tube.ts
+   (canvas track ring). Light mode gets a much stronger alpha and a
+   slightly cooler hue because the original 0.18 gray was nearly
+   invisible against the near-white sidebar surface. */
+:root {
+  --usb-thread-inactive: rgba(127, 127, 127, 0.18);
+  --usb-track-color: rgba(127, 127, 127, 0.22);
+  /* Thread color for chapters with scroll progress but not yet
+     completed. Matches the peach disc gradient on .usb-chapter-in-progress
+     so the row's thread band reads as the same identity as its badge. */
+  --usb-thread-in-progress: rgba(253, 186, 116, 0.65);
+}
+:root:not(.dark) {
+  --usb-thread-inactive: rgba(35, 40, 52, 0.78);
+  --usb-track-color: rgba(35, 40, 52, 0.78);
+  --usb-thread-in-progress: #fed7aa;
+}
+
 .usb-thread {
   position: absolute;
   inset-inline-start: 16px;
   top: 22px;
   bottom: 22px;
   width: 2px;
-  background: rgba(127, 127, 127, 0.18);
+  background: var(--usb-thread-inactive);
   border-radius: 1px;
   pointer-events: none;
 }
@@ -458,25 +608,26 @@
    alignment with the visible circle. The active signal comes from
    the purple tint, the purple border, and the soft halo (box-shadow). */
 .usb-chapter-active .usb-node {
-  /* Active signal: just the soft purple halo (the badge body itself
-     is invisible; the particle tube provides the ring). */
+  /* Active signal: a soft red halo. Switched from purple because
+     purple at 0.12 alpha got swallowed by gray/peach disc backgrounds
+     mid-read; red holds visibility against every disc state. */
   background-image: none;
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(124, 92, 240, 0.12);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.18);
 }
 
 .usb-chapter-active .usb-node-number {
-  color: #7c5cf0;
+  color: #dc2626;
   font-weight: 600;
 }
 
 .dark .usb-chapter-active .usb-node-number {
-  color: #a89cf5;
+  color: #fca5a5;
 }
 
 .usb-chapter-active .usb-card {
-  background: rgba(124, 92, 240, 0.08);
-  border-color: rgba(124, 92, 240, 0.3);
+  background: rgba(220, 38, 38, 0.07);
+  border-color: rgba(220, 38, 38, 0.3);
 }
 
 .usb-chapter-active .usb-card-title-text {
@@ -490,29 +641,75 @@
 }
 
 .usb-chapter-active .usb-card-time {
-  color: #5b3fd8;
+  color: #b91c1c;
 }
 
 .dark .usb-chapter-active .usb-card-time {
-  color: #a89cf5;
+  color: #fca5a5;
+}
+
+/* ─── In-progress chapter ────────────────────────────────────────────
+   Chapter has scroll progress but isn't completed yet. Without a
+   tinted background the white badge body is invisible against the
+   white sidebar surface in light mode — only the thin orange arc on
+   the canvas signals "you've started this", which is too subtle. We
+   give the disc a soft peach gradient + warm rim + faint shadow so
+   it reads as a distinct "currently reading" badge against white,
+   while still letting the orange canvas arc remain the primary
+   progress signal. */
+.usb-chapter-in-progress .usb-node {
+  background-color: #fff5eb;
+  background-image: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  box-shadow:
+    0 1px 2px rgba(194, 65, 12, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .usb-chapter-in-progress .usb-node {
+  background-color: #2a1a0e;
+  background-image: linear-gradient(135deg, #3a2415 0%, #4a2c18 100%);
+  border: 1px solid rgba(253, 186, 116, 0.4);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.usb-chapter-in-progress .usb-node-number {
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.dark .usb-chapter-in-progress .usb-node-number {
+  color: #fdba74;
+  font-weight: 700;
 }
 
 /* ─── Completed chapter ──────────────────────────────────────────────
-   Node stays neutral with the chapter number visible. The visual
-   completion signal is the green check badge in the card below. */
+   The badge becomes a bright green disc with a pulsing emerald halo —
+   "the chapter is lit up" — and the chapter number flips to white
+   for high contrast against the saturated green fill. The canvas
+   still paints its green ring on top, so the visible badge is a
+   solid green disc with a subtle ring at the perimeter.
+   Active+completed below cancels the pulse and uses the purple halo
+   instead (active state takes priority — the user is reading it
+   right now, completion is secondary signal). */
+/* Per design: a completed chapter's disc looks identical to an
+   untouched one. No green fill, no halo, no animation — only the
+   chapter NUMBER changes color to forest green. The canvas ring
+   (drawn by ParticleTube) likewise uses the neutral gray/gold
+   palette in this state, not green. */
 .usb-chapter-completed .usb-node {
-  /* Badge body stays invisible; completion is signaled by the green
-     check badge in the card and by every tube particle being lit. */
-  background-image: none;
   border-color: transparent;
 }
 
 .usb-chapter-completed .usb-node-number {
-  color: #1f8a4d;
+  color: #2e7a4d;
+  font-weight: 700;
 }
 
 .dark .usb-chapter-completed .usb-node-number {
-  color: #4ade80;
+  color: #65b889;
 }
 
 /* The green check badge: appears at the inline-end of the card
@@ -525,7 +722,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #1f8a4d;
+  background: #2e7a4d;
   color: #fff;
   display: flex;
   align-items: center;
@@ -533,7 +730,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 180ms var(--ease-standard), transform 180ms var(--ease-standard);
-  box-shadow: 0 1px 3px rgba(31, 138, 77, 0.3);
+  box-shadow: 0 1px 3px rgba(46, 122, 77, 0.35);
 }
 
 .usb-chapter-completed .usb-card-check {
@@ -547,20 +744,27 @@
   padding-inline-end: 36px;
 }
 
-/* Active AND completed: keep the active purple node ring; the
-   check badge in the card already signals completion separately. */
+/* Active AND completed: keep the green fill (so the chapter still
+   visually reads as "done"), but cancel the pulsing glow and stack
+   a purple halo on top — purple = "you are here right now" takes
+   priority over the green sparkle. */
 .usb-chapter-active.usb-chapter-completed .usb-node {
-  background-image: none;
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(124, 92, 240, 0.12);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.18);
 }
 
+/* Active + completed: the disc still looks like untouched (the
+   active state contributes its red halo via the rule above). The
+   number color stays forest green to keep "you've read this"
+   readable — it's a stronger persistent signal than the transient
+   "currently viewing" red. */
 .usb-chapter-active.usb-chapter-completed .usb-node-number {
-  color: #7c5cf0;
+  color: #2e7a4d;
+  font-weight: 700;
 }
 
 .dark .usb-chapter-active.usb-chapter-completed .usb-node-number {
-  color: #a89cf5;
+  color: #65b889;
 }
 
 /* ─── Reset button (appears on hover for completed chapters) ──────── */
@@ -704,6 +908,8 @@
 
 /* Secondary thread for sections — runs parallel to the main thread,
    16px to the inline-start of the section text. */
+/* Secondary thread for sections — runs parallel to the main thread,
+   16px to the inline-start of the section text. */
 .usb-sections::before {
   content: '';
   position: absolute;
@@ -711,7 +917,7 @@
   top: 4px;
   bottom: 4px;
   width: 1px;
-  background: rgba(124, 92, 240, 0.2);
+  background: var(--usb-thread-inactive);
 }
 
 .usb-sections ul {
@@ -801,9 +1007,32 @@
   height: 11px;
 }
 
-.usb-sections li.section-completed::before {
-  background: #1f8a4d;
-  border-color: #1f8a4d;
+/* Completed section: a SOLO neon-green ✓ on the inline-end side
+   (= left in RTL, right in LTR) — no chip background, no border, no
+   glow on the row itself. Just the glowing check mark. The
+   per-section time is hidden on completed rows so the ✓ has the
+   inline-end real estate to itself; the row otherwise reads exactly
+   like an unread section, with the ✓ as the only completion signal.
+   The thread-side dot (::before) keeps its default styling — we
+   don't tint it green, the ✓ alone marks completion. */
+.usb-sections li.section-completed::after {
+  content: '✓';
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow:
+    0 0 4px rgba(74, 222, 128, 0.7),
+    0 0 9px rgba(74, 222, 128, 0.4);
+  pointer-events: none;
+}
+
+.usb-sections li.section-completed .section-time {
+  display: none;
 }
 
 .usb-sections .section-time {

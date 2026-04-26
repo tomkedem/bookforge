@@ -19,6 +19,26 @@ import { t } from '../i18n';
 
 const TOOLTIP_DELAY_MS = 500;
 const FAST_FOLLOW_MS = 600;
+const GOAL_POLL_MS = 30_000;
+
+// Bridges to the existing reading modules. Each entry resolves the
+// hidden floating button (or global hook) those modules already create
+// and clicks it — so panels open and toggle exactly the same way as
+// the legacy FAB cluster.
+const ACTION_TARGETS: Record<string, () => void> = {
+  'daily-goal': () => document.getElementById('goal-indicator')?.click(),
+  'tts': () => {
+    const win = window as unknown as {
+      __ttsOpenPanel?: () => void;
+      __ttsToggle?: () => void;
+    };
+    if (typeof win.__ttsOpenPanel === 'function') win.__ttsOpenPanel();
+    else win.__ttsToggle?.();
+  },
+  'statistics': () => document.getElementById('stats-fab-btn')?.click(),
+  'bookmarks': () => document.getElementById('bm-fab-btn')?.click(),
+  'highlights': () => document.getElementById('highlights-fab')?.click(),
+};
 
 let tooltipEl: HTMLDivElement | null = null;
 let showTimer: number | null = null;
@@ -121,11 +141,95 @@ function handleClick(button: HTMLButtonElement, sidebar: HTMLElement): void {
   }
   const isOpen = button.classList.contains('active');
   const action = button.dataset.action || '';
-  // eslint-disable-next-line no-console
-  console.log(`[LeftSidebar] Action: ${action}, isOpen: ${isOpen}`);
+
+  // Delegate to the legacy FAB / floating-button so the existing
+  // panels, modals, and TTS hook open exactly like before. Each target
+  // is a toggle on its own, so we always invoke regardless of wasActive
+  // and let the underlying module decide open vs close.
+  const trigger = ACTION_TARGETS[action];
+  if (trigger) {
+    try { trigger(); }
+    catch (err) { console.warn(`[LeftSidebar] ${action} trigger failed`, err); }
+  }
+
   window.dispatchEvent(new CustomEvent('left-sidebar-action', {
     detail: { action, isOpen },
   }));
+}
+
+// ── Badge + goal-ring sync ─────────────────────────────────────────────────
+
+function getCurrentBook(): string {
+  return document.getElementById('chapter-container')?.dataset.book || '';
+}
+
+function countBookmarks(book: string): number {
+  if (!book) return 0;
+  try {
+    const raw = localStorage.getItem(`yuval_bookmarks_${book}`);
+    if (!raw) return 0;
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list.length : 0;
+  } catch { return 0; }
+}
+
+function countHighlights(book: string): number {
+  if (!book) return 0;
+  const prefix = `yuval_hl_${book}_`;
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(prefix)) continue;
+    try {
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      if (Array.isArray(list)) total += list.length;
+    } catch { /* skip malformed entry */ }
+  }
+  return total;
+}
+
+interface GoalSnapshot { pct: number; done: boolean; }
+
+function readGoal(): GoalSnapshot {
+  try {
+    const data = JSON.parse(localStorage.getItem('yuval_reading_goal') || 'null');
+    if (!data || typeof data.goalMinutes !== 'number' || data.goalMinutes <= 0) {
+      return { pct: 0, done: false };
+    }
+    const today = (data.todayMinutes as number) || 0;
+    const pct = Math.max(0, Math.min(1, today / data.goalMinutes));
+    return { pct, done: pct >= 1 };
+  } catch { return { pct: 0, done: false }; }
+}
+
+function setBadge(action: string, count: number, color: 'gold' | 'green' | 'purple' = 'gold'): void {
+  const btn = document.querySelector<HTMLButtonElement>(
+    `.left-sidebar .lsb-btn[data-action="${action}"]`
+  );
+  if (!btn) return;
+  if (count > 0) {
+    btn.dataset.badge = count > 99 ? '99+' : String(count);
+    btn.dataset.badgeColor = color;
+  } else {
+    delete btn.dataset.badge;
+    delete btn.dataset.badgeColor;
+  }
+}
+
+function syncGoalRing(snapshot: GoalSnapshot): void {
+  const btn = document.querySelector<HTMLButtonElement>('.lsb-btn-goal');
+  const fill = document.querySelector<SVGCircleElement>('.lsb-goal-ring-fill');
+  if (!btn || !fill) return;
+  const visible = Math.round(snapshot.pct * 100);
+  fill.style.strokeDasharray = `${visible} ${100 - visible}`;
+  btn.dataset.goalDone = snapshot.done ? 'true' : 'false';
+}
+
+function refreshAll(): void {
+  const book = getCurrentBook();
+  setBadge('bookmarks', countBookmarks(book), 'gold');
+  setBadge('highlights', countHighlights(book), 'gold');
+  syncGoalRing(readGoal());
 }
 
 function applyAriaLabels(sidebar: HTMLElement): void {
@@ -141,8 +245,10 @@ export function initLeftSidebar(signal?: AbortSignal): void {
   const sidebar = document.getElementById('left-sidebar');
   if (!sidebar) return;
   if (sidebar.dataset.initialized === 'true') {
-    // Re-apply localized aria labels in case language changed.
+    // Re-apply localized aria labels and refresh badge counts in case
+    // language or storage changed since the last mount.
     applyAriaLabels(sidebar);
+    refreshAll();
     return;
   }
   sidebar.dataset.initialized = 'true';
@@ -162,12 +268,33 @@ export function initLeftSidebar(signal?: AbortSignal): void {
   // Re-localize tooltip aria labels when language changes mid-session.
   window.addEventListener('language-changed', () => applyAriaLabels(sidebar), opts);
 
-  // Clear init flag if the sidebar element is detached so the next
-  // mount can re-bind. This matters for fetch-based chapter swaps
-  // that may replace DOM under us.
+  // Initial badge + ring sync. The bookmarks/highlights modules may
+  // not have populated their floating buttons yet, but localStorage
+  // is already authoritative — no need to wait.
+  refreshAll();
+
+  // React immediately to user actions inside the existing modules so
+  // badges feel live. Storage event covers cross-tab edits.
+  window.addEventListener('yuval-bookmarks-changed', refreshAll, opts);
+  window.addEventListener('yuval-highlights-changed', refreshAll, opts);
+  window.addEventListener('storage', e => {
+    if (!e.key) { refreshAll(); return; }
+    if (e.key === 'yuval_reading_goal'
+      || e.key.startsWith('yuval_bookmarks_')
+      || e.key.startsWith('yuval_hl_')) refreshAll();
+  }, opts);
+
+  // Reading-goals.ts ticks every 30s and writes minutes back to
+  // storage without firing a custom event. Mirror that cadence so the
+  // ring stays current while the reader is on the page.
+  const goalTimer = window.setInterval(() => syncGoalRing(readGoal()), GOAL_POLL_MS);
+
+  // Clear init flag + interval on abort so the next mount re-binds
+  // cleanly across View Transitions / fetch-based chapter swaps.
   if (signal) {
     signal.addEventListener('abort', () => {
       sidebar.dataset.initialized = 'false';
+      window.clearInterval(goalTimer);
       hideTooltip();
       clearShowTimer();
     });

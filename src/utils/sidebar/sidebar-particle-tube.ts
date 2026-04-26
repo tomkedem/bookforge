@@ -29,29 +29,47 @@ const START_ANGLE = -Math.PI / 2;
 const RING_RADIUS = 14;
 const TRACK_WIDTH = 1;
 const ARC_WIDTH = 1.5;
-const TRACK_COLOR = 'rgba(127, 127, 127, 0.22)';
+/* Track ring color is read from the --usb-track-color CSS var so
+   light/dark mode can override it (defined in chapter-sidebar.css).
+   Falls back to the original constant if the var isn't resolvable
+   (e.g. during SSR or before styles attach). */
+const TRACK_COLOR_FALLBACK = 'rgba(127, 127, 127, 0.22)';
+function trackColor(): string {
+  if (typeof document === 'undefined') return TRACK_COLOR_FALLBACK;
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue('--usb-track-color')
+    .trim();
+  return v || TRACK_COLOR_FALLBACK;
+}
 
 /* Two color palettes — purple for in-progress chapters, green for
    completed ones. The active chapter's arc breathes in whichever
    palette is currently active. */
-const PURPLE_LIGHT = '#a89cf5';
-const PURPLE_MID = '#7c5cf0';
-const PURPLE_DARK = '#5b3fd8';
-const PURPLE_GLOW = 'rgba(124, 92, 240, 0.55)';
+/* "In progress" palette — partial arc on chapters that have been
+   opened but not yet finished. Switched from purple to a warm orange
+   so it reads distinctly from the active-chapter purple halo (which
+   highlights the currently-visible chapter, regardless of completion).
+   Constants keep the legacy PURPLE_* names so call sites don't churn —
+   the values are now orange. */
+const PURPLE_LIGHT = '#fdba74';
+const PURPLE_MID = '#f97316';
+const PURPLE_DARK = '#c2410c';
+const PURPLE_GLOW = 'rgba(249, 115, 22, 0.6)';
 
-const GREEN_LIGHT = '#86efac';
-const GREEN_MID = '#22c55e';
-const GREEN_DARK = '#1f8a4d';
-const GREEN_GLOW = 'rgba(34, 197, 94, 0.55)';
-
-/* Gold palette — rendered as a full ring on chapters that haven't
-   been opened yet (pct === 0 and not completed). Signals "pristine,
-   waiting to be read", visually distinct from both the in-progress
-   purple and the completed green. */
-const GOLD_LIGHT = '#ffe28a';
-const GOLD_MID = '#d4af37';
-const GOLD_DARK = '#b8860b';
-const GOLD_GLOW = 'rgba(212, 175, 55, 0.55)';
+/* Untouched + completed states render as a flat single-color ring
+   matching the inter-circle thread color (--usb-thread-inactive).
+   Provides visual continuity: the circle's outline literally
+   continues into the line that joins it to its neighbors. The
+   distinction between "not yet read" and "already read" lives only
+   in CSS (chapter number text color), not on the canvas. */
+const THREAD_COLOR_FALLBACK = 'rgba(127, 127, 127, 0.18)';
+function threadColor(): string {
+  if (typeof document === 'undefined') return THREAD_COLOR_FALLBACK;
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue('--usb-thread-inactive')
+    .trim();
+  return v || THREAD_COLOR_FALLBACK;
+}
 
 function prefersReducedMotion(): boolean {
   return (
@@ -174,40 +192,36 @@ export class ParticleTube {
     ctx.clearRect(0, 0, SIZE, SIZE);
 
     const pct = this.currentPct;
-    /* Three states drive the visual:
-       - completed → green full ring
-       - untouched (pct === 0) → gold full ring (pristine, waiting)
-       - in progress → purple partial arc growing from 12 o'clock
-       Untouched and completed both show a full ring; only the color
-       differs. The gray track is drawn only when an arc would be
-       partial (in-progress state) — a full-ring state paints over it
-       anyway, so we skip it for cleanness. */
+    /* Two visual paths:
+       - untouched OR completed → flat single-color full ring matching
+         --usb-thread-inactive (visual continuity with the line that
+         joins circles). No glow, no gradient, no breathing.
+       - in progress → orange partial arc growing from 12 o'clock,
+         on top of a faint gray track ring. The active arc breathes. */
     const isUntouched = !this.completed && pct <= 0.5;
     const fullRing = this.completed || isUntouched;
 
-    if (!fullRing) {
-      ctx.strokeStyle = TRACK_COLOR;
-      ctx.lineWidth = TRACK_WIDTH;
-      ctx.lineCap = 'butt';
+    if (fullRing) {
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = threadColor();
+      ctx.lineWidth = ARC_WIDTH;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(CENTER, CENTER, RING_RADIUS, 0, 2 * Math.PI);
+      ctx.arc(CENTER, CENTER, RING_RADIUS, START_ANGLE, START_ANGLE + 2 * Math.PI);
       ctx.stroke();
+      return;
     }
 
-    /* Pick the palette per state. */
-    let light: string;
-    let mid: string;
-    let dark: string;
-    let glow: string;
-    if (this.completed) {
-      light = GREEN_LIGHT; mid = GREEN_MID; dark = GREEN_DARK; glow = GREEN_GLOW;
-    } else if (isUntouched) {
-      light = GOLD_LIGHT; mid = GOLD_MID; dark = GOLD_DARK; glow = GOLD_GLOW;
-    } else {
-      light = PURPLE_LIGHT; mid = PURPLE_MID; dark = PURPLE_DARK; glow = PURPLE_GLOW;
-    }
+    /* In-progress: faint track ring under the orange progress arc. */
+    ctx.strokeStyle = trackColor();
+    ctx.lineWidth = TRACK_WIDTH;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.arc(CENTER, CENTER, RING_RADIUS, 0, 2 * Math.PI);
+    ctx.stroke();
 
-    /* Two-tone gradient stroke: light at the start (12 o'clock),
+    /* Two-tone orange gradient: light at the start (12 o'clock),
        deepening as the arc grows. createConicGradient is supported in
        all modern engines (2022+); fall back to a single color where
        it isn't. */
@@ -221,12 +235,12 @@ export class ParticleTube {
     }).createConicGradient;
     if (typeof conicCtor === 'function') {
       const g = conicCtor.call(ctx, START_ANGLE, CENTER, CENTER);
-      g.addColorStop(0, light);
-      g.addColorStop(0.5, mid);
-      g.addColorStop(1, dark);
+      g.addColorStop(0, PURPLE_LIGHT);
+      g.addColorStop(0.5, PURPLE_MID);
+      g.addColorStop(1, PURPLE_DARK);
       stroke = g;
     } else {
-      stroke = mid;
+      stroke = PURPLE_MID;
     }
 
     /* Breathing: opacity oscillates 0.82–1.0 over ~3.4s. Active arcs
@@ -237,14 +251,12 @@ export class ParticleTube {
     ctx.globalAlpha = alpha;
 
     ctx.shadowBlur = 4;
-    ctx.shadowColor = glow;
+    ctx.shadowColor = PURPLE_GLOW;
     ctx.strokeStyle = stroke;
     ctx.lineWidth = ARC_WIDTH;
     ctx.lineCap = 'round';
 
-    const endAngle = fullRing
-      ? START_ANGLE + 2 * Math.PI
-      : START_ANGLE + (pct / 100) * 2 * Math.PI;
+    const endAngle = START_ANGLE + (pct / 100) * 2 * Math.PI;
     ctx.beginPath();
     ctx.arc(CENTER, CENTER, RING_RADIUS, START_ANGLE, endAngle);
     ctx.stroke();

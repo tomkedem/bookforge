@@ -168,6 +168,13 @@ function injectStyles(): void {
     @media (max-width: 1023px) {
       #goal-indicator { display: none !important; }
     }
+    /* On desktop the LeftSidebar's daily-goal button replaces this
+       legacy FAB. The DOM stays in place so left-sidebar.ts can still
+       delegate clicks to it (#goal-indicator?.click()), but it's
+       visually hidden. */
+    @media (min-width: 1024px) {
+      #goal-indicator { display: none !important; }
+    }
 
     #goal-ring { position: absolute; inset: 0; }
     #goal-ring-track { fill: none; stroke: var(--yuval-border, #e5e7eb); stroke-width: 3; }

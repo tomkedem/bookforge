@@ -187,9 +187,11 @@ export class NeuronBar {
         wobbleSpeedY: prev?.wobbleSpeedY ?? 0.0006 + Math.random() * 0.0014,
         wobblePhaseX: prev?.wobblePhaseX ?? Math.random() * 2 * Math.PI,
         wobblePhaseY: prev?.wobblePhaseY ?? Math.random() * 2 * Math.PI,
-        /* Font size 7–9.5 px keeps glyphs readable at 14px-tall track
-           without crowding when 80 particles overlap. */
-        fontSize: prev?.fontSize ?? 7 + Math.random() * 2.5,
+        /* Font size 10–14 px — bumped from the original 7–9.5 range so
+           the math glyphs are clearly readable inside the 21px-tall
+           pencil tube. Some overlap is intentional ("crowd of symbols
+           swirling in the tube"). */
+        fontSize: prev?.fontSize ?? 10 + Math.random() * 4,
         symbol: prev?.symbol ?? SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
         color: prev?.color ?? COLORS[Math.floor(Math.random() * COLORS.length)],
         baseOpacity: prev?.baseOpacity ?? 0.55 + Math.random() * 0.4,

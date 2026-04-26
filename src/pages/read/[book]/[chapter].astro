@@ -227,20 +227,24 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    ───────────────────────────────────────────────────────────── */
 .chapter-top-strip {
   position: sticky;
-  /* The site header's offsetHeight (~64px) is reported to
-     --reading-sticky-top by sticky-header.ts. But the visible
-     quote inside the site header ends ~15px before the header's
-     bottom edge, leaving an empty band. Subtract 15px so the
-     strip docks directly under the quote, not under the empty
-     padding band below it. */
-  top: calc(var(--reading-sticky-top, 4rem) - 15px);
+  /* Dock flush against the bottom of the platform header.
+     sticky-header.ts keeps --reading-sticky-top in sync with
+     #site-header.offsetHeight via a ResizeObserver, so this
+     value matches the header's height exactly at every
+     breakpoint and on font/quote changes. */
+  top: var(--reading-sticky-top, 4rem);
   z-index: 46;
-  width: 100%;
-  max-width: 100%;
-  /* Negative top margin pulls the strip up by the same 15px on its
-     non-sticky position, so before the user scrolls the strip is
-     also flush with the quote's bottom. */
-  margin: -15px 0 1rem;
+  /* No explicit width — let block-level `width: auto` fill the
+     available inline space. This is what allows the negative
+     `margin-inline-end` at desktop (-320px - 2rem) to extend the
+     strip past .reading-article's content edge all the way to the
+     LeftSidebar. With `width: 100%` the layout was over-constrained
+     and the browser silently dropped the trailing margin, leaving
+     a large empty gap on the inline-end side. */
+  /* No vertical margin — the strip must sit flush against the
+     platform header above and provide its own breathing room
+     to the content below. */
+  margin: 0 0 1rem;
   padding: 0;
 
   /* Faint gold tint over the reading background — gives the strip a
@@ -265,7 +269,6 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     /* Break out of .reading-article's px-6 (24px) horizontal padding. */
     margin-inline-start: -1.5rem;
     margin-inline-end: -1.5rem;
-    margin-top: 0;
   }
 }
 
@@ -279,10 +282,6 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     max-width: 100vw;
     margin-inline-start: calc(50% - 50vw);
     margin-inline-end: calc(50% - 50vw);
-    /* Strip stays flush against the quote — no extra top margin.
-       The strip's internal vertical padding (.strip-row below) is
-       what makes the header taller on mobile, not external space. */
-    margin-top: 0;
   }
 }
 
@@ -316,8 +315,12 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
      pill is pushed below. */
   flex-wrap: nowrap;
   gap: 0.4rem 0.85rem;
-  /* Tighter vertical padding for a compact, single-line header. */
-  padding: 0.5rem 0.85rem;
+  /* Tighter vertical padding for a compact, single-line header.
+     Note: padding-bottom is forced to 0 by the global selector in
+     reading-typography.css (.reading-content *:not(code)...), so
+     row height is controlled entirely by padding-top. To shave 2px
+     off the row, padding-top is dropped 2px below 0.5rem (8px → 6px). */
+  padding: 6px 0.85rem 0.5rem;
   border-radius: 0;
   background: rgba(201, 162, 39, 0.04);
   border-bottom: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
@@ -691,11 +694,44 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
                              sections meta hidden
    ───────────────────────────────────────────────────────────── */
 
+/* DESKTOP — taller strip, wider span, breathing room from the
+   platform header. Placed AFTER all the base .strip-row / .chapter-
+   top-strip rules above so source-order resolves these as the winning
+   declarations at ≥1024px (same specificity, last wins). */
+@media (min-width: 1024px) {
+  .chapter-top-strip {
+    /* Span edge-to-edge between the unified sidebar (320px on
+       inline-start) and the LeftSidebar activity bar (76px on
+       inline-end). The article reserves 320px on inline-start and
+       76px on inline-end (asymmetric, matches each sidebar exactly)
+       plus lg:px-8 (2rem) of inner padding on both sides — so a
+       single -2rem on each side is enough to break the strip out of
+       the article's padding and dock its edges flush against the two
+       sidebars. The strip's inline-end edge always lands at the
+       LeftSidebar's inner edge, decoupled from the reading-content
+       width. The base rule's top: var(--reading-sticky-top) docks
+       the strip flush against the platform header — no override here. */
+    margin-inline-start: -2rem;
+    margin-inline-end: -2rem;
+  }
+
+  .strip-row {
+    /* padding-bottom is zeroed globally by reading-typography.css
+       (.reading-content *:not(code)…), so row height = content +
+       padding-top only. -2px below 1.1rem (17.6 → 15.6) shaves 2px
+       off the row. */
+    padding: 6.1px 1.5rem 1.1rem;
+    gap: 0.6rem 1.15rem;
+  }
+}
+
 /* TABLET — hide completion pill (still visible in sidebar). */
 @media (max-width: 1023px) {
   .strip-row {
     gap: 0.3rem 0.55rem;
-    padding: 0.45rem 0.7rem;
+    /* padding-bottom is zeroed globally by reading-typography.css; only
+       padding-top contributes to row height. -2px below 0.45rem. */
+    padding: 5.2px 0.7rem 0.45rem;
   }
 
   .strip-title {
@@ -776,9 +812,10 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     column-gap: 0.5rem;
     /* Generous vertical padding — extra on top so the chapter title
        has visual breathing room below the site header above it.
-       The strip itself stays flush against the header (no external
-       top margin); the breathing room lives inside the row. */
-    padding: 1.35rem 1rem 1.1rem;
+       padding-bottom is zeroed globally by reading-typography.css; only
+       padding-top contributes to row height. -2px below 1.35rem
+       (21.6 → 19.6) to shave 2px off the row. */
+    padding: 19.6px 1rem 1.1rem;
   }
 
   /* Hide the "פרק" eyebrow — the pill alone conveys "chapter N". */
@@ -829,7 +866,10 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
    stays hidden. */
 @media (max-width: 379px) {
   .strip-row {
-    padding: 1.1rem 0.75rem 0.95rem;
+    /* padding-bottom is zeroed globally by reading-typography.css; only
+       padding-top contributes to row height. -2px below 1.1rem
+       (17.6 → 15.6) to shave 2px off the row. */
+    padding: 15.6px 0.75rem 0.95rem;
     column-gap: 0.4rem;
   }
 

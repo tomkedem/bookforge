@@ -31,20 +31,20 @@ html {
 
 :root {
   /* ── Page backgrounds ── */
-  --yuval-bg: #f5f0e8;
+  --yuval-bg: #F7F7F7;
   --yuval-bg-secondary: #ede8df;
-  --yuval-surface: #ffffff;               /* cards, header, sidebars */
+  --yuval-surface: #FFFFFF;               /* cards, header, sidebars */
   --yuval-header-bg: rgba(255, 255, 255, 0.95);
-  --yuval-reading-bg: #f7f1e3;            /* Kindle Paperwhite cream - industry standard for long reading */
+  --yuval-reading-bg: #F7F7F7;
 
   /* ── Text ── */
-  --yuval-text: #1a1a1a;
-  --yuval-text-secondary: #555555;        /* improved contrast on #f5f0e8 bg */
+  --yuval-text: #1F1F1F;
+  --yuval-text-secondary: #555555;
   --yuval-text-tertiary: #777777;
-  --yuval-text-muted: #999999;
+  --yuval-text-muted: #7A7A7A;
 
   /* ── Borders ── */
-  --yuval-border: #f0ede8;
+  --yuval-border: #E2E2E2;
   --yuval-border-secondary: #e0ddd8;
 
   /* ── Links ── */
@@ -86,20 +86,20 @@ html {
 
 .dark {
   /* ── Page backgrounds - true neutral dark, no color cast ── */
-  --yuval-bg: #111111;
+  --yuval-bg: #121212;
   --yuval-bg-secondary: #191919;
-  --yuval-surface: #1e1e1e;
+  --yuval-surface: #1A1A1A;
   --yuval-header-bg: rgba(17, 17, 17, 0.92);
-  --yuval-reading-bg: #161616;
+  --yuval-reading-bg: #121212;
 
   /* ── Text ── */
-  --yuval-text: #ededed;
-  --yuval-text-secondary: #b0b0b0;
+  --yuval-text: #EAEAEA;
+  --yuval-text-secondary: #B0B0B0;
   --yuval-text-tertiary: #888888;
-  --yuval-text-muted: #666666;
+  --yuval-text-muted: #7A7A7A;
 
   /* ── Borders ── */
-  --yuval-border: #272727;
+  --yuval-border: #2A2A2A;
   --yuval-border-secondary: #333333;
 
   /* ── Links ── */
