@@ -16,7 +16,7 @@
  * active chapter and triggers auto-completion at 95%.
  */
 
-import { getCurrentChapterId, getBookSlug } from './sidebar-helpers';
+import { getCurrentChapterId, getBookSlug, getVisibleContentDiv } from './sidebar-helpers';
 import {
   unmarkChapterComplete,
   markChapterComplete,
@@ -36,6 +36,21 @@ import { loadChapterContent } from './sidebar-navigation';
 import { clearActiveSectionMarks } from './sidebar-outline';
 import { AUTO_COMPLETE_THRESHOLD } from './sidebar-constants';
 import { setActiveTubePct } from './sidebar-particle-tube';
+
+/** Collapse every expanded chapter except the one whose id is
+ *  given. Used to enforce a single-open invariant: only one chapter
+ *  card has its section list expanded at a time. */
+function collapseOtherChapters(keepChId: string): void {
+  document
+    .querySelectorAll<HTMLElement>('.usb-chapter[data-expanded="true"]')
+    .forEach(other => {
+      if ((other.dataset.chapterId || '') === keepChId) return;
+      other.dataset.expanded = 'false';
+      other
+        .querySelector<HTMLElement>('.usb-toggle-btn')
+        ?.setAttribute('aria-expanded', 'false');
+    });
+}
 
 /** Wire all sidebar click + hover handlers. Idempotent — guards
  *  against double-init via a data-nav-init flag on the sidebar. */
@@ -67,6 +82,9 @@ export function initSidebarNavigation(): void {
         li.dataset.expanded = 'false';
         toggleBtn.setAttribute('aria-expanded', 'false');
       } else {
+        /* Single-open invariant: collapse any other expanded
+           chapter before opening this one. */
+        collapseOtherChapters(chId);
         li.dataset.expanded = 'true';
         toggleBtn.setAttribute('aria-expanded', 'true');
         void renderChapterSections(chId);
@@ -122,14 +140,21 @@ export function initSidebarNavigation(): void {
       return;
     }
 
-    /* Chapter row click.
-       For chapters with sections, the card behaves like the toggle
-       button: first click expands the section list, second click
-       collapses it. Navigation to such chapters happens by clicking a
-       section in the expanded list (or by clicking the caret toggle
-       button explicitly, which also expands).
-       For chapters with no sections there's nothing to expand, so the
-       card click falls through to the original navigation behavior. */
+    /* Chapter card click. Two behaviors depending on current state:
+
+         (a) Card is already OPEN (data-expanded="true") — typically
+             because the user is on this chapter or just peeked at
+             it via the chevron. A repeat click collapses it. No
+             navigation. Mental model: the click "toggles closed"
+             a card the user can already see is open.
+
+         (b) Card is CLOSED — click navigates to the chapter AND
+             scrolls to its first section heading. The active-
+             chapter pipe appears post-navigation (the .usb-chapter-
+             active class flips to this chapter), other expanded
+             chapters collapse via ensureSectionsContainer, and the
+             reader lands on the first H2 instead of any intro
+             paragraph that might precede it. */
     const link = target.closest<HTMLAnchorElement>('a.usb-chapter-link');
     if (!link) return;
 
@@ -140,26 +165,26 @@ export function initSidebarNavigation(): void {
     const li = chId
       ? document.querySelector<HTMLElement>(`.usb-chapter[data-chapter-id="${chId}"]`)
       : null;
-    const sectionCount = li
-      ? parseInt(li.dataset.sectionCount || '0', 10) || 0
-      : 0;
 
-    if (li && sectionCount > 0) {
-      const isExpanded = li.dataset.expanded === 'true';
-      const toggleBtn = li.querySelector<HTMLElement>('.usb-toggle-btn');
-      if (isExpanded) {
-        li.dataset.expanded = 'false';
-        toggleBtn?.setAttribute('aria-expanded', 'false');
-      } else {
-        li.dataset.expanded = 'true';
-        toggleBtn?.setAttribute('aria-expanded', 'true');
-        void renderChapterSections(chId);
-      }
+    if (li && li.dataset.expanded === 'true') {
+      li.dataset.expanded = 'false';
+      li.querySelector<HTMLElement>('.usb-toggle-btn')
+        ?.setAttribute('aria-expanded', 'false');
       return;
     }
 
     const url = link.getAttribute('href')?.split('?')[0] || '';
     await loadChapterContent(url);
+
+    /* After view-transition swap, the new chapter's content lands
+       in .chapter-content.visible. Wait a tick for the swap, then
+       scroll to the first H2 — same delay (200ms) and same
+       scrollIntoView behavior used by section-link clicks below. */
+    setTimeout(() => {
+      const content = getVisibleContentDiv();
+      const firstHeading = content?.querySelector<HTMLElement>('h2');
+      if (firstHeading) firstHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
   }, true);
 
   /* Lazy prefetch on hover. pointerover bubbles, so a single

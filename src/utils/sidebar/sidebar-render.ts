@@ -25,6 +25,7 @@ import {
   getCompletedChapters,
   getChapterScrollPercent,
   getReadSections,
+  setReadSections,
 } from './sidebar-storage';
 import {
   computeTimeRemaining,
@@ -237,11 +238,34 @@ export async function renderChapterSections(chapterId: string | number): Promise
      already read (without waiting for setupOutlineScrollSpy's
      hydration), and clicking a NON-active chapter's caret expands a
      section list with no scroll-spy at all — read marks would never
-     appear without this pass. */
+     appear without this pass.
+
+     Edge case: if the chapter is already marked complete, treat
+     EVERY heading as read (even ones not in the persisted set).
+     Scroll-spy never marks the trailing heading on its own — there's
+     nothing after it to advance to — so a chapter completed before
+     the trailing-mark fix shipped will have a partial set in
+     storage. We backfill here AND write the full set back so the
+     storage reflects reality going forward. */
   const bookSlug = getBookSlug();
+  const chapterAlreadyComplete = bookSlug
+    ? getCompletedChapters(bookSlug).includes(String(id))
+    : false;
   const persistedReadSections = bookSlug
     ? new Set(getReadSections(bookSlug, id))
     : new Set<string>();
+  if (chapterAlreadyComplete) {
+    let added = false;
+    for (const h of headings) {
+      if (!persistedReadSections.has(h.id)) {
+        persistedReadSections.add(h.id);
+        added = true;
+      }
+    }
+    if (added && bookSlug) {
+      setReadSections(bookSlug, id, persistedReadSections);
+    }
+  }
 
   /* Section minutes — distributed proportionally so the sum equals
      the chapter card's reading time. Falls back to direct estimate
