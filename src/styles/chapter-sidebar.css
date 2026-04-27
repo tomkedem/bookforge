@@ -442,19 +442,29 @@
   --usb-pipe-inline-start:       26px;
 
   /* ─── Step 3 of 4: water tokens (dark default) ───────────────── */
-  --water-stop-deep:             #185FA5;
-  --water-stop-mid:              #378ADD;
-  --water-stop-light:            #85B7EB;
-  --water-flow-stripe-1:         #B5D4F4;
-  --water-flow-stripe-2:         #E6F1FB;
+  /* Water gradient shifted from "royal blue" (#185FA5..#85B7EB)
+     to the sky family — gives a more cyan, ocean-like feel. */
+  --water-stop-deep:             #0369A1;
+  --water-stop-mid:              #0EA5E9;
+  --water-stop-light:            #38BDF8;
+  /* Flow stripe colors are sky-200/300 (clear cyan), not the
+     near-white pastels we had before — too much white in the
+     streaks made the flow look like glare instead of water. */
+  --water-flow-stripe-1:         #7DD3FC;
+  --water-flow-stripe-2:         #BAE6FD;
   --bubble-color:                #E6F1FB;
 
   /* Z-index stack: pipe sits BEHIND cards (so card backgrounds
      visually break the tube at chapter boundaries), chapter circles
      sit on top of cards (so the tube looks like it threads through
-     them), and the corner badge / reset button stack above all. */
+     them), and the corner badge / reset button stack above all.
+     Step 4 feeders sit above the main pipe (z=1) so they visually
+     emerge from it; cards (z=2) still cover them in the chapter
+     card area, but feeders only render in the section list area
+     where there's no card to compete with. */
   --z-pipe:                      1;
   --z-pipe-water:                1;
+  --z-feeder:                    2;
   --z-card:                      2;
   --z-card-circle:               3;
   --z-card-progress-ring:        3;
@@ -497,8 +507,11 @@
   --water-stop-deep:             #4DA8E0;
   --water-stop-mid:              #85B7EB;
   --water-stop-light:             #B5D4F4;
-  --water-flow-stripe-1:         #ffffff;
-  --water-flow-stripe-2:         #ffffff;
+  /* In light mode the water gradient itself is pale, so flow
+     stripes need DARKER cyan to stand out. sky-500/400 give clear
+     cyan highlights instead of invisible white-on-white. */
+  --water-flow-stripe-1:         #0EA5E9;
+  --water-flow-stripe-2:         #38BDF8;
   --bubble-color:                #ffffff;
 }
 
@@ -589,13 +602,6 @@
   100% { transform: translateY(20px); }
 }
 
-@keyframes usbWaterBubbleUp {
-  0%   { transform: translateY(0); opacity: 0; }
-  20%  { opacity: 0.7; }
-  80%  { opacity: 0.7; }
-  100% { transform: translateY(-40px); opacity: 0; }
-}
-
 /* offset-path particles travel the pipe centerline. They give the
    "real flowing water" feel — discrete highlights moving through
    the water rather than the ambient pattern alone. Matches the
@@ -614,18 +620,67 @@
   animation: usbWaterFlowDown 2.5s linear infinite;
 }
 
-.usb-chapters-pipe-water .usb-water-bubble {
-  animation: usbWaterBubbleUp 2.5s ease-in infinite;
-}
-
 .usb-chapters-pipe-water .usb-water-particle {
   animation: usbWaterParticleFlow 5s linear infinite;
+  /* offset-path's default offset-rotate is `auto`, which rotates
+     the element so its 0° axis aligns with the path tangent. For
+     a vertical path going down that's a 90° rotation — fine for
+     symmetric circles but it turns a diamond into a square. Lock
+     to 0deg so the diamond keeps its pointy-top orientation as it
+     drifts down. */
+  offset-rotate: 0deg;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .usb-chapters-pipe-water .usb-water-stream,
-  .usb-chapters-pipe-water .usb-water-bubble,
   .usb-chapters-pipe-water .usb-water-particle {
+    animation: none;
+  }
+}
+
+/* ─── Per-section horizontal feeders (step 4 of 4) ─────────────────
+   Each section <li> in the active chapter gets a small 30×5 SVG
+   feeder branching from the main chapters-pipe to (just before)
+   the section text. The feeder's right physical edge (= inline-
+   start side in RTL) lands on the main pipe's inline-end edge at
+   <li>-relative x=34; section text starts at <li>-relative x=78.5,
+   so a 30-wide feeder leaves a 14px gap to the text. The feeder
+   is hidden by default and switched on for the active chapter only
+   via the rule below — non-active expanded chapters (chevron peek)
+   still show their section list, but without feeders. */
+.usb-section-feeder {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  /* Section <li> inline-start sits at .usb-timeline x=68.5 in active
+     mode (.usb-sections.margin-inline-start: 40.5 + <ul>.padding:
+     28). Main pipe inline-end is at .usb-timeline x=34. So the
+     feeder's inline-start (right physical edge in RTL) needs
+     34 − 68.5 = −34.5 from the section <li>. */
+  inset-inline-start: -34.5px;
+  width: 30px;
+  height: 5px;
+  pointer-events: none;
+  z-index: var(--z-feeder);
+  display: none;
+  overflow: hidden;
+}
+
+.usb-chapter-active .usb-sections li .usb-section-feeder {
+  display: block;
+}
+
+@keyframes usbFeederFlowLeft {
+  0%   { transform: translateX(16px); }
+  100% { transform: translateX(-16px); }
+}
+
+.usb-section-feeder .usb-feeder-stream {
+  animation: usbFeederFlowLeft 0.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usb-section-feeder .usb-feeder-stream {
     animation: none;
   }
 }
@@ -1178,8 +1233,17 @@
   content: '✓';
   width: 14px;
   height: 14px;
-  inset-inline-start: -22.5px;
-  top: 11px;
+  /* Step 4 of 4: badge moved back to the inline-end side of the
+     row (left physical in RTL = right of the inline text flow).
+     Earlier steps placed it in the inline-start gutter when the
+     legacy thread + section-pipe lived there; now that the new
+     chapters-pipe runs through the inline-start area at x=26..34,
+     the gutter is no longer free space and the badge has to move.
+     The .section-time element on the same row is auto-hidden for
+     completed sections so the inline-end real estate is free. */
+  inset-inline-start: auto;
+  inset-inline-end: 6px;
+  top: 50%;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -1193,7 +1257,7 @@
   pointer-events: none;
   z-index: 2;
   transition: none;
-  transform: none;
+  transform: translateY(-50%);
   box-shadow: none;
 }
 
@@ -1518,19 +1582,12 @@
   display: none;
 }
 
-/* Active chapter: completion badge sits in the gutter BETWEEN the
-   sidebar's main vertical thread (.usb-thread, at <li>-relative
-   x=16..18) and the active chapter's main pipe (at <li>-relative
-   x≈44..49 with margin-inline-start: 40.5 + SVG geometry). The
-   middle of that gutter is at <li>-relative x=31; centring a
-   14-wide badge there means inline-start at <li>-relative x=24.
-   Section <li> starts at <li>-relative x=68.5 (margin 40.5 +
-   <ul>-padding 28), so the offset is 24 - 68.5 = -44.5. Also
-   re-asserts display:flex to override the rule above which hides
-   all <li>::before pseudos in active mode. */
+/* Active chapter: re-assert display:flex on completed-section
+   badges to override the rule above that hides all <li>::before
+   pseudos in active mode. The badge's actual position (inline-
+   end of the row) is set in the base rule. */
 .usb-chapter-active .usb-sections li.section-completed::before {
   display: flex;
-  inset-inline-start: -44.5px;
 }
 
 /* The SVG sits in the inline-start gutter just outside the section
@@ -1550,6 +1607,11 @@
   pointer-events: none;
   z-index: 1;
   overflow: visible;
+  /* Step 4 of 4: hidden because the new chapters-pipe + per-
+     section feeders take over its visual role. The element + its
+     JS lifecycle (sidebar-pipe.ts) stay in place so we can restore
+     it as a fallback by deleting this single rule. */
+  display: none;
 }
 
 /* Water-flow animations.

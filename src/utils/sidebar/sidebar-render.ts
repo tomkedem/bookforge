@@ -333,6 +333,27 @@ export async function renderChapterSections(chapterId: string | number): Promise
     link.appendChild(titleSpan);
     link.appendChild(timeSpan);
 
+    /* Step 4 of 4: per-section horizontal feeder pipe. Injected
+       once per section row; CSS handles visibility (only shows on
+       .usb-chapter-active rows) and positioning (absolute, 30×5,
+       centred on the row's vertical middle, inline-start at -34.5
+       so its right physical edge lands on the main chapters-pipe
+       inline-end edge at <li>-relative x=34). The shared <svg
+       class="usb-pipe-defs"> in .usb-timeline supplies the
+       gradient/pattern referenced by url(#…). innerHTML is fine
+       here — the parser auto-namespaces <svg> children correctly. */
+    liEl.insertAdjacentHTML(
+      'beforeend',
+      `<svg class="usb-section-feeder" width="30" height="5" viewBox="0 0 30 5" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="0" y="0" width="30" height="5" fill="url(#usbWaterBody)"/>
+        <rect class="usb-feeder-stream" x="-12" y="0" width="54" height="5" fill="url(#usbWaterFlowHoriz)"/>
+        <rect x="0" y="0" width="30" height="5" fill="url(#usbFeederGlass)"/>
+        <line x1="0" y1="0" x2="30" y2="0" stroke="var(--pipe-glass-edge-line)" stroke-width="0.6" opacity="0.7"/>
+        <line x1="0" y1="5" x2="30" y2="5" stroke="var(--pipe-glass-edge-line)" stroke-width="0.6" opacity="0.7"/>
+        <line x1="0" y1="0" x2="0" y2="5" stroke="var(--pipe-glass-edge-line)" stroke-width="0.7" opacity="0.75"/>
+      </svg>`,
+    );
+
     if (isActive) {
       /* Backfill missing live ids so the next scroll-spy cycle
          observes the right elements. */
