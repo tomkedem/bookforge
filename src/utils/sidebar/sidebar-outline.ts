@@ -120,12 +120,13 @@ export function setActiveOutlineItem(id: string | null): void {
     `.usb-sections li[data-heading-id="${id}"], #mobile-chapter-outline li[data-heading-id="${id}"]`,
   ).forEach(li => li.classList.add('active'));
 
-  /* Mark every heading BEFORE the new active one as read. We don't
-     mark the current active itself — "you're reading it now" is a
-     separate signal — but the moment activity moves to the next
-     heading this one will be backfilled on the next call. We don't
-     unmark when scrolling back up: once you've passed a section,
-     you've read it for the rest of the session. */
+  /* Mark every heading BEFORE the new active one as read. Once the
+     reader scrolls past a heading it's considered read; we don't
+     un-mark on scroll-back because "you've already been here" is a
+     persistent fact, not a viewport state. The trailing heading is
+     backfilled by markAllSectionsRead when the chapter completes
+     (chapter-completed event), since scroll-spy itself can never
+     advance past it. */
   const activeIdx = outlineHeadingOrder.findIndex(h => h.id === id);
   if (activeIdx > 0) {
     let added = false;

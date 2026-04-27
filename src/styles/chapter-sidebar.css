@@ -420,7 +420,12 @@
   --color-card-border-locked:    #14283c;
   --color-card-border-active:    #4DA8E0;
   --color-circle-bg:             #102230;
-  --color-circle-border-locked:  #2A6BAE;
+  /* Neutral gray (not blue) — six chapters in a row with blue
+     borders chained visually into "a column of water" alongside the
+     transparent pipe. Gray breaks that illusion: locked = no color
+     in the timeline, only completed (green ✓) and active (blue
+     fill) introduce color. */
+  --color-circle-border-locked:  #6b7280;
   --color-text-accent:           #4DA8E0;
   --color-text-completed:        #5DCAA5;
   --color-text-active:           #E6F1FB;
@@ -431,10 +436,16 @@
   --color-completion-green:      #5DCAA5;
   --color-active-accent:         #4DA8E0;
 
-  /* ─── Step 2 of 4: chapters-pipe glass tokens (dark default) ───── */
-  --pipe-glass-stop-edge:        #5a7a92;
-  --pipe-glass-stop-mid:         #9fc4dc;
-  --pipe-glass-edge-line:        #1a3850;
+  /* ─── Step 2 of 4: chapters-pipe glass tokens (dark default) ─────
+     Neutral grays (Tailwind gray-300/600/700) — deliberately OUT of
+     the blue/cyan family that the water uses. Earlier slate-blue
+     values (#5a7a92 / #9fc4dc) made empty glass read visually as
+     "filled with water" because both shared the same hue. With cool
+     gray here and sky-cyan for water, the contrast is unambiguous:
+     empty pipe = colorless tube, filled pipe = cyan column. */
+  --pipe-glass-stop-edge:        #4b5563;
+  --pipe-glass-stop-mid:         #d1d5db;
+  --pipe-glass-edge-line:        #374151;
   --pipe-glass-highlight:        #ffffff;
   /* Shared X position for the main pipe AND the per-chapter water
      overlay (step 3). Promoted to a variable so the two layers stay
@@ -485,7 +496,7 @@
   --color-card-border-locked:    #e2e8f0;
   --color-card-border-active:    #2563EB;
   --color-circle-bg:             #f1f5f9;
-  --color-circle-border-locked:  #93C5FD;
+  --color-circle-border-locked:  #9ca3af;
   --color-text-accent:           #2563EB;
   --color-text-completed:        #059669;
   --color-text-active:           #0a1828;
@@ -496,10 +507,13 @@
   --color-completion-green:      #10b981;
   --color-active-accent:         #2563EB;
 
-  /* Step 2 chapters-pipe glass — light-mode parallels */
-  --pipe-glass-stop-edge:        #94a8bc;
-  --pipe-glass-stop-mid:         #d3dde7;
-  --pipe-glass-edge-line:        #5a7a92;
+  /* Step 2 chapters-pipe glass — light-mode parallels.
+     Same hue strategy as dark mode: cool grays (gray-400/200/500)
+     instead of slate-blue, so empty glass reads clearly distinct
+     from the cyan water. */
+  --pipe-glass-stop-edge:        #9ca3af;
+  --pipe-glass-stop-mid:         #e5e7eb;
+  --pipe-glass-edge-line:        #6b7280;
   --pipe-glass-highlight:        #ffffff;
 
   /* Step 3 water — light-mode parallels (lighter, washed-out blues
@@ -524,10 +538,8 @@
   background: var(--usb-thread-inactive);
   border-radius: 1px;
   pointer-events: none;
-  /* Step 2 of 4: hidden because the new .usb-chapters-pipe takes
-     over its visual role. The element + its color tokens stay in
-     the DOM/CSS so we can restore it as a fallback by deleting
-     this single rule. */
+  /* Hidden — the .usb-chapters-pipe glass tube is the visible
+     backbone. Element + tokens stay so we can restore as a fallback. */
   display: none;
 }
 
@@ -555,6 +567,20 @@
   display: block;
 }
 
+/* Empty-glass disambiguation: zero out the inner gradient-filled
+   rect so the empty tube renders as TWO THIN EDGE LINES ONLY (the
+   two <line> elements at x=0 and x=8). The fill rect was reading
+   visually as "filled with water" regardless of color choice —
+   even neutral gray was being interpreted as a half-filled tube.
+   With no fill, the empty pipe is unambiguously a hollow outline,
+   and per-chapter water (.usb-chapters-pipe-water, fully opaque
+   cyan) clearly fills it where water is wanted. The center-line
+   highlight stays — it reads as the "shine" on a clear glass
+   tube, not as content. */
+.usb-chapters-pipe > rect {
+  fill: transparent;
+}
+
 /* ─── Chapters pipe: water layer (step 3 of 4) ───────────────────
    A per-chapter SVG that paints the animated water inside the main
    glass pipe. Hidden by default; the rule below switches it on for
@@ -580,11 +606,58 @@
   pointer-events: none;
   z-index: var(--z-pipe-water);
   display: none;
+  /* Explicit clip — the water-stream <rect> uses y=-20, height=1040
+     to animate translateY past viewBox edges, so any SVG renderer
+     that interprets overflow:visible (deviating from the UA default)
+     would let that rect render past the <li>'s bottom edge into the
+     next chapter's territory. This rule guarantees containment. */
+  overflow: hidden;
 }
 
 .usb-chapter-active .usb-chapters-pipe-water {
   display: block;
 }
+
+/* Step 5: completed chapters also show water in the main pipe —
+   not just the active one. The completed water sits STATIC (no
+   flow stream animation), and the downward particles slow down
+   from 5s to 8s per cycle so they read as "alive but at rest"
+   rather than "actively moving".
+
+   USER RULE (explicit): "every card marked with ✓ → the pipe
+   BELOW it is fully filled with water". So the water extends
+   exactly into the 10px margin-bottom gap that sits between this
+   chapter's <li> and the next one. Nothing more, nothing less:
+     - bottom: -10px → covers the inter-chapter gap so the column
+       reads as continuous from the completed card down to the
+       start of the next card.
+     - top: 0 (inherited) → never extends UP past the card.
+   Consequences this is okay with by spec: if the next chapter is
+   unread, the 10px sliver below the completed card still shows
+   water — that IS the user's stated rule (the gap below a ✓ is
+   "below the completed card", regardless of what's after). */
+.usb-chapter-completed .usb-chapters-pipe-water {
+  display: block;
+  bottom: -10px;
+  height: auto;
+}
+
+/* Last child has no margin-bottom (see .usb-chapter:last-child
+   rule above), so there's no gap below it to fill. Keep the
+   water strictly inside its <li>. */
+.usb-chapter-completed:last-child .usb-chapters-pipe-water {
+  bottom: 0;
+  height: 100%;
+}
+
+.usb-chapter-completed .usb-chapters-pipe-water .usb-water-stream {
+  animation: none;
+}
+
+.usb-chapter-completed .usb-chapters-pipe-water .usb-water-particle {
+  animation-duration: 8s;
+}
+
 
 /* Edge case: chapters with no subsections. Water still renders in
    the chapter card area, but fades out toward the bottom — visual
@@ -675,8 +748,47 @@
   100% { transform: translateX(-16px); }
 }
 
+/* Step 5 of 5: feeders now have THREE states matching the
+   section's reading status. Glass shell + edges always render
+   (the empty-tube identity); the water-body and animated stream
+   rects toggle per state.
+
+     • Default (unread): both hidden — feeder reads as empty glass
+     • .active (currently reading): both visible, stream animates
+     • .section-completed: water-body visible, stream hidden
+       (static water sitting in the tube)
+     • .active.section-completed: completed wins per edge case 3
+       in the spec — static water, no animation
+
+   visibility (not display) is used so the SVG element layout
+   stays stable and we don't churn computed styles when toggling. */
+.usb-section-feeder .usb-feeder-water,
+.usb-section-feeder .usb-feeder-stream {
+  visibility: hidden;
+}
+
+.usb-chapter-active .usb-sections li.active .usb-feeder-water,
+.usb-chapter-active .usb-sections li.active .usb-feeder-stream {
+  visibility: visible;
+}
+
+.usb-chapter-active .usb-sections li.section-completed .usb-feeder-water {
+  visibility: visible;
+}
+.usb-chapter-active .usb-sections li.section-completed .usb-feeder-stream {
+  visibility: hidden;
+}
+
 .usb-section-feeder .usb-feeder-stream {
   animation: usbFeederFlowLeft 0.6s linear infinite;
+}
+
+/* Step 5: completed sections show STATIC water (no horizontal
+   flow). Stop the keyframe so the stream doesn't run even though
+   it's hidden — saves a paint cycle and keeps the underlying
+   gradient still if the visibility rule is ever overridden. */
+.usb-chapter-active .usb-sections li.section-completed .usb-feeder-stream {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -890,7 +1002,14 @@
    "you've opened this". The progress ring on the canvas paints the
    actual percentage. No completion badge. */
 .usb-chapter-in-progress .usb-node {
-  border-color: var(--color-text-accent);
+  /* No accent border for in-progress — the partial progress arc on
+     the .usb-particle-tube canvas already signals "started reading".
+     Painting the circle border in --color-text-accent (sky-blue in
+     both modes) chained 5-6 in-progress circles into a vertical
+     blue column that read visually as a water-filled pipe alongside
+     the empty glass. Keeping the locked gray border here removes
+     that illusion without losing the in-progress signal. */
+  border-color: var(--color-circle-border-locked);
 }
 
 .usb-chapter-in-progress .usb-card-title-text {
@@ -995,7 +1114,8 @@
     border-color 140ms var(--ease-standard);
 }
 
-.usb-chapter-completed .usb-reset-btn {
+.usb-chapter-completed .usb-reset-btn,
+.usb-chapter-in-progress .usb-reset-btn {
   display: flex;
 }
 
@@ -1003,7 +1123,8 @@
   opacity: 0;
 }
 
-.usb-chapter-completed:hover .usb-reset-btn {
+.usb-chapter-completed:hover .usb-reset-btn,
+.usb-chapter-in-progress:hover .usb-reset-btn {
   opacity: 1;
   pointer-events: auto;
 }
@@ -1222,48 +1343,12 @@
   height: 11px;
 }
 
-/* Completion mark — just the green ✓ glyph in the gutter between
-   the main thread and the active chapter's pipe (active mode) or
-   on the local thread (non-active expanded chapter). No
-   surrounding chip, no border, no fill — the bare checkmark reads
-   as "done" without adding visual weight. pointer-events: none so
-   the row stays clickable; no animation so it stays visible under
-   prefers-reduced-motion. */
-.usb-sections li.section-completed::before {
-  content: '✓';
-  width: 14px;
-  height: 14px;
-  /* Step 4 of 4: badge moved back to the inline-end side of the
-     row (left physical in RTL = right of the inline text flow).
-     Earlier steps placed it in the inline-start gutter when the
-     legacy thread + section-pipe lived there; now that the new
-     chapters-pipe runs through the inline-start area at x=26..34,
-     the gutter is no longer free space and the badge has to move.
-     The .section-time element on the same row is auto-hidden for
-     completed sections so the inline-end real estate is free. */
-  inset-inline-start: auto;
-  inset-inline-end: 6px;
-  top: 50%;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #22C55E;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  pointer-events: none;
-  z-index: 2;
-  transition: none;
-  transform: translateY(-50%);
-  box-shadow: none;
-}
-
-.usb-sections li.section-completed .section-time {
-  display: none;
-}
+/* Step 5 of 5: the green ✓ on completed sections has been removed.
+   The water filling the section's feeder is now the completion
+   indicator — the ✓ was redundant visual noise alongside it. The
+   green ✓ on completed CHAPTER circles (top-right corner of the
+   chapter number) stays — that's the higher-level achievement
+   indicator and a separate signal. */
 
 .usb-sections .section-time {
   font-size: 10px;
@@ -1582,14 +1667,6 @@
   display: none;
 }
 
-/* Active chapter: re-assert display:flex on completed-section
-   badges to override the rule above that hides all <li>::before
-   pseudos in active mode. The badge's actual position (inline-
-   end of the row) is set in the base rule. */
-.usb-chapter-active .usb-sections li.section-completed::before {
-  display: flex;
-}
-
 /* The SVG sits in the inline-start gutter just outside the section
    text. inset-inline-start: -2px lets it stick 2px past the inline-
    start edge so the bottom curve can wrap into the last row card.
@@ -1668,6 +1745,102 @@
   .usb-pipe-overlay .usb-pipe-water-feeder,
   .usb-pipe-overlay .usb-pipe-bubble,
   .usb-pipe-overlay .usb-pipe-particle {
+    animation: none;
+  }
+}
+
+/* ── Resume-from-here banner ─────────────────────────────────────
+   Sits between the sidebar header and the chapter list. Pure-DOM,
+   injected by sidebar-resume-ui.ts when the reader returns after
+   ≥30 minutes. Soft amber accent (matches the gold/honey palette
+   the rest of Yuval uses for the "in-progress" state without
+   competing with the green-completed/red-active chapter colors).
+   ──────────────────────────────────────────────────────────────── */
+.usb-resume-banner {
+  position: relative;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 200, 80, 0.3);
+  background: linear-gradient(
+    135deg,
+    rgba(245, 200, 80, 0.10),
+    rgba(245, 200, 80, 0.04)
+  );
+  /* Subtle entrance — opacity-only by default so reduced-motion
+     readers don't perceive any movement. */
+  animation: usb-resume-banner-in 220ms ease-out both;
+}
+
+@keyframes usb-resume-banner-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.usb-resume-banner-dismissing {
+  animation: usb-resume-banner-out 300ms ease-in forwards;
+}
+
+@keyframes usb-resume-banner-out {
+  to { opacity: 0; transform: translateY(-2px); }
+}
+
+.usb-resume-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #F5C850;
+  line-height: 1.2;
+}
+
+.usb-resume-banner-emoji {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.usb-resume-banner-body {
+  margin-top: 4px;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: #B5D4F4;
+  /* Wrap defensively — section titles can be long even after the
+     30-char truncation if the surrounding copy is verbose. */
+  overflow-wrap: anywhere;
+}
+
+.usb-resume-banner-close {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 4px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: rgba(245, 200, 80, 0.55);
+  border-radius: 4px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.usb-resume-banner-close:hover {
+  color: #F5C850;
+  background: rgba(245, 200, 80, 0.10);
+}
+
+.usb-resume-banner-close:focus-visible {
+  outline: 1px solid rgba(245, 200, 80, 0.6);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usb-resume-banner,
+  .usb-resume-banner-dismissing {
     animation: none;
   }
 }

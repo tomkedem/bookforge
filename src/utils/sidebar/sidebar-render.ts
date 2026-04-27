@@ -345,7 +345,7 @@ export async function renderChapterSections(chapterId: string | number): Promise
     liEl.insertAdjacentHTML(
       'beforeend',
       `<svg class="usb-section-feeder" width="30" height="5" viewBox="0 0 30 5" preserveAspectRatio="none" aria-hidden="true">
-        <rect x="0" y="0" width="30" height="5" fill="url(#usbWaterBody)"/>
+        <rect class="usb-feeder-water" x="0" y="0" width="30" height="5" fill="url(#usbWaterBody)"/>
         <rect class="usb-feeder-stream" x="-12" y="0" width="54" height="5" fill="url(#usbWaterFlowHoriz)"/>
         <rect x="0" y="0" width="30" height="5" fill="url(#usbFeederGlass)"/>
         <line x1="0" y1="0" x2="30" y2="0" stroke="var(--pipe-glass-edge-line)" stroke-width="0.6" opacity="0.7"/>

@@ -23,6 +23,19 @@ import {
   initScrollListener,
 } from './sidebar-events';
 import {
+  getLastPosition,
+  getElapsedSinceLastVisit,
+  computeScrollTarget,
+  computeSectionPercent,
+  savePosition,
+} from './sidebar-resume';
+import {
+  showWelcomeBackBanner,
+  clearResumeBanner,
+  isBannerDismissedThisSession,
+} from './sidebar-resume-ui';
+import { getActiveOutlineId } from './sidebar-outline';
+import {
   updateActiveChapterRow,
   ensureSectionsContainer,
   buildSectionList,
@@ -62,7 +75,83 @@ export function initializeSidebar(): void {
        reader actually scrolls). */
     syncProgressOnLoad();
     syncStripCompletion();
+    /* Resume-from-here: depends on heading ids being live in the
+       DOM (auto-scroll uses getElementById) AND on the section list
+       being built (banner dismissal listens on the sidebar). Has to
+       run AFTER buildSectionList for both reasons. */
+    runResumeOnLoad();
   }, 150);
+}
+
+const RESUME_THRESHOLD_MS = 30 * 60 * 1000;
+
+/**
+ * On (re)load, decide whether to surface the resume UI:
+ *
+ *   - No saved position → silent first-visit behavior.
+ *   - Saved position is for a different chapter than the URL → also
+ *     silent. The user explicitly navigated elsewhere; their saved
+ *     position stays put for when they return.
+ *   - Same chapter, < 30 min ago → silent auto-scroll (refresh case).
+ *   - Same chapter, ≥ 30 min ago → banner + auto-scroll + initial
+ *     progress-bar paint.
+ *
+ * scrollPercent is the canonical positioning signal (decision 1):
+ * computeScrollTarget falls back to scrollY only when the saved
+ * heading is no longer in the DOM.
+ */
+function runResumeOnLoad(): void {
+  const book = getBookSlug();
+  const chapterId = String(getCurrentChapterId() || '');
+  if (!book || !chapterId) return;
+
+  const last = getLastPosition(book);
+  if (!last) return;
+
+  /* Only act when the user is on the chapter where they left off.
+     If they landed on a different chapter (deep link, manual nav),
+     leave the saved position untouched and let the scroll listener
+     overwrite it once they read here. */
+  if (last.chapterSlug !== chapterId) return;
+
+  const target = computeScrollTarget(last);
+  if (target !== null) {
+    /* Immediate, not animated — user expects to be where they were,
+       not to watch the page glide there. */
+    window.scrollTo({ top: target, behavior: 'auto' });
+  }
+
+  const elapsed = getElapsedSinceLastVisit(book) ?? 0;
+  if (elapsed >= RESUME_THRESHOLD_MS && !isBannerDismissedThisSession(book)) {
+    showWelcomeBackBanner(book, last, elapsed, {
+      initialScrollY: target ?? window.scrollY,
+    });
+  }
+}
+
+/**
+ * Force-save the current reading position. Wired to beforeunload so
+ * the final scroll position lands even if the 3 s save throttle
+ * hasn't elapsed since the last write. Defensive: returns silently
+ * when there's nothing meaningful to capture.
+ */
+function flushPositionOnUnload(): void {
+  const book = getBookSlug();
+  const chapterId = getCurrentChapterId();
+  if (!book || !chapterId) return;
+  const sectionSlug = getActiveOutlineId();
+  if (!sectionSlug) return;
+  const sectionPct = computeSectionPercent(sectionSlug) ?? 0;
+  savePosition(
+    book,
+    {
+      chapterSlug: String(chapterId),
+      sectionSlug,
+      scrollPercent: sectionPct,
+      scrollY: window.scrollY,
+    },
+    { force: true },
+  );
 }
 
 /**
@@ -76,6 +165,11 @@ export function initializeSidebar(): void {
  */
 export function installLifecycleHandlers(): void {
   initScrollListener();
+
+  /* Force-save the last position before the page tears down so the
+     final scroll spot survives. The 3 s throttle inside savePosition
+     would otherwise let very-recent scrolls slip through. */
+  window.addEventListener('beforeunload', flushPositionOnUnload);
 
   window.addEventListener('chapter-completed', () => {
     const book = getBookSlug();
@@ -120,6 +214,12 @@ export function installLifecycleHandlers(): void {
      DOM but its handlers may need re-pointing at the new content
      ids. We re-init the sidebar and re-arm mobile drawer. */
   document.addEventListener('astro:after-swap', () => {
+    /* Wipe any stale resume banner from the previous page. The
+       sidebar persists across view transitions (transition:persist),
+       so without explicit removal the banner from the original
+       page-load would linger after the user navigates elsewhere.
+       runResumeOnLoad will repaint a fresh one if appropriate. */
+    clearResumeBanner();
     initializeSidebar();
     resetMobileInitGuard();
     initMobileToc();

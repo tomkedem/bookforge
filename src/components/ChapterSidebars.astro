@@ -148,6 +148,11 @@ function formatChapterNumber(id: number | string): string {
       </div>
     </header>
 
+    <!-- Resume-from-here banner slot. Empty server-side; the resume
+         module decides on load whether to inject the welcome-back
+         card here based on saved position + elapsed time. -->
+    <div id="usb-resume-banner-slot"></div>
+
     <nav class="usb-timeline" aria-label="Chapter list">
       <!-- Legacy thread — kept in DOM for fallback; hidden in CSS by
            the .usb-thread { display: none } rule. Restore by removing
@@ -179,9 +184,15 @@ function formatChapterNumber(id: number | string): string {
           </linearGradient>
         </defs>
         <rect x="0" y="0" width="8" height="1000" fill="url(#usbChaptersPipeWall)"/>
-        <line x1="4" y1="0" x2="4" y2="1000" stroke="var(--pipe-glass-highlight)" stroke-width="0.4" opacity="0.45"/>
-        <line x1="0" y1="0" x2="0" y2="1000" stroke="var(--pipe-glass-edge-line)" stroke-width="0.5" opacity="0.75"/>
-        <line x1="8" y1="0" x2="8" y2="1000" stroke="var(--pipe-glass-edge-line)" stroke-width="0.5" opacity="0.75"/>
+        <!-- Empty-pipe outline removed entirely. Every visible variant
+             tried (solid gray, dashed gray, low-opacity outlines)
+             read either as "water" (continuous strokes chained into
+             a column visually) or as "broken pipe between some
+             cards" (dashes mis-aligning with card spacing). The
+             chapter-number circles already mark the timeline path,
+             so an empty outline is redundant. With nothing rendered
+             here, no-water = clean empty space, ✓-water = clear
+             cyan column — unambiguous. -->
       </svg>
 
       <!-- Step 3 of 4: shared SVG defs for the per-chapter water

@@ -33,9 +33,13 @@ import {
   syncStripCompletion,
 } from './sidebar-progress';
 import { loadChapterContent } from './sidebar-navigation';
-import { clearActiveSectionMarks } from './sidebar-outline';
+import { clearActiveSectionMarks, getActiveOutlineId } from './sidebar-outline';
 import { AUTO_COMPLETE_THRESHOLD } from './sidebar-constants';
 import { setActiveTubePct } from './sidebar-particle-tube';
+import {
+  savePosition,
+  computeSectionPercent,
+} from './sidebar-resume';
 
 /** Collapse every expanded chapter except the one whose id is
  *  given. Used to enforce a single-open invariant: only one chapter
@@ -308,6 +312,22 @@ export function initScrollListener(): void {
          chapter pct, not just whole-chapter completion. */
       const timeEl = document.getElementById('usb-time-remaining');
       if (timeEl) timeEl.textContent = formatTimeRemaining(computeTimeRemaining());
+
+      /* Last-read position — distinct from the per-chapter ring
+         data above. Captures section + section-relative percent so
+         a return visit can resume exactly. savePosition has its own
+         3 s throttle internally; calling it here every 120 ms is
+         cheap (most calls return early). */
+      const activeId = getActiveOutlineId();
+      if (activeId) {
+        const sectionPct = computeSectionPercent(activeId) ?? 0;
+        savePosition(book, {
+          chapterSlug: String(chapterId),
+          sectionSlug: activeId,
+          scrollPercent: sectionPct,
+          scrollY: window.scrollY,
+        });
+      }
     }, 120);
   }, { passive: true });
 }

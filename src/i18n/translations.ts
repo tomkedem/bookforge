@@ -330,4 +330,30 @@ export const translations: Translations = {
   'lightbox.prev':         { he: 'תמונה קודמת',       en: 'Previous image',   es: 'Imagen anterior' },
   'lightbox.next':         { he: 'תמונה הבאה',        en: 'Next image',       es: 'Imagen siguiente' },
   'lightbox.zoomHint':     { he: 'לחץ על תמונה להגדלה', en: 'Click any image to enlarge', es: 'Haz clic en una imagen para ampliar' },
+
+  // ── Resume-from-here banner ────────────────────────────────────────────────
+  'resume.welcomeBack':         { he: 'ברוך שובך!',  en: 'Welcome back!',   es: '¡Bienvenido de vuelta!' },
+  'resume.dismiss':             { he: 'סגור',         en: 'Dismiss',         es: 'Cerrar' },
+  'resume.bannerBody':          { he: "עצרת {{timeAgo}} בסעיף '{{section}}', {{position}}", en: "You stopped {{timeAgo}} in '{{section}}', {{position}}", es: "Te detuviste {{timeAgo}} en '{{section}}', {{position}}" },
+  'resume.bannerBodyNoSection': { he: 'עצרת {{timeAgo}}, {{position}}',                     en: 'You stopped {{timeAgo}}, {{position}}',                     es: 'Te detuviste {{timeAgo}}, {{position}}' },
+  'resume.position.start':      { he: 'בהתחלה',       en: 'near the start',  es: 'cerca del inicio' },
+  'resume.position.middle':     { he: 'בערך באמצע',   en: 'about midway',    es: 'aproximadamente a la mitad' },
+  'resume.position.end':        { he: 'כמעט בסוף',    en: 'near the end',    es: 'cerca del final' },
+
+  // ── Time-ago humanization ──────────────────────────────────────────────────
+  // Hebrew uses dual forms (שעתיים / יומיים / שבועיים) for n=2 — separate
+  // *Dual keys carry the dual form. en/es mirror their plural form for those
+  // keys so the lookup in sidebar-time-ago.ts stays uniform across languages.
+  'timeAgo.justNow':       { he: 'לפני רגע',         en: 'just now',           es: 'hace un momento' },
+  'timeAgo.minutes':       { he: 'לפני {{n}} דקות',  en: '{{n}} minutes ago',  es: 'hace {{n}} minutos' },
+  'timeAgo.hour':          { he: 'לפני שעה',         en: 'an hour ago',        es: 'hace una hora' },
+  'timeAgo.hoursDual':     { he: 'לפני שעתיים',      en: '2 hours ago',        es: 'hace 2 horas' },
+  'timeAgo.hours':         { he: 'לפני {{n}} שעות',  en: '{{n}} hours ago',    es: 'hace {{n}} horas' },
+  'timeAgo.yesterday':     { he: 'אתמול',            en: 'yesterday',          es: 'ayer' },
+  'timeAgo.daysDual':      { he: 'לפני יומיים',      en: '2 days ago',         es: 'hace 2 días' },
+  'timeAgo.days':          { he: 'לפני {{n}} ימים',  en: '{{n}} days ago',     es: 'hace {{n}} días' },
+  'timeAgo.week':          { he: 'לפני שבוע',        en: 'a week ago',         es: 'hace una semana' },
+  'timeAgo.weeksDual':     { he: 'לפני שבועיים',     en: '2 weeks ago',        es: 'hace 2 semanas' },
+  'timeAgo.weeks':         { he: 'לפני {{n}} שבועות', en: '{{n}} weeks ago',   es: 'hace {{n}} semanas' },
+  'timeAgo.moreThanMonth': { he: 'לפני יותר מחודש',  en: 'more than a month ago', es: 'hace más de un mes' },
 };

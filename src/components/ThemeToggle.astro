@@ -28,8 +28,9 @@ const { class: className } = Astro.props;
 
     <!--
       Stars — positions, sizes and colors are randomized at mount via
-      CSS variables set by the init script. Keeping twelve span elements
-      lets the CSS keyframes stagger the twinkle cleanly.
+      CSS variables set by the init script. Seven spans give enough
+      twinkle variety in a 64×28 window without crowding the moon
+      that shares the space.
     -->
     <div class="stars" data-sky-stars>
       <span class="star"></span>
@@ -39,22 +40,6 @@ const { class: className } = Astro.props;
       <span class="star"></span>
       <span class="star"></span>
       <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-      <span class="star"></span>
-    </div>
-
-    <!--
-      Planets — three distinct bodies (Mars / Neptune / Saturn-with-ring).
-      Positions are randomized at mount but constrained to the right half
-      of the window so they never collide with the moon on the left.
-    -->
-    <div class="planets" data-sky-planets>
-      <span class="planet planet-mars"></span>
-      <span class="planet planet-neptune"></span>
-      <span class="planet planet-saturn"><span class="saturn-ring"></span></span>
     </div>
 
     <!-- Shooting stars container — populated dynamically by script -->
@@ -206,15 +191,19 @@ const { class: className } = Astro.props;
     100% { transform: translate(-25%, -25%) rotate(10deg); }
   }
 
+  /* Opacity values dialed back ~35% from the original peaks so the
+     nebula + dust layers read as ambient atmosphere rather than a
+     competing focal element. The moon and stars carry the
+     scene; these gradients are background mood. */
   @keyframes nebula-flow {
-    0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
-    50% { transform: translate(-10%, 5%) scale(1.1); opacity: 1; }
-    100% { transform: translate(5%, -10%) scale(1.05); opacity: 0.9; }
+    0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+    50% { transform: translate(-10%, 5%) scale(1.1); opacity: 0.65; }
+    100% { transform: translate(5%, -10%) scale(1.05); opacity: 0.58; }
   }
 
   @keyframes dust-shimmer {
-    0% { transform: translate(0, 0); opacity: 0.5; }
-    100% { transform: translate(10%, -5%); opacity: 0.8; }
+    0% { transform: translate(0, 0); opacity: 0.32; }
+    100% { transform: translate(10%, -5%); opacity: 0.52; }
   }
 
   :global(.dark) .sky-day {
@@ -264,84 +253,6 @@ const { class: className } = Astro.props;
     25% { opacity: 0.8; }
     50% { opacity: 1; transform: scale(1.3); filter: brightness(1.3); }
     75% { opacity: 0.7; }
-  }
-
-  /* Planets — randomized x/y on mount, distinct palettes per body */
-  .planets {
-    position: absolute;
-    inset: 0;
-    opacity: 1;
-    transition: opacity 600ms var(--ease-standard) 200ms;
-    pointer-events: none;
-  }
-
-  :global(.dark) .planets {
-    opacity: 0;
-  }
-
-  .planet {
-    position: absolute;
-    top: var(--planet-y, 10px);
-    left: var(--planet-x, 10px);
-    width: var(--planet-size, 2.4px);
-    height: var(--planet-size, 2.4px);
-    border-radius: 50%;
-    animation: planet-drift var(--planet-dur, 80s) linear infinite;
-    animation-delay: var(--planet-delay, 0s);
-  }
-
-  .planet-mars {
-    background: radial-gradient(
-      circle at 35% 30%,
-      #ffb08a 0%,
-      #d25a3a 55%,
-      #7a2615 100%
-    );
-    box-shadow: 0 0 3px rgba(210, 90, 58, 0.5);
-  }
-
-  .planet-neptune {
-    background: radial-gradient(
-      circle at 35% 30%,
-      #a8d8ff 0%,
-      #4a6ed3 55%,
-      #1e2a78 100%
-    );
-    box-shadow: 0 0 3px rgba(74, 110, 211, 0.5);
-  }
-
-  .planet-saturn {
-    background: radial-gradient(
-      circle at 35% 30%,
-      #ffe6a8 0%,
-      #d9a84a 55%,
-      #8b6914 100%
-    );
-    box-shadow: 0 0 3px rgba(217, 168, 74, 0.55);
-  }
-
-  /*
-    Saturn's ring — a flat ellipse rotated slightly, anchored to the
-    planet center. Uses a transparent fill with a light outline so it
-    reads as a ring even at ~4px wide.
-  */
-  .saturn-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 250%;
-    height: 70%;
-    transform: translate(-50%, -50%) rotate(-18deg);
-    border: 0.5px solid rgba(255, 230, 168, 0.7);
-    border-radius: 50%;
-    background: transparent;
-    pointer-events: none;
-  }
-
-  @keyframes planet-drift {
-    0% { transform: translate(0, 0); }
-    50% { transform: translate(var(--planet-drift-x, 2px), var(--planet-drift-y, -1px)); }
-    100% { transform: translate(0, 0); }
   }
 
   /* Shooting stars — a 1px head with a gradient trail behind it */
@@ -824,7 +735,6 @@ const { class: className } = Astro.props;
     .galaxy-nebula,
     .galaxy-dust,
     .star,
-    .planet,
     .moon-body,
     .moon-sparkle,
     .sun-rays,
@@ -947,30 +857,6 @@ const { class: className } = Astro.props;
       star.style.setProperty('--star-glow', tint.glow);
       star.style.setProperty('--star-dur', `${dur.toFixed(2)}s`);
       star.style.setProperty('--star-delay', `${delay.toFixed(2)}s`);
-    });
-  }
-
-  /*
-    Randomize planet positions. Planets sit in the right half of the
-    window (x: 24..58) to stay clear of the moon. Each gets a small drift
-    range so the slow orbital animation doesn't go out of bounds.
-  */
-  function randomizePlanets(root: HTMLElement) {
-    const planets = root.querySelectorAll<HTMLElement>('[data-sky-planets] .planet');
-    planets.forEach((p) => {
-      const x = randomInRange(26, 56);
-      const y = randomInRange(4, 22);
-      const dx = randomInRange(-2.5, 2.5);
-      const dy = randomInRange(-1.5, 1.5);
-      const dur = randomInRange(60, 120);
-      const delay = randomInRange(0, 10);
-
-      p.style.setProperty('--planet-x', `${x.toFixed(1)}px`);
-      p.style.setProperty('--planet-y', `${y.toFixed(1)}px`);
-      p.style.setProperty('--planet-drift-x', `${dx.toFixed(2)}px`);
-      p.style.setProperty('--planet-drift-y', `${dy.toFixed(2)}px`);
-      p.style.setProperty('--planet-dur', `${dur.toFixed(1)}s`);
-      p.style.setProperty('--planet-delay', `${delay.toFixed(1)}s`);
     });
   }
 
@@ -1191,10 +1077,9 @@ const { class: className } = Astro.props;
     const current = getEffectiveTheme();
     applyTheme(current);
 
-    // Randomize star / planet positions for this page load so the sky
-    // never looks identical twice in a row.
+    // Randomize star positions for this page load so the sky never
+    // looks identical twice in a row.
     randomizeStars(toggle);
-    randomizePlanets(toggle);
 
     // Compute and apply today's lunar phase.
     const moonEl = toggle.querySelector<HTMLElement>('[data-sky-moon]');
