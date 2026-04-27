@@ -335,8 +335,6 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     letter-spacing: 0.12em;
     text-transform: uppercase;
     opacity: 1;
-    transition: opacity 500ms var(--ease-standard),
-                transform 500ms var(--ease-standard);
     /* Inline-end edge of the inner .quote-stack — the stack is
        sized to the quote text, so this is the visual end of the
        quote, not the wide outer container's edge. */
@@ -359,14 +357,66 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     display: none;
   }
 
-  .quote-author.fade-out {
-    opacity: 0;
-    transform: translateY(50%) translateY(8px);
+  /* Per-word stagger animation via keyframes. Each .qw child runs
+     its own animation with a delay computed from --i. Keyframes are
+     more reliable than transitions because the browser plays them
+     unconditionally from the moment the rule applies — no need to
+     juggle paint cycles to "register" a starting state. */
+  /* Entry direction is driven by --qw-from-x / --qw-from-y, set per
+     quote in JS so each appearance can come from a random direction
+     (above / below / left / right). Defaults preserve the original
+     "from below" behaviour if JS doesn't set them. */
+  @keyframes qw-fade-in-up {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translate(var(--qw-from-x, 0px), var(--qw-from-y, 14px));
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate(0, 0);
+    }
   }
 
-  .quote-author.fade-in-up {
-    opacity: 0;
-    transform: translateY(50%) translateY(12px);
+  @keyframes qw-fade-out {
+    from {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translateY(-4px);
+    }
+  }
+
+  /* :global(.qw) — these spans are created dynamically by JS, so they
+     don't receive Astro's scoped data-astro-cid attribute. Without
+     :global the scoped selector wouldn't match them and the animation
+     wouldn't run. The parent (.quote-text/.quote-author) is still
+     scoped — only the descendant class needs to escape scoping. */
+  .quote-text :global(.qw),
+  .quote-author :global(.qw) {
+    display: inline-block;
+    opacity: 1;
+    will-change: opacity, filter, transform;
+  }
+
+  /* Default state: parent has no fade-out class, so any .qw children
+     present (typically just-inserted ones) play the fade-in-up. The
+     `both` fill mode keeps them at the final keyframe after the run. */
+  .quote-text:not(.fade-out) :global(.qw),
+  .quote-author:not(.fade-out) :global(.qw) {
+    animation: qw-fade-in-up 550ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 35ms);
+  }
+
+  .quote-text.fade-out :global(.qw),
+  .quote-author.fade-out :global(.qw) {
+    animation: qw-fade-out 380ms cubic-bezier(0.4, 0, 0.6, 1) both;
+    animation-delay: calc(var(--i, 0) * 22ms);
   }
 
   .quote-author::before {
@@ -398,9 +448,6 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     text-align: center;
     line-height: 1.5;
     opacity: 1;
-    transform: translateY(0);
-    transition: opacity 500ms var(--ease-standard),
-                transform 500ms var(--ease-standard);
     letter-spacing: 0.005em;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
   }
@@ -412,15 +459,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     letter-spacing: 0;
   }
 
-  .quote-text.fade-out {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  .quote-text.fade-in-up {
-    opacity: 0;
-    transform: translateY(12px);
-  }
+  /* Parent stays at full opacity — children handle the animation. */
 
   :global(.dark) .quote-text {
     color: #d4c4a8;
@@ -643,6 +682,55 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     return pool[((currentFontIndex % pool.length) + pool.length) % pool.length];
   }
 
+  // Picks a random entry direction for the next quote appearance and
+  // applies it to the parent as CSS variables. The keyframe reads
+  // these to translate each word from that direction toward (0,0).
+  type EntryDirection = { x: string; y: string };
+  const ENTRY_DIRECTIONS: EntryDirection[] = [
+    { x: '0px', y: '14px' },    // from below
+    { x: '0px', y: '-14px' },   // from above
+    { x: '14px', y: '0px' },    // from right
+    { x: '-14px', y: '0px' },   // from left
+    { x: '10px', y: '10px' },   // from bottom-right
+    { x: '-10px', y: '10px' },  // from bottom-left
+    { x: '10px', y: '-10px' },  // from top-right
+    { x: '-10px', y: '-10px' }, // from top-left
+  ];
+  let lastEntryDirIndex = -1;
+
+  function pickEntryDirection(): EntryDirection {
+    let i: number;
+    do {
+      i = Math.floor(Math.random() * ENTRY_DIRECTIONS.length);
+    } while (i === lastEntryDirIndex && ENTRY_DIRECTIONS.length > 1);
+    lastEntryDirIndex = i;
+    return ENTRY_DIRECTIONS[i];
+  }
+
+  function applyEntryDirection(el: HTMLElement | null, dir: EntryDirection) {
+    if (!el) return;
+    el.style.setProperty('--qw-from-x', dir.x);
+    el.style.setProperty('--qw-from-y', dir.y);
+  }
+
+  // Splits text into per-word spans with --i indices so CSS can stagger
+  // each word's opacity/blur/translate transition for a cinematic reveal.
+  function setStaggeredText(el: HTMLElement, text: string) {
+    el.textContent = '';
+    if (!text) return;
+    const words = text.split(/\s+/).filter(Boolean);
+    words.forEach((word, i) => {
+      const span = document.createElement('span');
+      span.className = 'qw';
+      span.style.setProperty('--i', String(i));
+      span.textContent = word;
+      el.appendChild(span);
+      if (i < words.length - 1) {
+        el.appendChild(document.createTextNode(' '));
+      }
+    });
+  }
+
   function applyFontToEl(el: HTMLElement | null, font: FontChoice) {
     if (!el) return;
     el.style.fontFamily = font.family;
@@ -705,26 +793,26 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     if (quoteEl) {
       quoteEl.classList.add('fade-out');
       if (authorEl) authorEl.classList.add('fade-out');
+      // One direction per cycle — quote and author share it so the
+      // pair feels like a single unit blowing in from the same place.
+      const entryDir = pickEntryDirection();
       setTimeout(() => {
-        quoteEl.textContent = quoteWithMarks;
+        // Removing fade-out + replacing children in the same synchronous
+        // block lets the browser apply the default :not(.fade-out) rule
+        // to the fresh spans, which triggers the fade-in-up keyframe
+        // animation from frame one. No paint-cycle juggling needed.
+        applyEntryDirection(quoteEl, entryDir);
+        quoteEl.classList.remove('fade-out');
+        setStaggeredText(quoteEl, quoteWithMarks);
         quoteEl.dir = isRtl ? 'rtl' : 'ltr';
         applyFontToEl(quoteEl, font);
-        quoteEl.classList.remove('fade-out');
-        quoteEl.classList.add('fade-in-up');
         if (authorEl) {
-          authorEl.textContent = author;
-          authorEl.dir = isRtl ? 'rtl' : 'ltr';
+          applyEntryDirection(authorEl, entryDir);
           authorEl.classList.remove('fade-out');
-          authorEl.classList.add('fade-in-up');
+          setStaggeredText(authorEl, author);
+          authorEl.dir = isRtl ? 'rtl' : 'ltr';
         }
-        // Force reflow so the browser registers the "below" state
-        // before we transition up to the resting position.
-        void quoteEl.offsetWidth;
-        requestAnimationFrame(() => {
-          quoteEl.classList.remove('fade-in-up');
-          if (authorEl) authorEl.classList.remove('fade-in-up');
-        });
-      }, 500);
+      }, 600);
     }
 
     if (mobileBar) {
@@ -753,7 +841,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     window.__yuvalHeaderQuotesInitialized = true;
 
     showQuote();
-    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 10000);
+    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 5000);
 
     window.addEventListener('language-changed', showQuote);
     document.addEventListener('astro:page-load', showQuote);
