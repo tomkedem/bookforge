@@ -1395,45 +1395,60 @@
   overflow: visible;
 }
 
-/* Subtle, slow water-flow animations.
+/* Water-flow animations.
 
-   The MAIN pipe (vertical → bottom curve → entry into the last row)
-   is a single continuous SVG path with a stroke-dashoffset animation,
-   so the flow stays seamless across the bend with no break or reset.
-   Side feeders use a separate horizontal translateX animation per
-   branch. Bubbles fade-rise over a long cycle inside the vertical
-   pipe. Speeds chosen to be noticeable on inspection but calm at a
-   glance. */
+   Hybrid architecture for natural-feeling flow:
 
-@keyframes pipeFlowDash {
-  to { stroke-dashoffset: -22; }
+     - Translate-based stripe patterns (pipeFlowDown / pipeFlowLeft)
+       provide the ambient water texture in the straight segments
+       (vertical pipe + horizontal entry into the last row + side
+       feeders). Both axes use the SAME 2.5s period so the flow
+       reads as a single connected system rather than two
+       independent rhythms.
+
+     - A few small light particles travel the full pipe centerline
+       (vertical → curve → horizontal) via CSS offset-path. They
+       follow the actual bent geometry, so the flow stays
+       continuous across the bend and the curve is no longer a
+       "dead zone" between the two stripe cycles. */
+
+@keyframes pipeFlowDown {
+  0%   { transform: translateY(-20px); }
+  100% { transform: translateY(20px); }
 }
 
 @keyframes pipeFlowLeft {
-  from { transform: translateX(8px); }
-  to   { transform: translateX(-8px); }
+  0%   { transform: translateX(8px); }
+  100% { transform: translateX(-8px); }
 }
 
 @keyframes pipeBubbleUp {
   0%   { transform: translateY(0); opacity: 0; }
-  20%  { opacity: 0.6; }
-  80%  { opacity: 0.6; }
+  20%  { opacity: 0.7; }
+  80%  { opacity: 0.7; }
   100% { transform: translateY(-40px); opacity: 0; }
 }
 
-.usb-pipe-overlay .usb-pipe-flow          { animation: pipeFlowDash 2.5s linear infinite; }
-.usb-pipe-overlay .usb-pipe-water-feeder  { animation: pipeFlowLeft 1.2s linear infinite; }
-.usb-pipe-overlay .usb-pipe-bubble        { animation: pipeBubbleUp 3s ease-in infinite; }
+@keyframes pipeParticleFlow {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  10%  { opacity: 0.9; }
+  85%  { opacity: 0.9; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
 
-/* Reduced motion: full stop on flow streams, bubbles hidden entirely
-   so the pipe reads as a static structural element (per spec). */
+.usb-pipe-overlay .usb-pipe-water-vert    { animation: pipeFlowDown 2.5s linear infinite; }
+.usb-pipe-overlay .usb-pipe-water-feeder  { animation: pipeFlowLeft 2.5s linear infinite; }
+.usb-pipe-overlay .usb-pipe-bubble        { animation: pipeBubbleUp 2.5s ease-in infinite; }
+.usb-pipe-overlay .usb-pipe-particle      { animation: pipeParticleFlow 5s linear infinite; }
+
+/* Reduced motion: stop all flow / particle / bubble animations.
+   The static water gradient + glass walls remain visible so the
+   pipe still reads as a structural element. */
 @media (prefers-reduced-motion: reduce) {
-  .usb-pipe-overlay .usb-pipe-flow,
-  .usb-pipe-overlay .usb-pipe-water-feeder {
+  .usb-pipe-overlay .usb-pipe-water-vert,
+  .usb-pipe-overlay .usb-pipe-water-feeder,
+  .usb-pipe-overlay .usb-pipe-bubble,
+  .usb-pipe-overlay .usb-pipe-particle {
     animation: none;
-  }
-  .usb-pipe-overlay .usb-pipe-bubble {
-    animation: none;
-    display: none;
   }
 }

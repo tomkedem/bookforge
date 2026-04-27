@@ -115,19 +115,38 @@ function buildDefs(geo: PipeGeometry): SVGElement {
   appendStops(water, WATER_STOPS);
   defs.appendChild(water);
 
-  /* Horizontal stream pattern for the side feeders — single thin
-     sine wave at 10×3 (period × feeder height). The main pipe
-     (vertical + curve + last-row entry) does NOT use this pattern;
-     it uses a single continuous stroke-dashoffset animation
-     instead, which is why the flow stays seamless across the bend. */
-  const flowH = svg('pattern', {
-    id: 'usbPipeFlowHoriz', x: 0, y: 0, width: 10, height: 3,
+  /* Vertical stream pattern: a pair of soft sine ripples tiled at
+     6×14 (pipe width × short vertical period). Translated by the
+     animation to give a "flowing downward" illusion in the
+     vertical pipe segment. */
+  const flowV = svg('pattern', {
+    id: 'usbPipeFlowVert', x: 0, y: 0, width: 6, height: 14,
     patternUnits: 'userSpaceOnUse',
   });
-  flowH.appendChild(svg('rect', { width: 10, height: 3, fill: 'transparent' }));
+  flowV.appendChild(svg('rect', { width: 6, height: 14, fill: 'transparent' }));
+  flowV.appendChild(svg('path', {
+    d: 'M 0 0 Q 3 4 6 0',
+    stroke: '#B5D4F4', 'stroke-width': '0.9', fill: 'none', opacity: '0.65',
+  }));
+  flowV.appendChild(svg('path', {
+    d: 'M 0 7 Q 3 11 6 7',
+    stroke: '#E6F1FB', 'stroke-width': '0.6', fill: 'none', opacity: '0.55',
+  }));
+  defs.appendChild(flowV);
+
+  /* Horizontal stream pattern for the side feeders + the main pipe's
+     horizontal entry into the last row — single thin sine wave at
+     10×5. The curve itself is bridged by the stroke-dashoffset path
+     (built in buildMainPipe) so flow appears continuous across the
+     vertical → horizontal transition. */
+  const flowH = svg('pattern', {
+    id: 'usbPipeFlowHoriz', x: 0, y: 0, width: 10, height: 5,
+    patternUnits: 'userSpaceOnUse',
+  });
+  flowH.appendChild(svg('rect', { width: 10, height: 5, fill: 'transparent' }));
   flowH.appendChild(svg('path', {
-    d: 'M 0 1.5 Q 2.5 0 5 1.5 Q 7.5 3 10 1.5',
-    stroke: '#BAE6FD', 'stroke-width': '0.4', fill: 'none', opacity: '0.7',
+    d: 'M 0 2.5 Q 2.5 0.5 5 2.5 Q 7.5 4.5 10 2.5',
+    stroke: '#B5D4F4', 'stroke-width': '0.5', fill: 'none', opacity: '0.75',
   }));
   defs.appendChild(flowH);
 
@@ -188,45 +207,79 @@ function buildMainPipe(root: SVGElement, geo: PipeGeometry): void {
     fill: 'url(#usbPipeWater)',
   }));
 
-  /* Single continuous flow stroke — THE key animation. One <path>
-     traces the centerline from the top of the vertical pipe, down,
-     around the curve, and into the last row's extension. Dashed
-     stroke + animated stroke-dashoffset gives a smooth water-flow
-     illusion that passes through the bend without resetting. The
-     stroke is wider than the pipe interior in places (e.g. 4 in a
-     3-tall horizontal segment) — the parent clip masks it to the
-     actual interior shape so it never bleeds. */
-  interior.appendChild(svg('path', {
-    'class': 'usb-pipe-flow',
-    d: [
-      `M ${PIPE_CENTER_X} 0`,
-      `L ${PIPE_CENTER_X} ${verticalPipeEndY}`,
-      `Q ${PIPE_CENTER_X} ${lastRowCenterY} ${CURVE_INNER_X} ${lastRowCenterY}`,
-      `L 0 ${lastRowCenterY}`,
-    ].join(' '),
-    stroke: '#BAE6FD',
-    'stroke-width': '4',
-    'stroke-linecap': 'round',
-    fill: 'none',
-    opacity: '0.55',
-    'stroke-dasharray': '8 14',
+  /* Vertical flow stripes inside the vertical pipe segment. Sized
+     +20px on top and +20px on bottom of the visible pipe so the
+     translateY animation never reveals an empty edge. Pattern is
+     the soft-ripple usbPipeFlowVert. */
+  interior.appendChild(svg('rect', {
+    'class': 'usb-pipe-water-vert',
+    x: 22, y: -20,
+    width: 4, height: verticalPipeEndY + 40,
+    fill: 'url(#usbPipeFlowVert)',
   }));
 
+  /* Horizontal flow stripes inside the curve + horizontal entry
+     into the last row. A flat rect at y=lastRowCenterY centred on
+     the row's vertical middle; the parent clip-path masks it to
+     the curve+extension shape. Oversized horizontally (x=-13,
+     width≈visible+20) so the translateX animation has bleed
+     space. */
+  interior.appendChild(svg('rect', {
+    'class': 'usb-pipe-water-feeder',
+    x: -13, y: wallTopY,
+    width: 42, height: FEEDER_HEIGHT,
+    fill: 'url(#usbPipeFlowHoriz)',
+  }));
+
+  /* Bridge particles — small light highlights travelling the full
+     pipe centerline via CSS offset-path. They follow the actual
+     bent geometry (vertical → quadratic curve → horizontal entry
+     into last row), so the flow visibly stays continuous across
+     the bend. Three particles with staggered delays spaced over
+     the 5s cycle so at any moment ~one particle is visible
+     somewhere along the path, giving the impression of occasional
+     highlights moving with the water rather than a marching
+     line. */
+  const pipePathD = [
+    `M ${PIPE_CENTER_X} 0`,
+    `L ${PIPE_CENTER_X} ${verticalPipeEndY}`,
+    `Q ${PIPE_CENTER_X} ${lastRowCenterY} ${CURVE_INNER_X} ${lastRowCenterY}`,
+    `L 0 ${lastRowCenterY}`,
+  ].join(' ');
+  const particles: Array<[number, number]> = [
+    [1.2, 0],     // [radius, animation-delay seconds]
+    [1.0, 1.67],
+    [1.4, 3.33],
+  ];
+  for (const [r, delay] of particles) {
+    interior.appendChild(svg('circle', {
+      'class': 'usb-pipe-particle',
+      cx: 0, cy: 0,
+      r,
+      fill: '#E6F1FB',
+      opacity: '0',
+      style: `offset-path: path('${pipePathD}'); animation-delay: ${delay}s;`,
+    }));
+  }
+
   /* Bubbles distributed along the vertical run with staggered
-     start delays. Their cy positions scale with the run length so
-     visual density adapts to chapter size. Sit above the flow
-     stroke (z-order) so they read as gentle motion in the water. */
+     start delays. Ratios (0.9 / 0.65 / 0.4 / 0.15) and radii
+     (0.9 / 0.7 / 0.8 / 0.6) and delays (0 / 0.8 / 1.6 / 2.2s)
+     match the spec for an organic non-synchronized rise. cx
+     values stay anchored on the pipe centre (PIPE_CENTER_X = 24)
+     since the spec's literal cx values (17, 19, 18, 19) target a
+     different pipe origin. */
   const bubbles: Array<[number, number, number, number]> = [
-    [23.5, verticalPipeEndY * 0.85, 0.8, 0],
-    [24.5, verticalPipeEndY * 0.6,  0.6, 0.8],
-    [23.8, verticalPipeEndY * 0.4,  0.7, 1.6],
-    [24.2, verticalPipeEndY * 0.2,  0.5, 2.2],
+    [23.5, verticalPipeEndY * 0.9,  0.9, 0],
+    [24.5, verticalPipeEndY * 0.65, 0.7, 0.8],
+    [23.8, verticalPipeEndY * 0.4,  0.8, 1.6],
+    [24.2, verticalPipeEndY * 0.15, 0.6, 2.2],
   ];
   for (const [cx, cy, r, delay] of bubbles) {
     interior.appendChild(svg('circle', {
       'class': 'usb-pipe-bubble',
       cx, cy, r,
-      fill: '#E0F2FE', opacity: '0',
+      fill: '#E6F1FB', opacity: '0',
       style: `animation-delay: ${delay}s;`,
     }));
   }
@@ -304,7 +357,7 @@ function buildFeeders(root: SVGElement, geo: PipeGeometry): void {
     }));
     g.appendChild(svg('rect', {
       'class': 'usb-pipe-water-feeder',
-      x: -10, y: feederTopY, width: 40, height: FEEDER_HEIGHT,
+      x: -13, y: feederTopY, width: 42, height: FEEDER_HEIGHT,
       fill: 'url(#usbPipeFlowHoriz)',
     }));
     root.appendChild(g);
