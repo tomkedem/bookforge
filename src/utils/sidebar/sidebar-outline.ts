@@ -12,7 +12,7 @@
  */
 
 import { getBookSlug, getCurrentChapterId } from './sidebar-helpers';
-import { getReadSections, setReadSections } from './sidebar-storage';
+import { getReadSections, setReadSections, getCompletedChapters } from './sidebar-storage';
 
 let outlineSpyObserver: IntersectionObserver | null = null;
 let outlineHeadingOrder: HTMLElement[] = [];
@@ -66,6 +66,26 @@ function resetReadSections(): void {
  *  in DOM but would still incorrectly clear our in-memory cache. */
 export function clearActiveSectionMarks(): void {
   resetReadSections();
+}
+
+/** Mark every heading in the active chapter as read. Called when the
+ *  chapter-completed event fires — scroll-spy itself only marks
+ *  headings BEFORE the active one (so it can never mark the LAST
+ *  heading on its own; there's nothing after it to advance to), but
+ *  finishing the chapter implicitly means the last section is done
+ *  too. This backfills the trailing ✓ at that moment and persists it
+ *  so reopening the chapter re-applies the mark. */
+export function markAllSectionsRead(): void {
+  if (outlineHeadingOrder.length === 0) return;
+  let added = false;
+  for (const h of outlineHeadingOrder) {
+    if (!sectionsRead.has(h.id)) {
+      sectionsRead.add(h.id);
+      markSectionRead(h.id);
+      added = true;
+    }
+  }
+  if (added) persistReadSections();
 }
 
 /** Register an outline `<li>` for a heading id so scroll-spy knows
@@ -192,15 +212,36 @@ export function setupOutlineScrollSpy(headings: HTMLElement[]): void {
   /* Hydrate from localStorage so previously-read sections of THIS
      chapter are marked immediately on chapter open, before the user
      scrolls anything. This is what makes clicking a chapter card
-     feel "remembered" rather than starting fresh every visit. */
+     feel "remembered" rather than starting fresh every visit.
+
+     Edge case: if the chapter is already marked complete (the
+     reader finished it in a previous session), force-mark EVERY
+     heading — scroll-spy can't mark the last heading on its own
+     (nothing comes after it to advance to), and the chapter-
+     completed event won't re-fire for an already-completed chapter
+     on reopen, so without this backfill the trailing ✓ would never
+     appear after a reload. */
   const book = getBookSlug();
   const chapterId = getCurrentChapterId();
   if (book && chapterId != null) {
-    const persisted = getReadSections(book, chapterId);
-    persisted.forEach(headingId => {
-      sectionsRead.add(headingId);
-      markSectionRead(headingId);
-    });
+    const chapterDone = getCompletedChapters(book).includes(String(chapterId));
+    if (chapterDone) {
+      let added = false;
+      for (const h of headings) {
+        if (!sectionsRead.has(h.id)) {
+          sectionsRead.add(h.id);
+          markSectionRead(h.id);
+          added = true;
+        }
+      }
+      if (added) persistReadSections();
+    } else {
+      const persisted = getReadSections(book, chapterId);
+      persisted.forEach(headingId => {
+        sectionsRead.add(headingId);
+        markSectionRead(headingId);
+      });
+    }
   }
 
   if (!('IntersectionObserver' in window) || headings.length === 0) return;

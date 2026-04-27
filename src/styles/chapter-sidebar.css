@@ -1010,13 +1010,12 @@
   height: 11px;
 }
 
-/* Completion badge — a small circular chip with a green checkmark,
-   positioned ON the feeder line (active chapter) or the thread
-   (non-active expanded chapter). Replaces both the regular dot
-   (.usb-sections li::before) and the previous standalone inline-end
-   ✓. The feeder/thread visually passes into the chip from the
-   inline-start side. pointer-events: none so the row stays
-   clickable; the badge has no animation and remains visible under
+/* Completion mark — just the green ✓ glyph in the gutter between
+   the main thread and the active chapter's pipe (active mode) or
+   on the local thread (non-active expanded chapter). No
+   surrounding chip, no border, no fill — the bare checkmark reads
+   as "done" without adding visual weight. pointer-events: none so
+   the row stays clickable; no animation so it stays visible under
    prefers-reduced-motion. */
 .usb-sections li.section-completed::before {
   content: '✓';
@@ -1024,14 +1023,14 @@
   height: 14px;
   inset-inline-start: -22.5px;
   top: 11px;
-  background: #ECFDF5;
-  border: 1px solid #86EFAC;
-  border-radius: 50%;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #22C55E;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
   pointer-events: none;
@@ -1317,6 +1316,14 @@
      get breathing room below. The SVG height auto-grows because
      row offsetTop values shift down by this amount. */
   padding-top: 12px;
+  /* Allow horizontal overflow so the section-completed badge can
+     sit in the gutter between the main thread (.usb-thread) and
+     the active chapter's pipe — that gutter is OUTSIDE this
+     element's box. The active chapter is permanently expanded as
+     long as it's the active chapter, so we don't need overflow:
+     hidden for the max-height collapse transition (that's still
+     active for non-active expanded chapters via the base rule). */
+  overflow: visible;
 }
 
 /* Active-chapter section rows: fixed 36px height + nowrap so the SVG
@@ -1354,17 +1361,19 @@
   display: none;
 }
 
-/* Active chapter: completion badge sits on the middle of the
-   section's feeder line. With the original SVG geometry (width 32,
-   inset-inline-start: -2px) the feeder middle lands at css-x ≈
-   8.75 inside .usb-sections. The active <ul> has padding-inline-
-   start: 28 (so <li> inline-start is at +28); centring a 14-wide
-   badge at +8.75 needs an offset of 8.75 - 28 - 7 = -26.25. Also
+/* Active chapter: completion badge sits in the gutter BETWEEN the
+   sidebar's main vertical thread (.usb-thread, at <li>-relative
+   x=16..18) and the active chapter's main pipe (at <li>-relative
+   x≈44..49 with margin-inline-start: 40.5 + SVG geometry). The
+   middle of that gutter is at <li>-relative x=31; centring a
+   14-wide badge there means inline-start at <li>-relative x=24.
+   Section <li> starts at <li>-relative x=68.5 (margin 40.5 +
+   <ul>-padding 28), so the offset is 24 - 68.5 = -44.5. Also
    re-asserts display:flex to override the rule above which hides
    all <li>::before pseudos in active mode. */
 .usb-chapter-active .usb-sections li.section-completed::before {
   display: flex;
-  inset-inline-start: -26.25px;
+  inset-inline-start: -44.5px;
 }
 
 /* The SVG sits in the inline-start gutter just outside the section

@@ -28,6 +28,7 @@ import {
   buildSectionList,
   syncChapterStates,
 } from './sidebar-render';
+import { markAllSectionsRead } from './sidebar-outline';
 import { loadChapterContent } from './sidebar-navigation';
 import {
   initMobileToc,
@@ -81,6 +82,11 @@ export function installLifecycleHandlers(): void {
     const chId = getCurrentChapterId();
     if (book && chId) {
       markChapterComplete(book, chId);
+      /* Backfill the LAST section's ✓: scroll-spy only marks
+         headings before the active one, so the trailing heading
+         never gets its mark on its own. Finishing the chapter
+         implicitly means every section is done. */
+      markAllSectionsRead();
       syncChapterStates();
       /* Reveal the inline completion pill in the chapter top strip
          now that the active chapter has just been marked complete. */
