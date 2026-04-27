@@ -222,9 +222,11 @@ export async function renderChapterSections(chapterId: string | number): Promise
     return;
   }
 
-  /* Hierarchical numbering: H2s sequential under chapter id, H3s as
-     parent.child (e.g. chapter 3 → 3.1, 3.2; H3 under 3.2 → 3.2.1). */
-  const chapterPrefix = id.replace(/^chapter-/, '').replace(/^0+/, '') || id;
+  /* Hierarchical numbering WITHIN the chapter: H2s sequential (1,
+     2, 3 …), H3s as h2.h3 (e.g. 3rd H2's 2nd H3 → "3.2"). The
+     chapter number itself is NOT prefixed — readers already know
+     which chapter they're on from the chapter card above, and the
+     prefix only added visual noise. */
   let h2Counter = 0;
   let h3Counter = 0;
 
@@ -265,10 +267,10 @@ export async function renderChapterSections(chapterId: string | number): Promise
     if (h.level === 'h2') {
       h2Counter += 1;
       h3Counter = 0;
-      sectionLabel = `${chapterPrefix}.${h2Counter}`;
+      sectionLabel = `${h2Counter}`;
     } else {
       h3Counter += 1;
-      sectionLabel = `${chapterPrefix}.${h2Counter || 1}.${h3Counter}`;
+      sectionLabel = `${h2Counter || 1}.${h3Counter}`;
     }
 
     const liEl = document.createElement('li');

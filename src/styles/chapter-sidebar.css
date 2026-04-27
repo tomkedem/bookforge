@@ -629,7 +629,7 @@
 }
 
 .dark .usb-chapter-active .usb-card {
-  background: rgba(37, 99, 235, 0.14);
+  background: rgba(125, 211, 252, 0.20);
   border-color: rgba(96, 165, 250, 0.4);
 }
 
@@ -1010,28 +1010,35 @@
   height: 11px;
 }
 
-/* Completed section: a SOLO neon-green ✓ on the inline-end side
-   (= left in RTL, right in LTR) — no chip background, no border, no
-   glow on the row itself. Just the glowing check mark. The
-   per-section time is hidden on completed rows so the ✓ has the
-   inline-end real estate to itself; the row otherwise reads exactly
-   like an unread section, with the ✓ as the only completion signal.
-   The thread-side dot (::before) keeps its default styling — we
-   don't tint it green, the ✓ alone marks completion. */
-.usb-sections li.section-completed::after {
+/* Completion badge — a small circular chip with a green checkmark,
+   positioned ON the feeder line (active chapter) or the thread
+   (non-active expanded chapter). Replaces both the regular dot
+   (.usb-sections li::before) and the previous standalone inline-end
+   ✓. The feeder/thread visually passes into the chip from the
+   inline-start side. pointer-events: none so the row stays
+   clickable; the badge has no animation and remains visible under
+   prefers-reduced-motion. */
+.usb-sections li.section-completed::before {
   content: '✓';
-  position: absolute;
-  inset-inline-end: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #4ade80;
+  width: 14px;
+  height: 14px;
+  inset-inline-start: -22.5px;
+  top: 11px;
+  background: #ECFDF5;
+  border: 1px solid #86EFAC;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22C55E;
+  font-size: 9px;
   font-weight: 700;
-  font-size: 14px;
   line-height: 1;
-  text-shadow:
-    0 0 4px rgba(74, 222, 128, 0.7),
-    0 0 9px rgba(74, 222, 128, 0.4);
   pointer-events: none;
+  z-index: 2;
+  transition: none;
+  transform: none;
+  box-shadow: none;
 }
 
 .usb-sections li.section-completed .section-time {
@@ -1283,6 +1290,35 @@
    (sidebar-pipe.ts) and injected into .usb-sections; geometry assumes
    each row is exactly 36px tall — we pin that here. */
 
+/* Active-chapter section list snugs up directly to the chapter
+   card's bottom edge — no vertical gap — so the pipe visually
+   emerges from the card. Higher specificity than the
+   .usb-chapter[data-expanded="true"] rule that sets margin-top: 12
+   for the generic expanded state.
+
+   Also shifts the section list inline-start-ward (right physical
+   in RTL) so the main pipe lands at the active chapter card's
+   right corner. The base .usb-sections rule sets margin-inline-
+   start: 56; reducing it to 36.5 moves the whole list — including
+   the SVG pipe inside — by 19.5px. Combined with the pipe's
+   viewBox-x=26.5 right edge and SVG inset-inline-start: -2, the
+   pipe right physical edge lands at <li>-relative x = 40, which
+   is exactly the card's inline-start corner (the card link
+   reserves 40px padding-inline-start for the chapter number node,
+   so the card body starts at <li>-relative x = 40). */
+.usb-chapter-active.usb-chapter[data-expanded="true"] .usb-sections {
+  margin-top: 0;
+  margin-inline-start: 40.5px;
+  /* Padding (not margin) pushes the section rows down without
+     moving the SVG: position:absolute children resolve top: 0
+     against the padding-box top, which is the same as the
+     element's top edge regardless of padding-top. So the pipe
+     stays glued to the chapter card's bottom edge while the rows
+     get breathing room below. The SVG height auto-grows because
+     row offsetTop values shift down by this amount. */
+  padding-top: 12px;
+}
+
 /* Active-chapter section rows: fixed 36px height + nowrap so the SVG
    can compute feeder Y offsets from row index × 36 with no surprises.
    Long titles ellipsize; the section anchor gets a title attribute
@@ -1318,12 +1354,29 @@
   display: none;
 }
 
+/* Active chapter: completion badge sits on the middle of the
+   section's feeder line. With the original SVG geometry (width 32,
+   inset-inline-start: -2px) the feeder middle lands at css-x ≈
+   8.75 inside .usb-sections. The active <ul> has padding-inline-
+   start: 28 (so <li> inline-start is at +28); centring a 14-wide
+   badge at +8.75 needs an offset of 8.75 - 28 - 7 = -26.25. Also
+   re-asserts display:flex to override the rule above which hides
+   all <li>::before pseudos in active mode. */
+.usb-chapter-active .usb-sections li.section-completed::before {
+  display: flex;
+  inset-inline-start: -26.25px;
+}
+
 /* The SVG sits in the inline-start gutter just outside the section
    text. inset-inline-start: -2px lets it stick 2px past the inline-
    start edge so the bottom curve can wrap into the last row card.
    overflow: visible on the SVG element ensures the curve is not
    clipped. z-index: 1 + pointer-events: none keeps it above the row
-   background but transparent to clicks. */
+   background but transparent to clicks. The pipe lands at the
+   active chapter card's right corner because .usb-chapter-active
+   .usb-sections shrinks its margin-inline-start (see the rule
+   below), which shifts the entire section list — including this
+   SVG — inline-start-ward to align with the card. */
 .usb-pipe-overlay {
   position: absolute;
   inset-inline-start: -2px;
