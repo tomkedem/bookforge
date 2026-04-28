@@ -1876,17 +1876,80 @@
   display: none;
 }
 
-/* Compact row layout for non-active rows is the existing single-row
-   flex (defined upstream in this file). Only the active row needs
-   to stack vertically (title-row + preview pane). */
+/* Active row link — column layout, NO padding here. The title-row
+   and the preview pane each carry their own padding so they can
+   render their own internal chrome (border-bottom on the title
+   row, distinct background on the preview, etc.). */
 .usb-sections li.active a {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 0;
   height: auto;
-  padding-top: 8px;
-  padding-bottom: 10px;
+  padding: 0;
+}
+
+/* Title row inside the active card — matches the design's
+   "header" block: padding generous on top/sides, border-bottom
+   to separate from the code preview. inline-end padding bumped
+   to 24px so content doesn't sit beneath the glowing bar. */
+.usb-sections li.active .usb-section-title-row {
+  padding-block: 12px 10px;
+  padding-inline-start: 16px;
+  padding-inline-end: 24px;
+  border-bottom: 1px solid var(--header-border);
+  position: relative;
+  z-index: 3;
+}
+
+/* Preview pane (the <pre> wrapper) — replaces the old 6/8 padding
+   with the design's 11/13 + bumped inline-end so the bar's halo
+   doesn't overlap code text. The bottom-corners get the card's
+   14px radius so the preview seamlessly meets the card edge. */
+.usb-sections li.active .usb-section-preview {
+  padding-block: 11px 13px;
+  padding-inline-start: 16px;
+  padding-inline-end: 24px;
+  border-radius: 0 0 14px 14px;
+  margin-top: 0;
+  position: relative;
+  z-index: 3;
+}
+
+/* Number circle — enlarged from 22 to 30 + 3D depth so it carries
+   the visual weight required by the bigger neumorphic card. The
+   inset highlights/shadows give it a "polished metal disc" feel
+   that complements the lifted card surface. */
+.usb-sections li.active .usb-section-number {
+  width: 30px;
+  height: 30px;
+  font-size: 12px;
+  background: linear-gradient(135deg, #185FA5, #4DA8E0);
+  color: #ffffff;
+  box-shadow:
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.2),
+    2px 2px 6px rgba(24, 95, 165, 0.4),
+    -1px -1px 2px var(--num-highlight);
+  border: none;
+}
+
+/* Time pill — themed gradient + 3D inset highlights. Sits in the
+   title row alongside the heading text. */
+.usb-sections li.active .usb-section-time,
+.usb-sections li.active .section-time {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #185FA5, #4DA8E0);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    2px 2px 4px rgba(24, 95, 165, 0.3),
+    -1px -1px 2px var(--time-highlight);
 }
 
 /* Active row card — gives the row visual weight so the preview pane
@@ -1901,42 +1964,42 @@
    Specificity: must out-rank `.usb-sections li.active` upstream
    (which sets a 10% blue background only). Same selector with the
    `.usb-chapter-active` ancestor wins on length. */
-/* Active card — "floating lens" focal point. The card is scaled to
-   108% and lifted with a multi-layer shadow stack so it reads as
-   "above" the rest of the section list; surrounding rows get a
-   blur falloff (declared further down) that mimics camera depth-
-   of-field around the focal point. The dual-layer background pairs
-   a soft radial highlight in the upper-right with a deep blue
-   diagonal gradient — the highlight reads as light catching the
-   "lens" at glance. */
+/* Active card — Neumorphic + glowing side bar.
+   The card matches the sidebar's exact background color so it
+   reads as "rising from the surface" rather than "sitting on
+   top of it". Multi-layer inset + outer shadows create the
+   physical-depth illusion. A glowing accent bar floats on the
+   inline-end edge (::before), with a soft radial halo (::after)
+   bleeding into the card body. Color palette is driven by
+   --neumorphic-* + --bar-* CSS variables defined per theme
+   below; structure is identical in light + dark. */
 .usb-sections li.active {
-  margin: 14px -4px;
-  transform: scale(1.08);
+  /* `!important` overrides the upstream `margin-block` rule on
+     non-active sections (8px) and the older `margin: 14px -4px`
+     of the previous Floating Lens. The 24px breathing-room is
+     non-negotiable for neumorphic — outer shadows are 16-32px
+     and would clip into neighbors with anything tighter. */
+  margin: 24px -8px !important;
+  padding: 0;
+  transform: scale(1.10);
   transform-origin: center;
-  background:
-    radial-gradient(
-      circle at 75% 25%,
-      rgba(133, 183, 235, 0.15) 0%,
-      transparent 50%
-    ),
-    linear-gradient(135deg, #1a3a5c 0%, #14304a 50%, #0a1f33 100%);
-  border: 2px solid #4DA8E0;
-  border-radius: 10px;
+  background: var(--neumorphic-bg);
+  border: none;
+  border-radius: 14px;
   box-shadow:
-    0 0 0 1px rgba(77, 168, 224, 0.4),
-    0 4px 16px rgba(77, 168, 224, 0.4),
-    0 12px 32px rgba(77, 168, 224, 0.2),
-    0 20px 50px rgba(0, 0, 0, 0.5);
+    /* Inner highlights (top-left light source) */
+    inset 3px 3px 6px var(--neu-inner-light),
+    inset -1px -1px 3px var(--neu-inner-shadow),
+    /* Outer "lit" side (top-left) */
+    -8px -8px 16px var(--neu-outer-light),
+    /* Outer "shadow" side (bottom-right) */
+    8px 8px 16px var(--neu-outer-shadow),
+    /* Main 3D depth */
+    0 16px 32px var(--neu-deep-shadow),
+    0 32px 64px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
   position: relative;
   z-index: 10;
-  /* Snappy transitions (was 0.3s). When clicking a section, the
-     resulting `scrollIntoView({ behavior: 'smooth' })` causes the
-     scroll-spy IntersectionObserver to fire on every heading the
-     scroll passes through — so .active flips through 3-4 sections
-     in quick succession before settling. With 0.3s transitions
-     those scale animations overlapped and produced a visible
-     "judder". 0.15s is short enough that intermediate states snap
-     past invisibly while the final landing still feels animated. */
   transition:
     transform 0.15s ease-out,
     box-shadow 0.15s ease-out;
@@ -1945,6 +2008,54 @@
      preview pane below the title row. */
   height: auto;
   min-height: 36px;
+}
+
+/* Glowing side bar lives on the inner <a>, not the <li>. Reason:
+   `overflow: hidden` on the <li> would clip the bar's
+   `box-shadow` glow as well, but it doesn't — box-shadow is
+   "decoration", not "content", and isn't subject to overflow
+   clipping. So the 24px glow leaked OUT of the card's right edge
+   into the sidebar background.
+   By moving the bar to the <a> (which is the same size as the
+   card's content area but, critically, can have its own
+   overflow:hidden without affecting the neumorphic shadows of
+   the parent <li>), the glow is clipped at the card edge while
+   the <li>'s outer shadows render normally. */
+.usb-sections li.active > a {
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.usb-sections li.active > a::before {
+  content: '';
+  display: block;
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  background: linear-gradient(180deg,
+    var(--bar-light) 0%,
+    var(--bar-dark) 50%,
+    var(--bar-light) 100%);
+  border-radius: 2px;
+  box-shadow:
+    /* Tight halo (1px ring of brightness) */
+    0 0 0 1px var(--bar-halo-tight),
+    /* Layered outward glow */
+    0 0 8px var(--bar-glow-inner),
+    0 0 16px var(--bar-glow-mid),
+    0 0 24px var(--bar-glow-far);
+  z-index: 2;
+}
+
+/* Halo (radial gradient extending inward from the bar) is
+   removed — read as "shadow next to the bar" rather than the
+   intended soft glow bleed-in. The bar's own multi-layer
+   box-shadow already supplies the surrounding luminance, so the
+   halo was redundant and now actively unwanted. */
+.usb-sections li.active > a::after {
+  content: none;
 }
 
 /* Defensive: id-prefixed twin to guarantee `height: auto` wins even
@@ -2489,37 +2600,78 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   ACTIVE SECTION CARD — light-mode variant
-   The dark-mode block (deep blue gradient + heavy glow) lives
-   higher in this file. Here we override the visual properties that
-   look bad on a white sidebar:
-     • dark gradient → light gradient (E8F0F9 → D8E5F0 → C5D4E5)
-     • cyan border → darker accent (#185FA5) for contrast on white
-     • all box-shadow alpha values softened
-   Border-radius / scale / margin / z-index inherit from the dark
-   rule above (no need to redeclare).
+   ACTIVE SECTION CARD — neumorphic color tokens
+   The base structure (margin, transform, shadows, ::before bar,
+   ::after halo) lives higher in this file and consumes these
+   custom properties. Light + dark each define their own palette
+   with EXACT sidebar background match — neumorphic illusion
+   breaks at the slightest hue mismatch (#1A1A1A vs #1B1B1B is
+   already enough to "see" the card edge).
    ───────────────────────────────────────────────────────────── */
-:root:not(.dark) .usb-sections li.active {
-  background:
-    radial-gradient(
-      circle at 75% 25%,
-      rgba(24, 95, 165, 0.08) 0%,
-      transparent 50%
-    ),
-    linear-gradient(135deg, #E8F0F9 0%, #D8E5F0 50%, #C5D4E5 100%);
-  border-color: #185FA5;
-  box-shadow:
-    0 0 0 1px rgba(24, 95, 165, 0.25),
-    0 4px 16px rgba(24, 95, 165, 0.2),
-    0 12px 32px rgba(24, 95, 165, 0.1),
-    0 20px 50px rgba(0, 0, 0, 0.1);
+
+/* Dark mode (default — matches `.dark` on <html>, which is the
+   default theme in this project). Sidebar bg = #1A1A1A
+   (var(--yuval-surface) at theme.css:91). */
+.usb-sections li.active {
+  --neumorphic-bg: #1A1A1A;
+  --neu-inner-light: rgba(77, 168, 224, 0.15);
+  --neu-inner-shadow: rgba(0, 0, 0, 0.4);
+  --neu-outer-light: rgba(77, 168, 224, 0.10);
+  --neu-outer-shadow: rgba(0, 0, 0, 0.6);
+  --neu-deep-shadow: rgba(0, 0, 0, 0.5);
+
+  --bar-light: #85B7EB;
+  --bar-dark: #4DA8E0;
+  /* Glow alphas softened twice. Original was 0.3/0.7/0.5/0.3,
+     reduced once to 0.15/0.3/0.2/0.1, and reduced again here to
+     half of that — the bar now reads as a quiet lit accent
+     against the dark surface rather than a beacon. */
+  --bar-halo-tight: rgba(255, 255, 255, 0.08);
+  --bar-glow-inner: rgba(77, 168, 224, 0.15);
+  --bar-glow-mid: rgba(77, 168, 224, 0.1);
+  --bar-glow-far: rgba(77, 168, 224, 0.05);
+  --bar-halo-extended: rgba(77, 168, 224, 0.20);
+
+  --header-border: rgba(77, 168, 224, 0.2);
+  --code-bg: rgba(0, 0, 0, 0.25);
+  --num-highlight: rgba(255, 255, 255, 0.3);
+  --time-highlight: rgba(255, 255, 255, 0.4);
 }
 
-/* Code preview INSIDE the active card — light-mode background.
-   The dark-mode preview uses rgba(15, 35, 54, 0.5) which would be
-   a deep navy blob on white. Replace with a subtle light blue. */
-:root:not(.dark) .usb-sections li.active .usb-section-preview {
-  background: rgba(24, 95, 165, 0.06);
+/* Light mode. Sidebar bg = #f8fafc (--sidebar-bg in
+   :root:not(.dark) at chapter-sidebar.css:496). Critical: the
+   `--neumorphic-bg` here MUST match #f8fafc exactly, otherwise
+   the card edge will be visible against the sidebar. */
+:root:not(.dark) .usb-sections li.active {
+  --neumorphic-bg: #f8fafc;
+  --neu-inner-light: rgba(255, 255, 255, 1);
+  --neu-inner-shadow: rgba(24, 95, 165, 0.06);
+  --neu-outer-light: rgba(255, 255, 255, 0.9);
+  --neu-outer-shadow: rgba(24, 95, 165, 0.18);
+  --neu-deep-shadow: rgba(24, 95, 165, 0.15);
+
+  --bar-light: #4DA8E0;
+  --bar-dark: #185FA5;
+  /* Glow alphas softened to match dark-mode tempo (was 0.5 / 0.6
+     / 0.4 / 0.2). Light mode keeps a slightly brighter halo since
+     blue against white reads dimmer than blue against black at the
+     same alpha. */
+  --bar-halo-tight: rgba(255, 255, 255, 0.25);
+  --bar-glow-inner: rgba(77, 168, 224, 0.25);
+  --bar-glow-mid: rgba(77, 168, 224, 0.15);
+  --bar-glow-far: rgba(77, 168, 224, 0.08);
+  --bar-halo-extended: rgba(77, 168, 224, 0.15);
+
+  --header-border: rgba(77, 168, 224, 0.15);
+  --code-bg: rgba(255, 255, 255, 0.5);
+  --num-highlight: rgba(255, 255, 255, 0.5);
+  --time-highlight: rgba(255, 255, 255, 0.6);
+}
+
+/* Code preview INSIDE the active card — themed via --code-bg so
+   it works in both light and dark. */
+.usb-sections li.active .usb-section-preview {
+  background: var(--code-bg);
 }
 
 /* Code preview default text color flips to dark for legibility on
