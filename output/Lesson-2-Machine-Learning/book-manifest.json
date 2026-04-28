@@ -357,6 +357,18 @@
         "has_images": true,
         "word_count": 288,
         "topics": []
+      },
+      {
+        "id": 29,
+        "file_slug": "chapter-29",
+        "type": "content",
+        "titles": {
+          "he": "מעבדה: מעבר מהבנה ליישום"
+        },
+        "sections": 7,
+        "has_images": true,
+        "word_count": 9222,
+        "topics": []
       }
     ],
     "languages": [
