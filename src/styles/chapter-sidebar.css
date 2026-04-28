@@ -651,7 +651,17 @@
    margin-bottom, so no extension needed there. */
 .usb-chapter:not(:last-child) .usb-chapters-pipe-water {
   bottom: -10px;
-  height: auto;
+  /* CRITICAL: explicit height (not `auto`) because <svg> is a
+     replaced element. With `height: auto` the browser falls back
+     to the SVG's intrinsic height — and the viewBox is "0 0 8 1000"
+     (a 1000-unit coordinate space, not a render hint), so the
+     intrinsic height resolves to ~1000px. That meant every non-
+     last chapter's water SVG was 1000px tall, painting straight
+     through every chapter card below it the moment a sibling
+     expanded its section list. `calc(100% + 10px)` ties the height
+     to the parent <li> + the 10px overhang we want into the
+     margin gap, and nothing more. */
+  height: calc(100% + 10px);
 }
 
 
@@ -2376,14 +2386,323 @@
    opacity dimming, no transitions. Active row still has its border
    + gradient + glow shadow, so it's still findable, just not
    "lifted". */
+/* ─────────────────────────────────────────────────────────────────
+   ACTIVE CHAPTER CARD — Level 1 of the lens hierarchy
+   Subtle elevation only: scale 1.04 (vs 1.08 on the active section
+   below) so the section reads as the dominant focal point and the
+   chapter merely "frames" it. The chapter card already has its own
+   colored background + accent from earlier work; this rule only
+   adds lift/shadow/scale.
+
+   KNOWN ISSUE (out of scope for this feature): the
+   `.usb-chapter-active` class is sometimes not assigned by the
+   render pipeline at the moment scroll-spy first fires (we saw
+   chapters stuck on `.usb-chapter-in-progress` only). When that
+   happens, this rule simply doesn't apply and the chapter renders
+   without lift — graceful degradation, no broken layout.
+   ───────────────────────────────────────────────────────────── */
+/* Every chapter <li> establishes its own stacking context one level
+   above the global pipe (z-index var(--z-pipe) = 1). Without this,
+   the inner .usb-card's z-index:2 was relative to whichever
+   ancestor first created a stacking context — and on rows where
+   nothing did, the main pipe SVG painted ON TOP of the card,
+   producing the "card sits behind the pipe" artifact you saw on
+   chapters 4, 7, 9, etc. Forcing position:relative + z-index:2 on
+   every chapter li lifts the entire chapter entry above the pipe,
+   so the card always wins. The active chapter overrides this with
+   z-index:5 below. */
+.usb-chapter {
+  position: relative;
+  z-index: 2;
+}
+
+/* Solid background on the chapter <li> in light mode. The card
+   inside is `#f1f5f9` and the sidebar is `#f8fafc` — nearly
+   identical brightness, so even with correct z-index ordering the
+   global pipe was reading "through" the card edges. Painting an
+   opaque sidebar-colored layer on the <li> itself guarantees the
+   card area is never visually mixed with whatever sits behind it. */
+:root:not(.dark) .usb-chapter {
+  background: var(--sidebar-bg, #f8fafc);
+  border-radius: 8px;
+}
+
+/* The chapter <a class="usb-chapter-link"> needs its own stacking
+   context AND a higher z-index than the per-chapter water SVG so
+   the card paints above the water on non-active rows.
+   Why z-index:2 (not 1): inside the <li>'s stack, both the <a>
+   and the .usb-chapters-pipe-water SVG sibling are positioned. If
+   they share the same z-index value, source order wins — and the
+   SVG sits after the <a> in the DOM, so it would paint on top.
+   Setting the <a> to z-index:2 puts it strictly above the SVG's
+   z-index:1 regardless of source order, restoring the intended
+   "card always on top of pipe" layering on every chapter row. */
+.usb-chapter-link {
+  z-index: 2;
+}
+
+.usb-chapter-active {
+  /* The visual frame (outline + shadow) lives on .usb-card, not on
+     this <li>, because the <li> also contains the expanded section
+     list below the card — putting the outline here drew a blue
+     rectangle around the entire chapter entry including all its
+     sections. The <li> only handles stacking context (z-index 5
+     overrides the base 2 above so the active chapter sits ABOVE
+     the inactive chapters' shadows). */
+  z-index: 5;
+}
+
+/* Outline + tight shadow on the card itself. The earlier 3-layer
+   shadow (0 12px 28px rgba(0,0,0,0.3) as the bottom layer) reached
+   ~40px below the active chapter's card, casting a dark drop
+   shadow onto the chapter cards directly beneath it. Result: those
+   neighbors looked "tucked under the pipe" — visually subordinate
+   to the pipe column running through the timeline. We now keep
+   only a tight rim + close glow that stops well short of any
+   neighbor card, so adjacent chapters render at full clarity. */
+.usb-chapter-active .usb-card {
+  outline: 2px solid rgba(77, 168, 224, 0.4);
+  outline-offset: -1px;
+  box-shadow:
+    0 0 0 1px rgba(77, 168, 224, 0.3),
+    0 2px 10px rgba(77, 168, 224, 0.18);
+  transition: box-shadow 0.3s ease-out;
+}
+
+/* Light-mode lift — softer + cooler. Same tight 2-layer profile,
+   tuned with the lighter blue alphas. The codebase uses
+   `:root:not(.dark)` (not `[data-theme="light"]`) for light
+   targeting — matched here. */
+:root:not(.dark) .usb-chapter-active .usb-card {
+  outline-color: rgba(37, 99, 235, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.2),
+    0 2px 10px rgba(37, 99, 235, 0.15);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ACTIVE SECTION CARD — light-mode variant
+   The dark-mode block (deep blue gradient + heavy glow) lives
+   higher in this file. Here we override the visual properties that
+   look bad on a white sidebar:
+     • dark gradient → light gradient (E8F0F9 → D8E5F0 → C5D4E5)
+     • cyan border → darker accent (#185FA5) for contrast on white
+     • all box-shadow alpha values softened
+   Border-radius / scale / margin / z-index inherit from the dark
+   rule above (no need to redeclare).
+   ───────────────────────────────────────────────────────────── */
+:root:not(.dark) .usb-sections li.active {
+  background:
+    radial-gradient(
+      circle at 75% 25%,
+      rgba(24, 95, 165, 0.08) 0%,
+      transparent 50%
+    ),
+    linear-gradient(135deg, #E8F0F9 0%, #D8E5F0 50%, #C5D4E5 100%);
+  border-color: #185FA5;
+  box-shadow:
+    0 0 0 1px rgba(24, 95, 165, 0.25),
+    0 4px 16px rgba(24, 95, 165, 0.2),
+    0 12px 32px rgba(24, 95, 165, 0.1),
+    0 20px 50px rgba(0, 0, 0, 0.1);
+}
+
+/* Code preview INSIDE the active card — light-mode background.
+   The dark-mode preview uses rgba(15, 35, 54, 0.5) which would be
+   a deep navy blob on white. Replace with a subtle light blue. */
+:root:not(.dark) .usb-sections li.active .usb-section-preview {
+  background: rgba(24, 95, 165, 0.06);
+}
+
+/* Code preview default text color flips to dark for legibility on
+   the light background. hljs token classes below get their own
+   light-mode palette. */
+:root:not(.dark) #unified-sidebar .usb-preview-code {
+  color: #1a3a5c;
+}
+
+/* hljs token palette — light mode. Mirrors the GitHub-light scheme
+   (already in use elsewhere in this codebase, see code-runner.css)
+   so the sidebar's preview reads consistently with the body's code
+   blocks. Same selectors as the dark-mode palette earlier in this
+   file, scoped to `:root:not(.dark)` so they only fire when the
+   user is in light mode. */
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-keyword,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-keyword-meta,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-doctag,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-meta .hljs-keyword,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-template-tag,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-template-variable,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-type,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-variable.language_ { color: #cf222e; }
+
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-string,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-meta-string,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-regexp,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-addition { color: #0a3069; }
+
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-comment,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-quote,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-code { color: #6e7781; font-style: italic; }
+
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-title,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-title.function_,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-title.class_,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-section { color: #8250df; }
+
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-number,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-literal { color: #0550ae; }
+
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-attr,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-attribute,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-property,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-name,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-selector-id,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-selector-class,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-selector-attr { color: #0550ae; }
+
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-built_in,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-symbol,
+:root:not(.dark) #unified-sidebar .usb-preview-code .hljs-link { color: #953800; }
+
+/* prefers-reduced-motion — extended to cover both lens levels.
+   Active chapter loses its 1.04 scale; active section loses its
+   1.08 scale; all section-list rows lose blur+opacity dimming. The
+   colored backgrounds, borders, and shadows still render so the
+   active states stay findable — just no motion. */
 @media (prefers-reduced-motion: reduce) {
+  .usb-chapter-active {
+    /* No transform to undo here anymore (we use outline+shadow);
+       just kill the transition so state changes are instant. */
+    transition: none !important;
+  }
   .usb-sections li {
     filter: none !important;
     opacity: 1 !important;
     transition: none !important;
   }
   .usb-sections li.active {
-    transform: none;
-    transition: none;
+    transform: none !important;
+    transition: none !important;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LIGHT-MODE POLISH FOR THE SECTION LIST
+   On dark backgrounds, the soft greens / blue-grays / 0.55 opacity
+   blur read as "atmospheric depth". On a white sidebar they read
+   as "washed-out ghost rows". Three fixes per state:
+     1. Title colors swap to saturated values that survive on white
+     2. Card backgrounds get a stronger alpha so the row silhouette
+        actually defines a rectangle
+     3. The lens blur softens (less aggressive distance falloff)
+   ───────────────────────────────────────────────────────────── */
+
+/* Active section title — explicit dark color on the light gradient
+   so the heading line reads at a glance. (Dark-mode keeps the
+   `var(--yuval-text-primary, #ffffff)` from earlier.) */
+:root:not(.dark) .usb-sections li.active .section-title {
+  color: #0a1828;
+}
+
+/* Completed: deeper green title for contrast on white; the row's
+   light-green gradient stays pleasant but the title was washing
+   out at #8AC4A8. */
+:root:not(.dark) .usb-sections li.section-completed .section-title {
+  color: #1a7a4a;
+}
+
+/* Upcoming: slate-blue title that has enough weight to stand on a
+   nearly-transparent card background. */
+:root:not(.dark) .usb-sections li:not(.active):not(.section-completed) .section-title {
+  color: #475569;
+}
+:root:not(.dark) .usb-sections li:not(.active):not(.section-completed) .section-time {
+  color: #475569;
+}
+
+/* Card backgrounds — bumped alphas so each row silhouette is
+   actually visible against the sidebar. Borders also tightened. */
+:root:not(.dark) .usb-sections li.section-completed {
+  background: linear-gradient(
+    to left,
+    rgba(16, 185, 129, 0.18),
+    rgba(16, 185, 129, 0.06)
+  );
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+:root:not(.dark) .usb-sections li:not(.active):not(.section-completed) {
+  background: rgba(37, 99, 235, 0.04);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+/* Number circles — light-mode palette. Dark-mode greens/blues read
+   muddy on white. */
+:root:not(.dark) .usb-sections li.section-completed .usb-section-number {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #047857;
+}
+:root:not(.dark) .usb-sections li:not(.active):not(.section-completed) .usb-section-number {
+  border-color: rgba(37, 99, 235, 0.5);
+  color: #1D4ED8;
+}
+
+/* Chapter card meta text — light-mode contrast bump.
+   The base rule uses `--color-text-tertiary` which is `#cbd5e1`
+   in light (set in :root:not(.dark) at line 511) — nearly invisible
+   on the `#f8fafc` sidebar background. Bump to a darker slate that
+   reads at glance without hijacking the chapter title's visual
+   priority. */
+:root:not(.dark) .usb-card-meta {
+  color: #475569;
+}
+
+/* Chapter card border — light-mode contrast bump. The base
+   `--color-card-border-locked` (#e2e8f0) is nearly the same
+   brightness as `--color-card-bg-locked` (#f1f5f9), so the card
+   silhouette dissolves into the sidebar. Use a mid-slate to make
+   the rectangle definite. Completed and active states already have
+   their own border variables (#BBF7D0 / #2563EB) and are skipped
+   here so we don't override their state coloring. */
+:root:not(.dark) .usb-chapter:not(.usb-chapter-active):not(.usb-chapter-completed) .usb-card {
+  border-color: #94a3b8;
+}
+
+/* Completed chapter border bump — base #BBF7D0 is too pastel on
+   light. Step up to a saturated green that matches the completed
+   row treatment we set for sections. */
+:root:not(.dark) .usb-chapter-completed:not(.usb-chapter-active) .usb-card {
+  border-color: #4ade80;
+}
+
+/* Hover overrides for light mode. */
+:root:not(.dark) .usb-sections li.section-completed:hover {
+  background: linear-gradient(
+    to left,
+    rgba(16, 185, 129, 0.25),
+    rgba(16, 185, 129, 0.10)
+  );
+  border-color: rgba(16, 185, 129, 0.5);
+}
+:root:not(.dark) .usb-sections li:not(.active):not(.section-completed):hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.5);
+  border-style: solid;
+}
+
+/* Lens blur — much gentler on light. 0.7/0.55 was tuned for the
+   dark "out-of-focus night sky" feel; on white the same numbers
+   make rows read as "smudged photocopies". Halve the blur and
+   raise the opacity floor. */
+:root:not(.dark) .usb-sections li:has(~ li.active),
+:root:not(.dark) .usb-sections li.active ~ li {
+  filter: blur(0.4px);
+  opacity: 0.65;
+}
+:root:not(.dark) .usb-sections li:has(+ li.active),
+:root:not(.dark) .usb-sections li.active + li {
+  filter: blur(0.3px) !important;
+  opacity: 0.78 !important;
 }
