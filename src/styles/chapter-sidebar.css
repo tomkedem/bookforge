@@ -2262,3 +2262,43 @@
 #unified-sidebar .usb-preview-code .hljs-built_in,
 #unified-sidebar .usb-preview-code .hljs-symbol,
 #unified-sidebar .usb-preview-code .hljs-link { color: #4DA8E0; }
+
+/* ─────────────────────────────────────────────────────────────────
+   ROW CLEANUP  ─  remove ✓ on completed and time on non-active.
+   The completed row already reads as "done" via the green
+   gradient + green border + filled green circle + soft green
+   title — the ✓ is a fourth signal that's now redundant.
+   The chapter card above already shows total reading time, so
+   per-section time on rows the reader hasn't entered is also
+   redundant. Active row keeps its time pill since it answers the
+   live question "how long is left in what I'm reading right now?".
+   ───────────────────────────────────────────────────────────── */
+
+/* Suppress the completed-row ✓ pseudo-element. Kept declared earlier
+   in the file for history; this neutralizes it without deleting
+   the original rule. */
+.usb-sections li.section-completed .usb-section-title-row::after {
+  content: none;
+  display: none;
+}
+
+/* Hide per-section reading-time badge on every non-active row.
+   Both class names targeted because the renderer applies legacy
+   `.section-time` and the new `.usb-section-time` to the same
+   element. */
+.usb-sections li:not(.active) .usb-section-time,
+.usb-sections li:not(.active) .section-time {
+  display: none;
+}
+
+/* With time and ✓ gone, let the title claim the freed inline space.
+   `flex: 1` already exists on the title in the active-chapter rule
+   upstream, but that rule depends on `.usb-chapter-active` being on
+   the chapter LI — we've seen that ancestor class can be absent in
+   some states. This rule is unconditional and id-prefixed so it
+   wins regardless. */
+#unified-sidebar .usb-sections li:not(.active) .usb-section-title,
+#unified-sidebar .usb-sections li:not(.active) .section-title {
+  flex: 1;
+  min-width: 0;
+}
