@@ -221,8 +221,7 @@ const description = getLocalizedText(book.descriptions, language);
               {t('sidebar.chapters', language)}
             </h2>
             <span
-              class="flex-1 h-px"
-              style="background: linear-gradient(to left, rgba(201,162,39,0.5), transparent);"
+              class="chapters-heading-rule flex-1 h-px"
               aria-hidden="true"
             ></span>
           </div>
@@ -241,28 +240,18 @@ const description = getLocalizedText(book.descriptions, language);
                       `chapter-link-${chapter.id}`,
                       'block',
                       'p-3',
-                      'rounded-lg',
-                      'border',
-                      'border-yuval-border',
-                      'hover:border-[rgba(201,162,39,0.55)]',
-                      'hover:shadow-sm',
                       'transition-all',
                       'duration-200',
                       'focus:outline-none',
-                      'focus:ring-2',
-                      'focus:ring-offset-2',
-                      'focus:ring-yuval-highlight',
                       'relative',
                       'overflow-hidden',
-                      'bg-yuval-surface',
                     ]}
                     data-chapter-id={chapter.id}
                     data-book-slug={slug}
                   >
-                    <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5 bg-yuval-border">
+                    <div class="chapter-progress-bar absolute bottom-0 left-0 right-0 h-0.5">
                       <div
-                        class="chapter-progress-fill h-full bg-green-500 w-0 transition-all duration-700"
-                        style="border-radius: 0 2px 2px 0"
+                        class="chapter-progress-fill h-full w-0 transition-all duration-700"
                       ></div>
                     </div>
 
@@ -276,12 +265,8 @@ const description = getLocalizedText(book.descriptions, language);
                       ]}
                     >
                       <div class:list={[isRtl && 'text-right', 'flex-1', 'min-w-0', 'flex', 'items-start', 'gap-3']}>
-                        <!-- Gold-tinted chapter number badge. No "Chapter"
-                             label here — the list sits under a "Chapters"
-                             header so repeating the word on every row is
-                             just noise. -->
                         <span
-                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center min-w-[44px] h-9 px-2.5 rounded-md font-bold text-base tabular-nums"
+                          class="chapter-number-badge flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm tabular-nums"
                           aria-hidden="true"
                         >
                           {chapterNum.toString().padStart(2, '0')}
@@ -725,30 +710,105 @@ const description = getLocalizedText(book.descriptions, language);
     }
   }
 
-  /* Gold chapter-number badge — distinct light/dark palettes so the
-     numeral keeps strong contrast against the surface in both themes. */
-  .chapter-number-badge {
-    background-color: rgba(201, 162, 39, 0.12);
-    color: #8a6a15;
-    border: 1px solid rgba(201, 162, 39, 0.25);
+  /* Chapter cards on the landing page mirror the reading-view sidebar
+     identity: cyan/blue accent over a dark slate card in dark mode,
+     blue accent over a soft slate card in light mode. Tokens are
+     duplicated from src/styles/chapter-sidebar.css so this page stays
+     visually in sync without pulling in the full sidebar stylesheet. */
+  :root {
+    --landing-card-bg:           #0e1a26;
+    --landing-card-bg-completed: #102438;
+    --landing-card-border:       #374151;
+    --landing-card-border-completed: #1a3850;
+    --landing-card-border-hover: #4DA8E0;
+    --landing-circle-bg:         #102230;
+    --landing-circle-border:     #6b7280;
+    --landing-text-accent:       #4DA8E0;
+    --landing-text-completed:    #5DCAA5;
+    --landing-completion-green:  #5DCAA5;
+    --landing-progress-track:    rgba(255, 255, 255, 0.06);
   }
-  html.dark .chapter-number-badge {
-    background-color: rgba(201, 162, 39, 0.18);
-    color: #e5c158;
-    border-color: rgba(201, 162, 39, 0.4);
+  :root:not(.dark) {
+    --landing-card-bg:           #f1f5f9;
+    --landing-card-bg-completed: #ECFDF5;
+    --landing-card-border:       #e2e8f0;
+    --landing-card-border-completed: #BBF7D0;
+    --landing-card-border-hover: #2563EB;
+    --landing-circle-bg:         #f8fafc;
+    --landing-circle-border:     #9ca3af;
+    --landing-text-accent:       #2563EB;
+    --landing-text-completed:    #059669;
+    --landing-completion-green:  #10b981;
+    --landing-progress-track:    rgba(15, 23, 42, 0.08);
   }
 
-  /* Read-status signals: completed gets a soft green wash, in-progress
-     gets a gold border tint that pairs with the bottom progress fill. */
-  .chapter-link[data-read-status="completed"] {
-    background-color: rgba(34, 197, 94, 0.06);
-    border-color: rgba(34, 197, 94, 0.35);
+  /* Slim accent rule beside the "Chapters" heading. Mirrors the soft
+     gradient feeder used in the sidebar header. */
+  .chapters-heading-rule {
+    background: linear-gradient(
+      to var(--rule-direction, left),
+      color-mix(in srgb, var(--landing-text-accent) 55%, transparent),
+      transparent
+    );
   }
-  html.dark .chapter-link[data-read-status="completed"] {
-    background-color: rgba(34, 197, 94, 0.09);
-    border-color: rgba(34, 197, 94, 0.4);
+  [dir="ltr"] .chapters-heading-rule {
+    --rule-direction: right;
+  }
+
+  .chapter-link {
+    background: var(--landing-card-bg);
+    border: 1px solid var(--landing-card-border);
+    border-radius: 10px;
+  }
+  .chapter-link:hover {
+    border-color: var(--landing-card-border-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--landing-card-border-hover) 12%, transparent);
+  }
+  .chapter-link:focus-visible {
+    outline: 2px solid var(--landing-card-border-hover);
+    outline-offset: 2px;
+  }
+
+  .chapter-number-badge {
+    background: var(--landing-circle-bg);
+    border: 1.5px solid var(--landing-circle-border);
+    color: var(--landing-text-accent);
+    line-height: 1;
+  }
+  .chapter-link:hover .chapter-number-badge {
+    border-color: var(--landing-card-border-hover);
+    color: var(--landing-card-border-hover);
+  }
+
+  /* Bottom progress fill: in-progress = accent cyan/blue,
+     completed = green. Track is a low-contrast wash. */
+  .chapter-progress-bar {
+    background: var(--landing-progress-track);
+  }
+  .chapter-progress-fill {
+    background: var(--landing-text-accent);
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Read-status states. Completed leans green (action confirmed),
+     in-progress keeps the cyan accent on the border and the badge
+     so the active reading thread feels continuous with the sidebar. */
+  .chapter-link[data-read-status="completed"] {
+    background: var(--landing-card-bg-completed);
+    border-color: var(--landing-card-border-completed);
+  }
+  .chapter-link[data-read-status="completed"] .chapter-number-badge {
+    border-color: var(--landing-completion-green);
+    color: var(--landing-text-completed);
+  }
+  .chapter-link[data-read-status="completed"] .chapter-progress-fill {
+    background: var(--landing-completion-green);
   }
   .chapter-link[data-read-status="in-progress"] {
-    border-color: rgba(201, 162, 39, 0.45);
+    border-color: var(--landing-text-accent);
+  }
+  .chapter-link[data-read-status="in-progress"] .chapter-number-badge {
+    border-color: var(--landing-text-accent);
   }
 </style>
