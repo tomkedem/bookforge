@@ -10,7 +10,63 @@
 // for each action land in later tasks.
 ---
 
+<!-- Hidden SVG filter for the chromatic-shift collapse animation.
+     Mutated in real-time by sidebar-collapse.ts during the 500ms
+     window. Detached outside that window via the
+     body.left-sidebar-animating gate in CSS. -->
+<svg class="lsb-fx-defs" width="0" height="0" aria-hidden="true">
+  <defs>
+    <filter id="left-sidebar-chromatic" color-interpolation-filters="sRGB">
+      <feColorMatrix
+        id="left-sidebar-chromatic-matrix"
+        type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"
+      />
+    </filter>
+  </defs>
+</svg>
+
+<!-- Floating return button: appears on the inline-end screen edge
+     while the activity rail is collapsed. Mirror of the right-side
+     return button — same pulse-glow language, opposite anchor. -->
+<button
+  type="button"
+  class="lsb-return-btn"
+  data-left-sidebar-toggle="expand"
+  aria-controls="left-sidebar"
+  aria-expanded="true"
+  title="Show tools"
+  data-i18n-title="leftSidebar.expand"
+>
+  <span class="sr-only" data-i18n="leftSidebar.expand">Show tools</span>
+  <span class="lsb-return-glow" aria-hidden="true"></span>
+  <svg class="lsb-return-chev" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+    <!-- Chevron points inline-START in LTR (away from screen edge,
+         into the page = "I'll pop out"). CSS flips it for RTL. -->
+    <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
 <aside id="left-sidebar" class="left-sidebar" aria-label="Reading tools">
+  <!-- Collapse trigger: small chevron button at the top of the rail.
+       Chevron points outward (toward inline-end / outer screen edge).
+       Visually separated from the action icons by gap; the existing
+       gap: 1.1rem on the rail handles spacing. -->
+  <button
+    type="button"
+    class="lsb-collapse-btn"
+    data-left-sidebar-toggle="collapse"
+    aria-controls="left-sidebar"
+    aria-expanded="true"
+    title="Collapse tools"
+    data-i18n-title="leftSidebar.collapse"
+  >
+    <span class="sr-only" data-i18n="leftSidebar.collapse">Collapse tools</span>
+    <svg class="lsb-collapse-chev" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
   <button
     type="button"
     class="lsb-btn lsb-btn-goal"
@@ -302,5 +358,222 @@
 
   :global(.lsb-tooltip.visible) {
     opacity: 1;
+  }
+
+  /* ─── Chromatic-shift collapse ─────────────────────────────────────
+     Same approach as the right-side unified sidebar: 500ms cubic-out
+     on opacity + transform, with rAF mutating <feColorMatrix> for the
+     color → grayscale drain. The filter is only attached during the
+     animation window via :global(body.left-sidebar-animating). */
+
+  /* Exit direction: LeftSidebar sits on inline-END, so on collapse
+     it slides OUTWARD — away from the content edge.
+     LTR: inline-end = right → translateX(+100%)
+     RTL: inline-end = left  → translateX(-100%) */
+  :root { --lsb-collapse-exit: 1; }
+  :global([dir="rtl"]) { --lsb-collapse-exit: -1; }
+
+  .left-sidebar {
+    transition:
+      opacity 500ms cubic-bezier(0.33, 1, 0.68, 1),
+      transform 500ms cubic-bezier(0.33, 1, 0.68, 1);
+    will-change: opacity, transform;
+  }
+
+  :global(body.left-sidebar-animating) .left-sidebar {
+    filter: url(#left-sidebar-chromatic);
+  }
+
+  :global(body.left-sidebar-collapsed) .left-sidebar {
+    opacity: 0;
+    transform: translateX(calc(var(--lsb-collapse-exit, 1) * 100%));
+    pointer-events: none;
+  }
+
+  /* Hide the SVG defs visually but keep them in the layout tree. */
+  .lsb-fx-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* ─── Collapse button (top of rail) ─────────────────────────────── */
+  .lsb-collapse-btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
+    color: rgba(255, 255, 255, 0.55);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-block-end: 4px;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      transform 160ms ease;
+  }
+
+  :global(:root:not(.dark)) .lsb-collapse-btn {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .lsb-collapse-btn:hover {
+    background: rgba(201, 162, 39, 0.1);
+    border-color: rgba(201, 162, 39, 0.4);
+    color: #c9a227;
+  }
+
+  .lsb-collapse-btn:active { transform: scale(0.94); }
+
+  .lsb-collapse-btn:focus-visible {
+    outline: 2px solid rgba(201, 162, 39, 0.7);
+    outline-offset: 2px;
+  }
+
+  /* The chevron path points inline-END in LTR (toward the outer
+     screen edge). RTL flips horizontally. */
+  :global([dir="rtl"]) .lsb-collapse-chev {
+    transform: scaleX(-1);
+  }
+
+  /* ─── Return button (floating, on inline-end edge) ──────────────── */
+  .lsb-return-btn {
+    /* Mirror of usb-return-btn but anchored to inline-END. Half-pill
+       with rounded corners on the inline-START side (facing the
+       content). Pulse glow signals "bring me back" while collapsed. */
+    position: fixed;
+    inset-block-start: calc(50% + 60px);
+    inset-inline-end: 0;
+    z-index: 41;
+    width: 32px;
+    height: 64px;
+    padding: 0;
+    border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
+    border-inline-end: none;
+    border-start-start-radius: 14px;
+    border-end-start-radius: 14px;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    background: linear-gradient(
+      225deg,
+      rgba(201, 162, 39, 0.14),
+      rgba(201, 162, 39, 0.04)
+    );
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) translateX(calc(var(--lsb-collapse-exit, 1) * 12px));
+    transition:
+      opacity 320ms cubic-bezier(0.33, 1, 0.68, 1) 180ms,
+      transform 360ms cubic-bezier(0.33, 1, 0.68, 1) 180ms,
+      background 220ms ease;
+  }
+
+  :global(:root:not(.dark)) .lsb-return-btn {
+    color: rgba(0, 0, 0, 0.75);
+  }
+
+  :global(body.left-sidebar-collapsed) .lsb-return-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-50%) translateX(0);
+  }
+
+  .lsb-return-btn:hover {
+    background: linear-gradient(
+      225deg,
+      rgba(201, 162, 39, 0.28),
+      rgba(201, 162, 39, 0.10)
+    );
+  }
+
+  :global(body.left-sidebar-collapsed) .lsb-return-btn:hover {
+    transform:
+      translateY(-50%)
+      translateX(calc(var(--lsb-collapse-exit, 1) * -4px));
+  }
+
+  .lsb-return-btn:focus-visible {
+    outline: 2px solid rgba(201, 162, 39, 0.7);
+    outline-offset: 2px;
+  }
+
+  .lsb-return-chev {
+    transition: transform 220ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  /* Path points inline-START in LTR (toward content). RTL flips. */
+  :global([dir="rtl"]) .lsb-return-chev {
+    transform: scaleX(-1);
+  }
+
+  .lsb-return-btn:hover .lsb-return-chev {
+    transform: translateX(calc(var(--lsb-collapse-exit, 1) * 2px));
+  }
+
+  :global([dir="rtl"]) .lsb-return-btn:hover .lsb-return-chev {
+    transform: scaleX(-1) translateX(-2px);
+  }
+
+  /* Pulse glow ring — only animates while collapsed. */
+  .lsb-return-glow {
+    position: absolute;
+    inset: -8px;
+    border-radius: inherit;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(201, 162, 39, 0.55),
+      transparent 70%
+    );
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  :global(body.left-sidebar-collapsed) .lsb-return-glow {
+    animation: lsbReturnPulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes lsbReturnPulse {
+    0%, 100% { transform: scale(0.92); opacity: 0.32; }
+    50%      { transform: scale(1.12); opacity: 0.7; }
+  }
+
+  /* sr-only — visually hidden but accessible to screen readers.
+     Mirrors the global utility used elsewhere in the codebase. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Mobile: rail is already hidden under 1024px; hide collapse and
+     return controls there too. */
+  @media (max-width: 1023px) {
+    .lsb-collapse-btn,
+    .lsb-return-btn { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .left-sidebar,
+    .lsb-return-btn,
+    .lsb-return-chev,
+    .lsb-collapse-btn { transition-duration: 0ms !important; }
+    :global(body.left-sidebar-collapsed) .lsb-return-glow { animation: none; }
   }
 </style>

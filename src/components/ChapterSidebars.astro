@@ -49,6 +49,43 @@ function formatChapterNumber(id: number | string): string {
 ---
 
 <div class="sidebars-container" transition:persist="sidebars">
+  <!-- Hidden SVG filter for the chromatic-shift collapse animation.
+       The matrix values are mutated by sidebar-collapse.ts during
+       the 500ms transition, drains color → grayscale (or back).
+       Outside the animation window the filter is detached entirely
+       (CSS only applies it under body.sidebar-animating), so there's
+       no perpetual offscreen-render cost. -->
+  <svg class="sidebar-fx-defs" width="0" height="0" aria-hidden="true">
+    <defs>
+      <filter id="sidebar-chromatic" color-interpolation-filters="sRGB">
+        <feColorMatrix
+          id="sidebar-chromatic-matrix"
+          type="matrix"
+          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Floating return button: appears on the inline-start screen
+       edge while the sidebar is collapsed. Pulse-glow signals
+       "bring me back". Hidden + non-interactive when expanded. -->
+  <button
+    type="button"
+    class="usb-return-btn"
+    data-sidebar-toggle="expand"
+    aria-controls="unified-sidebar"
+    aria-expanded="true"
+    title="Show navigation"
+    data-i18n-title="sidebar.expand"
+  >
+    <span class="sr-only" data-i18n="sidebar.expand">Show navigation</span>
+    <span class="usb-return-glow" aria-hidden="true"></span>
+    <svg class="usb-return-chev" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
   <!-- Mobile TOC toggle button (kept in DOM for FAB delegation; never visible on desktop) -->
   <button
     id="mobile-toc-toggle"
@@ -134,9 +171,28 @@ function formatChapterNumber(id: number | string): string {
     <header class="usb-header">
       <div class="usb-header-row">
         <span class="usb-title" data-i18n="sidebar.tableOfContents">תוכן העניינים</span>
-        <span class="usb-completion-count">
-          <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapters.length}</span>
-          <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
+        <span class="usb-header-actions">
+          <span class="usb-completion-count">
+            <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapters.length}</span>
+            <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
+          </span>
+          <!-- Collapse button: triggers chromatic-shift hide. Chevron
+               always points toward the outer screen edge (inline-start
+               of viewport). The CSS flips it for RTL via scaleX. -->
+          <button
+            type="button"
+            class="usb-collapse-btn"
+            data-sidebar-toggle="collapse"
+            aria-controls="unified-sidebar"
+            aria-expanded="true"
+            title="Collapse navigation"
+            data-i18n-title="sidebar.collapse"
+          >
+            <span class="sr-only" data-i18n="sidebar.collapse">Collapse navigation</span>
+            <svg class="usb-collapse-chev" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </span>
       </div>
       <div class="usb-progress-track">
@@ -424,5 +480,8 @@ function formatChapterNumber(id: number | string): string {
      DOMContentLoaded vs. already-loaded itself, and idempotently
      installs all lifecycle handlers. */
   import { bootstrap } from '../utils/sidebar/sidebar-init';
+  /* Collapse / chromatic-shift toggle. Self-bootstraps on import. */
+  import '../scripts/sidebar-collapse';
+
   bootstrap();
 </script>

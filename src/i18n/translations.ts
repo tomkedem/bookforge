@@ -59,6 +59,8 @@ export const translations: Translations = {
   'sidebar.outline':       { he: 'מתוכן הפרק',     en: 'Chapter Outline',  es: 'Esquema del Capítulo' },
   'sidebar.noSections':    { he: 'לא נמצאו סעיפים', en: 'No sections found', es: 'No se encontraron secciones' },
   'sidebar.noSectionsFound': { he: 'לא נמצאו סעיפים', en: 'No sections found', es: 'No se encontraron secciones' },
+  'sidebar.collapse':      { he: 'הסתר תפריט',       en: 'Collapse navigation', es: 'Ocultar navegación' },
+  'sidebar.expand':        { he: 'הצג תפריט',        en: 'Show navigation',     es: 'Mostrar navegación' },
 
   // ── Reading status ──────────────────────────────────────────────────────────
   'reading.total':         { he: '{{n}} דקות קריאה', en: '{{n}} min read',   es: '{{n}} min de lectura' },
@@ -324,6 +326,8 @@ export const translations: Translations = {
   'leftSidebar.statistics': { he: 'סטטיסטיקות קריאה',   en: 'Reading statistics',   es: 'Estadísticas de lectura' },
   'leftSidebar.bookmarks':  { he: 'סימניות',            en: 'Bookmarks',            es: 'Marcadores' },
   'leftSidebar.highlights': { he: 'ההדגשות שלי',        en: 'My highlights',        es: 'Mis resaltados' },
+  'leftSidebar.collapse':   { he: 'הסתר סרגל כלים',     en: 'Collapse tools',       es: 'Ocultar herramientas' },
+  'leftSidebar.expand':     { he: 'הצג סרגל כלים',      en: 'Show tools',           es: 'Mostrar herramientas' },
 
   // ── Image Lightbox ──────────────────────────────────────────────────────────
   'lightbox.close':        { he: 'סגור',              en: 'Close',            es: 'Cerrar' },

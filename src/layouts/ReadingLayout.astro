@@ -758,6 +758,12 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
           margin-right: 0;
           margin-inline-start: 320px;
           margin-inline-end: 76px;
+          /* Sync with the chromatic-shift collapse animations: same
+             500ms cubic-out the SVG matrices run on. Both edges
+             transition independently. */
+          transition:
+            margin-inline-start 500ms cubic-bezier(0.33, 1, 0.68, 1),
+            margin-inline-end   500ms cubic-bezier(0.33, 1, 0.68, 1);
         }
 
         /* Immersive: hides the unified sidebar, so we drop the
@@ -765,6 +771,19 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         :global(body.reading-immersive) .reading-article {
           margin-inline-start: 0;
           margin-inline-end: 76px;
+        }
+
+        /* Sidebar-collapsed: same reservation drop, but driven by
+           the explicit collapse toggle (independent of immersive). */
+        :global(body.sidebar-collapsed) .reading-article {
+          margin-inline-start: 0;
+        }
+
+        /* Left-sidebar collapsed: drop the inline-end activity-rail
+           reservation. Stacks with sidebar-collapsed when both are
+           collapsed (full-width reading column). */
+        :global(body.left-sidebar-collapsed) .reading-article {
+          margin-inline-end: 0;
         }
       }
 
