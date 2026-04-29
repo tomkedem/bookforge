@@ -40,7 +40,7 @@ function injectStyles(): void {
       position: fixed;
       top: 72px;
       left: 50%;
-      transform: translateX(-50%) translateY(-8px);
+      transform: translateX(-50%) translateY(-10px) scale(0.985);
       z-index: 9985;
       display: flex;
       flex-direction: column;
@@ -51,13 +51,21 @@ function injectStyles(): void {
       box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1), transform 320ms cubic-bezier(0.3, 0, 0, 1);
+      transform-origin: top center;
+      /* Smooth, connected entry: 180ms opacity + 200ms transform —
+         feels like the panel descends from the dock's search tile. */
+      transition:
+        opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+        transform 200ms cubic-bezier(0.33, 1, 0.68, 1);
       overflow: hidden;
     }
     #chapter-search.open {
       opacity: 1;
       pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #chapter-search { transition-duration: 0ms; }
     }
     :is(.dark) #chapter-search {
       background: #232323;
@@ -682,17 +690,25 @@ function buildSearchBar(): void {
 
 function openSearch(): void {
   if (!searchBar || !searchInput) return;
+  if (searchBar.classList.contains('open')) return;  // already open
   searchBar.classList.add('open');
   setTimeout(() => searchInput?.focus(), 20);
+  // Notify other UI surfaces (e.g. the left dock's search tile)
+  // so they can mirror the open state visually.
+  window.dispatchEvent(new CustomEvent('search:opened'));
 }
 
 function closeSearch(): void {
   if (!searchBar || !searchInput || !searchResults) return;
+  const wasOpen = searchBar.classList.contains('open');
   searchBar.classList.remove('open');
   searchInput.value = '';
   searchResults.innerHTML = '';
   clearMatches();
   updateCount();
+  if (wasOpen) {
+    window.dispatchEvent(new CustomEvent('search:closed'));
+  }
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -726,6 +742,16 @@ export function initSearch(signal: AbortSignal): void {
       !!target?.closest('[contenteditable="true"]');
 
     if (e.key === '/' && !isTyping) {
+      e.preventDefault();
+      openSearch();
+    }
+
+    // Ctrl/Cmd + F: open the in-chapter search instead of the
+    // browser's native find. Keeps the user inside the premium
+    // overlay (with mode toggle, counter, jump-to-match) instead
+    // of the rectangular OS bar.
+    const isFindCombo = (e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F');
+    if (isFindCombo) {
       e.preventDefault();
       openSearch();
     }

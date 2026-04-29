@@ -95,7 +95,23 @@ function showTooltipFor(button: HTMLButtonElement): void {
   const key = button.dataset.i18nTooltip;
   if (!key) return;
   const tip = ensureTooltip();
-  tip.textContent = t(key, getLang());
+
+  // Build content: label + optional keycap shortcut.
+  // The shortcut is a desktop-only hint (CSS handles hiding it on
+  // touch / narrow screens via .lsb-tooltip-shortcut).
+  const shortcut = button.dataset.shortcut?.trim();
+  tip.replaceChildren();
+  const label = document.createElement('span');
+  label.className = 'lsb-tooltip-label';
+  label.textContent = t(key, getLang());
+  tip.appendChild(label);
+  if (shortcut) {
+    const kbd = document.createElement('span');
+    kbd.className = 'lsb-tooltip-shortcut';
+    kbd.textContent = shortcut;
+    tip.appendChild(kbd);
+  }
+
   positionTooltip(button, tip);
   tip.classList.add('visible');
 }
@@ -145,6 +161,31 @@ function handleClick(button: HTMLButtonElement, sidebar: HTMLElement): void {
   }
   const isOpen = button.classList.contains('active');
   const action = button.dataset.action || '';
+
+  // Search tile: fire a one-shot pulse animation on activation so
+  // the icon visually "launches" the overlay above. The animation
+  // class is removed at end so a future activation re-triggers it.
+  if (action === 'search' && isOpen) {
+    button.classList.remove('lsb-pulse');
+    // Force reflow so re-adding the class restarts the animation.
+    void button.offsetWidth;
+    button.classList.add('lsb-pulse');
+    button.addEventListener(
+      'animationend',
+      () => button.classList.remove('lsb-pulse'),
+      { once: true }
+    );
+  }
+
+  // If the user pivots to a NON-search tile, close the search
+  // overlay so it doesn't linger out of sync with the no-longer-
+  // active icon. Search is the only tile owning a connected
+  // floating panel; the others use modals/popovers that handle
+  // their own dismissal.
+  if (action !== 'search') {
+    const win = window as unknown as { __closeSearch?: () => void };
+    win.__closeSearch?.();
+  }
 
   // Delegate to the legacy FAB / floating-button so the existing
   // panels, modals, and TTS hook open exactly like before. Each target
@@ -317,6 +358,27 @@ export function initLeftSidebar(signal?: AbortSignal): void {
   // is already authoritative — no need to wait.
   refreshAll();
   watchReadingProgress(signal);
+
+  // Mirror the search overlay's open/close state on the search
+  // tile. Without this, the icon stays "active" if the user
+  // dismisses search via Escape or the X button — drifting out
+  // of sync. The events are dispatched from search.ts.
+  const syncSearchActive = (isOpen: boolean): void => {
+    const btn = sidebar.querySelector<HTMLButtonElement>(
+      '.lsb-btn[data-action="search"]'
+    );
+    if (!btn) return;
+    if (isOpen) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+    } else {
+      btn.classList.remove('active');
+      btn.classList.remove('lsb-pulse');
+      btn.setAttribute('aria-pressed', 'false');
+    }
+  };
+  window.addEventListener('search:opened', () => syncSearchActive(true), opts);
+  window.addEventListener('search:closed', () => syncSearchActive(false), opts);
 
   // React immediately to user actions inside the existing modules so
   // badges feel live. Storage event covers cross-tab edits.

@@ -112,7 +112,7 @@ export const translations: Translations = {
   'search.modeChapter':    { he: 'חיפוש בפרק',      en: 'Search chapter',    es: 'Buscar en capítulo' },
   'search.modeBook':       { he: 'חיפוש בספר',      en: 'Search book',       es: 'Buscar en libro' },
   'search.noResults':      { he: 'אין תוצאות',       en: 'No results',        es: 'Sin resultados' },
-  'search.results':        { he: '{{n}} מתוך {{total}}', en: '{{n}} of {{total}}', es: '{{n}} de {{total}}' },
+  'search.results':        { he: '{{n}} / {{total}}',    en: '{{n}} / {{total}}',  es: '{{n}} / {{total}}' },
   'search.chapterLabel':   { he: 'פרק {{n}}',        en: 'Chapter {{n}}',     es: 'Capítulo {{n}}' },
   'search.ariaPrev':       { he: 'תוצאה קודמת',      en: 'Previous result',   es: 'Resultado anterior' },
   'search.ariaNext':       { he: 'תוצאה הבאה',       en: 'Next result',       es: 'Resultado siguiente' },
@@ -339,7 +339,7 @@ export const translations: Translations = {
   'readingTools.readingStats':  { he: 'סטטיסטיקות קריאה',  en: 'Reading statistics', es: 'Estadísticas de lectura' },
   'readingTools.bookmarks':     { he: 'סימניות',            en: 'Bookmarks',          es: 'Marcadores' },
   'readingTools.highlights':    { he: 'ההדגשות שלי',        en: 'My highlights',      es: 'Mis resaltados' },
-  'readingTools.search':        { he: 'חיפוש',              en: 'Search',             es: 'Buscar' },
+  'readingTools.search':        { he: 'חיפוש בפרק',         en: 'Search in chapter',  es: 'Buscar en el capítulo' },
 
   // ── Image Lightbox ──────────────────────────────────────────────────────────
   'lightbox.close':        { he: 'סגור',              en: 'Close',            es: 'Cerrar' },
