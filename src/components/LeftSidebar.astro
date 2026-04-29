@@ -30,13 +30,13 @@
          rotated -90deg in CSS so the arc starts at 12 o'clock; the
          gradient runs along its visible sweep, picking up purple at
          the start and electric cyan at the end. -->
-    <!-- Soft Yuval-brand gradient: indigo (matches the right TOC
-         active accent #7c5cf0) → lighter indigo → warm gold (the
+    <!-- Soft Yuval-brand gradient: gold (matches the right TOC
+         active accent #b8923f) → lighter gold → warm gold (the
          header ornament tone). Ties the dock to both the menu-on-
          the-right and the logo-up-top without electric blue. -->
     <linearGradient id="rldock-progress-arc" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%"   stop-color="#7c5cf0"/>
-      <stop offset="60%"  stop-color="#a89cf5"/>
+      <stop offset="0%"   stop-color="#b8923f"/>
+      <stop offset="60%"  stop-color="#e6c98a"/>
       <stop offset="100%" stop-color="#d4c4a8"/>
     </linearGradient>
   </defs>
@@ -350,14 +350,14 @@
     color: #2c2c34;
   }
 
-  /* Active state: same indigo as dark theme but the inset glow is
+  /* Active state: same gold as dark theme but the inset glow is
      milder (cream surface doesn't need much glow to read). */
   :global(:root:not(.dark)) .lsb-btn.reading-left-dock__item.active {
-    background: rgba(124, 92, 240, 0.10);
-    border-color: rgba(124, 92, 240, 0.45);
+    background: rgba(184, 146, 63, 0.10);
+    border-color: rgba(184, 146, 63, 0.45);
     color: #2c2c34;
     box-shadow:
-      inset 0 0 14px rgba(124, 92, 240, 0.10),
+      inset 0 0 14px rgba(184, 146, 63, 0.10),
       inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 
@@ -374,8 +374,8 @@
   }
 
   :global(:root:not(.dark)) .reading-left-dock__collapse:hover {
-    background: rgba(124, 92, 240, 0.10);
-    border-color: rgba(124, 92, 240, 0.40);
+    background: rgba(184, 146, 63, 0.10);
+    border-color: rgba(184, 146, 63, 0.40);
     color: #2c2c34;
   }
 
@@ -453,7 +453,7 @@
     stroke: url(#rldock-progress-arc);
     stroke-width: 4;
     stroke-linecap: round;
-    filter: drop-shadow(0 0 5px rgba(124, 92, 240, 0.35));
+    filter: drop-shadow(0 0 5px rgba(184, 146, 63, 0.35));
     transition: stroke-dasharray 500ms cubic-bezier(0.33, 1, 0.68, 1);
   }
 
@@ -536,13 +536,13 @@
   }
 
   .reading-left-dock__item:focus-visible {
-    outline: 2px solid rgba(168, 156, 245, 0.7);
+    outline: 2px solid rgba(230, 201, 138, 0.7);
     outline-offset: 2px;
   }
 
-  /* Thin indigo vertical indicator on the LEFT edge of the active
+  /* Thin gold vertical indicator on the LEFT edge of the active
      tile (screen-edge side). Tone matches the right TOC's active
-     chapter color (#7c5cf0/#a89cf5) so the two menus feel like
+     chapter color (#b8923f/#e6c98a) so the two menus feel like
      siblings. Hidden by default via scaleY(0). */
   .reading-left-dock__item::before {
     content: '';
@@ -555,10 +555,10 @@
     border-radius: 2px;
     background: linear-gradient(
       180deg,
-      #a89cf5 0%,
-      #7c5cf0 100%
+      #e6c98a 0%,
+      #b8923f 100%
     );
-    box-shadow: 0 0 6px rgba(124, 92, 240, 0.45);
+    box-shadow: 0 0 6px rgba(184, 146, 63, 0.45);
     transform: translateY(-50%) scaleY(0);
     transform-origin: center;
     opacity: 0;
@@ -596,9 +596,9 @@
     display: none;
   }
 
-  /* Small indigo dot indicator — sits inside the tile near the
+  /* Small gold dot indicator — sits inside the tile near the
      content-facing (right) edge of the active item. Physical right
-     so it never flips by language. Matches Yuval's brand indigo. */
+     so it never flips by language. Matches Yuval's brand gold. */
   .reading-left-dock__item-dot {
     position: absolute;
     top: 9px;
@@ -607,8 +607,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #a89cf5;
-    box-shadow: 0 0 5px rgba(168, 156, 245, 0.6);
+    background: #e6c98a;
+    box-shadow: 0 0 5px rgba(230, 201, 138, 0.6);
     transform: scale(0);
     opacity: 0;
     pointer-events: none;
@@ -635,16 +635,16 @@
   }
 
   /* ── Active state — driven by `.active` (toggled by left-sidebar.ts) ──
-     Soft indigo wash + thin left-edge indicator + small right-corner
-     dot + INSET indigo glow only inside the tile. The tone matches
-     the Yuval brand indigo (#7c5cf0) used by the right TOC for the
+     Soft gold wash + thin left-edge indicator + small right-corner
+     dot + INSET gold glow only inside the tile. The tone matches
+     the Yuval brand gold (#b8923f) used by the right TOC for the
      active chapter, so the two sidebars share one accent color. */
   .lsb-btn.reading-left-dock__item.active {
-    background: rgba(124, 92, 240, 0.16);
-    border-color: rgba(168, 156, 245, 0.42);
+    background: rgba(184, 146, 63, 0.16);
+    border-color: rgba(230, 201, 138, 0.42);
     color: #ffffff;
     box-shadow:
-      inset 0 0 18px rgba(124, 92, 240, 0.18),
+      inset 0 0 18px rgba(184, 146, 63, 0.18),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
@@ -675,28 +675,28 @@
   .lsb-btn.reading-left-dock__item.lsb-btn-search.active {
     transform: translateY(-2px);
     box-shadow:
-      inset 0 0 22px rgba(124, 92, 240, 0.28),
+      inset 0 0 22px rgba(184, 146, 63, 0.28),
       inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 6px 20px -8px rgba(124, 92, 240, 0.45);
+      0 6px 20px -8px rgba(184, 146, 63, 0.45);
   }
 
   .lsb-btn.reading-left-dock__item.lsb-btn-search.active
     .reading-left-dock__item-icon {
-    filter: drop-shadow(0 0 6px rgba(168, 156, 245, 0.55));
+    filter: drop-shadow(0 0 6px rgba(230, 201, 138, 0.55));
   }
 
   /* One-shot click pulse — fires the moment the search tile is
      activated. Echoes the overlay's slide-in (200ms opacity / ~320ms
      transform) by lifting + glowing slightly more for a brief beat. */
   @keyframes lsb-search-pulse {
-    0%   { transform: translateY(0);    box-shadow: inset 0 0 0 rgba(124, 92, 240, 0); }
+    0%   { transform: translateY(0);    box-shadow: inset 0 0 0 rgba(184, 146, 63, 0); }
     35%  { transform: translateY(-3px); box-shadow:
-              inset 0 0 26px rgba(124, 92, 240, 0.35),
-              0 8px 22px -6px rgba(124, 92, 240, 0.55); }
+              inset 0 0 26px rgba(184, 146, 63, 0.35),
+              0 8px 22px -6px rgba(184, 146, 63, 0.55); }
     100% { transform: translateY(-2px); box-shadow:
-              inset 0 0 22px rgba(124, 92, 240, 0.28),
+              inset 0 0 22px rgba(184, 146, 63, 0.28),
               inset 0 1px 0 rgba(255, 255, 255, 0.07),
-              0 6px 20px -8px rgba(124, 92, 240, 0.45); }
+              0 6px 20px -8px rgba(184, 146, 63, 0.45); }
   }
 
   .lsb-btn.reading-left-dock__item.lsb-btn-search.lsb-pulse {
@@ -724,14 +724,14 @@
     box-sizing: border-box;
     border-radius: 9px;
     border: 1.5px solid rgba(7, 13, 28, 0.85);
-    background: #8A4DFF;
+    background: #d4af37;
     color: #ffffff;
     font-size: 0.68rem;
     font-weight: 700;
     line-height: 15px;
     text-align: center;
     pointer-events: none;
-    box-shadow: 0 0 8px rgba(138, 77, 255, 0.6);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
   }
 
   .lsb-btn[data-badge-color="green"]::after { background: #1f8a4d; }
@@ -840,14 +840,14 @@
 
   .reading-left-dock__collapse:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(168, 156, 245, 0.35);
+    border-color: rgba(230, 201, 138, 0.35);
     color: #ffffff;
   }
 
   .reading-left-dock__collapse:active { transform: scale(0.94); }
 
   .reading-left-dock__collapse:focus-visible {
-    outline: 2px solid rgba(168, 156, 245, 0.7);
+    outline: 2px solid rgba(230, 201, 138, 0.7);
     outline-offset: 2px;
   }
 
@@ -910,7 +910,7 @@
     border-bottom-right-radius: 14px;
     background: linear-gradient(
       135deg,
-      rgba(124, 92, 240, 0.18),
+      rgba(184, 146, 63, 0.18),
       rgba(28, 28, 34, 0.5)
     );
     color: rgba(232, 230, 255, 0.95);
@@ -935,7 +935,7 @@
   .lsb-return-btn:hover {
     background: linear-gradient(
       135deg,
-      rgba(168, 156, 245, 0.32),
+      rgba(230, 201, 138, 0.32),
       rgba(28, 28, 34, 0.6)
     );
   }
@@ -945,7 +945,7 @@
   }
 
   .lsb-return-btn:focus-visible {
-    outline: 2px solid rgba(168, 156, 245, 0.7);
+    outline: 2px solid rgba(230, 201, 138, 0.7);
     outline-offset: 2px;
   }
 
@@ -967,7 +967,7 @@
     border-radius: inherit;
     background: radial-gradient(
       ellipse at center,
-      rgba(168, 156, 245, 0.45),
+      rgba(230, 201, 138, 0.45),
       transparent 70%
     );
     opacity: 0;

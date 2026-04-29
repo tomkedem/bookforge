@@ -160,10 +160,14 @@
    list scrolls behind. Negative margins + re-padding extend the
    solid background out to the sidebar's full inline width so
    scrolled chapter rows don't peek through at the inline edges. */
+/* z-index: 10 — strictly above the active chapter <li> (z-index: 5
+   in chapter-sidebar.css:2643) and every other card-internal stack
+   level, so chapter cards always slide UNDER this sticky header
+   when the list scrolls. */
 .usb-header {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 10;
   background: var(--yuval-surface, #fff);
   margin: 0 -16px 8px;
   padding: 8px 16px 6px;
@@ -181,16 +185,20 @@
   gap: 8px;
 }
 
+/* Section title — placed in cream-gold (matches the Yuval logo
+   and the dock's progress percent) so the TOC header reads as
+   the same chrome layer. The deeper saturated gold is reserved
+   for the things that move (active chapter, percent, dock tile). */
 .usb-title {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #7c5cf0;
+  color: #8b7355;
 }
 
 .dark .usb-title {
-  color: #a89cf5;
+  color: #d4c4a8;
 }
 
 .usb-completion-count {
@@ -372,10 +380,18 @@
   color: var(--yuval-text-muted, #6b7280);
 }
 
+/* Reading-progress percent — uses the same deep-gold accent as
+   the active chapter and the active dock tile so the user sees one
+   consistent "you-are-here" color across the whole reading UI.
+   Light-mode variant below. */
 .usb-progress-percent {
   font-variant-numeric: tabular-nums;
-  color: var(--yuval-text-secondary, var(--yuval-text-muted, #6b7280));
-  font-weight: 500;
+  color: #b8923f;
+  font-weight: 600;
+}
+
+.dark .usb-progress-percent {
+  color: #e6c98a;
 }
 
 .usb-time-remaining {
@@ -1470,18 +1486,18 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #7c5cf0;
+  background: #b8923f;
   border: 0;
   color: #fff;
   cursor: pointer;
   z-index: 50;
-  box-shadow: 0 4px 20px rgba(124, 92, 240, 0.4);
+  box-shadow: 0 4px 20px rgba(184, 146, 63, 0.4);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .mobile-toc-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 24px rgba(124, 92, 240, 0.5);
+  box-shadow: 0 6px 24px rgba(184, 146, 63, 0.5);
 }
 
 .mobile-toc-btn:active {
@@ -1497,7 +1513,7 @@
 }
 
 .mobile-toc-btn-glow {
-  background: rgba(124, 92, 240, 0.3);
+  background: rgba(184, 146, 63, 0.3);
   filter: blur(12px);
   z-index: -1;
 }
