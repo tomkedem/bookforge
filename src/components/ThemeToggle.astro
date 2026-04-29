@@ -70,16 +70,12 @@ const { class: className } = Astro.props;
       <div class="moon-sparkle"></div>
     </div>
 
-    <!-- Clouds - continuous drift -->
-    <div class="clouds">
-      <div class="cloud-track">
-        <div class="cloud cloud-a"></div>
-        <div class="cloud cloud-b"></div>
-        <div class="cloud cloud-c"></div>
-        <div class="cloud cloud-d"></div>
-        <div class="cloud cloud-e"></div>
-      </div>
-    </div>
+    <!-- Clouds — JS-spawned, each with fully randomized geometry,
+         altitude, opacity, drift speed and puff layout. The host
+         starts empty; clouds enter from the right and self-remove
+         when they exit on the left. Edge-fade mask in CSS keeps
+         their entry/exit gentle. -->
+    <div class="clouds" data-sky-clouds aria-hidden="true"></div>
   </div>
 
   <!-- Glass frame overlay -->
@@ -87,21 +83,29 @@ const { class: className } = Astro.props;
 </button>
 
 <style>
+  /* +15% lift in both dimensions over the previous 73×32 baseline,
+     so the sky window earns a touch more presence in the header
+     without dominating it. Both axes scale together to preserve
+     proportions. */
   .sky-window {
     position: relative;
-    width: 64px;
-    height: 28px;
-    border-radius: 14px;
+    width: 84px;
+    height: 37px;
+    border-radius: 18px;
     overflow: visible;
     cursor: pointer;
     border: none;
     padding: 0;
     background: transparent;
-    transition: transform 300ms var(--ease-standard);
+    transition: transform 300ms var(--ease-standard),
+                filter 600ms var(--ease-standard);
   }
 
   .sky-window:hover {
     transform: scale(1.05);
+    /* Subtle daylight shift on hover — reads as a "warmer moment"
+       inside the window without lighting up the whole header. */
+    filter: brightness(1.06) saturate(1.05);
   }
 
   .sky-window:active {
@@ -334,10 +338,20 @@ const { class: className } = Astro.props;
     left: var(--bird-start-x, -20px);
     width: var(--bird-size, 14px);
     height: calc(var(--bird-size, 14px) * 0.5);
-    opacity: var(--bird-opacity, 0.9);
+    opacity: var(--bird-opacity, 0.6);
     pointer-events: none;
     will-change: transform;
-    animation: bird-fly var(--bird-dur, 8s) linear forwards;
+    /* Soft atmospheric blur — blends the silhouette with the sky so
+       the bird reads as part of the scene rather than a UI sprite.
+       The filter is kept off-the-main-thread by using a single
+       transform-only animation; the blur stays static. */
+    filter: blur(0.25px);
+    /* Linear timing so the bird crosses the frame at a constant
+       glide speed — real birds don't ease-in or ease-out within a
+       2-4s pass; an easing curve shows up here as an unnatural
+       accel/decel mid-frame. The y-drift in the keyframes already
+       provides the "soft" feel the spec asks for. */
+    animation: bird-fly var(--bird-dur, 3s) linear forwards;
     /* The transform in bird-fly already owns scaleX for direction; we
        keep the bird group itself untransformed here. */
   }
@@ -376,11 +390,13 @@ const { class: className } = Astro.props;
     50%, 100% { opacity: 1; }
   }
 
+  /* Mostly horizontal — small (≤1.4px) vertical drift keeps the
+     flock reading as a calm V/wave line instead of a roller-coaster. */
   @keyframes bird-fly {
     0%   { transform: translate(0, 0) scaleX(var(--bird-dir, 1)); }
-    25%  { transform: translate(var(--bird-x-25, 0), -2.2px) scaleX(var(--bird-dir, 1)); }
-    50%  { transform: translate(var(--bird-x-50, 0), 1.5px)  scaleX(var(--bird-dir, 1)); }
-    75%  { transform: translate(var(--bird-x-75, 0), -1.5px) scaleX(var(--bird-dir, 1)); }
+    25%  { transform: translate(var(--bird-x-25, 0), -1.2px) scaleX(var(--bird-dir, 1)); }
+    50%  { transform: translate(var(--bird-x-50, 0),  0.8px) scaleX(var(--bird-dir, 1)); }
+    75%  { transform: translate(var(--bird-x-75, 0), -0.8px) scaleX(var(--bird-dir, 1)); }
     100% { transform: translate(var(--bird-x-100, 0), 0)    scaleX(var(--bird-dir, 1)); }
   }
 
@@ -614,57 +630,88 @@ const { class: className } = Astro.props;
     opacity: 0;
     transition: opacity 600ms var(--ease-standard);
     overflow: hidden;
+    /* Edge-fade mask: clouds entering from the right fade IN over
+       the first ~12% of the window's width and OUT over the last
+       ~12%. Reads as clouds drifting in/out of view through a
+       soft horizon, instead of "popping" at the edges. Both the
+       webkit prefix and the standard property are set so all
+       evergreen browsers pick it up. */
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    );
   }
 
   :global(.dark) .clouds {
     opacity: 1;
   }
 
-  .cloud-track {
-    position: absolute;
-    width: 200%;
-    height: 100%;
-    animation: drift-clouds 25s linear infinite;
-  }
+  /*
+    Each cloud is now a JS-spawned <div> that drifts independently
+    across the window. No two are alike: width, height, altitude,
+    opacity, drift duration, and the count + size + position of
+    its inner puffs are all randomized per spawn.
 
-  @keyframes drift-clouds {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-
-  .cloud {
+    The body is a soft radial-gradient ellipse (no hard edges).
+    Inside it, 2-4 .cloud-puff children layer additional rounded
+    bumps for the cumulus / "sheep wool" silhouette. A 0.6px filter
+    blur fluffs whatever crisp edges remain.
+  */
+  :global(.cloud) {
     position: absolute;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 10px;
-  }
-
-  .cloud::before,
-  .cloud::after {
-    content: '';
-    position: absolute;
-    background: inherit;
+    bottom: var(--cloud-y, 8px);
+    left: 0;
+    width: var(--cloud-w, 22px);
+    height: var(--cloud-h, 12px);
+    opacity: var(--cloud-opacity, 0.85);
     border-radius: 50%;
+    background: radial-gradient(
+      ellipse at 35% 45%,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.85) 45%,
+      rgba(255, 255, 255, 0.55) 80%,
+      rgba(255, 255, 255, 0.0) 100%
+    );
+    filter: blur(0.6px);
+    pointer-events: none;
+    will-change: transform;
+    animation: cloud-drift var(--cloud-dur, 26s) linear forwards;
+    animation-delay: var(--cloud-delay, 0s);
   }
 
-  .cloud-a { width: 14px; height: 5px; bottom: 8px; left: 5px; }
-  .cloud-a::before { width: 7px; height: 7px; top: -4px; left: 2px; }
-  .cloud-a::after { width: 6px; height: 6px; top: -3px; left: 7px; }
+  :global(.cloud-puff) {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 40% 40%,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(255, 255, 255, 0.72) 55%,
+      rgba(255, 255, 255, 0.0) 100%
+    );
+    pointer-events: none;
+  }
 
-  .cloud-b { width: 8px; height: 3px; bottom: 14px; left: 28px; opacity: 0.7; }
-  .cloud-b::before { width: 4px; height: 4px; top: -2px; left: 1px; }
-  .cloud-b::after { width: 3px; height: 3px; top: -1px; left: 4px; }
+  /* Drift right→left across the window; the JS sets --cloud-x-start
+     (just outside the right edge) and --cloud-x-end (just past the
+     left edge). transform stays the GPU-friendly path. */
+  @keyframes cloud-drift {
+    0%   { transform: translateX(var(--cloud-x-start, 100px)); }
+    100% { transform: translateX(var(--cloud-x-end, -40px)); }
+  }
 
-  .cloud-c { width: 11px; height: 4px; bottom: 5px; left: 45px; }
-  .cloud-c::before { width: 8px; height: 8px; top: -5px; left: 1px; }
-  .cloud-c::after { width: 5px; height: 5px; top: -2px; left: 5px; }
-
-  .cloud-d { width: 14px; height: 5px; bottom: 8px; left: 57px; }
-  .cloud-d::before { width: 7px; height: 7px; top: -4px; left: 2px; }
-  .cloud-d::after { width: 6px; height: 6px; top: -3px; left: 7px; }
-
-  .cloud-e { width: 8px; height: 3px; bottom: 14px; left: 80px; opacity: 0.7; }
-  .cloud-e::before { width: 4px; height: 4px; top: -2px; left: 1px; }
-  .cloud-e::after { width: 3px; height: 3px; top: -1px; left: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.cloud) { animation: none; }
+  }
 
   /* Window frame */
   .window-frame {
@@ -993,29 +1040,205 @@ const { class: className } = Astro.props;
       '<circle cx="20" cy="10" r="1.1" fill="currentColor"/>' +
     '</svg>';
 
+  /*
+    Tuning per species — duration is now 2–4s per the calm-flock spec
+    (one flock pass shouldn't linger), and opacity is dialed down to
+    0.5–0.7 so the silhouettes blend into the sky atmosphere instead
+    of advertising themselves to the reader's peripheral vision.
+    Altitude ranges scaled up a touch for the new 32px window height.
+  */
+  /* Four silhouettes — eagle / seagull / dove / sparrow. Solitary
+     passes can pick from any of them so the user sees real variety
+     between scattered birds; flocks stick to a single species per
+     pass so a group reads as one species moving together. Altitude
+     ranges scale with the new 37px window height. */
   const BIRD_SPECIES: BirdSpecies[] = [
-    { name: 'eagle',   size: [18, 24], opacity: [0.82, 0.92], altitude: [2,  9],  duration: [7.0, 10.0], flap: [480, 620], svg: EAGLE_SVG },
-    { name: 'seagull', size: [16, 22], opacity: [0.85, 0.95], altitude: [1,  8],  duration: [6.0, 8.5],  flap: [360, 460], svg: SEAGULL_SVG },
-    { name: 'dove',    size: [13, 17], opacity: [0.85, 0.95], altitude: [3, 11],  duration: [5.5, 7.5],  flap: [260, 340], svg: DOVE_SVG },
-    { name: 'sparrow', size: [10, 14], opacity: [0.8,  0.92], altitude: [4, 14],  duration: [4.5, 6.5],  flap: [160, 220], svg: SPARROW_SVG },
+    { name: 'eagle',   size: [16, 22], opacity: [0.55, 0.68], altitude: [3, 14], duration: [3.0, 4.0], flap: [480, 620], svg: EAGLE_SVG },
+    { name: 'seagull', size: [14, 20], opacity: [0.55, 0.70], altitude: [2, 12], duration: [2.6, 3.6], flap: [360, 460], svg: SEAGULL_SVG },
+    { name: 'dove',    size: [12, 16], opacity: [0.55, 0.70], altitude: [4, 16], duration: [2.4, 3.4], flap: [260, 340], svg: DOVE_SVG },
+    { name: 'sparrow', size: [9,  13], opacity: [0.50, 0.65], altitude: [5, 19], duration: [2.0, 3.0], flap: [160, 220], svg: SPARROW_SVG },
   ];
 
-  function spawnBird(host: HTMLElement) {
+  /* Window dimensions — read once and reused so size tweaks here
+     stay in one place (CSS keeps the source of truth). */
+  const WINDOW_WIDTH_PX = 84;
+  const WINDOW_HEIGHT_PX = 37;
+
+  // ── Clouds ────────────────────────────────────────────────────────
+  /*
+    Random cloud spawner. Each cloud is fully procedural — the
+    chance of seeing the same shape twice is effectively zero
+    because every dimension and every puff is sampled from a
+    continuous range.
+
+      width: 14–28px
+      height: 45–60% of width (proportional ellipse)
+      altitude: anywhere in the available vertical range
+      opacity: 0.6–0.95
+      drift duration: 22–34s (slower clouds outlast faster ones,
+                              so different clouds overlap on screen)
+      puff count: 2–4
+      puff size: 40–70% of cloud width
+      puff position: scattered across the cloud body
+  */
+  function spawnCloud(host: HTMLElement, opts: { delaySec?: number } = {}) {
     if (document.hidden) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // The toggle's day sky only renders while the site theme is dark
-    // (preview-of-the-opposite design). Skip spawning otherwise —
-    // birds have no business flying across a night sky.
     if (!document.documentElement.classList.contains('dark')) return;
+    if (document.documentElement.dataset.disableSkyClouds === 'true') return;
 
-    const species = BIRD_SPECIES[Math.floor(Math.random() * BIRD_SPECIES.length)];
-    const dir = Math.random() < 0.5 ? 1 : -1; // 1 = L→R, -1 = R→L
-    const size = randomInRange(species.size[0], species.size[1]);
+    const w = randomInRange(14, 28);
+    const h = randomInRange(w * 0.45, w * 0.6);
+    // Altitude: keep the cloud fully inside the window vertically
+    // (with a tiny margin so the soft halo doesn't get clipped).
+    const maxY = Math.max(2, WINDOW_HEIGHT_PX - h - 2);
+    const y = randomInRange(2, maxY);
+    const opacity = randomInRange(0.6, 0.95);
+    const dur = randomInRange(22, 34);
+
+    const startX = WINDOW_WIDTH_PX + 4;
+    const endX = -(w + 4);
+    const dx = endX - startX;
+
+    const cloud = document.createElement('div');
+    cloud.className = 'cloud';
+    cloud.style.setProperty('--cloud-w', `${w.toFixed(1)}px`);
+    cloud.style.setProperty('--cloud-h', `${h.toFixed(1)}px`);
+    cloud.style.setProperty('--cloud-y', `${y.toFixed(1)}px`);
+    cloud.style.setProperty('--cloud-opacity', opacity.toFixed(2));
+    cloud.style.setProperty('--cloud-dur', `${dur.toFixed(1)}s`);
+    cloud.style.setProperty('--cloud-x-start', `${startX.toFixed(1)}px`);
+    cloud.style.setProperty('--cloud-x-end', `${(startX + dx).toFixed(1)}px`);
+    if (opts.delaySec) {
+      // Negative delay = "skip ahead" — used at init to bootstrap
+      // clouds already partway across the window so the sky isn't
+      // empty for the first 20s.
+      cloud.style.setProperty('--cloud-delay', `${opts.delaySec.toFixed(1)}s`);
+    }
+
+    // 2–4 puffs scattered along the upper half of the body. Each
+    // puff is its own random size + position; the cumulative effect
+    // is an irregular cumulus silhouette that's never the same twice.
+    const numPuffs = 2 + Math.floor(Math.random() * 3); // 2 / 3 / 4
+    for (let i = 0; i < numPuffs; i++) {
+      const puff = document.createElement('span');
+      puff.className = 'cloud-puff';
+      const pw = randomInRange(w * 0.40, w * 0.70);
+      const ph = pw * randomInRange(0.85, 1.15); // near-circle
+      // Spread puffs across the full width so two never stack
+      // identically. The leftmost puff is biased left, rightmost
+      // biased right, middle puffs anywhere in between.
+      const slot = (i + randomInRange(0, 0.6)) / numPuffs;
+      const px = slot * (w - pw);
+      // Sit on top of the body — top offset between -55% and -15%
+      // of the puff width so each puff peeks above at a different
+      // height.
+      const py = -pw * randomInRange(0.15, 0.55);
+      puff.style.width = `${pw.toFixed(1)}px`;
+      puff.style.height = `${ph.toFixed(1)}px`;
+      puff.style.left = `${px.toFixed(1)}px`;
+      puff.style.top = `${py.toFixed(1)}px`;
+      cloud.appendChild(puff);
+    }
+
+    cloud.addEventListener('animationend', () => cloud.remove(), { once: true });
+    host.appendChild(cloud);
+  }
+
+  /* Cadence: clouds spawn every 3.5–7.5s, with each lasting 22–34s
+     across the window. That gives ~4–8 clouds visible at any time
+     — continuous ambient sky cover, but every cloud unique. Hover
+     speeds the cadence up. */
+  const CLOUD_INTERVAL_S: [number, number] = [3.5, 7.5];
+  const CLOUD_INTERVAL_HOVER_S: [number, number] = [2.0, 4.5];
+
+  let cloudTimer: number | undefined;
+  let cloudHoverActive = false;
+
+  function scheduleNextCloud(host: HTMLElement) {
+    const range = cloudHoverActive ? CLOUD_INTERVAL_HOVER_S : CLOUD_INTERVAL_S;
+    const wait = randomInRange(range[0], range[1]) * 1000;
+    cloudTimer = window.setTimeout(() => {
+      spawnCloud(host);
+      scheduleNextCloud(host);
+    }, wait);
+  }
+
+  function stopClouds() {
+    if (cloudTimer !== undefined) {
+      clearTimeout(cloudTimer);
+      cloudTimer = undefined;
+    }
+  }
+
+  /* Bootstrap: when the page first opens (or theme flips back to
+     dark), the cloud host is empty. Pre-seed 4 clouds with negative
+     animation-delays so they appear already mid-flight, distributed
+     across the window. The user sees a populated sky immediately. */
+  function bootstrapClouds(host: HTMLElement) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!document.documentElement.classList.contains('dark')) return;
+    if (document.documentElement.dataset.disableSkyClouds === 'true') return;
+
+    const seedCount = 4;
+    for (let i = 0; i < seedCount; i++) {
+      // Each seed is "already X seconds into its drift" — distributed
+      // evenly across the cycle so they spread across the window.
+      const progress = (i + randomInRange(0, 0.6)) / seedCount; // 0..1
+      const dur = randomInRange(22, 34);
+      spawnCloud(host, { delaySec: -dur * progress });
+    }
+  }
+
+  /* Per-bird spawn options — when omitted, every parameter is
+     randomized independently. The flock spawner overrides them so
+     all birds in a flock share a species + direction + altitude
+     with small per-bird variation, which is what reads as "flock"
+     vs. "scattered solo birds". */
+  type SpawnOpts = {
+    species?: BirdSpecies;
+    dir?: 1 | -1;
+    altitudeBase?: number;
+    altitudeJitter?: number;
+    sizeMul?: number;
+    speedMul?: number;
+  };
+
+  function birdsDisabled(): boolean {
+    if (document.hidden) return true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+    // Future-toggle hook: any code path may opt out of bird animation
+    // by setting <html data-disable-sky-birds="true">. Keeps the API
+    // pre-wired without imposing a UI yet.
+    if (document.documentElement.dataset.disableSkyBirds === 'true') return true;
+    // Day-sky only renders as a preview while the site is in dark mode.
+    if (!document.documentElement.classList.contains('dark')) return true;
+    return false;
+  }
+
+  function spawnBird(host: HTMLElement, opts: SpawnOpts = {}) {
+    if (birdsDisabled()) return;
+
+    const species = opts.species
+      ?? BIRD_SPECIES[Math.floor(Math.random() * BIRD_SPECIES.length)];
+    const dir: 1 | -1 = opts.dir ?? (Math.random() < 0.5 ? 1 : -1);
+    const sizeMul = opts.sizeMul ?? 1;
+    const speedMul = opts.speedMul ?? 1;
+    const size = randomInRange(species.size[0], species.size[1]) * sizeMul;
+
+    // Altitude: when a flock supplies a base + small jitter, all birds
+    // sit on roughly the same line (with mild scatter). Otherwise we
+    // fall back to the species range.
+    const altitude = opts.altitudeBase !== undefined
+      ? opts.altitudeBase + randomInRange(-(opts.altitudeJitter ?? 1.5), (opts.altitudeJitter ?? 1.5))
+      : randomInRange(species.altitude[0], species.altitude[1]);
+
     // Start just outside the window and fly all the way across to the other
     // edge (+/- a bit of overscan so the bird doesn't pop in/out visibly).
     const overscan = size + 6;
-    const startX = dir === 1 ? -overscan : (64 + overscan);
-    const endX   = dir === 1 ? (64 + overscan) : -overscan;
+    const W = WINDOW_WIDTH_PX;
+    const startX = dir === 1 ? -overscan : (W + overscan);
+    const endX   = dir === 1 ? (W + overscan) : -overscan;
     const dx = endX - startX;
 
     const bird = document.createElement('span');
@@ -1023,7 +1246,7 @@ const { class: className } = Astro.props;
     bird.innerHTML = species.svg;
 
     bird.style.setProperty('--bird-size', `${size.toFixed(1)}px`);
-    bird.style.setProperty('--bird-y', `${randomInRange(species.altitude[0], species.altitude[1]).toFixed(1)}px`);
+    bird.style.setProperty('--bird-y', `${altitude.toFixed(1)}px`);
     bird.style.setProperty('--bird-start-x', `${startX.toFixed(1)}px`);
     // Precomputed X offsets relative to start position for each keyframe,
     // because calc() inside @keyframes with nested var() can fail to
@@ -1032,7 +1255,8 @@ const { class: className } = Astro.props;
     bird.style.setProperty('--bird-x-50',  `${(dx * 0.50).toFixed(1)}px`);
     bird.style.setProperty('--bird-x-75',  `${(dx * 0.75).toFixed(1)}px`);
     bird.style.setProperty('--bird-x-100', `${dx.toFixed(1)}px`);
-    bird.style.setProperty('--bird-dur', `${randomInRange(species.duration[0], species.duration[1]).toFixed(2)}s`);
+    const dur = randomInRange(species.duration[0], species.duration[1]) / speedMul;
+    bird.style.setProperty('--bird-dur', `${dur.toFixed(2)}s`);
     bird.style.setProperty('--bird-opacity', randomInRange(species.opacity[0], species.opacity[1]).toFixed(2));
     // Wing-flap rate — faster for small birds, slower for raptors.
     bird.style.setProperty('--flap-dur', `${Math.round(randomInRange(species.flap[0], species.flap[1]))}ms`);
@@ -1044,19 +1268,92 @@ const { class: className } = Astro.props;
     host.appendChild(bird);
   }
 
-  const BIRD_MIN_INTERVAL_S = 4;
-  const BIRD_MAX_INTERVAL_S = 12;
+  /*
+    Flock spawner — all birds share species + direction + a common
+    altitude, but each gets per-bird variation:
+      - size ±10%
+      - speed ±15% (some birds drift ahead, others fall behind →
+        natural V/streamer formation instead of a parade line)
+      - altitude ±3px (wider scatter than before; the previous
+        1.8px felt too "single-line" and stiff)
+      - stagger is randomized PER bird (60–260ms) instead of a
+        constant interval, so the flock arrives in irregular clumps
+
+    Flock size leans small (mostly 3–6, occasional 7–12) — the spec
+    asks for "calm breathing moment", not a migration event.
+  */
+  function spawnFlock(host: HTMLElement) {
+    if (birdsDisabled()) return;
+
+    const species = BIRD_SPECIES[Math.floor(Math.random() * BIRD_SPECIES.length)];
+    const dir: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
+    const altitudeBase = randomInRange(species.altitude[0] + 1, species.altitude[1] - 1);
+
+    // Heavily biased toward smaller flocks: ~75% are 3–6, ~25% are
+    // 7–12. Real flocks of these sizes feel native; larger ones
+    // are reserved for the rare migration moment.
+    const isLarge = Math.random() < 0.25;
+    const size = isLarge
+      ? Math.floor(randomInRange(7, 12.99))
+      : Math.floor(randomInRange(3, 6.99));
+
+    let cumulativeDelay = 0;
+    for (let i = 0; i < size; i++) {
+      // Each gap is independently random — the second bird might
+      // arrive 70ms after the first, the third 240ms after that, etc.
+      // Reads as breathing rather than ticking.
+      if (i > 0) cumulativeDelay += randomInRange(60, 260);
+      const captureDelay = cumulativeDelay;
+      window.setTimeout(() => {
+        spawnBird(host, {
+          species,
+          dir,
+          altitudeBase,
+          altitudeJitter: 3.0,
+          sizeMul: randomInRange(0.88, 1.10),
+          speedMul: randomInRange(0.85, 1.15),
+        });
+      }, captureDelay);
+    }
+  }
+
+  /* Solitary spawner — a single bird of a random species drifts
+     across alone. Used for ~60% of intervals so the user sees real
+     variety between flock passes. Each solitary bird is fully
+     randomized (any species, any direction, any altitude). */
+  function spawnSolitary(host: HTMLElement) {
+    if (birdsDisabled()) return;
+    spawnBird(host);  // no opts → all parameters randomized
+    // Occasional pair: 18% chance a second bird (different species
+    // possible) trails 400-900ms behind. Reads as "two unrelated
+    // birds happened to cross at once" rather than a tiny flock.
+    if (Math.random() < 0.18) {
+      window.setTimeout(() => spawnBird(host), randomInRange(400, 900));
+    }
+  }
+
+  /* Default cadence (calm) — 10 to 25 seconds between events.
+     Hover state shortens the next interval. */
+  const BIRD_INTERVAL_S: [number, number] = [10, 25];
+  const BIRD_INTERVAL_HOVER_S: [number, number] = [4, 10];
+
+  /* Mode mix per scheduled tick: ~60% solitary, ~40% flock. The
+     solitary path is what makes the sky feel inhabited between the
+     bigger flock moments — birds of different species cross at
+     unrelated times, like a real sky. */
+  const FLOCK_PROBABILITY = 0.4;
 
   let birdTimer: number | undefined;
+  let birdHoverActive = false;
 
   function scheduleNextBird(host: HTMLElement) {
-    const wait = randomInRange(BIRD_MIN_INTERVAL_S, BIRD_MAX_INTERVAL_S) * 1000;
+    const range = birdHoverActive ? BIRD_INTERVAL_HOVER_S : BIRD_INTERVAL_S;
+    const wait = randomInRange(range[0], range[1]) * 1000;
     birdTimer = window.setTimeout(() => {
-      // Occasionally send a small flock (2–3 of the same species in a row)
-      const flockSize = Math.random() < 0.22 ? 2 + Math.floor(Math.random() * 2) : 1;
-      spawnBird(host);
-      for (let i = 1; i < flockSize; i++) {
-        window.setTimeout(() => spawnBird(host), i * randomInRange(220, 520));
+      if (Math.random() < FLOCK_PROBABILITY) {
+        spawnFlock(host);
+      } else {
+        spawnSolitary(host);
       }
       scheduleNextBird(host);
     }, wait);
@@ -1090,15 +1387,36 @@ const { class: className } = Astro.props;
     stopMeteors();
     if (shooterHost) scheduleNextMeteor(shooterHost);
 
-    // Kick off the bird loop (day-sky only; the spawn function gates itself).
-    // First bird spawns almost immediately (800–1800ms) so the user sees
-    // one quickly on page load; subsequent birds follow the random cadence.
+    // Kick off the flock loop (day-sky only; the spawn function gates
+    // itself). No immediate spawn on page load — the window must feel
+    // CALM at idle and only earn attention when the user looks. The
+    // first flock arrives after the regular 10–25s wait.
     const birdHost = toggle.querySelector<HTMLElement>('[data-sky-birds]');
     stopBirds();
-    if (birdHost) {
-      window.setTimeout(() => spawnBird(birdHost), randomInRange(800, 1800));
-      scheduleNextBird(birdHost);
+    if (birdHost) scheduleNextBird(birdHost);
+
+    // Kick off the cloud loop — bootstrap a few mid-flight clouds so
+    // the sky reads as populated immediately, then schedule fresh
+    // unique clouds at the configured cadence.
+    const cloudHost = toggle.querySelector<HTMLElement>('[data-sky-clouds]');
+    stopClouds();
+    if (cloudHost) {
+      bootstrapClouds(cloudHost);
+      scheduleNextCloud(cloudHost);
     }
+
+    // Hover handler — bumps both bird and cloud cadence into their
+    // faster ranges while the cursor is over the window, reverts on
+    // leave. Doesn't trigger an instant spawn; the next scheduled
+    // tick simply uses the shorter interval.
+    toggle.addEventListener('mouseenter', () => {
+      birdHoverActive = true;
+      cloudHoverActive = true;
+    });
+    toggle.addEventListener('mouseleave', () => {
+      birdHoverActive = false;
+      cloudHoverActive = false;
+    });
 
     // Toggle on click
     toggle.addEventListener('click', () => {
@@ -1109,15 +1427,21 @@ const { class: className } = Astro.props;
 
       // Birds live in the toggle's day sky, which is only visible while
       // the site is in dark mode. When switching to dark, kick off a
-      // quick first bird so the freshly-revealed day sky feels alive.
-      // When switching to light, clear any mid-flight birds so they
-      // don't linger behind the night-sky scene.
+      // quick first bird so the freshly-revealed day sky feels alive,
+      // and re-bootstrap clouds so the sky isn't empty for the first
+      // 3-7s of cadence. Switching to light: clear mid-flight elements
+      // so they don't linger behind the night-sky scene.
       if (newTheme === 'dark') {
         if (birdHost) {
           window.setTimeout(() => spawnBird(birdHost), randomInRange(600, 1400));
         }
+        if (cloudHost) {
+          cloudHost.replaceChildren();
+          bootstrapClouds(cloudHost);
+        }
       } else {
         if (birdHost) birdHost.replaceChildren();
+        if (cloudHost) cloudHost.replaceChildren();
       }
     });
   }
@@ -1140,6 +1464,7 @@ const { class: className } = Astro.props;
   document.addEventListener('astro:before-swap', () => {
     stopMeteors();
     stopBirds();
+    stopClouds();
   });
   document.addEventListener('astro:after-swap', initThemeToggle);
 </script>
