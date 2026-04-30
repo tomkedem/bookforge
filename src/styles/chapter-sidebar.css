@@ -866,6 +866,68 @@
   }
 }
 
+/* ─── Junction gem: diamond at the feeder ↔ main pipe joint ─────────
+   A small rotated square sits centered on the main pipe wall where
+   the horizontal feeder enters it. Reads as a brass/gold fitting on
+   a glass tube — the kind of joint hardware you'd see on real
+   plumbing. Only renders for active-chapter sections (same gating
+   as the feeders themselves) so it never floats orphaned next to a
+   collapsed chapter.
+
+   Geometry: the main pipe inline-end edge sits at section <li>
+   inline-start x = -34.5px. The gem is 7×7 rotated 45°, so its
+   inline-start anchor is offset by half its width (-3.5px) to land
+   the visual CENTER of the diamond exactly on the pipe wall. */
+.usb-chapter-active .usb-sections li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -38px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%) rotate(45deg);
+  background: linear-gradient(
+    135deg,
+    #fff7d4 0%,
+    #e6c98a 35%,
+    #b8923f 100%
+  );
+  border: 0.5px solid #8a6d2b;
+  border-radius: 1px;
+  box-shadow:
+    0 0 5px rgba(212, 175, 55, 0.55),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.55);
+  /* Sits ABOVE both the main pipe (z-pipe: 1) and the feeder
+     (z-feeder: 2) so the joint cap visually finishes the T-junction. */
+  z-index: 3;
+  pointer-events: none;
+  animation: usbJointShimmer 4.2s ease-in-out infinite;
+}
+
+/* Slow gold shimmer — the joint catches light occasionally. Box
+   shadow alpha pulses gently between calm and bright. */
+@keyframes usbJointShimmer {
+  0%, 100% {
+    box-shadow:
+      0 0 5px rgba(212, 175, 55, 0.45),
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 10px rgba(212, 175, 55, 0.78),
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.65);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usb-chapter-active .usb-sections li::before { animation: none; }
+}
+
+/* Light mode: same gold gradient — gold reads well against both
+   the dark cyan (night) and pale cyan (day) water columns. The
+   stagger between the lighter highlight and the darker base gives
+   it a faceted-gem look in both. */
+
 .usb-chapter-list {
   list-style: none;
   margin: 0;
