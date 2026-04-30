@@ -3,6 +3,7 @@ import ReadingLayout from '../../../layouts/ReadingLayout.astro';
 import ChapterNavigation from '../../../components/ChapterNavigation.astro';
 import ChapterSidebars from '../../../components/ChapterSidebars.astro';
 import ChapterMeta from '../../../components/ChapterMeta.astro';
+import PlatformStatusBar from '../../../components/PlatformStatusBar.astro';
 import type { Language, Chapter } from '../../../types/index';
 import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGE } from '../../../utils/language';
 import { t } from '../../../i18n';
@@ -134,6 +135,26 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     currentChapterId={chapterId}
     bookSlug={book || ''}
     language={language}
+  />
+
+  {/* Bottom platform status bar — book-level reading progress.
+      Hosts the pencil meter (NeuronBar) + completion counts +
+      time remaining. Same IDs as the old TOC-header strip, so
+      sidebar-render.ts updates this without modification.
+      Lives in the `sidebars` slot (chrome layer) — the bar is
+      `position: fixed` so its DOM location doesn't affect its
+      paint position; what matters is staying outside .reading-content
+      so it doesn't inherit prose typography or RTL scope. */}
+  <PlatformStatusBar
+    slot="sidebars"
+    bookTitle={getLocalized(bookData.titles, language)}
+    bookAuthor={(() => {
+      const a = bookData.credits?.author;
+      if (!a) return '';
+      if (typeof a === 'string') return a;
+      return a[language] ?? a[SOURCE_LANGUAGE] ?? Object.values(a).find(Boolean) ?? '';
+    })()}
+    chapterCount={chapters.length}
   />
   {/* Unified top strip: sticky band between the sidebars that merges what
       used to be three stacked regions — title card, meta stats, progress
@@ -336,6 +357,10 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
      row height is controlled entirely by padding-top. To shave 2px
      off the row, padding-top is dropped 2px below 0.5rem (8px → 6px). */
   padding: 6px 0.85rem 0.5rem;
+  /* Shared height with the right-sidebar header (.usb-header) so the
+     bottom border draws one continuous line across the page. */
+  min-height: 40px;
+  box-sizing: border-box;
   border-radius: 0;
   background: rgba(201, 162, 39, 0.04);
   border-bottom: 0.5px solid var(--yuval-border, rgba(127, 127, 127, 0.18));

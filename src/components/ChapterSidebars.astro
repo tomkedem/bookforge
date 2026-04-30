@@ -172,10 +172,6 @@ function formatChapterNumber(id: number | string): string {
       <div class="usb-header-row">
         <span class="usb-title" data-i18n="sidebar.tableOfContents">תוכן העניינים</span>
         <span class="usb-header-actions">
-          <span class="usb-completion-count">
-            <span class="usb-completion-done" id="usb-completion-done">0</span><span class="usb-completion-sep">/</span><span class="usb-completion-total">{chapters.length}</span>
-            <span class="usb-completion-suffix" data-i18n="sidebar.completed">הושלמו</span>
-          </span>
           <!-- Focus toggle: collapses BOTH sidebars in lockstep for
                distraction-free reading. Sits next to the per-sidebar
                collapse button so it's discoverable in the same place. -->
@@ -214,13 +210,10 @@ function formatChapterNumber(id: number | string): string {
           </button>
         </span>
       </div>
-      <div class="usb-progress-track">
-        <canvas class="usb-toc-progress-canvas" id="usb-progress-canvas" aria-hidden="true"></canvas>
-      </div>
-      <div class="usb-header-row usb-header-meta">
-        <span class="usb-progress-percent" id="usb-progress-percent">0%</span>
-        <span class="usb-time-remaining" id="usb-time-remaining"></span>
-      </div>
+      <!-- Book-level progress (completion count, pencil progress meter,
+           percent + time remaining) lives in PlatformStatusBar at the
+           bottom of the screen. Same DOM IDs preserved there so all
+           sidebar-render.ts wiring keeps working. -->
     </header>
 
     <!-- Resume-from-here banner slot. Empty server-side; the resume

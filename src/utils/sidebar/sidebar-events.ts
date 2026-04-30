@@ -390,11 +390,20 @@ export function initSidebarAutoHideScrollbar(): void {
     thumb!.style.display = '';
 
     const rect = sidebar!.getBoundingClientRect();
-    const ratio = clientHeight / scrollHeight;
-    const thumbHeight = Math.max(40, clientHeight * ratio);
+    /* Sticky header (.usb-header) sits at the top of the sidebar and
+       stays fixed while content scrolls underneath. The thumb track
+       should live entirely BELOW it so it never reads as "floating
+       above the toolbar". Querying offsetHeight every frame is cheap
+       and stays correct across responsive height changes. */
+    const stickyHeader = sidebar!.querySelector<HTMLElement>('.usb-header');
+    const stickyOffset = stickyHeader ? stickyHeader.offsetHeight : 0;
+
+    const trackHeight = clientHeight - stickyOffset;
+    const ratio = trackHeight / scrollHeight;
+    const thumbHeight = Math.max(40, trackHeight * ratio);
     const maxScroll = scrollHeight - clientHeight;
     const scrollRatio = maxScroll > 0 ? sidebar!.scrollTop / maxScroll : 0;
-    const thumbTop = scrollRatio * (clientHeight - thumbHeight);
+    const thumbTop = stickyOffset + scrollRatio * (trackHeight - thumbHeight);
 
     thumb!.style.height = `${thumbHeight}px`;
     thumb!.style.top = `${rect.top + thumbTop}px`;

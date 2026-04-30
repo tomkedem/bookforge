@@ -49,7 +49,14 @@
   top: var(--reading-sticky-top, 68px);
   inset-inline-start: 0;
   width: 320px;
-  height: calc(100vh - var(--reading-sticky-top, 68px));
+  /* Reserve space at the bottom for the platform status bar (the
+     pencil progress strip). var falls back to 0 on pages that
+     don't mount the bar, so non-reading layouts behave as before. */
+  height: calc(
+    100vh
+    - var(--reading-sticky-top, 68px)
+    - var(--platform-status-bar-height, 0px)
+  );
   /* Shell surface — must match .usb-header and the chapter top strip
      exactly so header + sidebar + content frame read as one continuous
      surface (the "puzzle" effect). Light: warm cream that the strip
@@ -244,7 +251,19 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
   z-index: 10;
   background: var(--yuval-surface, #fff);
   margin: 0 -16px 8px;
-  padding: 8px 16px 6px;
+  /* Align this header's bottom border to the chapter top strip's
+     bottom border across the page — both share top: --reading-sticky-top
+     and need to share total height so the gold hairline reads as one
+     continuous boundary. */
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 6px 16px 0;
+  display: flex;
+  align-items: center;
+}
+
+.usb-header > .usb-header-row {
+  flex: 1;
 }
 
 /* Dark-mode separator: light hairline + deep falloff shadow so the
@@ -286,6 +305,10 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #8b7355;
+  /* Lift 2px so the title sits visually centered against the action
+     buttons on its baseline, without changing the header's overall
+     height. */
+  transform: translateY(-2px);
 }
 
 .dark .usb-title {
@@ -498,6 +521,10 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
      left. The reader's eye lands on the visual rail first, then
      moves to the card content. */
   padding-inline-start: 0;
+  /* Breathing room between the sticky usb-header's bottom border and
+     the first chapter card — without this the card sits too close
+     to the gold hairline and the page reads as cramped. */
+  padding-top: 15px;
 }
 
 /* The continuous vertical thread. Sits at a fixed inline-start
@@ -1933,7 +1960,11 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
 
 .usb-chapter-active .usb-sections li,
 .usb-chapter-active .usb-sections li[data-level="h3"] {
-  height: 36px;
+  /* min-height instead of fixed height — short titles still get the
+     same 36px row, long titles can wrap to a second line and the row
+     grows to fit them rather than ellipsizing. */
+  min-height: 36px;
+  height: auto;
 }
 
 .usb-chapter-active .usb-sections a {
@@ -1944,9 +1975,12 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
 .usb-chapter-active .usb-sections .section-title {
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wrap onto a second line instead of ellipsizing — show the full
+     section title even when it's long, with no "…" cut-off. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 /* Hide the inactive-state thread + dots on the active chapter —
@@ -2278,6 +2312,25 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     2px 2px 4px rgba(24, 95, 165, 0.3),
     -1px -1px 2px var(--time-highlight);
+}
+
+/* Light-mode-only sharpening — the existing gradient ends at #4DA8E0
+   (sky-blue), which on a cream sidebar surface reads as too low
+   contrast for crisp white text. Push the gradient deeper, bump the
+   weight, and strengthen the text-shadow so the "X דק'" reads
+   instantly without straining the eye. Dark mode keeps the default
+   above (it already had enough contrast on charcoal). */
+:root:not(.dark) .usb-sections li.active .usb-section-time,
+:root:not(.dark) .usb-sections li.active .section-time {
+  background: linear-gradient(135deg, #0d3a6e 0%, #1d6fac 100%);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  text-shadow:
+    0 1px 1px rgba(0, 20, 50, 0.75),
+    0 0 1px rgba(0, 20, 50, 0.5);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Active row card — gives the row visual weight so the preview pane
@@ -3391,6 +3444,18 @@ body.sidebar-collapsed .unified-sidebar {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  /* Lift the action cluster 1px so the buttons sit visually centered
+     on the header's text baseline. */
+  transform: translateY(-1px);
+}
+
+/* Force both action-cluster SVGs to render at the same size,
+   regardless of the inline width/height attributes the markup
+   emits — small diffs there were what made the buttons look
+   uneven. */
+.usb-header-actions svg {
+  width: 13px;
+  height: 13px;
 }
 
 /* ─── Focus toggle (sits next to the collapse button) ────────────
@@ -3462,15 +3527,19 @@ body.sidebar-collapsed .unified-sidebar {
   .usb-focus-btn { transition-duration: 0ms !important; }
 }
 
-/* ─── Collapse button (in usb-header) ───────────────────────────── */
+/* ─── Collapse button (in usb-header) ─────────────────────────────
+   Visually identical to .usb-focus-btn — same 28px footprint, same
+   gold-gradient surface + border, same hover/active/focus states.
+   The two buttons differ only in their action; their chrome is one. */
 .usb-collapse-btn {
-  /* Sits at the inline-end edge of the header row, after the
-     completion counter. Square 28px button, neutral surface, picks
-     up the brand accent on hover. */
   appearance: none;
-  background: transparent;
-  border: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.18));
-  color: var(--yuval-text-muted, rgba(255, 255, 255, 0.6));
+  background: linear-gradient(
+    135deg,
+    rgba(230, 201, 138, 0.16) 0%,
+    rgba(184, 146, 63, 0.06) 100%
+  );
+  border: 1px solid rgba(184, 146, 63, 0.40);
+  color: #e6c98a;
   width: 28px;
   height: 28px;
   border-radius: 8px;
@@ -3482,13 +3551,19 @@ body.sidebar-collapsed .unified-sidebar {
     background-color 160ms ease,
     border-color 160ms ease,
     color 160ms ease,
+    box-shadow 160ms ease,
     transform 160ms ease;
 }
 
 .usb-collapse-btn:hover {
-  background: rgba(125, 140, 255, 0.12);
-  border-color: rgba(125, 140, 255, 0.4);
-  color: var(--yuval-text, #fff);
+  background: linear-gradient(
+    135deg,
+    rgba(230, 201, 138, 0.28) 0%,
+    rgba(184, 146, 63, 0.14) 100%
+  );
+  border-color: rgba(212, 175, 55, 0.65);
+  color: #ffffff;
+  box-shadow: 0 4px 12px -4px rgba(212, 175, 55, 0.40);
 }
 
 .usb-collapse-btn:active {
@@ -3496,7 +3571,7 @@ body.sidebar-collapsed .unified-sidebar {
 }
 
 .usb-collapse-btn:focus-visible {
-  outline: 2px solid rgba(125, 140, 255, 0.7);
+  outline: 2px solid rgba(212, 175, 55, 0.7);
   outline-offset: 2px;
 }
 

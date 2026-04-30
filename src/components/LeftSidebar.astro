@@ -247,9 +247,11 @@
     left: 16px;
     right: auto;
     /* 68px = global site header height; +16px gap so the dock
-       sits beneath the header without overlap. */
+       sits beneath the header without overlap. Bottom adds the
+       platform-status-bar height (var falls back to 0 on pages
+       without the bar) plus a 16px breathing gap. */
     top: 84px;
-    bottom: 16px;
+    bottom: calc(16px + var(--platform-status-bar-height, 0px));
     height: auto;
     width: 96px;
     z-index: 40;
