@@ -37,7 +37,15 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
          how a book is presented on a shelf or library page. -->
     <div class="psb-context">
       {coverImage && (
-        <img class="psb-cover" src={coverImage} alt="" aria-hidden="true" loading="lazy" />
+        <button
+          type="button"
+          class="psb-cover-trigger"
+          data-cover-src={coverImage}
+          data-cover-alt={bookTitle}
+          aria-label={bookTitle ? `הצג עטיפה: ${bookTitle}` : 'הצג עטיפה'}
+        >
+          <img class="psb-cover" src={coverImage} alt="" loading="lazy" />
+        </button>
       )}
       <div class="psb-context-text">
         {bookTitle && <span class="psb-book-title">{bookTitle}</span>}
@@ -94,7 +102,180 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
       --platform-status-bar-height: 48px;
     }
   }
+
+  /* ── Cover lightbox (created dynamically by the script below) ────
+     Click on the small psb-cover thumb in the status bar opens this
+     full-screen modal showing the cover at large size. Click outside
+     or press Escape to close. Same charcoal/parchment language as the
+     rest of the platform's premium dialogs. */
+  .psb-cover-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 6, 18, 0.78);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease-out;
+  }
+  :root:not(.dark) .psb-cover-lightbox {
+    background: rgba(15, 23, 42, 0.55);
+  }
+  .psb-cover-lightbox.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .psb-cover-lightbox-img {
+    max-width: min(560px, 80vw);
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow:
+      0 30px 80px -10px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(184, 146, 63, 0.35);
+    transform: scale(0.96) translateY(8px);
+    transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    user-select: none;
+  }
+  .psb-cover-lightbox.open .psb-cover-lightbox-img {
+    transform: scale(1) translateY(0);
+  }
+
+  .psb-cover-lightbox-close {
+    position: absolute;
+    top: 24px;
+    inset-inline-end: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(240, 240, 240, 0.92);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    display: inline-grid;
+    place-items: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
+  }
+  .psb-cover-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(212, 175, 55, 0.55);
+    color: #fff;
+  }
+  .psb-cover-lightbox-close:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.6);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .psb-cover-lightbox-img {
+      max-width: calc(100vw - 32px);
+      max-height: 78vh;
+    }
+    .psb-cover-lightbox-close {
+      top: 16px;
+      inset-inline-end: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .psb-cover-lightbox,
+    .psb-cover-lightbox-img {
+      transition: opacity 120ms ease;
+      transform: none !important;
+    }
+  }
 </style>
+
+<script>
+  (function () {
+    function openCoverLightbox(src: string, alt: string): void {
+      if (document.getElementById('psb-cover-lightbox')) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'psb-cover-lightbox';
+      overlay.className = 'psb-cover-lightbox';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', alt || 'Book cover');
+
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'psb-cover-lightbox-close';
+      closeBtn.setAttribute('aria-label', 'Close');
+      closeBtn.textContent = '✕';
+
+      const img = document.createElement('img');
+      img.className = 'psb-cover-lightbox-img';
+      img.src = src;
+      img.alt = alt || '';
+
+      overlay.appendChild(closeBtn);
+      overlay.appendChild(img);
+      document.body.appendChild(overlay);
+
+      // Animate in next frame so the transition fires.
+      requestAnimationFrame(() => overlay.classList.add('open'));
+
+      function close(): void {
+        overlay.classList.remove('open');
+        document.removeEventListener('keydown', onKey);
+        // Wait for fade-out before removing from DOM.
+        setTimeout(() => overlay.remove(), 240);
+      }
+
+      function onKey(e: KeyboardEvent): void {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          close();
+        }
+      }
+
+      // Click backdrop or close button → dismiss.
+      overlay.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target === overlay || target.classList.contains('psb-cover-lightbox-close')) {
+          close();
+        }
+      });
+      document.addEventListener('keydown', onKey);
+
+      // Focus the close button so keyboard users can dismiss immediately.
+      requestAnimationFrame(() => closeBtn.focus());
+    }
+
+    function bind(): void {
+      document.querySelectorAll<HTMLButtonElement>('.psb-cover-trigger').forEach((btn) => {
+        if (btn.dataset.lightboxBound === '1') return;
+        btn.dataset.lightboxBound = '1';
+        btn.addEventListener('click', () => {
+          const src = btn.dataset.coverSrc || '';
+          const alt = btn.dataset.coverAlt || '';
+          if (src) openCoverLightbox(src, alt);
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bind);
+    } else {
+      bind();
+    }
+    document.addEventListener('astro:page-load', bind);
+    document.addEventListener('astro:after-swap', bind);
+  })();
+</script>
 
 <style>
   /* Surface — matches the reading-mode header (Header.astro:757-768)
@@ -187,12 +368,34 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
     gap: 10px;
   }
 
+  /* Cover trigger — clickable wrapper around the thumbnail. Buttonised
+     so it reads as interactive (cursor + focus ring + hover lift). */
+  .psb-cover-trigger {
+    flex-shrink: 0;
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .psb-cover-trigger:hover {
+    transform: translateY(-1px);
+  }
+
+  .psb-cover-trigger:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.55);
+    outline-offset: 2px;
+  }
+
   /* Cover thumbnail — small portrait rectangle echoing a real book
      spine + cover. Subtle gold rim ties it to the rest of the chrome
      vocabulary; thin shadow gives it depth so it reads as an object,
      not a flat sticker. */
   .psb-cover {
-    flex-shrink: 0;
+    display: block;
     width: 26px;
     height: 38px;
     object-fit: cover;
@@ -201,6 +404,14 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.20),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: box-shadow 200ms ease;
+  }
+
+  .psb-cover-trigger:hover .psb-cover {
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(212, 175, 55, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   :global(.dark) .psb-cover {
@@ -208,6 +419,13 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  :global(.dark) .psb-cover-trigger:hover .psb-cover {
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(212, 175, 55, 0.40),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
   /* Text column: title + author stacked, with min-width: 0 so
@@ -249,8 +467,16 @@ const { bookTitle = '', bookAuthor = '', coverImage = '', chapterCount } = Astro
     margin-inline-end: 4px;
   }
 
+  /* Author name — warm walnut/cream tint instead of plain grey, picks
+     the name out as its own object without resorting to gold. Dark
+     mode: cream over charcoal. Light mode: aged-walnut over parchment. */
   .psb-author-name {
     font-weight: 500;
+    color: rgba(120, 100, 60, 0.88);
+  }
+
+  :global(.dark) .psb-author-name {
+    color: rgba(212, 196, 168, 0.85);
   }
 
   /* Center: pencil wrap. Sized so the artwork keeps its proportions
