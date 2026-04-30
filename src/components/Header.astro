@@ -947,7 +947,7 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     window.__yuvalHeaderQuotesInitialized = true;
 
     showQuote();
-    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 5000);
+    window.__yuvalHeaderQuotesInterval = window.setInterval(showQuote, 10000);
 
     window.addEventListener('language-changed', showQuote);
     document.addEventListener('astro:page-load', showQuote);
