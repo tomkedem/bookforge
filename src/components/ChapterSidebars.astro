@@ -285,25 +285,14 @@ function formatChapterNumber(id: number | string): string {
             <stop offset="100%" stop-color="var(--water-stop-deep)"  stop-opacity="0.85"/>
           </linearGradient>
 
-          <pattern id="usbWaterFlowVert"
-                   x="0" y="0" width="6" height="14"
-                   patternUnits="userSpaceOnUse">
-            <rect width="6" height="14" fill="transparent"/>
-            <!-- Single sine wave running ALONG the pipe length —
-                 same visual idiom as the feeder pattern below
-                 (one wave running along the feeder length), just
-                 rotated 90°. The wave starts centred at the top,
-                 swings to the left wall at y=3.5, back to centre
-                 at y=7, swings to the right wall at y=10.5, and
-                 returns to centre at y=14, where the pattern
-                 repeats. With translateY animation it reads as a
-                 single ribbon of water snaking down through the
-                 pipe — quieter and more "water-like" than the
-                 horizontal Q-curves it replaces. -->
-            <path d="M 3 0 Q 1.5 3.5 3 7 Q 4.5 10.5 3 14"
-                  stroke="var(--water-flow-stripe-1)" stroke-width="0.5"
-                  fill="none" opacity="0.75"/>
-          </pattern>
+          <!-- usbWaterFlowVert was a tiled sine-wave pattern that
+               drove the (now-removed) <rect class="usb-water-stream">.
+               That approach inverted perceived flow direction
+               because patternUnits="userSpaceOnUse" anchors the
+               pattern grid to user space, not the host element —
+               so translating the rect down caused the visible
+               grid samples to scroll up. Replaced by individual
+               falling <ellipse> streaks (see usbWaterStreakFall). -->
 
           <pattern id="usbWaterFlowHoriz"
                    x="0" y="0" width="10" height="5"
@@ -338,6 +327,20 @@ function formatChapterNumber(id: number | string): string {
                 x="0" y="0" width="8" height="1000">
             <rect x="0" y="0" width="8" height="1000" fill="url(#usbWaterFadeGradient)"/>
           </mask>
+
+          <!-- Bubble sheen: a soft radial gradient that turns each
+               <circle> into a glassy water bubble. The bright spot
+               sits top-left (35%/30%) so all bubbles share a
+               consistent "light source from above" — looks like
+               real bubbles in a tube rather than flat dots. The
+               mid stop uses --bubble-color (theme-aware), and the
+               edge picks up the flow-stripe color so the bubble
+               has a faint cyan rim that reads against the water. -->
+          <radialGradient id="usbBubbleSheen" cx="35%" cy="30%" r="80%">
+            <stop offset="0%"   stop-color="#ffffff"                    stop-opacity="0.95"/>
+            <stop offset="45%"  stop-color="var(--bubble-color)"        stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="var(--water-flow-stripe-1)" stop-opacity="0.40"/>
+          </radialGradient>
         </defs>
       </svg>
 
@@ -415,61 +418,99 @@ function formatChapterNumber(id: number | string): string {
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              <rect x="1" y="0" width="6" height="1000" fill="url(#usbWaterBody)" opacity="0.65"/>
-              <rect class="usb-water-stream" x="1" y="-20" width="6" height="1040" fill="url(#usbWaterFlowVert)"/>
-              <!-- Diamond-shaped bubbles flowing top-to-bottom.
-                   Polygon points = (top, right, bottom, left) of
-                   each diamond, scaled per-bubble for size variety.
-                   Translucent fill + stroke gives the "ice diamond"
-                   look. CSS sets offset-rotate: 0deg so the diamond
-                   keeps its orientation as it travels (otherwise
-                   offset-path's default `auto` would rotate it 90°
-                   along the vertical tangent and it would render
-                   as a square instead). -->
-              <!-- Diamond + trailing marble pairs. Each marble shares
-                   its diamond's offset-path but starts 0.25s later,
-                   so it always sits ~50 viewBox-units behind the
-                   diamond (= ~15px in a typical chapter, depending
-                   on the SVG's stretched height). Reads as a small
-                   glass bead chasing the diamond down the pipe. -->
-              <polygon class="usb-water-particle"
-                       points="0,-2.4 2.0,0 0,2.4 -2.0,0"
-                       fill="var(--water-flow-stripe-2)" fill-opacity="0.18"
-                       stroke="var(--water-flow-stripe-2)" stroke-width="1.0"
-                       opacity="0"
-                       style="offset-path: path('M 3.5 0 L 3.5 1000'); animation-delay: 0s;"/>
-              <circle class="usb-water-particle"
-                      cx="0" cy="0" r="1.5"
-                      fill="var(--bubble-color)"
+              <!-- Water body — gradient column. -->
+              <rect x="1" y="0" width="6" height="1000" fill="url(#usbWaterBody)" opacity="0.88"/>
+
+              <!-- Falling streaks. Each one is an independent
+                   <ellipse> with its own CSS keyframe translating
+                   from y=-30 to y=1030 (above viewport → below) so
+                   the direction is unambiguous: pure top→bottom.
+                   The cubic-bezier timing simulates gravity (slow
+                   initial creep, then accelerates downward).
+                   Per-streak randomness comes from inline
+                   animation-duration/delay/cx + ry — together they
+                   read as a real, irregular stream of falling
+                   water instead of a tiled sine pattern. -->
+              <ellipse class="usb-water-streak" cx="2.6" cy="0" rx="0.65" ry="14" fill="var(--water-flow-stripe-2)" opacity="0" style="animation-duration: 1.20s; animation-delay: 0.00s;"/>
+              <ellipse class="usb-water-streak" cx="3.4" cy="0" rx="0.75" ry="20" fill="var(--water-flow-stripe-1)" opacity="0" style="animation-duration: 0.95s; animation-delay: 0.18s;"/>
+              <ellipse class="usb-water-streak" cx="4.5" cy="0" rx="0.55" ry="12" fill="var(--water-flow-stripe-2)" opacity="0" style="animation-duration: 1.45s; animation-delay: 0.32s;"/>
+              <ellipse class="usb-water-streak" cx="3.0" cy="0" rx="0.70" ry="22" fill="var(--water-flow-stripe-1)" opacity="0" style="animation-duration: 1.05s; animation-delay: 0.55s;"/>
+              <ellipse class="usb-water-streak" cx="4.1" cy="0" rx="0.60" ry="16" fill="var(--water-flow-stripe-2)" opacity="0" style="animation-duration: 1.30s; animation-delay: 0.72s;"/>
+              <ellipse class="usb-water-streak" cx="2.8" cy="0" rx="0.70" ry="18" fill="var(--water-flow-stripe-1)" opacity="0" style="animation-duration: 1.10s; animation-delay: 0.88s;"/>
+              <ellipse class="usb-water-streak" cx="4.7" cy="0" rx="0.55" ry="14" fill="var(--water-flow-stripe-2)" opacity="0" style="animation-duration: 1.55s; animation-delay: 1.05s;"/>
+              <ellipse class="usb-water-streak" cx="3.7" cy="0" rx="0.75" ry="22" fill="var(--water-flow-stripe-1)" opacity="0" style="animation-duration: 0.85s; animation-delay: 1.25s;"/>
+
+              <!-- Bubble CHASE PAIRS — the strongest directional
+                   cue in the pipe. Each pair = two bubbles sharing
+                   the SAME offset-path and SAME animation-duration,
+                   but the chaser starts 0.30s after the leader.
+                   With identical speed + a 0.3s delay, the chaser
+                   stays a constant short distance behind: the eye
+                   reads it as one bubble pursuing another, and the
+                   only way that pursuit can be visually consistent
+                   is if both are moving downward together. The
+                   pairs are spaced ~2-3s apart so the user gets a
+                   clear "another pair just rushed past" rhythm
+                   instead of a constant blur.
+                   Leader is slightly bigger than chaser, evoking
+                   the natural "main bubble + smaller wake bubble"
+                   you see in actual moving water. -->
+              <!-- Pair 1 -->
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.6"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.45"
+                      opacity="0"
+                      style="offset-path: path('M 3.6 0 C 4.6 320 2.7 660 3.5 1000'); animation-duration: 3.2s; animation-delay: 0.0s;"/>
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.0"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.40"
+                      opacity="0"
+                      style="offset-path: path('M 3.6 0 C 4.6 320 2.7 660 3.5 1000'); animation-duration: 3.2s; animation-delay: 0.30s;"/>
+
+              <!-- Pair 2 -->
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.4"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.42"
+                      opacity="0"
+                      style="offset-path: path('M 2.9 0 C 2.4 280 4.0 720 3.1 1000'); animation-duration: 3.6s; animation-delay: 2.1s;"/>
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="0.9"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.38"
+                      opacity="0"
+                      style="offset-path: path('M 2.9 0 C 2.4 280 4.0 720 3.1 1000'); animation-duration: 3.6s; animation-delay: 2.40s;"/>
+
+              <!-- Pair 3 — bigger, slower; reads as a heavier
+                   pair drifting through. -->
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.9"
+                      fill="url(#usbBubbleSheen)"
                       stroke="var(--water-flow-stripe-1)" stroke-width="0.5"
                       opacity="0"
-                      style="offset-path: path('M 3.5 0 L 3.5 1000'); animation-delay: 0.25s;"/>
-
-              <polygon class="usb-water-particle"
-                       points="0,-2.1 1.7,0 0,2.1 -1.7,0"
-                       fill="var(--water-flow-stripe-2)" fill-opacity="0.18"
-                       stroke="var(--water-flow-stripe-2)" stroke-width="0.9"
-                       opacity="0"
-                       style="offset-path: path('M 4 0 L 4 1000'); animation-delay: 1.67s;"/>
-              <circle class="usb-water-particle"
-                      cx="0" cy="0" r="1.4"
-                      fill="var(--bubble-color)"
-                      stroke="var(--water-flow-stripe-1)" stroke-width="0.5"
+                      style="offset-path: path('M 4.2 0 C 3.7 360 4.5 640 4.0 1000'); animation-duration: 4.0s; animation-delay: 4.5s;"/>
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.2"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.42"
                       opacity="0"
-                      style="offset-path: path('M 4 0 L 4 1000'); animation-delay: 1.92s;"/>
+                      style="offset-path: path('M 4.2 0 C 3.7 360 4.5 640 4.0 1000'); animation-duration: 4.0s; animation-delay: 4.85s;"/>
 
-              <polygon class="usb-water-particle"
-                       points="0,-2.7 2.2,0 0,2.7 -2.2,0"
-                       fill="var(--water-flow-stripe-2)" fill-opacity="0.18"
-                       stroke="var(--water-flow-stripe-2)" stroke-width="1.1"
-                       opacity="0"
-                       style="offset-path: path('M 4.5 0 L 4.5 1000'); animation-delay: 3.33s;"/>
-              <circle class="usb-water-particle"
-                      cx="0" cy="0" r="1.7"
-                      fill="var(--bubble-color)"
-                      stroke="var(--water-flow-stripe-1)" stroke-width="0.6"
+              <!-- Pair 4 -->
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.3"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.42"
                       opacity="0"
-                      style="offset-path: path('M 4.5 0 L 4.5 1000'); animation-delay: 3.58s;"/>
+                      style="offset-path: path('M 2.7 0 C 4.0 300 2.5 700 3.7 1000'); animation-duration: 3.4s; animation-delay: 6.6s;"/>
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="0.8"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.36"
+                      opacity="0"
+                      style="offset-path: path('M 2.7 0 C 4.0 300 2.5 700 3.7 1000'); animation-duration: 3.4s; animation-delay: 6.88s;"/>
+
+              <!-- Solo drift bubble for ambient texture between
+                   the chase pairs. -->
+              <circle class="usb-water-particle usb-bubble" cx="0" cy="0" r="1.1"
+                      fill="url(#usbBubbleSheen)"
+                      stroke="var(--water-flow-stripe-1)" stroke-width="0.4"
+                      opacity="0"
+                      style="offset-path: path('M 4.3 0 C 3.5 380 4.6 620 3.4 1000'); animation-duration: 5.2s; animation-delay: 8.4s;"/>
             </svg>
 
           </li>
