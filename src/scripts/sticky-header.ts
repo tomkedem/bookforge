@@ -57,9 +57,17 @@ export function initStickyHeader(controller: AbortController) {
   const siteHeader = document.getElementById('site-header');
 
   function updateStickyOffset(): void {
-    const top = siteHeader?.offsetHeight ?? 64;
+    /* Use getBoundingClientRect for sub-pixel accuracy. offsetHeight
+       rounds to integer pixels, which produced a half-pixel gap
+       between the platform header and the chapter strip when the
+       header's actual height landed on a fractional value (font
+       metrics from the quote). The bounding rect's height is the
+       real rendered height, no rounding. */
+    const top = siteHeader
+      ? siteHeader.getBoundingClientRect().height
+      : 64;
     document.documentElement.style.setProperty('--reading-sticky-top', `${top}px`);
-    const stripH = strip.offsetHeight;
+    const stripH = strip.getBoundingClientRect().height;
     document.documentElement.style.setProperty('--top-strip-h', `${stripH}px`);
   }
 
@@ -144,9 +152,14 @@ export function initStickyHeader(controller: AbortController) {
     signal: controller.signal,
   });
 
-  const stripObserver = new ResizeObserver(updateStickyOffset);
-  stripObserver.observe(strip);
-  controller.signal.addEventListener('abort', () => stripObserver.disconnect());
+  /* Observe BOTH the strip AND the site header. The header's height
+     can change after initial render (web-font swap on the quote,
+     responsive layout shifts) — without observing it, the var stays
+     stale and a gap appears between header and strip. */
+  const layoutObserver = new ResizeObserver(updateStickyOffset);
+  layoutObserver.observe(strip);
+  if (siteHeader) layoutObserver.observe(siteHeader);
+  controller.signal.addEventListener('abort', () => layoutObserver.disconnect());
 
   updateStickyOffset();
   onScroll();

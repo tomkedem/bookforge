@@ -264,10 +264,13 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   position: sticky;
   /* Dock flush against the bottom of the platform header.
      sticky-header.ts keeps --reading-sticky-top in sync with
-     #site-header.offsetHeight via a ResizeObserver, so this
-     value matches the header's height exactly at every
-     breakpoint and on font/quote changes. */
-  top: var(--reading-sticky-top, 4rem);
+     #site-header.getBoundingClientRect().height via a ResizeObserver
+     on both the strip and the header, so this value matches the
+     header's height exactly at every breakpoint and on font/quote
+     changes. -1px overlap guarantees no sub-pixel gap is ever
+     visible at any zoom or DPR — the strip's top edge laps under
+     the header's bottom edge by a hair. */
+  top: calc(var(--reading-sticky-top, 4rem) - 1px);
   z-index: 46;
   /* No explicit width — let block-level `width: auto` fill the
      available inline space. This is what allows the negative
