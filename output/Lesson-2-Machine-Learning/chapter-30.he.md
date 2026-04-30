@@ -515,17 +515,13 @@ living_area = float(user_input)
 
 השורה הזו עובדת רק אם המשתמש באמת הזין מספר.
 
-לדוגמה, זה יעבוד:
+לדוגמה,
 
-1500
+**זה יעבוד:** 1500
 
-אבל זה לא יעבוד:
+**אבל זה לא יעבוד:** abc
 
-abc
-
-וזה גם לא מספיק טוב:
-
--50
+**וזה גם לא מספיק טוב:** -50
 
 כי מבחינת Python זה מספר תקין, אבל מבחינת המשמעות של התוכנית, שטח בית לא יכול להיות שלילי.
 
@@ -533,15 +529,15 @@ abc
 
 **מה נרצה שהקוד יעשה**
 
-ההתנהגות הרצויה היא כזו:
+**ההתנהגות הרצויה היא כזו:**
 
-אם המשתמש מזין מספר חיובי, התוכנית תחשב תחזית ותציג מחיר.
+- אם המשתמש מזין מספר חיובי, התוכנית תחשב תחזית ותציג מחיר.
 
-אם המשתמש מזין טקסט, התוכנית תציג הודעת שגיאה.
+- אם המשתמש מזין טקסט, התוכנית תציג הודעת שגיאה.
 
-אם המשתמש מזין מספר שלילי או אפס, התוכנית תציג הודעת שגיאה.
+- אם המשתמש מזין מספר שלילי או אפס, התוכנית תציג הודעת שגיאה.
 
-אם המשתמש רוצה לצאת, הוא יוכל לכתוב exit.
+- אם המשתמש רוצה לצאת, הוא יוכל לכתוב exit.
 
 כלומר, במקום שהתוכנית תעבוד פעם אחת ותסתיים, נבנה לולאה שמאפשרת להזין כמה ערכים ברצף.
 
@@ -549,26 +545,32 @@ abc
 
 במקום לפזר את בדיקת הקלט בתוך main, ניצור פונקציה ייעודית:
 
-def parse_living_area(user_input: str) -> float: 
- value = float(user_input) 
- 
- if value <= 0: 
- raise ValueError("Living area must be greater than zero.") 
- 
- return value
+```python
+def parse_living_area(user_input: str) -> float:
+    value = float(user_input)
+
+    if value <= 0:
+        raise ValueError("Living area must be greater than zero.")
+
+    return value
+```
 
 מה הפונקציה הזו עושה?
 
 קודם היא מנסה להמיר את הקלט למספר:
 
+```python
 value = float(user_input)
+```
 
 אם המשתמש הזין משהו שאינו מספר, למשל abc, השורה הזו תזרוק ValueError.
 
 אחר כך אנחנו בודקים שהמספר גדול מאפס:
 
-if value <= 0: 
- raise ValueError("Living area must be greater than zero.")
+```python
+if value <= 0:
+    raise ValueError("Living area must be greater than zero.")
+```
 
 אם הערך הוא אפס או שלילי, אנחנו מתייחסים אליו כקלט לא חוקי.
 
@@ -578,12 +580,14 @@ if value <= 0:
 
 עכשיו צריך להשתמש בפונקציה הזו בתוך הלולאה:
 
-try: 
- living_area = parse_living_area(user_input) 
- predicted_price = predict_price(model, living_area) 
- print(f"Predicted Sale Price: ${predicted_price:,.2f}") 
-except ValueError: 
- print("Invalid input. Please enter a positive number, for example: 1500")
+```python
+try:
+    living_area = parse_living_area(user_input)
+    predicted_price = predict_price(model, living_area)
+    print(f"Predicted Sale Price: ${predicted_price:,.2f}")
+except ValueError:
+    print("Invalid input. Please enter a positive number, for example: 1500")
+```
 
 המבנה הזה אומר:
 
@@ -603,142 +607,150 @@ except ValueError:
 
 אנחנו לא צריכים ליצור קובץ חדש, אלא לשפר את הקובץ של תרגיל 2.
 
-from pathlib import Path 
- 
-import joblib 
-import numpy as np 
- 
- 
-# ---------------------------------------- 
-# Project paths 
-# ---------------------------------------- 
-BASE_DIR = Path(__file__).resolve().parent.parent 
- 
-# Path to the trained model file 
-MODEL_PATH = BASE_DIR / "models" / "linear_regression_model.pkl" 
- 
- 
-def load_model(): 
- # ---------------------------------------- 
- # Load trained model from disk 
- # ---------------------------------------- 
- # The model must already exist. 
- # It is created by running: 
- # 3_train_linear_regression_model.py 
- return joblib.load(MODEL_PATH) 
- 
- 
-def parse_living_area(user_input: str) -> float: 
- # ---------------------------------------- 
- # Convert CLI input into a valid number 
- # ---------------------------------------- 
- # input() always returns text. 
- # We need to convert it to float before using it. 
- value = float(user_input) 
- 
- # ---------------------------------------- 
- # Validate business meaning 
- # ---------------------------------------- 
- # A house living area must be greater than zero. 
- if value <= 0: 
- raise ValueError("Living area must be greater than zero.") 
- 
- return value 
- 
- 
-def predict_price(model, living_area: float) -> float: 
- # ---------------------------------------- 
- # Convert user input into model input format 
- # ---------------------------------------- 
- # scikit-learn expects a 2D array: 
- # rows = samples 
- # columns = features 
- input_data = np.array([[living_area]]) 
- 
- # ---------------------------------------- 
- # Run prediction 
- # ---------------------------------------- 
- prediction = model.predict(input_data) 
- 
- # prediction is an array, so we return the first value 
- return prediction[0] 
- 
- 
-def main(): 
- # ---------------------------------------- 
- # 1. Load model once 
- # ---------------------------------------- 
- model = load_model() 
- 
- print("Linear Regression model loaded successfully.") 
- print("Enter a living area in square feet.") 
- print("Type 'exit' to quit.") 
- 
- # ---------------------------------------- 
- # 2. Keep asking the user for input 
- # ---------------------------------------- 
- while True: 
- user_input = input("\nLiving area: ").strip() 
- 
- # ---------------------------------------- 
- # 3. Allow the user to exit the program 
- # ---------------------------------------- 
- if user_input.lower() in {"exit", "quit", "q"}: 
- print("Goodbye.") 
- break 
- 
- try: 
- # ---------------------------------------- 
- # 4. Parse and validate input 
- # ---------------------------------------- 
- living_area = parse_living_area(user_input) 
- 
- # ---------------------------------------- 
- # 5. Predict sale price 
- # ---------------------------------------- 
- predicted_price = predict_price(model, living_area) 
- 
- # ---------------------------------------- 
- # 6. Print result 
- # ---------------------------------------- 
- print(f"Predicted Sale Price: ${predicted_price:,.2f}") 
- 
- except ValueError: 
- # ---------------------------------------- 
- # Handle illegal input without crashing 
- # ---------------------------------------- 
- print("Invalid input. Please enter a positive number, for example: 1500") 
- 
- 
-if __name__ == "__main__": 
- main()
+```python
+from pathlib import Path
+
+import joblib
+import numpy as np
+
+
+# ----------------------------------------
+# Project paths
+# ----------------------------------------
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Path to the trained model file
+MODEL_PATH = BASE_DIR / "models" / "linear_regression_model.pkl"
+
+
+def load_model():
+    # ----------------------------------------
+    # Load trained model from disk
+    # ----------------------------------------
+    # The model must already exist.
+    # It is created by running:
+    # 3_train_linear_regression_model.py
+    return joblib.load(MODEL_PATH)
+
+
+def parse_living_area(user_input: str) -> float:
+    # ----------------------------------------
+    # Convert CLI input into a valid number
+    # ----------------------------------------
+    # input() always returns text.
+    # We need to convert it to float before using it.
+    value = float(user_input)
+
+    # ----------------------------------------
+    # Validate business meaning
+    # ----------------------------------------
+    # A house living area must be greater than zero.
+    if value <= 0:
+        raise ValueError("Living area must be greater than zero.")
+
+    return value
+
+
+def predict_price(model, living_area: float) -> float:
+    # ----------------------------------------
+    # Convert user input into model input format
+    # ----------------------------------------
+    # scikit-learn expects a 2D array:
+    # rows = samples
+    # columns = features
+    input_data = np.array([[living_area]])
+
+    # ----------------------------------------
+    # Run prediction
+    # ----------------------------------------
+    prediction = model.predict(input_data)
+
+    # prediction is an array, so we return the first value
+    return prediction[0]
+
+
+def main():
+    # ----------------------------------------
+    # 1. Load model once
+    # ----------------------------------------
+    model = load_model()
+
+    print("Linear Regression model loaded successfully.")
+    print("Enter a living area in square feet.")
+    print("Type 'exit' to quit.")
+
+    # ----------------------------------------
+    # 2. Keep asking the user for input
+    # ----------------------------------------
+    while True:
+        user_input = input("\nLiving area: ").strip()
+
+        # ----------------------------------------
+        # 3. Allow the user to exit the program
+        # ----------------------------------------
+        if user_input.lower() in {"exit", "quit", "q"}:
+            print("Goodbye.")
+            break
+
+        try:
+            # ----------------------------------------
+            # 4. Parse and validate input
+            # ----------------------------------------
+            living_area = parse_living_area(user_input)
+
+            # ----------------------------------------
+            # 5. Predict sale price
+            # ----------------------------------------
+            predicted_price = predict_price(model, living_area)
+
+            # ----------------------------------------
+            # 6. Print result
+            # ----------------------------------------
+            print(f"Predicted Sale Price: ${predicted_price:,.2f}")
+
+        except ValueError:
+            # ----------------------------------------
+            # Handle illegal input without crashing
+            # ----------------------------------------
+            print("Invalid input. Please enter a positive number, for example: 1500")
+
+
+if __name__ == "__main__":
+    main()
+```
 
 **מה השתנה לעומת תרגיל 2**
 
 בתרגיל 2 קיבלנו קלט והמרנו אותו ישירות למספר:
 
+```python
 living_area = float(user_input)
+```
 
 זה היה פשוט, אבל לא בטוח.
 
 בתרגיל 3 העברנו את האחריות הזו לפונקציה נפרדת:
 
+```python
 parse_living_area(user_input)
+```
 
 וזה שיפור חשוב, כי עכשיו ברור שיש מקום אחד שאחראי על בדיקת הקלט.
 
-הוספנו גם לולאת while True, כדי שהמשתמש יוכל לבצע כמה תחזיות ברצף בלי להריץ את התוכנית מחדש בכל פעם.
+הוספנו גם לולאת **while True**, כדי שהמשתמש יוכל לבצע כמה תחזיות ברצף בלי להריץ את התוכנית מחדש בכל פעם.
 
 **דוגמת הרצה תקינה**
 
 לאחר הרצה של הקובץ:
 
-Linear Regression model loaded successfully. 
-Enter a living area in square feet. 
-Type 'exit' to quit. 
- 
-Living area: 1500 
+```bash
+Linear Regression model loaded successfully.
+Enter a living area in square feet.
+Type 'exit' to quit.
+
+Living area: 1500
 Predicted Sale Price: $179,344.29
+```
 
 המשתמש הזין מספר חיובי, ולכן התוכנית חישבה תחזית.
 
@@ -746,8 +758,10 @@ Predicted Sale Price: $179,344.29
 
 אם המשתמש מזין טקסט:
 
-Living area: abc 
+```bash
+Living area: abc
 Invalid input. Please enter a positive number, for example: 1500
+```
 
 התוכנית לא קורסת.
 
@@ -757,8 +771,10 @@ Invalid input. Please enter a positive number, for example: 1500
 
 אם המשתמש מזין מספר שלילי:
 
-Living area: -100 
+```bash
+Living area: -100
 Invalid input. Please enter a positive number, for example: 1500
+```
 
 גם כאן התוכנית לא קורסת.
 
@@ -768,8 +784,10 @@ Invalid input. Please enter a positive number, for example: 1500
 
 אם המשתמש רוצה לצאת:
 
-Living area: exit 
+```bash
+Living area: exit
 Goodbye.
+```
 
 זה הופך את התוכנית לנוחה יותר לשימוש, כי לא צריך לעצור אותה בכוח.
 
@@ -782,6 +800,8 @@ Goodbye.
 לכן התרגיל הזה מלמד משהו חשוב מעבר ל-Machine Learning: מודל טוב לא מספיק. צריך גם תוכנית שיודעת לעבוד בצורה יציבה סביב המודל.
 
 כאן בדיוק מתחילים לראות את ההבדל בין דוגמת מעבדה לבין קוד שמתחיל להתנהג כמו מערכת.
+
+
 
 ## תרגיל 3: טיפול בקלט לא חוקי
 
@@ -1095,6 +1115,8 @@ Goodbye.
 
 כאן בדיוק מתחילים לראות את ההבדל בין דוגמת מעבדה לבין קוד שמתחיל להתנהג כמו מערכת.
 
+
+
 ## תרגיל 4: יעילות - טעינת המודל פעם אחת בזמן עליית התוכנית
 
 מתוך שיעורי הבית:
@@ -1245,13 +1267,7 @@ model = load_model()
 
 כשעובדים עם מודלים גדולים, טעינה מהדיסק יכולה לקחת זמן. אם טוענים את המודל בכל פעולה, הביצועים נפגעים בצורה משמעותית.
 
-**לכן, העיקרון הוא:**
-
-טעינה פעם אחת
-
-שימוש הרבה פעמים
-
-זה עיקרון שחוזר כמעט בכל מערכת.
+**לכן, העיקרון הוא:** טעינה פעם אחת, שימוש הרבה פעמים. זה עיקרון שחוזר כמעט בכל מערכת.
 
 **איך זה מתחבר לכל התרגילים**
 
