@@ -353,42 +353,34 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
   border-bottom-color: rgba(184, 146, 63, 0.20);
 }
 
+/* Light-mode parent (.chapter-top-strip): drop the vertical fade
+   gradient + backdrop blur. Both were tuned for dark mode where they
+   read as atmospheric depth; on cream they introduce a subtle
+   darkening at the bottom edge that reads as a faint shadow. Keep
+   the strip flat — the .strip-row's own #F5F4EF fill carries the
+   tone. */
+:global(:root:not(.dark)) .chapter-top-strip {
+  background: transparent;
+  backdrop-filter: none;
+}
+
 .strip-row.hidden {
   display: none !important;
 }
 
-/* "Tucked-under" illusion: a thin gradient overlay painted on top of
-   the strip-row's background, fading from a soft shadow at the very
-   top edge to transparent ~10px down. The eye reads this as the
-   platform header casting a shadow onto the strip below — i.e. the
-   strip is sliding out from under the header.
-   Pointer-events: none so it doesn't block taps; positioned absolute
-   in the row's relative box, painted above .strip-row's solid
-   background but below its text.
-
-   Default = light-mode tone: warm gold-brown at very low alpha so the
-   shadow blends with the cream surface and gold accents. The earlier
-   navy tone (`rgba(17, 24, 39, 0.18)`) read as a foreign dark band
-   stamped onto cream. Dark mode overrides below with the deeper black
-   gradient that reads correctly on the near-black surface. */
-.strip-row::before {
+/* "Tucked-under" illusion: dark mode only.
+   Originally this gradient appeared in both modes to suggest the
+   platform header was casting a shadow onto the strip below. On the
+   cream light-mode surface that shadow read as a foreign dark band,
+   so the rule is now scoped to .dark only and removed from light
+   entirely (light-mode strip stays flat, matching the right sidebar
+   header for a uniform top-chrome band). */
+:global(.dark) .strip-row::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 8px;
-  background: linear-gradient(
-    to bottom,
-    rgba(120, 90, 30, 0.10) 0%,
-    rgba(120, 90, 30, 0.04) 55%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
-:global(.dark) .strip-row::before {
   height: 10px;
   background: linear-gradient(
     to bottom,
@@ -396,6 +388,8 @@ const language = (langs.includes(SOURCE_LANGUAGE) ? SOURCE_LANGUAGE : langs[0] |
     rgba(0, 0, 0, 0.20) 55%,
     transparent 100%
   );
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Lift the row's actual content above the shadow overlay. */
