@@ -381,27 +381,23 @@
     color: #2c2c34;
   }
 
-  /* Focus toggle in light mode: deeper gold ink, cream surface. */
+  /* Focus toggle in light mode — INACTIVE state mirrors the collapse
+     button below (cream surface, neutral border). Gold appears only
+     in the .active state so the colour shift carries semantic weight. */
   :global(:root:not(.dark)) .reading-left-dock__focus {
-    background: linear-gradient(
-      135deg,
-      rgba(184, 146, 63, 0.16) 0%,
-      rgba(184, 146, 63, 0.06) 100%
-    );
-    border-color: rgba(184, 146, 63, 0.45);
-    color: #6d5320;
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(60, 50, 30, 0.14);
+    color: rgba(60, 50, 70, 0.7);
   }
 
   :global(:root:not(.dark)) .reading-left-dock__focus:hover {
-    background: linear-gradient(
-      135deg,
-      rgba(184, 146, 63, 0.28) 0%,
-      rgba(184, 146, 63, 0.12) 100%
-    );
-    border-color: rgba(184, 146, 63, 0.65);
+    background: rgba(184, 146, 63, 0.10);
+    border-color: rgba(184, 146, 63, 0.40);
     color: #2c2c34;
   }
 
+  /* Active state in light mode — gold engaged, signalling
+     "focus mode ON" unambiguously against the cream chrome. */
   :global(:root:not(.dark)) .reading-left-dock__focus.active {
     background: linear-gradient(
       135deg,
@@ -746,10 +742,11 @@
     gap: 8px;
   }
 
-  /* Focus toggle: same 40×40 footprint as the collapse button, but
-     gold-accented to read as the *primary* "give me space" action.
-     Sits visually grouped with the collapse button so users find both
-     in the same place. */
+  /* Focus toggle — visually identical to the collapse button below it
+     in its INACTIVE state (neutral charcoal glass). This keeps gold
+     reserved for the .active state, which lights up only when focus
+     mode is actually engaged — preserving gold-as-active-signal across
+     the platform (target tile, current chapter, etc.). */
   .reading-left-dock__focus {
     appearance: none;
     position: relative;
@@ -759,13 +756,9 @@
     border-radius: 12px;
     display: inline-grid;
     place-items: center;
-    background: linear-gradient(
-      135deg,
-      rgba(230, 201, 138, 0.18) 0%,
-      rgba(184, 146, 63, 0.08) 100%
-    );
-    border: 1px solid rgba(184, 146, 63, 0.40);
-    color: #e6c98a;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(230, 235, 255, 0.78);
     cursor: pointer;
     flex-shrink: 0;
     transition:
@@ -777,25 +770,21 @@
   }
 
   .reading-left-dock__focus:hover {
-    background: linear-gradient(
-      135deg,
-      rgba(230, 201, 138, 0.30) 0%,
-      rgba(184, 146, 63, 0.16) 100%
-    );
-    border-color: rgba(212, 175, 55, 0.65);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(230, 201, 138, 0.35);
     color: #ffffff;
-    box-shadow: 0 4px 14px -4px rgba(212, 175, 55, 0.40);
   }
 
   .reading-left-dock__focus:active { transform: scale(0.94); }
 
   .reading-left-dock__focus:focus-visible {
-    outline: 2px solid rgba(212, 175, 55, 0.7);
+    outline: 2px solid rgba(230, 201, 138, 0.7);
     outline-offset: 2px;
   }
 
-  /* Active state — toggled on while focus mode is on (both
-     sidebars collapsed). Stronger gold to read as "engaged". */
+  /* Active state — focus mode is ON (both sidebars collapsed). Gold
+     lights up here, and ONLY here, so the colour change carries
+     unambiguous meaning ("focus is engaged"). */
   .reading-left-dock__focus.active {
     background: linear-gradient(
       135deg,

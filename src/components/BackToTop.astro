@@ -19,6 +19,15 @@ const { threshold = 300 } = Astro.props;
 </button>
 
 <style>
+  /* Lift the button above the platform status bar when one is mounted
+     (reading pages). On pages without the bar the variable falls back
+     to 0px and the button stays at the original Tailwind bottom-6 (24px).
+     !important needed to win over Tailwind's `bottom-6` utility. */
+  #back-to-top {
+    bottom: calc(1.5rem + var(--platform-status-bar-height, 0px)) !important;
+    transition: bottom 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   /* Desktop-only: the unified mobile FAB + chapter-title tap gesture
      replace this button below 1024px. */
   @media (max-width: 1023px) {
@@ -36,6 +45,7 @@ const { threshold = 300 } = Astro.props;
       inset-inline-start: calc(320px + 6px);
       transition:
         inset-inline-start 380ms cubic-bezier(0.33, 1, 0.68, 1),
+        bottom 320ms cubic-bezier(0.4, 0, 0.2, 1),
         opacity 300ms ease,
         transform 300ms ease,
         background-color 200ms ease;

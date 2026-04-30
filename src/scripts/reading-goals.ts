@@ -190,89 +190,288 @@ function injectStyles(): void {
     #goal-ring-fill.done { stroke: #16a34a; }
     #goal-emoji { font-size: 18px; position: relative; z-index: 1; }
 
+    /* ── Goal modal — Yuval premium charcoal+gold language ─────────
+       Drops the old green-accented Bootstrap-y look in favour of the
+       same warm-charcoal surface + gold-accent vocabulary used by
+       the LeftSidebar dock, the bookmark dialog, and the active
+       chapter card. Light mode uses a parchment-cream variant of
+       the same shapes. */
+
     #goal-modal-overlay {
       position: fixed; inset: 0; z-index: 10001;
-      background: rgba(0,0,0,0.5); backdrop-filter: blur(6px);
+      background: rgba(2, 6, 18, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex; align-items: center; justify-content: center;
+      animation: goal-fade-in 200ms ease-out;
     }
+
+    @keyframes goal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes goal-pop-in {
+      from { opacity: 0; transform: translateY(6px) scale(0.985); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Default = LIGHT — warm cream parchment. Dark overrides below. */
     #goal-modal {
-      background: var(--yuval-surface, #fff);
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      border-radius: 20px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
-      padding: 28px 24px 24px;
-      width: min(360px, 90vw);
+      --gm-bg-from: rgba(252, 250, 246, 0.94);
+      --gm-bg-to:   rgba(245, 242, 235, 0.96);
+      --gm-border:  var(--yuval-border, rgba(201, 169, 110, 0.30));
+      --gm-shadow:
+        0 18px 40px -16px rgba(60, 50, 30, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      --gm-title:        #2c2c34;
+      --gm-text:         rgba(60, 50, 70, 0.82);
+      --gm-text-muted:   rgba(60, 50, 70, 0.60);
+      --gm-divider:      rgba(60, 50, 30, 0.10);
+      --gm-inner-bg:     rgba(255, 248, 232, 0.55);
+      --gm-inner-border: rgba(184, 146, 63, 0.22);
+      --gm-track:        rgba(60, 50, 30, 0.12);
+      --gm-secondary-bg:        rgba(60, 50, 30, 0.04);
+      --gm-secondary-bg-hover:  rgba(201, 169, 110, 0.10);
+      --gm-secondary-border:    rgba(60, 50, 30, 0.14);
+      --gm-secondary-text:      rgba(60, 50, 70, 0.85);
+
+      background: linear-gradient(180deg, var(--gm-bg-from) 0%, var(--gm-bg-to) 100%);
+      border: 1px solid var(--gm-border);
+      border-radius: 18px;
+      box-shadow: var(--gm-shadow);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      padding: 22px 22px 20px;
+      width: min(360px, calc(100vw - 32px));
+      animation: goal-pop-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    :is(.dark) #goal-modal { background: #1e1e1e; border-color: rgba(255,255,255,0.08); }
+
+    :is(.dark) #goal-modal {
+      --gm-bg-from: rgba(28, 28, 34, 0.92);
+      --gm-bg-to:   rgba(20, 20, 26, 0.96);
+      --gm-border:  var(--yuval-border, rgba(127, 127, 127, 0.18));
+      --gm-shadow:
+        0 24px 60px -18px rgba(0, 0, 0, 0.65),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+        inset 0 1px 0 rgba(212, 196, 168, 0.06);
+      --gm-title:        rgba(240, 235, 225, 0.96);
+      --gm-text:         rgba(212, 196, 168, 0.82);
+      --gm-text-muted:   rgba(212, 196, 168, 0.55);
+      --gm-divider:      rgba(255, 255, 255, 0.07);
+      --gm-inner-bg:     rgba(255, 255, 255, 0.025);
+      --gm-inner-border: rgba(184, 146, 63, 0.22);
+      --gm-track:        rgba(255, 255, 255, 0.08);
+      --gm-secondary-bg:        rgba(255, 255, 255, 0.035);
+      --gm-secondary-bg-hover:  rgba(255, 255, 255, 0.07);
+      --gm-secondary-border:    rgba(255, 255, 255, 0.10);
+      --gm-secondary-text:      rgba(230, 225, 215, 0.85);
+    }
 
     #goal-modal h2 {
-      font-size: 16px; font-weight: 800;
-      color: var(--yuval-text, #1a1a1a);
-      margin-bottom: 8px;
+      font-size: 17px; font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--gm-title);
+      margin: 0 0 6px;
+      display: flex; align-items: center; gap: 8px;
     }
+
+    /* Streak — warm amber instead of safety-orange. The flame emoji
+       carries the heat semantics; the colour just supports it. */
     .goal-streak-row {
-      font-size: 14px; font-weight: 600; color: #f97316;
-      margin-bottom: 20px;
+      font-size: 13px; font-weight: 500;
+      color: #d49b4a;
+      margin: 0 0 18px;
+      letter-spacing: 0.01em;
     }
+    :is(.dark) .goal-streak-row { color: #e6b56a; }
+
+    /* Progress card — warm-cream inset (light) / charcoal-glass (dark)
+       with a thin gold border. */
     .goal-progress-row {
-      background: var(--yuval-bg-secondary, #f9f9f9);
-      border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 20px;
-      border: 1px solid var(--yuval-border, #e5e7eb);
+      background: var(--gm-inner-bg);
+      border: 1px solid var(--gm-inner-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 0 0 18px;
     }
-    :is(.dark) .goal-progress-row { background: #252525; border-color: rgba(255,255,255,0.07); }
+
     .goal-progress-label {
-      font-size: 12px; color: var(--yuval-text-muted, #999);
-      margin-bottom: 8px; font-weight: 500;
+      font-size: 12px; font-weight: 500;
+      color: var(--gm-text-muted);
+      letter-spacing: 0.01em;
+      margin: 0 0 8px;
+      font-variant-numeric: tabular-nums;
     }
+
+    /* Track + fill — gold gradient instead of bright green; matches
+       the dock's golden-target tile so progress reads as "the brand". */
     .goal-progress-bar {
-      height: 8px; border-radius: 99px;
-      background: var(--yuval-border, #e5e7eb); overflow: hidden;
+      height: 6px; border-radius: 99px;
+      background: var(--gm-track); overflow: hidden;
     }
     .goal-progress-fill {
-      height: 100%; border-radius: 99px; background: #22c55e;
-      transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .goal-progress-text {
-      font-size: 13px; font-weight: 700;
-      color: var(--yuval-text, #1a1a1a);
-      margin-top: 6px;
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(
+        90deg,
+        rgba(212, 175, 55, 0.85) 0%,
+        rgba(184, 146, 63, 0.95) 100%
+      );
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.35);
+      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
+    .goal-progress-text {
+      font-size: 13px; font-weight: 600;
+      color: var(--gm-title);
+      margin-top: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Preset options — 2×2 grid. Inactive: glass. Active: gold gradient
+       like the dock's golden-target. */
     .goal-options {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 8px; margin-bottom: 16px;
+      gap: 8px; margin: 0 0 18px;
     }
     .goal-option {
-      padding: 10px; border-radius: 10px;
-      border: 2px solid var(--yuval-border, #e5e7eb);
-      background: var(--yuval-bg-secondary, #f9f9f9);
-      font-size: 13px; font-weight: 600;
-      color: var(--yuval-text-secondary, #555);
+      padding: 11px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--gm-secondary-border);
+      background: var(--gm-secondary-bg);
+      font-size: 13px; font-weight: 500;
+      color: var(--gm-secondary-text);
       cursor: pointer; text-align: center;
-      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      letter-spacing: 0.005em;
+      transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
     }
-    .goal-option:hover { border-color: #22c55e; color: #16a34a; }
+    .goal-option:hover {
+      background: var(--gm-secondary-bg-hover);
+      border-color: rgba(184, 146, 63, 0.45);
+    }
     .goal-option.active {
-      border-color: #22c55e; background: #f0fdf4; color: #16a34a;
+      background: linear-gradient(
+        135deg,
+        rgba(212, 175, 55, 0.32) 0%,
+        rgba(184, 146, 63, 0.16) 100%
+      );
+      border-color: rgba(212, 175, 55, 0.65);
+      color: #4a3a14;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.40),
+        0 4px 14px -4px rgba(212, 175, 55, 0.30);
     }
-    :is(.dark) .goal-option.active { background: rgba(34,197,94,0.1); }
+    :is(.dark) .goal-option.active {
+      background: linear-gradient(
+        135deg,
+        rgba(212, 175, 55, 0.22) 0%,
+        rgba(184, 146, 63, 0.10) 100%
+      );
+      color: #f0e3c2;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 235, 180, 0.10),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+        0 6px 16px -6px rgba(212, 175, 55, 0.25);
+    }
 
+    /* Divider above the action row to lift the buttons off the grid. */
     .goal-modal-actions {
-      display: flex; gap: 8px; justify-content: flex-end;
+      display: flex; gap: 10px; justify-content: flex-end;
+      padding-top: 14px;
+      border-top: 1px solid var(--gm-divider);
     }
+
     .goal-btn {
-      padding: 8px 18px; border-radius: 8px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      border: 1px solid var(--yuval-border, #e5e7eb);
-      background: var(--yuval-bg-secondary, #f3f4f6);
-      color: var(--yuval-text-secondary, #555);
-      transition: background 0.15s;
+      flex: 1 1 auto;
+      min-height: 38px;
+      padding: 0 16px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      border: 1px solid var(--gm-secondary-border);
+      background: var(--gm-secondary-bg);
+      color: var(--gm-secondary-text);
+      transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        box-shadow 200ms ease,
+        transform 160ms ease;
     }
+    .goal-btn:hover { background: var(--gm-secondary-bg-hover); }
+    .goal-btn:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 2px var(--gm-bg-from),
+        0 0 0 4px rgba(212, 175, 55, 0.55);
+    }
+
+    /* Primary "save" — gold gradient in the warm Yuval brand language. */
     .goal-btn.primary {
-      background: #22c55e; color: #fff; border-color: #22c55e;
+      background: linear-gradient(
+        180deg,
+        rgba(230, 201, 138, 0.32) 0%,
+        rgba(184, 146, 63, 0.18) 100%
+      );
+      border: 1px solid rgba(184, 146, 63, 0.55);
+      color: #4a3a14;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
+        0 -1px 0 rgba(60, 50, 30, 0.06) inset,
+        0 4px 14px -4px rgba(184, 146, 63, 0.30);
     }
-    .goal-btn.primary:hover { background: #16a34a; }
+    :is(.dark) .goal-btn.primary {
+      background: linear-gradient(
+        180deg,
+        rgba(212, 175, 55, 0.22) 0%,
+        rgba(184, 146, 63, 0.10) 100%
+      );
+      border-color: rgba(184, 146, 63, 0.45);
+      color: #f0e3c2;
+      box-shadow:
+        0 1px 0 rgba(255, 235, 180, 0.10) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.35) inset,
+        0 6px 16px -6px rgba(212, 175, 55, 0.22);
+    }
+    .goal-btn.primary:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(
+        180deg,
+        rgba(230, 201, 138, 0.46) 0%,
+        rgba(184, 146, 63, 0.28) 100%
+      );
+      border-color: rgba(212, 175, 55, 0.70);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.70) inset,
+        0 -1px 0 rgba(60, 50, 30, 0.08) inset,
+        0 6px 18px -4px rgba(212, 175, 55, 0.45);
+    }
+    :is(.dark) .goal-btn.primary:hover {
+      background: linear-gradient(
+        180deg,
+        rgba(212, 175, 55, 0.34) 0%,
+        rgba(184, 146, 63, 0.18) 100%
+      );
+      border-color: rgba(212, 175, 55, 0.70);
+      color: #fbeec6;
+      box-shadow:
+        0 1px 0 rgba(255, 235, 180, 0.16) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.40) inset,
+        0 8px 22px -8px rgba(212, 175, 55, 0.45);
+    }
+    .goal-btn.primary:active { transform: translateY(0); filter: brightness(0.97); }
+
+    @media (prefers-reduced-motion: reduce) {
+      #goal-modal-overlay,
+      #goal-modal { animation: none; }
+      .goal-progress-fill { transition: none; }
+      .goal-btn,
+      .goal-option { transition: none; }
+    }
   `;
   document.head.appendChild(s);
 }
