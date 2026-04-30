@@ -270,28 +270,30 @@
     background: var(--yuval-surface, #1a1a1a);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    /* Royal floating frame — a thin warm-gold rim around the capsule
-       suggesting polished metal, paired with a layered drop shadow
-       that lets the dock visibly hover above the shell. The inner
-       highlights (white-sheen on top edge, faint gold rim on bottom)
-       give the frame a beveled "jewelry" quality without crossing
-       into ornamentation. */
-    border: 1px solid rgba(184, 146, 63, 0.42);
+    /* True royal hairline — the frame is now a 0.5px gold rim drawn
+       via box-shadow (border removed entirely). 0.5px renders as a
+       single device pixel on retina, half a logical pixel on standard
+       displays — the thinnest line a browser can paint. Less is more:
+       what reads as "royal" in physical jewelry isn't a thick gold
+       band, it's a precise, almost-invisible edge that catches light. */
+    border: none;
     box-shadow:
-      /* Atmospheric warm gold halo — barely perceptible, just enough
-         to make the dock feel embedded in a luminous field rather
-         than pasted onto the shell. */
-      0 0 32px -4px rgba(212, 178, 110, 0.14),
+      /* Hairline gold rim — even quieter (was 0.35, now 0.18). At
+         this alpha the line only registers when the eye is on it
+         directly; in peripheral vision it dissolves into the dock's
+         dark surface. That's the truly royal idiom — implied frame,
+         not declared. */
+      0 0 0 0.5px rgba(184, 146, 63, 0.18),
+      /* Atmospheric warm gold halo — barely perceptible. */
+      0 0 32px -4px rgba(212, 178, 110, 0.04),
       /* Far ambient drop shadow — soft, wide, gives the levitation. */
       0 28px 56px -18px rgba(0, 0, 0, 0.55),
       /* Closer key shadow — sharper, defines the bottom edge. */
       0 10px 24px -8px rgba(0, 0, 0, 0.32),
-      /* Inset bright top-edge gleam — light catching polished metal. */
-      inset 0 1px 0 rgba(255, 240, 200, 0.10),
-      /* Inset thin warm rim — the inner edge of the gold frame. */
-      inset 0 0 0 1px rgba(255, 240, 200, 0.045),
-      /* Inset deeper gold along the bottom — frame "weight". */
-      inset 0 -1px 0 rgba(184, 146, 63, 0.22);
+      /* Inset bright top-edge gleam — softened. */
+      inset 0 1px 0 rgba(255, 240, 200, 0.04),
+      /* Inset facet — almost gone. */
+      inset 0 0 0 1px rgba(255, 240, 200, 0.015);
   }
 
   /* ─────────── Light theme ────────────────────────────────────
@@ -341,8 +343,25 @@
 
   /* Menu item default state — dark text/icon on cream. */
   :global(:root:not(.dark)) .reading-left-dock__item {
-    border-color: rgba(60, 50, 30, 0.06);
+    /* Tile silhouette — a half-step deeper warm cream than the
+       parchment shell (#F3EEE0), so each icon sits on a visible
+       "stage" instead of dissolving into the dock's bg. Combined
+       with a gold hairline border, this gives every tool a clear
+       silhouette without resorting to saturated colored tiles. */
+    background: rgba(184, 146, 63, 0.07);
+    border-color: rgba(184, 146, 63, 0.22);
     color: rgba(60, 50, 70, 0.78);
+    /* Inset highlight on the top edge — same "polished metal" idiom
+       the dock frame uses, scaled down for tile-sized chrome. */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  /* Slight saturation + contrast bump on the colored PNG icons so
+     they read crisply against the warm tile bg. PNG colors that
+     looked muted on transparent now pop on the tile without altering
+     their hues. */
+  :global(:root:not(.dark)) .reading-left-dock__item-icon img {
+    filter: saturate(1.12) contrast(1.06);
   }
 
   :global(:root:not(.dark)) .reading-left-dock__item-label {
@@ -392,6 +411,13 @@
   :global(:root:not(.dark))
     .reading-left-dock__item[data-action="highlights"] img {
     content: url('/assets/icons/sidebar/highlight-day.png');
+    /* Stronger filter than the global icon treatment — the highlight
+       day-PNG is a soft yellow that nearly disappears against the
+       cream parchment shell + warm tile bg. Boost saturation and
+       darken slightly so it reads as a clear amber/ochre instead of
+       a pale wash. Overrides the .reading-left-dock__item-icon img
+       global filter for this one icon only. */
+    filter: saturate(1.6) contrast(1.2) brightness(0.82);
   }
   :global(:root:not(.dark))
     .reading-left-dock__item[data-action="search"] img {

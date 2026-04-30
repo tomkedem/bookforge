@@ -171,7 +171,7 @@ function renderStats(): void {
     <div class="stats-grid">
 
       <div class="stat-card">
-        <div>${stats.chaptersRead} ${tr('stats.of')} ${stats.totalChapters}</div>
+        <div>${stats.chaptersRead}<span class="stat-of">${tr('stats.of')}</span>${stats.totalChapters}</div>
         <div>${tr('stats.chapters')}</div>
       </div>
 

@@ -759,17 +759,22 @@ const isRtl = getLanguageDirection(language) === 'rtl';
        the LeftSidebar dock, right TOC, status bar, and body gutter,
        so the entire reading shell reads as one continuous parchment
        surface. backdrop-filter removed: bg is opaque, and the blur
-       was causing color drift from content scrolling underneath. */
+       was causing color drift from content scrolling underneath.
+       box-shadow removed: the 1-2px shadow band below the header
+       was rendering as a visible thin gap between the platform header
+       and the chapter top strip. With both surfaces sharing the same
+       color and the chapter strip docking flush via --reading-sticky-top,
+       the seam is conveyed by the ::before gold hairline alone. */
     background: #F3EEE0;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: none;
     transition: background-color 220ms var(--ease-standard);
   }
 
   :global(.dark body.reading-mode) .yuval-header {
     background: var(--yuval-surface, #1a1a1a);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    box-shadow: none;
   }
 
   /* Drop the warm under-glow; soften the gold hairline. */

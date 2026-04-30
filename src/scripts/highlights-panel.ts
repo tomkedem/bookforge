@@ -55,25 +55,41 @@ declare global {
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 
-const COLOR_EMOJI: Record<HighlightColor, string> = {
-  yellow: '💡',
-  blue: '❓',
-  green: '✅',
-  pink: '💬',
+/* Inline SVG icons (line-art, stroke-currentColor) replace the legacy
+   emoji set. Each is sized 16×16 with a 24×24 viewBox so the strokes
+   render at ~1.33 px optical weight — refined enough for the small
+   panel scale, bold enough not to dissolve.
+   - yellow  → lightbulb (insight)
+   - blue    → help circle (question)
+   - green   → check (verified)
+   - pink    → quote (commentary) */
+const COLOR_SVG: Record<HighlightColor, string> = {
+  yellow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
+  blue:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
+  green:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
+  pink:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>`,
 };
 
+/* Glass-tint backgrounds: each highlight card is a soft diagonal
+   gradient of its category hue rather than a flat colour wash.
+   Top-left of the card holds the most saturated tint; it fades to
+   near-transparent at bottom-right, which lets the panel surface
+   show through and creates a "light catches the corner" feel.
+   Lower max-opacity than the legacy flat fills so the gold rim
+   we added in CSS becomes the dominant visual cue, not the colour
+   wash. */
 const COLOR_BG: Record<HighlightColor, string> = {
-  yellow: '#fef9c3',
-  blue: '#dbeafe',
-  green: '#dcfce7',
-  pink: '#fce7f3',
+  yellow: 'linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(234,179,8,0.05) 100%)',
+  blue:   'linear-gradient(135deg, rgba(59,130,246,0.16) 0%, rgba(59,130,246,0.04) 100%)',
+  green:  'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.05) 100%)',
+  pink:   'linear-gradient(135deg, rgba(236,72,153,0.16) 0%, rgba(236,72,153,0.04) 100%)',
 };
 
 const COLOR_DARK_BG: Record<HighlightColor, string> = {
-  yellow: 'rgba(234,179,8,0.18)',
-  blue: 'rgba(59,130,246,0.18)',
-  green: 'rgba(34,197,94,0.18)',
-  pink: 'rgba(236,72,153,0.18)',
+  yellow: 'linear-gradient(135deg, rgba(234,179,8,0.14) 0%, rgba(234,179,8,0.03) 100%)',
+  blue:   'linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(59,130,246,0.03) 100%)',
+  green:  'linear-gradient(135deg, rgba(34,197,94,0.14) 0%, rgba(34,197,94,0.03) 100%)',
+  pink:   'linear-gradient(135deg, rgba(236,72,153,0.14) 0%, rgba(236,72,153,0.03) 100%)',
 };
 
 const COLOR_TEXT: Record<HighlightColor, string> = {
@@ -322,7 +338,7 @@ function renderPanel(): void {
 
       const bg = isDark ? COLOR_DARK_BG[color] : COLOR_BG[color];
       const text = isDark ? COLOR_DARK_TEXT[color] : COLOR_TEXT[color];
-      const emoji = COLOR_EMOJI[color];
+      const iconSvg = COLOR_SVG[color];
 
       const item = document.createElement('div');
       item.className = 'hl-item';
@@ -335,8 +351,11 @@ function renderPanel(): void {
         ? `${chapterLabel} › ${hl.sectionHeading}`
         : chapterLabel;
 
+      /* Icon span inherits the highlight's text color via inline style
+         so the SVG's `stroke="currentColor"` picks up the per-category
+         hue (warm-amber, blue, green, magenta) automatically. */
       item.innerHTML = `
-        <span>${emoji}</span>
+        <span class="hl-icon" style="color:${text}">${iconSvg}</span>
         <div>
           <div style="color:${text}">${escapeHtml(hl.text)}</div>
           <div class="hl-item-meta">${escapeHtml(meta)}</div>

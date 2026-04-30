@@ -514,17 +514,25 @@ body.reading-engaged #tts-fab {
 
 /* ═══════════════════════════════════════════════════
    READING STATS MODAL (#stats-overlay, #stats-modal)
+   Yuval premium: warm-charcoal/parchment surface, gold rim, serif
+   numerals on each stat — the same vocabulary as the LeftSidebar
+   dock, the bookmark dialog, and the goal modal.
    ═══════════════════════════════════════════════════ */
+
 #stats-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(2, 6, 18, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9997;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms var(--ease-standard);
+  transition: opacity 220ms var(--ease-standard);
+}
+
+:root:not(.dark) #stats-overlay {
+  background: rgba(15, 23, 42, 0.28);
 }
 
 #stats-overlay.open {
@@ -532,26 +540,77 @@ body.reading-engaged #tts-fab {
   pointer-events: auto;
 }
 
+/* Modal — defaults are LIGHT cream parchment; .dark overrides to warm
+   charcoal. Both share the gold-rim + soft inner-glow language. */
 #stats-modal {
+  --sm-bg-from: rgba(252, 250, 246, 0.94);
+  --sm-bg-to:   rgba(245, 242, 235, 0.96);
+  --sm-border:  var(--yuval-border, rgba(201, 169, 110, 0.30));
+  --sm-shadow:
+    0 18px 40px -16px rgba(60, 50, 30, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --sm-title:        #2c2c34;
+  --sm-text:         rgba(60, 50, 70, 0.82);
+  --sm-text-muted:   rgba(60, 50, 70, 0.60);
+  --sm-divider:      rgba(60, 50, 30, 0.10);
+  --sm-card-bg:      rgba(255, 248, 232, 0.55);
+  --sm-card-border:  rgba(184, 146, 63, 0.22);
+  --sm-card-bg-hover: rgba(255, 248, 232, 0.85);
+  --sm-card-border-hover: rgba(212, 175, 55, 0.45);
+  --sm-numeral:      #4a3a14;
+  --sm-numeral-accent: #b8923f;
+  --sm-close-bg:        rgba(60, 50, 30, 0.04);
+  --sm-close-bg-hover:  rgba(201, 169, 110, 0.10);
+  --sm-close-border:    rgba(60, 50, 30, 0.14);
+  --sm-close-text:      rgba(60, 50, 70, 0.85);
+
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -48%) scale(0.96);
-  width: min(480px, 92vw);
+  transform: translate(-50%, calc(-50% + 6px)) scale(0.985);
+  width: min(520px, calc(100vw - 32px));
   max-height: min(80vh, 640px);
-  background: var(--yuval-bg, #fff);
-  color: var(--yuval-text, #111);
-  border: 1px solid var(--yuval-border, #e5e7eb);
-  border-radius: 14px;
-  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.18), 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, var(--sm-bg-from) 0%, var(--sm-bg-to) 100%);
+  color: var(--sm-title);
+  border: 1px solid var(--sm-border);
+  border-radius: 18px;
+  box-shadow: var(--sm-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   z-index: 9998;
   opacity: 0;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: opacity 200ms var(--ease-standard),
-              transform 280ms var(--ease-emphasized);
+  transition:
+    opacity 220ms var(--ease-standard),
+    transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dark #stats-modal {
+  --sm-bg-from: rgba(28, 28, 34, 0.92);
+  --sm-bg-to:   rgba(20, 20, 26, 0.96);
+  --sm-border:  var(--yuval-border, rgba(127, 127, 127, 0.18));
+  --sm-shadow:
+    0 24px 60px -18px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(212, 196, 168, 0.06);
+  --sm-title:        rgba(240, 235, 225, 0.96);
+  --sm-text:         rgba(212, 196, 168, 0.82);
+  --sm-text-muted:   rgba(212, 196, 168, 0.55);
+  --sm-divider:      rgba(255, 255, 255, 0.07);
+  --sm-card-bg:      rgba(255, 255, 255, 0.025);
+  --sm-card-border:  rgba(184, 146, 63, 0.22);
+  --sm-card-bg-hover: rgba(212, 175, 55, 0.06);
+  --sm-card-border-hover: rgba(212, 175, 55, 0.45);
+  --sm-numeral:      #f0e3c2;
+  --sm-numeral-accent: #d4af37;
+  --sm-close-bg:        rgba(255, 255, 255, 0.035);
+  --sm-close-bg-hover:  rgba(255, 255, 255, 0.08);
+  --sm-close-border:    rgba(255, 255, 255, 0.10);
+  --sm-close-text:      rgba(230, 225, 215, 0.85);
 }
 
 #stats-modal.open {
@@ -564,60 +623,156 @@ body.reading-engaged #tts-fab {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--yuval-border, #e5e7eb);
-  font-weight: 700;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--sm-divider);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--sm-title);
 }
 
+/* Close — minimal pill button with the same glass-secondary treatment
+   as the goal modal's cancel button. */
 #stats-close {
   appearance: none;
-  background: transparent;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.9rem;
-  color: var(--yuval-text-secondary, #555);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--sm-close-text);
+  background: var(--sm-close-bg);
+  border: 1px solid var(--sm-close-border);
+  border-radius: 9px;
+  padding: 5px 11px;
   cursor: pointer;
-  border-radius: 6px;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 #stats-close:hover {
-  background: var(--yuval-bg-secondary, #f3f4f6);
-  color: var(--yuval-text, #111);
+  background: var(--sm-close-bg-hover);
+  border-color: rgba(184, 146, 63, 0.40);
+  color: var(--sm-title);
+}
+
+#stats-close:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.55);
+  outline-offset: 2px;
 }
 
 #stats-modal .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  padding: 1.25rem;
+  gap: 12px;
+  padding: 20px;
   overflow-y: auto;
 }
 
+/* Stat card — thin gold-rim medallion. The accent line at the top
+   is the gold cue that ties each tile into the brand language without
+   shouting. */
 #stats-modal .stat-card {
-  background: var(--yuval-bg-secondary, #f9fafb);
-  border: 1px solid var(--yuval-border, #e5e7eb);
-  border-radius: 10px;
-  padding: 0.9rem 1rem;
+  position: relative;
+  background: var(--sm-card-bg);
+  border: 1px solid var(--sm-card-border);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 6px;
+  overflow: hidden;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+#stats-modal .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(212, 175, 55, 0.45) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+#stats-modal .stat-card:hover {
+  background: var(--sm-card-bg-hover);
+  border-color: var(--sm-card-border-hover);
+  transform: translateY(-1px);
+}
+
+/* Big numeral — serif typography for the headline value, same family
+   used by the LeftSidebar badge medallions. The serif is what makes
+   "11.6k" or "7 of 18" read as edition-grade rather than dashboard. */
 #stats-modal .stat-card > div:first-child {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--yuval-text, #111);
+  font-family: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia,
+               'Times New Roman', serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--sm-numeral);
+  letter-spacing: -0.005em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Highlight any small word inside the numeral block (like "מתוך"
+   or " of ") — they should read as a quieter connector, not as a
+   numeral. The user's HTML emits them inline, so we use the
+   numeral element's natural cascade and let consumers add a
+   `.stat-of` span for the connector. Falls back gracefully if
+   the span isn't present. */
+#stats-modal .stat-card .stat-of {
+  font-family: inherit;
+  font-size: 0.5em;
+  font-weight: 500;
+  color: var(--sm-text-muted);
+  letter-spacing: 0.04em;
+  margin: 0 0.18em;
+  vertical-align: 0.25em;
 }
 
 #stats-modal .stat-card > div:last-child {
-  font-size: 0.8rem;
-  color: var(--yuval-text-secondary, #555);
-  letter-spacing: 0.03em;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sm-text-muted);
+  letter-spacing: 0.02em;
 }
 
 @media (max-width: 639px) {
+  #stats-modal {
+    width: calc(100vw - 24px);
+  }
   #stats-modal .stats-grid {
     grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 10px;
+  }
+  #stats-modal .stat-card > div:first-child {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #stats-overlay,
+  #stats-modal {
+    transition: opacity 120ms ease;
+  }
+  #stats-modal .stat-card {
+    transition: none;
+  }
+  #stats-modal .stat-card:hover {
+    transform: none;
   }
 }
 
@@ -628,16 +783,26 @@ body.reading-engaged #tts-fab {
    be rebuilt as a Living-Margin SVG filter composition per
    .impeccable.md. Do not add new rules to this block.
    ═══════════════════════════════════════════════════ */
+/* Yuval premium side-panel — mirrors the bookmarks panel exactly so
+   both side-panels feel like one consistent chrome family. Per-item
+   background colour is set via inline style by JS (carries the user's
+   highlight choice), so we avoid setting `background` on `.hl-item`
+   and only style structure / rim / hover. */
+
 #hl-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(2, 6, 18, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9997;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms var(--ease-standard);
+  transition: opacity 220ms var(--ease-standard);
+}
+
+:root:not(.dark) #hl-overlay {
+  background: rgba(15, 23, 42, 0.28);
 }
 
 #hl-overlay.open {
@@ -646,25 +811,83 @@ body.reading-engaged #tts-fab {
 }
 
 #hl-panel {
+  /* Light defaults — parchment cream. Dark overrides below. Token names
+     mirror the bookmarks panel (`--bp-*` → `--hp-*`) so a future refactor
+     can collapse them to a single shared block. */
+  --hp-bg-from: rgba(252, 250, 246, 0.96);
+  --hp-bg-to:   rgba(245, 242, 235, 0.98);
+  --hp-edge:    rgba(201, 169, 110, 0.30);
+  --hp-shadow:
+    -18px 0 40px -16px rgba(60, 50, 30, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --hp-title:        #2c2c34;
+  --hp-text:         rgba(60, 50, 70, 0.82);
+  --hp-text-muted:   rgba(60, 50, 70, 0.58);
+  --hp-divider:      rgba(60, 50, 30, 0.10);
+  --hp-group-label:  rgba(60, 50, 70, 0.70);
+  --hp-item-rim:        rgba(60, 50, 30, 0.10);
+  --hp-item-rim-hover:  rgba(212, 175, 55, 0.55);
+  --hp-close-bg:       rgba(60, 50, 30, 0.04);
+  --hp-close-bg-hover: rgba(201, 169, 110, 0.10);
+  --hp-close-border:   rgba(60, 50, 30, 0.14);
+  --hp-close-text:     rgba(60, 50, 70, 0.85);
+  --hp-meta-chevron:   #b8923f;
+
   position: fixed;
   top: 0;
   inset-inline-end: 0;
   height: 100vh;
-  width: min(420px, 92vw);
-  background: var(--yuval-bg, #fff);
-  color: var(--yuval-text, #111);
-  border-inline-start: 1px solid var(--yuval-border, #e5e7eb);
-  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.08);
+  width: min(440px, 92vw);
+  background: linear-gradient(180deg, var(--hp-bg-from) 0%, var(--hp-bg-to) 100%);
+  color: var(--hp-title);
+  border-inline-start: 1px solid var(--hp-edge);
+  box-shadow: var(--hp-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   z-index: 9998;
   transform: translateX(100%);
-  transition: transform 320ms var(--ease-emphasized);
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
+.dark #hl-panel {
+  --hp-bg-from: rgba(28, 28, 34, 0.94);
+  --hp-bg-to:   rgba(20, 20, 26, 0.98);
+  --hp-edge:    var(--yuval-border, rgba(127, 127, 127, 0.18));
+  --hp-shadow:
+    -24px 0 60px -18px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(212, 196, 168, 0.06);
+  --hp-title:        rgba(240, 235, 225, 0.96);
+  --hp-text:         rgba(212, 196, 168, 0.82);
+  --hp-text-muted:   rgba(212, 196, 168, 0.55);
+  --hp-divider:      rgba(255, 255, 255, 0.07);
+  --hp-group-label:  rgba(212, 196, 168, 0.72);
+  --hp-item-rim:        rgba(255, 255, 255, 0.10);
+  --hp-item-rim-hover:  rgba(212, 175, 55, 0.55);
+  --hp-close-bg:       rgba(255, 255, 255, 0.035);
+  --hp-close-bg-hover: rgba(255, 255, 255, 0.08);
+  --hp-close-border:   rgba(255, 255, 255, 0.10);
+  --hp-close-text:     rgba(230, 225, 215, 0.85);
+  --hp-meta-chevron:   #d4af37;
+}
+
 [dir="rtl"] #hl-panel {
   transform: translateX(-100%);
+  box-shadow:
+    18px 0 40px -16px rgba(60, 50, 30, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+[dir="rtl"] .dark #hl-panel {
+  box-shadow:
+    24px 0 60px -18px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(212, 196, 168, 0.06);
 }
 
 #hl-panel.open {
@@ -675,37 +898,54 @@ body.reading-engaged #tts-fab {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--yuval-border, #e5e7eb);
-  font-weight: 700;
-  font-size: 1rem;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--hp-divider);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--hp-title);
 }
 
 #hl-panel-close {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  border: none;
-  background: transparent;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid var(--hp-close-border);
+  background: var(--hp-close-bg);
   cursor: pointer;
-  font-size: 1rem;
-  color: var(--yuval-text-secondary, #6b7280);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hp-close-text);
+  display: inline-grid;
+  place-items: center;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 #hl-panel-close:hover {
-  background: var(--yuval-bg-secondary, #f3f4f6);
+  background: var(--hp-close-bg-hover);
+  border-color: rgba(184, 146, 63, 0.40);
+  color: var(--hp-title);
+}
+
+#hl-panel-close:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.55);
+  outline-offset: 2px;
 }
 
 #hl-panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 0.75rem;
+  padding: 14px 16px 24px;
 }
 
 .hl-panel-empty {
   padding: 2rem 1rem;
   text-align: center;
-  color: var(--yuval-text-secondary, #6b7280);
+  color: var(--hp-text-muted);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -714,6 +954,7 @@ body.reading-engaged #tts-fab {
 .hl-panel-empty > span:first-child {
   font-weight: 600;
   font-size: 0.95rem;
+  color: var(--hp-title);
 }
 
 .hl-panel-empty > span:last-child {
@@ -721,56 +962,136 @@ body.reading-engaged #tts-fab {
   line-height: 1.5;
 }
 
+/* Chapter group container. */
 #hl-panel-body > div {
-  margin-bottom: 1rem;
+  margin-bottom: 18px;
 }
 
-#hl-panel-body > div > div:first-child {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+/* Chapter group label ("פרק 1" / "Chapter 1"). Quiet uppercase
+   header that floats above the group's items, with a subtle gold
+   accent to mark the group boundary without drawing a hard line. */
+#hl-panel-body > div > div:first-child,
+.hl-chapter-label {
+  position: relative;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--yuval-text-tertiary, #9ca3af);
-  padding: 0.5rem 0.25rem;
-  border-bottom: 1px solid var(--yuval-border, #e5e7eb);
-  margin-bottom: 0.5rem;
+  color: var(--hp-group-label);
+  padding: 0 4px 8px;
+  margin: 4px 0 10px;
+  border-bottom: 0;
 }
 
-#hl-panel-body > div > div:not(:first-child) {
+/* Subtle gold-vignette divider beneath the label — same hairline
+   language as the stat-card top accent. */
+#hl-panel-body > div > div:first-child::after,
+.hl-chapter-label::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(212, 175, 55, 0.32) 25%,
+    rgba(212, 175, 55, 0.32) 75%,
+    transparent 100%
+  );
+}
+
+/* Highlight item — gold-rim card. The per-item background colour
+   comes from the user's saved highlight choice (set via inline style
+   in highlights-panel.ts), so we ONLY style structure here:
+   gold rim, hover lift, padding, radius. The user's colour stays. */
+#hl-panel-body > div > div:not(:first-child),
+.hl-item {
   display: flex;
-  gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.375rem;
-  margin-bottom: 0.3rem;
-  font-size: 0.85rem;
-  line-height: 1.45;
-  border: 1px solid transparent;
-  transition: border-color 0.15s;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid var(--hp-item-rim);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    border-color 200ms ease,
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 200ms ease;
 }
 
-#hl-panel-body > div > div:not(:first-child):hover {
-  border-color: var(--yuval-border, #e5e7eb);
+#hl-panel-body > div > div:not(:first-child):hover,
+.hl-item:hover {
+  border-color: var(--hp-item-rim-hover);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 4px 14px -6px rgba(212, 175, 55, 0.22);
 }
 
-#hl-panel-body > div > div > span {
+#hl-panel-body > div > div:not(:first-child):active,
+.hl-item:active {
+  transform: translateY(0);
+}
+
+/* Icon emoji on the inline-start side. Slightly enlarged + tabular
+   baseline so it lines up with the title's first cap-height. */
+#hl-panel-body > div > div > span,
+.hl-item > span {
   flex-shrink: 0;
-  font-size: 1rem;
+  font-size: 16px;
+  line-height: 1.3;
+  margin-top: 1px;
 }
 
-#hl-panel-body > div > div > div {
+/* Inner content wrapper. */
+#hl-panel-body > div > div > div,
+.hl-item > div {
   flex: 1;
   min-width: 0;
 }
 
-#hl-panel-body > div > div > div > div:first-child {
-  margin-bottom: 0.2rem;
+/* Title line — colour is inline-styled per-item in the JS, so we
+   only set weight + spacing here. */
+#hl-panel-body > div > div > div > div:first-child,
+.hl-item > div > div:first-child {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin-bottom: 4px;
+  word-break: break-word;
 }
 
-#hl-panel-body > div > div > div > div:last-child {
-  font-size: 0.7rem;
-  color: var(--yuval-text-tertiary, #9ca3af);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+/* Meta line ("פרק N › section heading"). Small, muted, with a
+   gold-tinted breadcrumb chevron via text-color override on the
+   `›` glyph. */
+#hl-panel-body > div > div > div > div:last-child,
+.hl-item > div > div:last-child,
+.hl-item-meta {
+  font-size: 11px;
+  color: var(--hp-text-muted);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #hl-overlay,
+  #hl-panel {
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+  .hl-item,
+  #hl-panel-body > div > div:not(:first-child) {
+    transition: none;
+  }
+  .hl-item:hover,
+  #hl-panel-body > div > div:not(:first-child):hover {
+    transform: none;
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -782,16 +1103,26 @@ body.reading-engaged #tts-fab {
    removed in this pass. Do not add new rules to this
    block.
    ═══════════════════════════════════════════════════ */
+/* Yuval premium side-panel language: same warm-charcoal / parchment
+   surface + gold-rim accents as the stats modal, the bookmark dialog,
+   and the LeftSidebar dock. Sliding side-panel pattern preserved.
+   Driven by `--bp-*` tokens so light + dark share one shape with
+   different ink. */
+
 #bm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(2, 6, 18, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9997;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms var(--ease-standard);
+  transition: opacity 220ms var(--ease-standard);
+}
+
+:root:not(.dark) #bm-overlay {
+  background: rgba(15, 23, 42, 0.28);
 }
 
 #bm-overlay.open {
@@ -800,25 +1131,88 @@ body.reading-engaged #tts-fab {
 }
 
 #bm-panel {
+  /* Light defaults — parchment cream. Dark overrides below. */
+  --bp-bg-from: rgba(252, 250, 246, 0.96);
+  --bp-bg-to:   rgba(245, 242, 235, 0.98);
+  --bp-edge:    rgba(201, 169, 110, 0.30);
+  --bp-shadow:
+    -18px 0 40px -16px rgba(60, 50, 30, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --bp-title:        #2c2c34;
+  --bp-text:         rgba(60, 50, 70, 0.82);
+  --bp-text-muted:   rgba(60, 50, 70, 0.58);
+  --bp-divider:      rgba(60, 50, 30, 0.10);
+  --bp-card-bg:        rgba(255, 248, 232, 0.55);
+  --bp-card-border:    rgba(184, 146, 63, 0.22);
+  --bp-card-bg-hover:  rgba(255, 248, 232, 0.85);
+  --bp-card-border-hover: rgba(212, 175, 55, 0.45);
+  --bp-meta-icon:      #b8923f;
+  --bp-close-bg:       rgba(60, 50, 30, 0.04);
+  --bp-close-bg-hover: rgba(201, 169, 110, 0.10);
+  --bp-close-border:   rgba(60, 50, 30, 0.14);
+  --bp-close-text:     rgba(60, 50, 70, 0.85);
+
   position: fixed;
   top: 0;
   inset-inline-end: 0;
   height: 100vh;
-  width: min(380px, 92vw);
-  background: var(--yuval-bg, #fff);
-  color: var(--yuval-text, #111);
-  border-inline-start: 1px solid var(--yuval-border, #e5e7eb);
-  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.12), 0 8px 16px -4px rgba(0, 0, 0, 0.08);
+  width: min(400px, 92vw);
+  background: linear-gradient(180deg, var(--bp-bg-from) 0%, var(--bp-bg-to) 100%);
+  color: var(--bp-title);
+  /* Gold hairline on the inline-start edge — the boundary the panel
+     shares with reading content. Subtler than a solid 1 px so it
+     reads as "edge of an applied surface", not a drawn divider. */
+  border-inline-start: 1px solid var(--bp-edge);
+  box-shadow: var(--bp-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   z-index: 9998;
   transform: translateX(100%);
-  transition: transform 320ms var(--ease-emphasized);
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
+.dark #bm-panel {
+  --bp-bg-from: rgba(28, 28, 34, 0.94);
+  --bp-bg-to:   rgba(20, 20, 26, 0.98);
+  --bp-edge:    var(--yuval-border, rgba(127, 127, 127, 0.18));
+  --bp-shadow:
+    -24px 0 60px -18px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(212, 196, 168, 0.06);
+  --bp-title:        rgba(240, 235, 225, 0.96);
+  --bp-text:         rgba(212, 196, 168, 0.82);
+  --bp-text-muted:   rgba(212, 196, 168, 0.55);
+  --bp-divider:      rgba(255, 255, 255, 0.07);
+  --bp-card-bg:        rgba(255, 255, 255, 0.025);
+  --bp-card-border:    rgba(184, 146, 63, 0.22);
+  --bp-card-bg-hover:  rgba(212, 175, 55, 0.06);
+  --bp-card-border-hover: rgba(212, 175, 55, 0.45);
+  --bp-meta-icon:      #d4af37;
+  --bp-close-bg:       rgba(255, 255, 255, 0.035);
+  --bp-close-bg-hover: rgba(255, 255, 255, 0.08);
+  --bp-close-border:   rgba(255, 255, 255, 0.10);
+  --bp-close-text:     rgba(230, 225, 215, 0.85);
+}
+
 [dir="rtl"] #bm-panel {
   transform: translateX(-100%);
+  /* Mirror the shadow so the depth falls AWAY from the content (i.e.,
+     toward the screen-end edge, not into the reading area). */
+  box-shadow:
+    18px 0 40px -16px rgba(60, 50, 30, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+[dir="rtl"] .dark #bm-panel {
+  box-shadow:
+    24px 0 60px -18px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px 0 rgba(212, 196, 168, 0.06);
 }
 
 #bm-panel.open {
@@ -829,31 +1223,48 @@ body.reading-engaged #tts-fab {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--yuval-border, #e5e7eb);
-  font-weight: 700;
-  font-size: 1rem;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--bp-divider);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--bp-title);
 }
 
 #bm-close {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  border: none;
-  background: transparent;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid var(--bp-close-border);
+  background: var(--bp-close-bg);
   cursor: pointer;
-  font-size: 1rem;
-  color: var(--yuval-text-secondary, #6b7280);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bp-close-text);
+  display: inline-grid;
+  place-items: center;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 #bm-close:hover {
-  background: var(--yuval-bg-secondary, #f3f4f6);
+  background: var(--bp-close-bg-hover);
+  border-color: rgba(184, 146, 63, 0.40);
+  color: var(--bp-title);
+}
+
+#bm-close:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.55);
+  outline-offset: 2px;
 }
 
 #bm-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem 0.75rem;
+  padding: 14px 16px 24px;
 }
 
 .bm-empty, .hl-panel-empty {
@@ -906,40 +1317,73 @@ body.reading-engaged #tts-fab {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Bookmark card — thin gold-rim medallion with the same vignette
+   accent line as the stats cards. Hover lifts subtly + intensifies
+   the rim, matching the rest of the platform's card vocabulary. */
 .bm-item {
-  padding: 0.75rem 0.9rem;
-  border-radius: 0.375rem;
+  position: relative;
+  padding: 14px 16px 12px;
+  border-radius: 12px;
   cursor: pointer;
-  margin-bottom: 0.25rem;
-  border: 1px solid transparent;
-  transition: background 200ms var(--ease-standard),
-              border-color 200ms var(--ease-standard),
-              transform 200ms var(--ease-standard);
+  margin-bottom: 10px;
+  background: var(--bp-card-bg);
+  border: 1px solid var(--bp-card-border);
+  overflow: hidden;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Top-edge vignette gold accent — same cue as the stats tiles, ties
+   each card into the brand language without visual noise. */
+.bm-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(212, 175, 55, 0.40) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .bm-item:hover {
-  background: var(--yuval-bg-secondary, #f3f4f6);
-  border-color: var(--yuval-border, #e5e7eb);
-  transform: translateX(var(--bm-hover-offset, 2px));
+  background: var(--bp-card-bg-hover);
+  border-color: var(--bp-card-border-hover);
+  transform: translateY(-1px);
 }
 
-[dir="rtl"] .bm-item { --bm-hover-offset: -2px; }
+.bm-item:active { transform: translateY(0); }
 
-.bm-item:active { transform: translateX(0) scale(0.99); }
-
+/* Quote text — readable body type. Slight serif-ish look via font
+   inheritance from the panel's reading-friendly font, but using the
+   inherited platform font for max compatibility. Kept at 2-line
+   clamp so the panel stays scannable. */
 .bm-item > div:first-child {
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin-bottom: 0.25rem;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--bp-text);
+  margin-bottom: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+/* Chapter context — quieter, smaller. Gold breadcrumb chevron on
+   the › glyph (which lives inside the text, so we tint the whole
+   line subtly and let the chevron carry the warm accent). */
 .bm-item > div:last-child {
-  font-size: 0.75rem;
-  color: var(--yuval-text-tertiary, #9ca3af);
+  font-size: 11.5px;
+  color: var(--bp-text-muted);
+  letter-spacing: 0.01em;
+  line-height: 1.45;
 }
 
 .bm-toast {

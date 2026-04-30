@@ -631,10 +631,17 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
   --usb-track-color: rgba(35, 40, 52, 0.78);
   --usb-thread-in-progress: rgba(37, 99, 235, 0.55);
 
-  /* Chapter card revamp — light-mode parallels (pending review) */
-  --sidebar-bg:                  #f8fafc;
-  --color-card-bg-completed:     #ECFDF5;
-  --color-card-bg-locked:        #f1f5f9;
+  /* Chapter card revamp — light-mode parallels.
+     Card fills now match the parchment shell (--bg-shell: #F3EEE0) so
+     the timeline pipes appear to flow over one continuous parchment
+     surface rather than being punctuated by cool-gray / mint-green
+     rectangles. State (completed / locked) is conveyed by border
+     color and number-circle styling, not by tinted card surfaces.
+     Active card keeps its blue gradient so it still pops as the
+     reader's current location. */
+  --sidebar-bg:                  #F3EEE0;
+  --color-card-bg-completed:     #F3EEE0;
+  --color-card-bg-locked:        #F3EEE0;
   --color-card-bg-active:        linear-gradient(135deg, #DBEAFE, #BFDBFE);
   --color-card-border-completed: #BBF7D0;
   --color-card-border-locked:    #e2e8f0;
