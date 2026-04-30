@@ -1417,7 +1417,10 @@ const { class: className } = Astro.props;
     if (!document.documentElement.classList.contains('dark')) return;
     if (document.documentElement.dataset.disableSkyClouds === 'true') return;
 
-    const w = randomInRange(14, 28);
+    /* Smaller, more delicate cumulus — was 14-28 px, now 8-17 px so
+       the clouds read as distant rather than pressing up against the
+       window. The proportional height ratio stays the same. */
+    const w = randomInRange(8, 17);
     const h = randomInRange(w * 0.45, w * 0.6);
     // Altitude: keep the cloud fully inside the window vertically
     // (with a tiny margin so the soft halo doesn't get clipped).
@@ -1446,10 +1449,10 @@ const { class: className } = Astro.props;
       cloud.style.setProperty('--cloud-delay', `${opts.delaySec.toFixed(1)}s`);
     }
 
-    // 2–4 puffs scattered along the upper half of the body. Each
-    // puff is its own random size + position; the cumulative effect
-    // is an irregular cumulus silhouette that's never the same twice.
-    const numPuffs = 2 + Math.floor(Math.random() * 3); // 2 / 3 / 4
+    // 2–3 puffs (was 2–4) scattered along the upper half of the body.
+    // Smaller clouds carry fewer puffs — keeps the silhouette tidy
+    // without blob-ing up. Each puff is its own random size + position.
+    const numPuffs = 2 + Math.floor(Math.random() * 2); // 2 / 3
     for (let i = 0; i < numPuffs; i++) {
       const puff = document.createElement('span');
       puff.className = 'cloud-puff';
