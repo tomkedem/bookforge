@@ -2229,31 +2229,53 @@ body.sidebar-collapsed .usb-custom-thumb.is-active {
 .usb-sections li.active .usb-section-number {
   width: 30px;
   height: 30px;
-  font-size: 12px;
+  /* Bumped 12 → 14: at 30px circle, the digit now claims its
+     correct optical share of the disc instead of floating small. */
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  /* tabular + lining numerals so "10" renders with proportional
+     stems matching "1", "2", etc., and centres optically. */
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  /* Anchors the white digit on the variable-luminance gradient —
+     the dark sub-pixel halo crisps the glyph edge regardless of
+     whether it sits over the lighter or darker stop. */
+  text-shadow: 0 1px 1px rgba(8, 35, 65, 0.55);
   background: linear-gradient(135deg, #185FA5, #4DA8E0);
   color: #ffffff;
+  /* Re-tuned shadow stack: top-left inset highlight reduced from
+     0.3 → 0.18 so it no longer competes with the white numeral
+     in the same quadrant; dark inset stays at 0.2 to give the
+     bottom-right edge depth. */
   box-shadow:
-    inset 1px 1px 2px rgba(255, 255, 255, 0.3),
-    inset -1px -1px 2px rgba(0, 0, 0, 0.2),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.18),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.22),
     2px 2px 6px rgba(24, 95, 165, 0.4),
     -1px -1px 2px var(--num-highlight);
   border: none;
 }
 
 /* Time pill — themed gradient + 3D inset highlights. Sits in the
-   title row alongside the heading text. */
+   title row alongside the heading text. Sharpened: bumped from
+   10px / 500-weight to 11.5px / 600-weight + dark text-shadow,
+   so the Hebrew "דק'" stops mid-stroking on the blue gradient. */
 .usb-sections li.active .usb-section-time,
 .usb-sections li.active .section-time {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 99px;
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
   background: linear-gradient(135deg, #185FA5, #4DA8E0);
   color: #ffffff;
+  text-shadow: 0 1px 1px rgba(8, 35, 65, 0.55);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
     2px 2px 4px rgba(24, 95, 165, 0.3),
     -1px -1px 2px var(--time-highlight);
 }
