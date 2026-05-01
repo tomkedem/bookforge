@@ -806,22 +806,23 @@ const COPY_SUCCESS_MESSAGE = 'Code copied!';
         margin: 0 auto;
       }
 
-      /* Reading-mode body bg = shell surface.
-         The page body's default bg (--yuval-bg) is the area around
-         the LeftSidebar dock and outside the chapter strip — it
-         shows in the gutters left of the article (and right of it
-         where the unified sidebar doesn't extend). For the
-         "single shell" frame to read as one continuous surface, the
-         gutters must match the strip + TOC + dock. We paint them
-         with --yuval-surface (#1A1A1A dark / #FFFFFF light, but the
-         shell uses #F5F4EF in light via the strip rules — so we
-         set it to the same #F5F4EF in light here too).
-         The reading article itself paints its own --yuval-reading-bg
-         on top, so the centered content column stays distinct. */
+      /* Reading-mode body bg = SHELL surface (--yuval-surface).
+         Painting the body with the same colour as the LeftSidebar
+         dock + the right TOC means the 16 px gap between the dock's
+         inline-end edge and the screen edge stops reading as a
+         "shadow strip" — it now looks like one continuous shell
+         that the dock floats inside. The reading article paints its
+         own --yuval-reading-bg on top so the centred content column
+         stays distinct (slightly deeper in dark, slightly cooler in
+         light). The article's edges become subtly visible — that's
+         the cost of removing the dock-edge seam, and it reads as a
+         "page on a desk" rather than a flaw. */
       :global(body.reading-mode) {
         background-color: var(--yuval-surface, #1a1a1a) !important;
       }
       :global(:root:not(.dark) body.reading-mode) {
+        /* Light mode: parchment cream matches the dock + chapter strip
+           rather than the article's slightly cooler reading-bg. */
         background-color: #F3EEE0 !important;
       }
 

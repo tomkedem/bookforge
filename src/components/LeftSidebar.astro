@@ -257,13 +257,12 @@
      padding: 16px 8px 14px;
      box-sizing: border-box;
      border-radius: 28px;
-     background: var(--yuval-surface, #1a1a1a);
+     background: var(--yuval-reading-bg, #0c0c0e);
      backdrop-filter: none;
      -webkit-backdrop-filter: none;
      border: none;
-    /* אין צל, אין הילה, אין מסגרת */
     box-shadow: none;
-    }
+  }
 
   /* ─────────── Light theme ────────────────────────────────────
      The dock fully flips to a cream-paper surface that harmonizes
@@ -283,20 +282,8 @@
        into a paper-and-ink idiom: bright white sheen on the top edge
        (page-light reflection), faint gold rim on the bottom (the
        frame's weight), warm halo around (atmospheric levitation). */
-    border-color: rgba(184, 146, 63, 0.50);
-    box-shadow:
-      /* Outer warm gold halo — gentle, like candlelight. */
-      0 0 36px -6px rgba(184, 146, 63, 0.20),
-      /* Far ambient drop shadow — wide and soft. */
-      0 28px 56px -20px rgba(60, 50, 30, 0.32),
-      /* Closer key shadow — sharper. */
-      0 12px 26px -10px rgba(60, 50, 30, 0.22),
-      /* Inner bright frame edge — like polished metal. */
-      inset 0 0 0 1px rgba(255, 252, 240, 0.7),
-      /* Top-edge gleam — strongest highlight. */
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      /* Bottom gold rim — frame weight. */
-      inset 0 -1px 0 rgba(184, 146, 63, 0.32);
+    border-color: transparent;
+    box-shadow: none;
   }
 
   /* Hairline divider above the collapse cluster: darker so it

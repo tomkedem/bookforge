@@ -890,6 +890,17 @@ body.reading-engaged #tts-fab {
     inset 0 1px 0 rgba(212, 196, 168, 0.06);
 }
 
+/* When closed, suppress the box-shadow entirely. The panel is
+   translated off-screen via translateX(±100%), but its drop-shadow
+   still rasterises around the off-screen panel — the inner edge of
+   that shadow leaks 40 px into the visible area, reading as a
+   permanent vertical "shadow strip" next to the LeftSidebar dock.
+   Only paint the shadow when the panel is actually open. */
+#hl-panel:not(.open),
+[dir="rtl"] #hl-panel:not(.open) {
+  box-shadow: none;
+}
+
 #hl-panel.open {
   transform: translateX(0);
 }
@@ -1213,6 +1224,14 @@ body.reading-engaged #tts-fab {
     24px 0 60px -18px rgba(0, 0, 0, 0.65),
     inset 0 0 0 1px rgba(255, 255, 255, 0.035),
     inset 0 1px 0 rgba(212, 196, 168, 0.06);
+}
+
+/* Same shadow-leak fix as #hl-panel — suppress the drop shadow when
+   the panel is off-screen so its blur ring doesn't show on the visible
+   area as a permanent vertical strip next to the LeftSidebar dock. */
+#bm-panel:not(.open),
+[dir="rtl"] #bm-panel:not(.open) {
+  box-shadow: none;
 }
 
 #bm-panel.open {
@@ -1993,18 +2012,14 @@ body.reading-engaged #tts-fab {
   min-height: 100vh;
 }
 
-/* Recessed-page effect in dark mode. With reading-bg at #0c0c0e and
-   the surrounding sidebars at #1A1A1A, the page already reads as a
-   "deeper layer". The inset shadow below adds a soft falloff at the
-   inline edges (where the page meets the elevated sidebars) so the
-   transition feels like a genuine well of focus rather than a
-   sudden color change. Light/sepia themes intentionally skip this —
-   their cream surfaces shouldn't read as recessed. */
+/* Recessed-page effect previously drew an inset shadow on the dark
+   reading-article to give it a "deeper layer" feel. It produced a
+   visible vertical dark band along the entire left and right edges
+   that read as an unrelated artifact, so it's removed. The base
+   color contrast between reading-bg (#0c0c0e) and surrounding
+   sidebars (#1A1A1A) is sufficient to convey depth without it. */
 .dark .reading-article {
-  box-shadow:
-    inset 18px 0 30px -22px rgba(0, 0, 0, 0.55),
-    inset -18px 0 30px -22px rgba(0, 0, 0, 0.55),
-    inset 0 18px 28px -22px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════════════════
