@@ -182,9 +182,8 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       applyStoredLanguage();
       document.addEventListener('astro:after-swap', applyStoredLanguage);
 
-      window.addEventListener('language-changed', (e: Event) => {
-        const customEvent = e as CustomEvent<{ language: string }>;
-        const lang = customEvent.detail?.language;
+      window.addEventListener('language-changed', (e) => {
+        const lang = e.detail && e.detail.language;
         if (!lang) return;
 
         document.documentElement.lang = lang;
