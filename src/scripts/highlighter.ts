@@ -862,7 +862,7 @@ function openQuoteCard(markEl: HTMLElement): void {
 
   function buildCardHTML(p: typeof PALETTES[0]): string {
     const coverPart = coverUrl
-      ? `<img class="qc-cover" src="${coverUrl}" alt="" onerror="this.style.display='none'">`
+      ? `<img class="qc-cover" src="${coverUrl}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">`
       : `<div class="qc-cover-placeholder"></div>`;
 
     const notePart = note ? `<p class="qc-note">📝 ${note}</p>` : '';

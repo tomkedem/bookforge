@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Yuval">
+  <!-- Placeholder favicon, kept on-brand: warm charcoal field, gold
+       serif "Y" with a small four-point sparkle ornament. Replace
+       this file with the AI-generated icon when ready; the markup
+       (link + manifest entry) stays the same. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="65%">
+      <stop offset="0%"  stop-color="#26262d"/>
+      <stop offset="100%" stop-color="#141418"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#f4e6bd"/>
+      <stop offset="55%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#8a6a1f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square so iOS / Android fall back gracefully. -->
+  <rect x="0" y="0" width="64" height="64" rx="14" ry="14" fill="url(#bg)"/>
+
+  <!-- Serif Y. Path is a stylised "Y" with high-contrast strokes
+       (Didone-ish), centred a touch above optical centre to leave
+       room for the sparkle in the upper-right. -->
+  <g fill="url(#gold)">
+    <path d="
+      M 18 17
+      L 24 17
+      L 32 32
+      L 40 17
+      L 46 17
+      L 35 36
+      L 35 50
+      L 29 50
+      L 29 36
+      Z
+    "/>
+  </g>
+
+  <!-- Four-point sparkle ornament (✦) upper-right of the Y. -->
+  <g fill="url(#gold)" transform="translate(48 16)">
+    <path d="M0 -5 L1 -1 L5 0 L1 1 L0 5 L-1 1 L-5 0 L-1 -1 Z"/>
+  </g>
+</svg>

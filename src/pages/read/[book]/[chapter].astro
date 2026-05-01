@@ -105,6 +105,16 @@ async function loadContent(lang: string): Promise<string> {
     const previewsScript = buildPreviewsScript(md);
     let html = await marked(md);
     html = html.replaceAll('src="../assets/', `src="/${book}/assets/`);
+    /* Add `loading="lazy" decoding="async"` to every <img> that
+       doesn't already have a loading attribute. This silences the
+       browser's "Images loaded lazily and replaced with placeholders"
+       intervention message — once we explicitly opt-in to lazy
+       loading, the browser stops dispatching the warning. Also helps
+       perf by deferring off-screen image decode work. */
+    html = html.replace(
+      /<img\b(?![^>]*\bloading=)([^>]*)>/g,
+      '<img loading="lazy" decoding="async"$1>',
+    );
     // Remove leading <h1>...</h1> if present (to avoid duplicate chapter title)
     html = html.replace(/^<h1[^>]*>.*?<\/h1>/s, '');
     html = annotateBookmarkAnchors(html);

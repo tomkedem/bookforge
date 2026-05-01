@@ -86,10 +86,11 @@
    logical inset so it lands on the correct side in both LTR and RTL.
    width: 0.5px matches the strip's bottom hairline weight; the gold
    tone matches its color in light mode. */
-/* Dark-mode shell — מואחד לרקע הקריאה כך שלא מופיע פס אנכי
-   מובחן לאורך המסך. */
+/* Dark-mode shell — matches the strip-row's dark bg (--yuval-surface)
+   so all three header regions share one surface across the top of the
+   page. */
 .dark .unified-sidebar {
-  background: var(--yuval-reading-bg, #0c0c0e);
+  background: var(--yuval-surface, #1a1a1a);
 }
 
 /* Collapsed sidebar: hide the inner-edge hairline alongside the sidebar

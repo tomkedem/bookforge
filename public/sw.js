@@ -19,8 +19,24 @@ const PRECACHE = [
 
 // ── Install ───────────────────────────────────────────────────────────────────
 self.addEventListener('install', (e) => {
+  /* `cache.addAll` is atomic — if any single resource 404s, the whole
+     batch rejects and the SW install fails ("Failed to execute 'addAll'
+     on 'Cache': Request failed"). Adding entries one by one with their
+     own try/catch lets the install succeed even when an asset is
+     temporarily missing (e.g. favicon during a redesign). */
   e.waitUntil(
-    caches.open(STATIC_CACHE).then(c => c.addAll(PRECACHE))
+    caches.open(STATIC_CACHE).then(async (cache) => {
+      await Promise.all(
+        PRECACHE.map(async (url) => {
+          try {
+            const res = await fetch(url, { cache: 'reload' });
+            if (res.ok) await cache.put(url, res);
+          } catch {
+            /* ignore — single-asset failure must not abort install */
+          }
+        }),
+      );
+    }),
   );
   self.skipWaiting();
 });

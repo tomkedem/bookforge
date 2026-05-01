@@ -60,6 +60,11 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1a1a1a" />
+    <!-- `mobile-web-app-capable` is the modern cross-browser tag; the
+         apple-prefixed one is kept alongside it for older iOS Safari
+         (it's the one that takes effect there) but is now reported as
+         deprecated by Chrome. -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
@@ -162,34 +167,12 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     </main>
 
     <BackToTop />
-    <script type="module">
-      import {
-        getLanguageFromStorage,
-        isValidLanguage,
-        applyLanguageToPage,
-        getLanguageDirection,
-      } from '../utils/language';
-
-      function applyStoredLanguage() {
-        const storedLang = getLanguageFromStorage();
-        if (isValidLanguage(storedLang)) {
-          document.documentElement.lang = storedLang;
-          document.documentElement.dir = getLanguageDirection(storedLang);
-          applyLanguageToPage(storedLang);
-        }
-      }
-
-      applyStoredLanguage();
-      document.addEventListener('astro:after-swap', applyStoredLanguage);
-
-      window.addEventListener('language-changed', (e) => {
-        const lang = e.detail && e.detail.language;
-        if (!lang) return;
-
-        document.documentElement.lang = lang;
-        document.documentElement.dir = getLanguageDirection(lang);
-        applyLanguageToPage(lang);
-      });
+    {/* Language bootstrap — extracted to a stand-alone .ts file so
+        Astro's bundler resolves the ../utils/language import correctly.
+        When the body lived inside a `<script type="module">` here it
+        was occasionally served raw, which exploded on the browser. */}
+    <script>
+      import '../scripts/language-bootstrap';
     </script>
     
     </body>
