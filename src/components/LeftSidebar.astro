@@ -261,7 +261,13 @@
      backdrop-filter: none;
      -webkit-backdrop-filter: none;
      border: none;
-    box-shadow: none;
+    /* מסגרת זהב עדינה + הילה מלכותית רכה — בלי צל כהה
+       רחב שמתפשט אנכית לכל אורך המסך. */
+    box-shadow:
+      0 0 0 0.5px rgba(184, 146, 63, 0.28),
+      0 0 24px -2px rgba(212, 178, 110, 0.10),
+      inset 0 1px 0 rgba(255, 240, 200, 0.05),
+      inset 0 0 0 1px rgba(255, 240, 200, 0.02);
   }
 
   /* ─────────── Light theme ────────────────────────────────────
@@ -275,15 +281,13 @@
        Slightly more saturated than the previous #F5F4EF so the dock
        reads as "parchment" rather than off-white paper. */
     background: #F3EEE0;
-    /* Royal floating frame (light) — deeper gold rim that reads
-       against the cream surface, paired with multi-layer drop
-       shadows so the dock hovers visibly above the shell. The inset
-       highlights translate the dark-mode "polished metal" treatment
-       into a paper-and-ink idiom: bright white sheen on the top edge
-       (page-light reflection), faint gold rim on the bottom (the
-       frame's weight), warm halo around (atmospheric levitation). */
-    border-color: transparent;
-    box-shadow: none;
+    /* מסגרת זהב עמוקה + הילה חמה עדינה, ללא צל לאורך המסך. */
+    border-color: rgba(184, 146, 63, 0.45);
+    box-shadow:
+      0 0 0 0.5px rgba(184, 146, 63, 0.45),
+      0 0 28px -4px rgba(184, 146, 63, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -1px 0 rgba(184, 146, 63, 0.25);
   }
 
   /* Hairline divider above the collapse cluster: darker so it

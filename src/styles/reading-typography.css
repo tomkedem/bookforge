@@ -1,6 +1,11 @@
-/* Global typography system for reading content */
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&display=swap');
+/* Global typography system for reading content.
+   Note: Assistant + Heebo are loaded via <link rel="stylesheet"> in
+   BaseLayout.astro alongside the rest of the Hebrew family bundle.
+   Loading them via @import here used to trigger DevTools' "Verify
+   stylesheet URLs" issue (the import blocks parent-CSS parsing and
+   the loader flags it as a risky resource even when the request
+   itself returns 200). Keep new fonts in the BaseLayout <link>
+   bundle, not as @import. */
 
 :root {
   --font-reading: 'Assistant', sans-serif;
