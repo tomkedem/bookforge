@@ -267,7 +267,10 @@ const initialPosition = SUPPORTED_LANGUAGES.findIndex(l => l.code === currentLan
     initLanguageToggle(controller);
     const unloadHandler = () => controller.abort();
     document.addEventListener('astro:before-unmount', unloadHandler);
-    window.addEventListener('unload', unloadHandler);
+    /* `unload` is deprecated and unreliable (mobile + bfcache). Use
+       `pagehide`, which fires in every navigation case including
+       bfcache stash. */
+    window.addEventListener('pagehide', unloadHandler);
   }
 
   if (document.readyState === 'loading') {

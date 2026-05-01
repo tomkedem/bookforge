@@ -75,7 +75,9 @@ function initializeReadingPage() {
   };
 
   document.addEventListener('astro:before-unmount', cleanup, { once: true, signal: controller.signal });
-  window.addEventListener('unload', cleanup, { once: true, signal: controller.signal });
+  /* `unload` is deprecated by Chrome (and unreliable across browsers
+     and bfcache); `pagehide` is the modern replacement. */
+  window.addEventListener('pagehide', cleanup, { once: true, signal: controller.signal });
 }
 
 if (document.readyState === 'loading') {

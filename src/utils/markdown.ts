@@ -192,7 +192,7 @@ function renderCodeRunner(text: string, lang: string, encodedCode: string, highl
   <div class="cr-body">
     <div class="cr-gutter" aria-hidden="true">${lineNumbers}</div>
     <pre class="cr-code"><code class="hljs language-${lang}">${highlightedCode}</code></pre>
-    <textarea class="cr-editor" spellcheck="false" autocorrect="off" autocapitalize="off" aria-label="Editable code"></textarea>
+    <textarea class="cr-editor" name="cr-editor" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" aria-label="Editable code"></textarea>
   </div>
   <div class="cr-statusbar">
     <span class="cr-status-item"><span class="cr-dot"></span>${label}</span>

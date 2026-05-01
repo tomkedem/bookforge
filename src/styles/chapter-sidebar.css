@@ -3616,16 +3616,16 @@ body.sidebar-collapsed .unified-sidebar {
     background 220ms ease;
 }
 
-/* RTL mirror: button anchors to right edge with rounded inline-start
-   corners instead of inline-end. */
+/* RTL mirror: button anchors to right screen edge. Flat side hugs
+   the edge (right), rounded corners face the content (left). */
 .usb-return-btn:dir(rtl),
 [dir="rtl"] .usb-return-btn {
-  border-inline-start: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
-  border-inline-end: none;
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
-  border-start-start-radius: 14px;
-  border-end-start-radius: 14px;
+  border-inline-start: none;
+  border-inline-end: 1px solid var(--yuval-border, rgba(127, 127, 127, 0.22));
+  border-start-end-radius: 14px;
+  border-end-end-radius: 14px;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
 }
 
 body.sidebar-collapsed .usb-return-btn {

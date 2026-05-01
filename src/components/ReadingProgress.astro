@@ -107,7 +107,9 @@ const ariaLabel =
 
     const cleanup = () => controller.abort();
     document.addEventListener('astro:before-unmount', cleanup);
-    window.addEventListener('unload', cleanup);
+    /* `unload` is deprecated; `pagehide` is the modern equivalent
+       and fires in every navigation case (incl. bfcache). */
+    window.addEventListener('pagehide', cleanup);
   }
 
   if (document.readyState === 'loading') {
