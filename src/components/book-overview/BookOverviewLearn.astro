@@ -2,20 +2,24 @@
 /**
  * Book Overview — "What you will learn" list.
  *
- * Two-tier source of truth:
+ * Two-tier source of truth (unchanged from previous iteration):
  *   1. If any chapter declares non-empty `topics`, those are the
  *      authored learning outcomes. Use up to MAX_ITEMS, in source order.
  *   2. Otherwise derive a short list from chapter titles, skipping
  *      `intro` / `cover` chapters since they're not learning outcomes.
  *
- * The component renders nothing when neither source yields any items
- * (e.g. an empty book), so adding it to a page is safe regardless of
- * whether a particular pipeline run produced topics yet.
+ * Renders nothing when neither source yields any items, so adding it
+ * to a page is safe regardless of whether a particular pipeline run
+ * has produced topics yet.
  *
  * Generic for every book — no slug, no language, no topic strings are
  * hardcoded. Topic strings come from the manifest as plain text in
- * whatever language the pipeline wrote them in; chapter-title fallback
- * is fully localized through getLocalizedText.
+ * whatever language the pipeline wrote them in; the chapter-title
+ * fallback runs through getLocalizedText so it follows the standard
+ * lang → source → first-non-empty fallback chain.
+ *
+ * Visual: dark glass card on the BO palette, calm checklist with
+ * violet/cyan check icons. No gold.
  */
 
 import type { Chapter, Language } from '../../types/index';
@@ -58,66 +62,99 @@ const shouldRender = items.length > 0;
 
 {shouldRender && (
   <section class="bol" aria-labelledby="bol-title" data-derived={derived ? 'true' : undefined}>
-    <h2 id="bol-title" class="bol-heading" data-i18n="bookOverview.whatYouWillLearn">
-      {t('bookOverview.whatYouWillLearn', language)}
-    </h2>
-
-    <ul class="bol-list" role="list">
-      {items.map((item) => (
-        <li class="bol-item">
-          <svg class="bol-bullet" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke-width="1.6" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12.5l2.5 2.5L16 9.5" />
+    <div class="bol-card">
+      <header class="bol-heading-row">
+        <span class="bol-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"
+              d="M12 2l2.39 4.84L20 7.62l-3.95 3.85.93 5.43L12 14.77 7.02 16.9l.93-5.43L4 7.62l5.61-.78L12 2z" />
           </svg>
-          <span class="bol-text">{item}</span>
-        </li>
-      ))}
-    </ul>
+        </span>
+        <h2 id="bol-title" class="bol-heading" data-i18n="bookOverview.whatYouWillLearn">
+          {t('bookOverview.whatYouWillLearn', language)}
+        </h2>
+      </header>
+
+      <ul class="bol-list" role="list">
+        {items.map((item) => (
+          <li class="bol-item">
+            <span class="bol-bullet" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 12.5l4 4 10-10" />
+              </svg>
+            </span>
+            <span class="bol-text">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   </section>
 )}
 
 <style>
-  .bol {
-    margin-block-start: 0;
+  /* ── Card shell — matches Summary/Hero/Progress ──────────────── */
+  .bol-card {
+    background: linear-gradient(
+      135deg,
+      var(--bo-surface) 0%,
+      var(--bo-surface-elevated) 100%
+    );
+    border: 1px solid var(--bo-border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    color: var(--bo-text-primary);
+  }
+  @media (min-width: 640px) {
+    .bol-card {
+      padding: 1.5rem 1.75rem;
+    }
   }
 
-  /* Heading — same family/size as the summary heading so the two
-     sit at the same hierarchy level. */
-  .bol-heading {
-    margin: 0 0 0.65rem 0;
-    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
-    font-weight: 600;
-    font-size: 1.05rem;
-    letter-spacing: 0.01em;
-    color: rgba(245, 239, 225, 0.92);
+  /* ── Heading row ──────────────────────────────────────────────── */
+  .bol-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0 0 1rem 0;
+  }
+
+  .bol-icon {
+    inline-size: 2rem;
+    block-size: 2rem;
+    flex-shrink: 0;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: center;
+    color: var(--bo-cyan);
+    background: var(--bo-cyan-soft);
+    border: 1px solid var(--bo-border);
   }
-  .bol-heading::after {
-    content: '';
-    display: block;
-    inline-size: 2.5rem;
-    block-size: 1px;
-    background: linear-gradient(to inline-end, rgba(232, 197, 71, 0.6), transparent);
-  }
-  :root:not(.dark) .bol-heading {
-    color: #2c2418;
-  }
-  :root:not(.dark) .bol-heading::after {
-    background: linear-gradient(to inline-end, rgba(184, 146, 63, 0.6), transparent);
+  .bol-icon svg {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
   }
 
+  .bol-heading {
+    margin: 0;
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.01em;
+    color: var(--bo-text-primary);
+  }
+
+  /* ── Checklist ──────────────────────────────────────────────── */
   .bol-list {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.5rem 1rem;
+    gap: 0.65rem 1.25rem;
   }
-  /* Two columns once the card has the room. The cap keeps individual
-     items from stretching wide enough to look like paragraphs. */
+  /* Two columns once the card has the room — keeps individual items
+     from stretching wide enough to read like paragraphs. */
   @media (min-width: 640px) {
     .bol-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -126,26 +163,33 @@ const shouldRender = items.length > 0;
 
   .bol-item {
     display: grid;
-    grid-template-columns: 1.1rem 1fr;
+    grid-template-columns: 1.4rem 1fr;
     align-items: start;
-    gap: 0.5rem;
+    gap: 0.55rem;
     font-size: 0.95rem;
-    line-height: 1.45;
-    color: rgba(245, 239, 225, 0.82);
-  }
-  :root:not(.dark) .bol-item {
-    color: rgba(44, 36, 24, 0.82);
+    line-height: 1.5;
+    color: var(--bo-text-secondary);
   }
 
+  /* Compact violet circle with a cyan check inside. The two-tone bullet
+     reads as a small "completed thought" without competing with the
+     hero's purple/cyan accents. */
   .bol-bullet {
-    inline-size: 1.1rem;
-    block-size: 1.1rem;
-    margin-block-start: 0.15rem;
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    margin-block-start: 0.05rem;
     flex-shrink: 0;
-    color: rgba(232, 197, 71, 0.85);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bo-cyan);
+    background: var(--bo-violet-soft);
+    border: 1px solid var(--bo-border-accent);
   }
-  :root:not(.dark) .bol-bullet {
-    color: rgba(184, 146, 63, 0.95);
+  .bol-bullet svg {
+    inline-size: 0.85rem;
+    block-size: 0.85rem;
   }
 
   .bol-text {

@@ -2,9 +2,10 @@
 /**
  * Book Overview — Summary section.
  *
- * Renders the localized book description under a "Book summary"
- * heading. Long descriptions clip to a fixed height with a fade mask
- * and a "Read more" toggle; short ones render fully without a button.
+ * Dark glass card on the BO palette (purple / blue / cyan). Houses
+ * the localized book description under a "Book summary" heading with
+ * a purple book glyph. Long descriptions clip to a fixed height with
+ * a fade mask and reveal behind a "Read more" toggle.
  *
  * Fallback behavior is preserved at the call site: the page resolves
  * `description` via getLocalizedText (lang → source → first non-empty),
@@ -28,52 +29,58 @@ const { description, subtitle, language } = Astro.props;
 
 const paragraphs = description.split(/\n\s*\n/).filter((p) => p.trim());
 
-// Threshold tuned to "fits in a card without forcing a scroll" —
-// roughly 4–5 lines of body text on a typical desktop column.
-// Below this we render fully and skip the toggle.
+// Threshold tuned to "fits in a card without forcing a scroll" — roughly
+// 4–5 lines of body text on a typical desktop column. Below this we
+// render fully and skip the toggle.
 const TRUNCATE_THRESHOLD = 500;
 const truncatable = description.length > TRUNCATE_THRESHOLD;
 ---
 
 <section class="bos" aria-labelledby="bos-title">
-  <h2 id="bos-title" class="bos-heading" data-i18n="bookOverview.bookSummary">
-    {t('bookOverview.bookSummary', language)}
-  </h2>
+  <div class="bos-card">
+    <header class="bos-heading-row">
+      <span class="bos-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"
+            d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a3 3 0 0 1 2 .8A3 3 0 0 1 14 4h4.5A1.5 1.5 0 0 1 20 5.5V18a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5a1 1 0 0 1-1-1V5.5z" />
+          <path stroke-linecap="round" stroke-width="1.7" d="M12 6v15" />
+        </svg>
+      </span>
+      <h2 id="bos-title" class="bos-heading" data-i18n="bookOverview.bookSummary">
+        {t('bookOverview.bookSummary', language)}
+      </h2>
+    </header>
 
-  <div
-    class:list={['bos-content', 'chapter-content', 'space-y-2', 'sm:space-y-2.5']}
-    data-truncatable={truncatable ? 'true' : undefined}
-    data-collapsed={truncatable ? 'true' : undefined}
-  >
-    {subtitle && (
-      <p class="sr-only">{subtitle}</p>
-    )}
-    {paragraphs.map((para) => (
-      <p
-        class="text-base sm:text-lg text-yuval-text-secondary leading-relaxed"
-        set:html={renderInlineMarkdown(para.trim())}
-      />
-    ))}
-  </div>
-
-  {truncatable && (
-    <button
-      type="button"
-      class="bos-toggle"
-      data-bos-toggle
-      data-i18n="bookOverview.readMore"
-      aria-expanded="false"
+    <div
+      class:list={['bos-content']}
+      data-truncatable={truncatable ? 'true' : undefined}
+      data-collapsed={truncatable ? 'true' : undefined}
     >
-      {t('bookOverview.readMore', language)}
-    </button>
-  )}
+      {subtitle && <p class="sr-only">{subtitle}</p>}
+      {paragraphs.map((para) => (
+        <p class="bos-para" set:html={renderInlineMarkdown(para.trim())} />
+      ))}
+    </div>
+
+    {truncatable && (
+      <button
+        type="button"
+        class="bos-toggle"
+        data-bos-toggle
+        data-i18n="bookOverview.readMore"
+        aria-expanded="false"
+      >
+        {t('bookOverview.readMore', language)}
+      </button>
+    )}
+  </div>
 </section>
 
 <script>
-  // Wire the expand/collapse toggle. Each button flips
-  // `data-collapsed` on the sibling content + swaps its own `data-i18n`
-  // key so the platform's language-changed handler keeps the label in
-  // sync if the user toggles language while expanded.
+  // Wire the expand/collapse toggle. Each button flips `data-collapsed`
+  // on the sibling content + swaps its own `data-i18n` key so the
+  // platform's language-changed handler keeps the label in sync if
+  // the user toggles language while expanded.
   import { t, resolveLanguage, type TranslationKey } from '../../i18n';
 
   const COLLAPSED_KEY: TranslationKey = 'bookOverview.readMore';
@@ -115,56 +122,101 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
 </script>
 
 <style>
-  .bos {
-    margin-block-start: 0;
+  /* ── Card shell — same depth language as Hero/Progress ──────── */
+  .bos-card {
+    background: linear-gradient(
+      135deg,
+      var(--bo-surface) 0%,
+      var(--bo-surface-elevated) 100%
+    );
+    border: 1px solid var(--bo-border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    color: var(--bo-text-primary);
+  }
+  @media (min-width: 640px) {
+    .bos-card {
+      padding: 1.5rem 1.75rem;
+    }
   }
 
-  /* Section heading — small gold-tinted serif label, mirrors the
-     "Chapters" rule used by BookOverviewChapters but at section
-     scale rather than column-scale. */
-  .bos-heading {
-    margin: 0 0 0.65rem 0;
-    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
-    font-weight: 600;
-    font-size: 1.05rem;
-    letter-spacing: 0.01em;
-    color: rgba(245, 239, 225, 0.92);
+  /* ── Heading row ──────────────────────────────────────────────── */
+  .bos-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0 0 0.85rem 0;
+  }
+
+  .bos-icon {
+    inline-size: 2rem;
+    block-size: 2rem;
+    flex-shrink: 0;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: center;
+    color: var(--bo-violet);
+    background: var(--bo-purple-soft);
+    border: 1px solid var(--bo-border);
   }
-  .bos-heading::after {
-    content: '';
-    display: block;
-    inline-size: 2.5rem;
-    block-size: 1px;
-    background: linear-gradient(
-      to inline-end,
-      rgba(232, 197, 71, 0.6),
-      transparent
-    );
+  .bos-icon svg {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
   }
-  :root:not(.dark) .bos-heading {
-    color: #2c2418;
+
+  .bos-heading {
+    margin: 0;
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.01em;
+    color: var(--bo-text-primary);
   }
-  :root:not(.dark) .bos-heading::after {
-    background: linear-gradient(
-      to inline-end,
-      rgba(184, 146, 63, 0.6),
-      transparent
-    );
+
+  /* ── Body content ─────────────────────────────────────────────
+     Reader-grade rhythm: line-height 1.85, generous paragraph gaps,
+     comfortable measure. Color comes from the card-level base so
+     individual paragraphs don't need to repeat it. */
+  .bos-content {
+    color: var(--bo-text-secondary);
+  }
+  .bos-para {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.85;
+    letter-spacing: 0.005em;
+  }
+  .bos-para + .bos-para {
+    margin-block-start: 0.85rem;
+  }
+  /* Inline elements rendered by renderInlineMarkdown — keep them on
+     the same color family so emphasis reads as a tone shift, not a
+     theme switch. */
+  .bos-content :global(strong) {
+    color: var(--bo-text-primary);
+    font-weight: 600;
+  }
+  .bos-content :global(em) {
+    color: var(--bo-text-primary);
+    font-style: italic;
+  }
+  .bos-content :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    padding: 0.1em 0.4em;
+    border-radius: 6px;
+    background: var(--bo-surface-elevated);
+    border: 1px solid var(--bo-border);
+    color: var(--bo-cyan);
   }
 
   /* Collapsed state. The fade mask keeps the lower edge soft so it
      reads as "more below" rather than a hard cut. */
   .bos-content[data-truncatable='true'][data-collapsed='true'] {
-    max-block-size: 12em;
+    max-block-size: 14em;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(
-      180deg,
-      #000 60%,
-      transparent 100%
-    );
+    -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
     mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
   }
   .bos-content[data-truncatable='true'][data-collapsed='false'] {
@@ -174,37 +226,35 @@ const truncatable = description.length > TRUNCATE_THRESHOLD;
     mask-image: none;
   }
 
-  /* Toggle — small text-style button, gold underline on hover. Not a
-     CTA pill on purpose: the hero already owns the primary action,
-     this is a tertiary affordance. */
+  /* ── Toggle ────────────────────────────────────────────────────
+     Tertiary link-style affordance, cyan accent. Lower visual weight
+     than Hero's primary CTA — this is "expand", not "act". */
   .bos-toggle {
-    margin-block-start: 0.4rem;
-    padding: 0.25rem 0;
+    margin-block-start: 0.85rem;
+    padding: 0.3rem 0;
     background: transparent;
     border: 0;
-    color: #f5e4a3;
+    color: var(--bo-cyan);
     font: inherit;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    border-block-end: 1px dashed rgba(232, 197, 71, 0.4);
+    border-block-end: 1px dashed rgba(34, 211, 238, 0.45);
     transition: color 160ms ease, border-color 160ms ease;
   }
   .bos-toggle:hover {
-    color: #ffe9a8;
-    border-block-end-color: rgba(232, 197, 71, 0.75);
+    color: var(--bo-text-primary);
+    border-block-end-color: var(--bo-cyan);
   }
   .bos-toggle:focus-visible {
-    outline: 2px solid #e8c547;
+    outline: 2px solid var(--bo-focus-ring);
     outline-offset: 3px;
     border-block-end-color: transparent;
   }
-  :root:not(.dark) .bos-toggle {
-    color: #6a4f12;
-    border-block-end-color: rgba(184, 146, 63, 0.5);
-  }
-  :root:not(.dark) .bos-toggle:hover {
-    color: #4a3712;
-    border-block-end-color: rgba(184, 146, 63, 0.85);
+
+  @media (prefers-reduced-motion: reduce) {
+    .bos-toggle {
+      transition: none;
+    }
   }
 </style>
