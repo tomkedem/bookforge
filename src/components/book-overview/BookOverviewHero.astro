@@ -1,131 +1,596 @@
 ---
 /**
- * Book Overview — Hero region.
+ * Book Overview — Hero card.
  *
- * Renders the title row (with the inline TTS pill), the subtitle, and
- * the cover figure containing credits and the chapter-count meta line.
+ * Premium dark card. Cover on the inline-start side at lg+, content
+ * (level badge, title, subtitle, credits, meta row, CTAs) on the
+ * inline-end side. Stacks on mobile.
  *
- * The figure floats inside its parent column on lg+; the parent page
- * is responsible for clearing the float after subsequent content.
+ * Generic for every book:
+ *  - Title / subtitle / cover come from props (already localized).
+ *  - Level badge renders only when `level` is defined; the label
+ *    is resolved through i18n (`library.level.<key>`).
+ *  - Reading time is computed from chapter word counts at ~200 wpm
+ *    so it works for any book without a stored field.
+ *  - Available languages come from the book's discovered language list
+ *    and are displayed as native labels.
  *
- * Markup is preserved verbatim from src/pages/books/[slug].astro to
- * avoid any visual regression. The TTS button keeps its
- * `id="tts-inline-trigger"` so the page-level boot script (which calls
- * initTextToSpeech) finds it without changes.
+ * The primary CTA starts as "Start learning" and is upgraded client-side
+ * to "Continue learning" if any chapter under this book has progress in
+ * localStorage. Same key shape as updateChapterProgress() in the page.
+ *
+ * The TTS pill from the previous design is preserved as a small icon
+ * button so the page-level TTS init script (which targets
+ * #tts-inline-trigger) keeps working without changes.
  */
 
-import type { Language } from '../../types/index';
+import type { BookLevel, Chapter, Language } from '../../types/index';
 import type { BookCredits } from '../../utils/book-discovery';
-import { t } from '../../i18n';
-import {
-  getCreditText,
-  creditDataAttr,
-  formatChapterCount,
-} from './utils';
+import { t, type TranslationKey } from '../../i18n';
+import { getLanguageMeta } from '../../utils/language';
+import { getCreditText, creditDataAttr, formatChapterCount } from './utils';
 
 interface Props {
   title: string;
   subtitle: string;
   coverImage: string;
   credits?: BookCredits;
-  chapterCount: number;
+  chapters: Chapter[];
+  slug: string;
+  level?: BookLevel;
+  languages: Language[];
   language: Language;
   isRtl: boolean;
 }
 
-const { title, subtitle, coverImage, credits, chapterCount, language, isRtl } = Astro.props;
+const {
+  title,
+  subtitle,
+  coverImage,
+  credits,
+  chapters,
+  slug,
+  level,
+  languages,
+  language,
+  isRtl,
+} = Astro.props;
+
+// Reading time at ~200 wpm against the sum of chapter word counts.
+// Shown as one aggregate pill in the meta row; per-chapter time stays
+// in BookOverviewChapters for the per-row labels.
+const totalWords = chapters.reduce((sum, ch) => sum + (ch.word_count ?? 0), 0);
+const totalMinutes = Math.max(1, Math.ceil(totalWords / 200));
+
+// Default landing target for the primary CTA — the first chapter in
+// reading order. Client script may override to the most-recently-read
+// chapter once it inspects localStorage.
+const firstChapter = chapters[0];
+const startHref = firstChapter ? `/read/${slug}/${firstChapter.id}` : '#';
+
+const languageNames = languages.map((l) => getLanguageMeta(l).label).join(' · ');
+const languagesAriaLabel = `${t('book.availableIn', language)}: ${languageNames}`;
+
+const levelKey: TranslationKey | undefined = level ? (`library.level.${level}` as TranslationKey) : undefined;
 ---
 
-<!-- Title row: heading + inline "listen to description" trigger.
-     Wired to the TTS engine by the page script. The icon is
-     injected at init; the label stays translated here. -->
-<div class:list={['flex', 'items-start', 'gap-3', 'flex-wrap', 'mb-4', 'sm:mb-5']}>
-  <h1 class="font-heading font-bold text-2xl sm:text-3xl lg:text-4xl leading-tight text-yuval-text flex-1 min-w-0">
-    {title}
-  </h1>
-  <button
-    id="tts-inline-trigger"
-    class="tts-inline-btn"
-    type="button"
-    aria-label={t('tts.listenToDescription', language)}
-    aria-pressed="false"
-  >
-    <span class="tts-inline-icon" aria-hidden="true"></span>
-    <span class="tts-inline-label">{t('tts.listenToDescription', language)}</span>
-  </button>
-</div>
+<section class:list={['boh', isRtl && 'is-rtl']} aria-labelledby="boh-title">
+  <div class="boh-card">
+    <!-- Cover -->
+    <figure class="boh-cover-wrap">
+      <img
+        src={coverImage}
+        alt={title}
+        loading="lazy"
+        decoding="async"
+        class="book-cover-img boh-cover"
+      />
+    </figure>
 
-{subtitle && (
-  <p class="text-sm sm:text-base text-yuval-text-tertiary leading-relaxed mb-5 sm:mb-6">
-    {subtitle}
-  </p>
-)}
-
-<!-- Cover image inside content flow, floated so text wraps around it -->
-<figure class:list={[
-  'mb-5',
-  'sm:mb-6',
-  'lg:mb-3',
-  'lg:max-w-[380px]',
-  'xl:max-w-[440px]',
-  isRtl ? 'lg:float-left lg:mr-6 xl:mr-8' : 'lg:float-right lg:ml-6 xl:ml-8',
-]}>
-  {credits && (
-    <figcaption class="mb-2 text-sm text-yuval-text-secondary">
-      {credits.type === 'lecture_summary' ? (
-        <div class="space-y-1.5">
-          <!-- Lecturer — person-outline icon -->
-          <p class="inline-flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" stroke-width="1.8" />
-              <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-            </svg>
-            <span>
-              <span class="font-medium text-yuval-text">{t('book.lecturer', language)}:</span>{' '}
-              <span data-credit-localized={creditDataAttr(credits.lecturer)}>{getCreditText(credits.lecturer, language)}</span>
-            </span>
-          </p>
-          <!-- Editor — pencil/edit icon -->
-          <p class="inline-flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-            </svg>
-            <span>
-              <span class="font-medium text-yuval-text">{t('book.editedBy', language)}:</span>{' '}
-              <span data-credit-localized={creditDataAttr(credits.editor)}>{getCreditText(credits.editor, language)}</span>
-            </span>
-          </p>
-        </div>
-      ) : (
-        <!-- Author — person-outline icon -->
-        <p class="inline-flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" stroke-width="1.8" />
-            <path stroke-linecap="round" stroke-width="1.8" d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-          </svg>
-          <span>
-            <span>{t('book.by', language)}</span> {' '}<span data-credit-localized={creditDataAttr(credits.author)}>{getCreditText(credits.author, language)}</span>
+    <!-- Content column -->
+    <div class="boh-content">
+      <!-- Top row: optional level badge + small TTS icon -->
+      <div class="boh-top">
+        {level && levelKey && (
+          <span class="boh-level" data-i18n={levelKey}>
+            {t(levelKey, language)}
           </span>
+        )}
+        <span class="boh-top-spacer" aria-hidden="true"></span>
+        <button
+          id="tts-inline-trigger"
+          class="boh-tts tts-inline-btn"
+          type="button"
+          aria-label={t('tts.listenToDescription', language)}
+          aria-pressed="false"
+          data-i18n-aria-label="tts.listenToDescription"
+        >
+          <span class="tts-inline-icon" aria-hidden="true"></span>
+          <span class="sr-only" data-i18n="tts.listenToDescription">{t('tts.listenToDescription', language)}</span>
+        </button>
+      </div>
+
+      <h1 id="boh-title" class="boh-title">{title}</h1>
+
+      {subtitle && (
+        <p class="boh-subtitle">{subtitle}</p>
+      )}
+
+      {credits && (
+        <p class="boh-credits">
+          {credits.type === 'lecture_summary' ? (
+            <>
+              <span class="boh-credits-label">{t('book.lecturer', language)}:</span>{' '}
+              <span data-credit-localized={creditDataAttr(credits.lecturer)}>{getCreditText(credits.lecturer, language)}</span>
+              <span class="boh-credits-sep" aria-hidden="true"> · </span>
+              <span class="boh-credits-label">{t('book.editedBy', language)}:</span>{' '}
+              <span data-credit-localized={creditDataAttr(credits.editor)}>{getCreditText(credits.editor, language)}</span>
+            </>
+          ) : (
+            <>
+              <span class="boh-credits-label">{t('book.by', language)}</span>{' '}
+              <span data-credit-localized={creditDataAttr(credits.author)}>{getCreditText(credits.author, language)}</span>
+            </>
+          )}
         </p>
       )}
-    </figcaption>
-  )}
 
-  <!-- Chapter count with book icon. Sits above the cover so the
-       metadata reads like a caption/heading to the image. -->
-  <p class="mb-3 inline-flex items-center gap-1.5 text-sm text-yuval-text-tertiary">
-    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-    <span>{formatChapterCount(chapterCount, language)}</span>
-  </p>
+      <!-- Meta row -->
+      <ul class="boh-meta" role="list">
+        <li class="boh-meta-item">
+          <svg class="boh-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+          <span>{formatChapterCount(chapters.length, language)}</span>
+        </li>
 
-  <img
-    src={coverImage}
-    alt={title}
-    loading="lazy"
-    decoding="async"
-    class="book-cover-img w-full h-auto rounded-lg shadow-lg object-contain"
-  />
-</figure>
+        <li class="boh-meta-item">
+          <svg class="boh-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+            <path stroke-linecap="round" stroke-width="1.8" d="M12 7v5l3 2" />
+          </svg>
+          <span>{t('book.minutesRead', language, { n: totalMinutes.toString() })}</span>
+        </li>
+
+        <li class="boh-meta-item" aria-label={languagesAriaLabel}>
+          <svg class="boh-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+            <path stroke-width="1.8" d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+          </svg>
+          <span aria-hidden="true">{languageNames}</span>
+        </li>
+      </ul>
+
+      <!-- CTAs -->
+      <div class="boh-actions">
+        <a
+          href={startHref}
+          class="boh-cta boh-cta-primary"
+          data-cta-primary
+          data-book-slug={slug}
+          data-i18n="book.startLearning"
+        >
+          {t('book.startLearning', language)}
+        </a>
+        <a
+          href="#chapters"
+          class="boh-cta boh-cta-secondary"
+          data-i18n="book.viewChapters"
+        >
+          {t('book.viewChapters', language)}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Upgrade the primary CTA from "Start learning" to "Continue learning"
+  // when any chapter under this book has progress in localStorage.
+  // Mirrors the key shape used by updateChapterProgress() in the page:
+  //   yuval_reading_progress_<slug>_ch<chapterId>
+  // Also re-points the href at the most recently updated chapter so a
+  // returning reader resumes where they left off.
+  import { t, resolveLanguage } from '../../i18n';
+
+  function updatePrimaryCta(): void {
+    const cta = document.querySelector<HTMLAnchorElement>('[data-cta-primary]');
+    if (!cta) return;
+    const slug = cta.dataset.bookSlug;
+    if (!slug) return;
+
+    const keyFragment = `reading_progress_${slug}_ch`;
+    let hasProgress = false;
+    let bestKey: string | null = null;
+    let bestUpdated = -Infinity;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.includes(keyFragment)) continue;
+      try {
+        const d = JSON.parse(localStorage.getItem(k) || '{}');
+        const has =
+          (typeof d.percentage === 'number' && d.percentage > 0) ||
+          (typeof d.scrollPosition === 'number' && d.scrollPosition > 200);
+        if (!has) continue;
+        hasProgress = true;
+        const updated = typeof d.lastUpdated === 'number' ? d.lastUpdated : 0;
+        if (updated >= bestUpdated) {
+          bestUpdated = updated;
+          bestKey = k;
+        }
+      } catch {
+        /* skip malformed entries */
+      }
+    }
+
+    const newKey = hasProgress ? 'book.continueLearning' : 'book.startLearning';
+    cta.dataset.i18n = newKey;
+
+    if (hasProgress && bestKey) {
+      const m = bestKey.match(/_ch(.+)$/);
+      if (m && m[1]) {
+        cta.href = `/read/${slug}/${m[1]}`;
+      }
+    }
+
+    const lang = resolveLanguage(document.documentElement.lang);
+    cta.textContent = t(newKey, lang);
+  }
+
+  function boot() {
+    updatePrimaryCta();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+
+  // Re-run on view transitions, language toggles, and tab focus so a
+  // chapter completed in another tab promotes the CTA on return.
+  document.addEventListener('astro:after-swap', boot);
+  window.addEventListener('language-changed', boot);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') boot();
+  });
+  window.addEventListener('pageshow', boot);
+</script>
+
+<style>
+  /* ── Card shell ───────────────────────────────────────────────────
+     Premium dark hero. Charcoal gradient + warm gold rim, deep shadow
+     so it floats above the page background. Light mode flips to a
+     warm cream surface to match the LeftSidebar palette. */
+  .boh {
+    container-type: inline-size;
+  }
+
+  .boh-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 18px;
+    background:
+      radial-gradient(120% 80% at 0% 0%, rgba(232, 197, 71, 0.08), transparent 60%),
+      linear-gradient(135deg, #1c1c22 0%, #14141a 100%);
+    border: 1px solid rgba(232, 197, 71, 0.18);
+    box-shadow:
+      0 24px 60px -20px rgba(0, 0, 0, 0.5),
+      0 8px 20px -10px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: #f5efe1;
+    overflow: hidden;
+  }
+
+  /* Subtle gold edge sheen along the inline-start side. Pure decoration;
+     pointer-events disabled so it never blocks clicks. */
+  .boh-card::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    inset-block-end: 0;
+    width: 3px;
+    background: linear-gradient(180deg, transparent, rgba(232, 197, 71, 0.55), transparent);
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  :root:not(.dark) .boh-card {
+    background:
+      radial-gradient(120% 80% at 0% 0%, rgba(184, 146, 63, 0.10), transparent 60%),
+      linear-gradient(135deg, #faf6ec 0%, #f3eedc 100%);
+    color: #2c2418;
+    border-color: rgba(184, 146, 63, 0.32);
+    box-shadow:
+      0 18px 40px -16px rgba(70, 50, 10, 0.18),
+      0 4px 12px -6px rgba(70, 50, 10, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  @media (min-width: 640px) {
+    .boh-card { padding: 1.75rem; gap: 1.75rem; }
+  }
+
+  /* Two-column layout above 720px container width. The cover lives on
+     the inline-start side; switching to grid columns here keeps the
+     stacked mobile layout untouched on phones. */
+  @container (min-width: 720px) {
+    .boh-card {
+      grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  /* ── Cover ───────────────────────────────────────────────────── */
+  .boh-cover-wrap {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .boh-cover {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow:
+      0 18px 40px -12px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(232, 197, 71, 0.16);
+  }
+
+  :root:not(.dark) .boh-cover {
+    box-shadow:
+      0 14px 30px -10px rgba(70, 50, 10, 0.30),
+      0 0 0 1px rgba(184, 146, 63, 0.22);
+  }
+
+  @container (min-width: 720px) {
+    .boh-cover-wrap { justify-content: flex-start; }
+    .boh-cover { max-width: 100%; }
+  }
+
+  /* ── Content column ──────────────────────────────────────────── */
+  .boh-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-width: 0;
+    text-align: start;
+  }
+
+  .boh-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .boh-top-spacer { flex: 1; }
+
+  /* Level badge — gold pill with subtle inner light. Renders only when
+     level is defined; otherwise the badge slot stays empty. */
+  .boh-level {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #2a1f08;
+    background: linear-gradient(145deg, #f4d97a 0%, #d4ae42 100%);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      0 0 0 1px rgba(255, 220, 120, 0.35);
+  }
+
+  :root:not(.dark) .boh-level {
+    color: #2c2418;
+    background: linear-gradient(145deg, #ecc967 0%, #c9a227 100%);
+    box-shadow:
+      0 1px 2px rgba(70, 50, 10, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      0 0 0 1px rgba(184, 146, 63, 0.45);
+  }
+
+  /* Compact TTS button — subtle on the dark card, doesn't compete with
+     the primary CTA. The shared .tts-inline-btn class is overridden so
+     the global animations (pulse waves) still fire when active. */
+  .boh-tts.tts-inline-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 999px;
+    background: rgba(232, 197, 71, 0.12);
+    color: #f5e9c4;
+    box-shadow:
+      0 0 0 1px rgba(232, 197, 71, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    align-self: auto;
+  }
+  .boh-tts.tts-inline-btn:hover {
+    background: rgba(232, 197, 71, 0.20);
+    transform: none;
+    filter: none;
+    box-shadow:
+      0 0 0 1px rgba(232, 197, 71, 0.55),
+      0 0 16px rgba(232, 197, 71, 0.22);
+  }
+  .boh-tts.tts-inline-btn .tts-inline-label { display: none; }
+
+  :root:not(.dark) .boh-tts.tts-inline-btn {
+    background: rgba(184, 146, 63, 0.12);
+    color: #6a4f12;
+    box-shadow:
+      0 0 0 1px rgba(184, 146, 63, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  :root:not(.dark) .boh-tts.tts-inline-btn:hover {
+    background: rgba(184, 146, 63, 0.22);
+    box-shadow:
+      0 0 0 1px rgba(184, 146, 63, 0.55),
+      0 0 16px rgba(184, 146, 63, 0.30);
+  }
+
+  /* ── Title / subtitle / credits ──────────────────────────────── */
+  .boh-title {
+    margin: 0;
+    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: #f8eed3;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  }
+  :root:not(.dark) .boh-title {
+    color: #1f1808;
+    text-shadow: none;
+  }
+
+  .boh-subtitle {
+    margin: 0;
+    font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+    line-height: 1.55;
+    color: rgba(245, 239, 225, 0.72);
+  }
+  :root:not(.dark) .boh-subtitle {
+    color: rgba(44, 36, 24, 0.72);
+  }
+
+  .boh-credits {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(245, 239, 225, 0.62);
+    font-style: italic;
+  }
+  :root:not(.dark) .boh-credits {
+    color: rgba(44, 36, 24, 0.62);
+  }
+  .boh-credits-label {
+    font-style: normal;
+    font-weight: 500;
+    color: rgba(245, 239, 225, 0.85);
+  }
+  :root:not(.dark) .boh-credits-label {
+    color: rgba(44, 36, 24, 0.88);
+  }
+  .boh-credits-sep { opacity: 0.55; }
+
+  /* ── Meta row ────────────────────────────────────────────────── */
+  .boh-meta {
+    list-style: none;
+    margin: 0;
+    padding: 0.65rem 0;
+    border-block-start: 1px solid rgba(232, 197, 71, 0.14);
+    border-block-end: 1px solid rgba(232, 197, 71, 0.14);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem 1.5rem;
+    font-size: 0.875rem;
+    color: rgba(245, 239, 225, 0.78);
+  }
+  :root:not(.dark) .boh-meta {
+    border-color: rgba(184, 146, 63, 0.22);
+    color: rgba(44, 36, 24, 0.75);
+  }
+
+  .boh-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .boh-meta-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: rgba(232, 197, 71, 0.72);
+  }
+  :root:not(.dark) .boh-meta-icon {
+    color: rgba(184, 146, 63, 0.85);
+  }
+
+  /* ── CTAs ────────────────────────────────────────────────────── */
+  .boh-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-block-start: 0.25rem;
+  }
+
+  .boh-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.7rem 1.25rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1;
+    text-decoration: none;
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, background-color 160ms ease;
+    white-space: nowrap;
+  }
+  .boh-cta:focus-visible {
+    outline: 2px solid #e8c547;
+    outline-offset: 3px;
+  }
+
+  /* Primary — gold gradient pill. Same family as .tts-inline-btn so
+     the platform reads as one set of medallions. */
+  .boh-cta-primary {
+    background: linear-gradient(145deg, #ddb52f 0%, #c9a227 100%);
+    color: #1f1808;
+    box-shadow:
+      0 4px 14px -4px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(232, 197, 71, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+  .boh-cta-primary:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow:
+      0 8px 22px -6px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(232, 197, 71, 0.7),
+      0 0 24px rgba(232, 197, 71, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  /* Secondary — outlined pill. Lower visual weight than primary but
+     reads clearly on the dark card. */
+  .boh-cta-secondary {
+    background: transparent;
+    color: rgba(245, 239, 225, 0.92);
+    box-shadow: 0 0 0 1px rgba(232, 197, 71, 0.45);
+  }
+  .boh-cta-secondary:hover {
+    background: rgba(232, 197, 71, 0.10);
+    color: #fff8d8;
+    box-shadow: 0 0 0 1px rgba(232, 197, 71, 0.7);
+  }
+  :root:not(.dark) .boh-cta-secondary {
+    color: #4a3712;
+    box-shadow: 0 0 0 1px rgba(184, 146, 63, 0.5);
+  }
+  :root:not(.dark) .boh-cta-secondary:hover {
+    background: rgba(184, 146, 63, 0.10);
+    color: #2c2418;
+    box-shadow: 0 0 0 1px rgba(184, 146, 63, 0.75);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .boh-cta {
+      transition: none;
+    }
+    .boh-cta:hover {
+      transform: none;
+    }
+  }
+</style>

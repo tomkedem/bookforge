@@ -62,6 +62,7 @@ const book = {
   dominantColor: bookData.dominantColor,
   chapters: bookData.chapters ?? [],
   credits: bookData.credits,
+  level: bookData.level,
   languages: availableLanguages,
 };
 
@@ -130,33 +131,39 @@ const description = getLocalizedText(book.descriptions, language);
           'items-start',
         ]}
       >
-        <!-- Chapters sidebar -->
-        <BookOverviewChapters
-          chapters={book.chapters}
-          slug={slug}
-          language={language}
-          isRtl={isRtl}
-        />
+        <!-- Chapters sidebar. The id is the scroll target for the
+             hero's secondary CTA ("View chapters"); scroll-margin keeps
+             the heading clear of any sticky chrome above. -->
+        <div id="chapters" class="boh-chapters-anchor">
+          <BookOverviewChapters
+            chapters={book.chapters}
+            slug={slug}
+            language={language}
+            isRtl={isRtl}
+          />
+        </div>
 
-        <!-- Content column: title, subtitle, cover, description, meta -->
+        <!-- Content column: hero card + summary -->
         <div class:list={[isRtl && 'text-right']}>
           <BookOverviewHero
             title={title}
             subtitle={subtitle}
             coverImage={book.coverImage}
             credits={book.credits}
-            chapterCount={book.chapters.length}
+            chapters={book.chapters}
+            slug={slug}
+            level={book.level}
+            languages={book.languages}
             language={language}
             isRtl={isRtl}
           />
 
-          <BookOverviewSummary
-            description={description}
-            subtitle={subtitle}
-          />
-
-          <!-- Clear the float so anything below sits after image+text -->
-          <div class="lg:clear-both"></div>
+          <div class="mt-6 sm:mt-8">
+            <BookOverviewSummary
+              description={description}
+              subtitle={subtitle}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -341,6 +348,13 @@ const description = getLocalizedText(book.descriptions, language);
      instead of multiplying/screening against the page background. */
   .book-cover-img {
     background-color: transparent;
+  }
+
+  /* Chapters scroll target. The hero's secondary CTA links to
+     #chapters; the inset offset keeps the heading clear of any sticky
+     chrome above. */
+  .boh-chapters-anchor {
+    scroll-margin-top: 5rem;
   }
 
   /* Inline TTS trigger — gold pill that sits beside the title.

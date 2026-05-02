@@ -94,6 +94,13 @@ export const translations: Translations = {
   'library.level.intermediate':  { he: 'ביניים',  en: 'Intermediate', es: 'Intermedio' },
   'library.level.advanced':      { he: 'מתקדם',   en: 'Advanced',     es: 'Avanzado' },
 
+  // Book Overview — hero card CTAs and meta.
+  'book.startLearning':    { he: 'התחל ללמוד',     en: 'Start learning',    es: 'Empezar a aprender' },
+  'book.continueLearning': { he: 'המשך לימוד',     en: 'Continue learning', es: 'Continuar aprendiendo' },
+  'book.viewChapters':     { he: 'צפה בפרקים',     en: 'View chapters',     es: 'Ver capítulos' },
+  'book.minutesRead':      { he: '{{n}} דקות קריאה', en: '{{n}} min read',  es: '{{n}} min de lectura' },
+  'book.availableIn':      { he: 'זמין ב',          en: 'Available in',     es: 'Disponible en' },
+
   // ── Courses (learning) section ──────────────────────────────────────────────
   'courses.title':         { he: 'למידה מקורסים',    en: 'Learning from Courses', es: 'Aprendizaje de cursos' },
   'courses.subtitle':      { he: 'סיכומי שיעורים בתהליך', en: 'Lecture summaries in progress', es: 'Resúmenes de clases en curso' },
