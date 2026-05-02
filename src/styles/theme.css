@@ -2107,3 +2107,150 @@ a, button {
 .dark * {
   scrollbar-color: rgba(168, 137, 42, 0.45) transparent;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOK OVERVIEW — modern dark AI-learning palette
+   ───────────────────────────────────────────────────────────────
+   Scoped tokens under the `--bo-*` namespace. Used by the Book
+   Overview page (src/pages/books/[slug].astro and the components
+   under src/components/book-overview/) to swap from the platform's
+   warm neutral chrome to a deep navy surface with purple/blue/cyan
+   accents.
+
+   The palette is dark by design and does NOT track the global
+   light/dark toggle — the Book Overview is always rendered in this
+   AI-learning skin to read as a "study session" surface distinct
+   from the reading view (which keeps the warm reading palette).
+
+   Gold (--yuval-gold-*) is reserved for the Yuval brand mark only.
+   Do not use --yuval-gold-* for buttons, progress, borders, active
+   states, icons, or chapter highlights on the Book Overview page —
+   use --bo-* tokens below.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Surfaces ────────────────────────────────────────────────
+     Three-tier depth: page → surface → elevated. The 6-luminance
+     spread keeps cards readable on the dark page without harsh
+     borders, mirroring how the reading view layers reading-bg →
+     bg → surface but in cool tones. */
+  --bo-bg:               #05080D;
+  --bo-surface:          #0B111A;
+  --bo-surface-elevated: #101722;
+
+  /* ── Borders ────────────────────────────────────────────────
+     Cool slate with very low alpha so card outlines read as a hair-
+     thin line rather than a hard frame. Use directly or with adjusted
+     alpha for hover/active states. */
+  --bo-border:           rgba(148, 163, 184, 0.14);
+  --bo-border-strong:    rgba(148, 163, 184, 0.28);
+  --bo-border-accent:    rgba(124, 58, 237, 0.45);
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --bo-text-primary:     #F8FAFC;
+  --bo-text-secondary:   #CBD5E1;
+  --bo-text-muted:       #94A3B8;
+
+  /* ── Primary accents ────────────────────────────────────────
+     Purple is the headline accent (level badges, primary CTA root,
+     active states). Violet is the warmer mid-tone used by gradients
+     to bridge purple → blue. Blue + cyan close the spectrum and own
+     the progress fill / link / focus-ring tones. */
+  --bo-purple:           #7C3AED;
+  --bo-violet:           #8B5CF6;
+  --bo-blue:             #3B82F6;
+  --bo-cyan:             #22D3EE;
+  --bo-indigo:           #6366F1;
+
+  /* Tinted variants for hover/active fills (translucent so they read
+     as "the accent at lower energy" against the dark surface). */
+  --bo-purple-soft:      rgba(124, 58, 237, 0.16);
+  --bo-violet-soft:      rgba(139, 92, 246, 0.16);
+  --bo-blue-soft:        rgba(59, 130, 246, 0.16);
+  --bo-cyan-soft:        rgba(34, 211, 238, 0.16);
+
+  /* Focus ring — single cyan so the Book Overview reads as one
+     interactive system. Avoid the platform gold here. */
+  --bo-focus-ring:       #22D3EE;
+
+  /* ── Gradients ──────────────────────────────────────────────
+     Reusable; reference via var() rather than redefining inline. */
+  --bo-grad-cta:
+    linear-gradient(135deg, #7C3AED 0%, #6366F1 45%, #22D3EE 100%);
+  --bo-grad-progress:
+    linear-gradient(90deg, #7C3AED 0%, #3B82F6 55%, #22D3EE 100%);
+
+  /* Direction-aware progress gradient. Components can swap to this
+     in RTL contexts so the brighter end aligns with the reading
+     direction's leading edge. */
+  --bo-grad-progress-rtl:
+    linear-gradient(270deg, #7C3AED 0%, #3B82F6 55%, #22D3EE 100%);
+
+  /* ── Shadows ────────────────────────────────────────────────
+     Cool-tinted instead of pure black so layered cards still feel
+     "lit" by the surrounding accent atmosphere. */
+  --bo-shadow-sm:
+    0 1px 2px rgba(2, 6, 23, 0.6),
+    0 0 0 1px rgba(148, 163, 184, 0.06);
+  --bo-shadow-md:
+    0 8px 20px -10px rgba(2, 6, 23, 0.7),
+    0 2px 6px -2px rgba(124, 58, 237, 0.08),
+    0 0 0 1px rgba(148, 163, 184, 0.08);
+  --bo-shadow-lg:
+    0 24px 60px -20px rgba(2, 6, 23, 0.8),
+    0 8px 20px -10px rgba(124, 58, 237, 0.12),
+    0 0 0 1px rgba(148, 163, 184, 0.10);
+  --bo-glow-cyan:        0 0 24px rgba(34, 211, 238, 0.18);
+  --bo-glow-purple:      0 0 24px rgba(124, 58, 237, 0.22);
+
+  /* ── Texture layers (consumed by .bo-page-bg / .bo-hero-glow) ──
+     Defined as tokens so a single tweak reshapes the whole page. */
+  --bo-haze:
+    radial-gradient(60% 45% at 12% 0%,  rgba(124, 58, 237, 0.10), transparent 70%),
+    radial-gradient(55% 40% at 88% 8%,  rgba(34, 211, 238, 0.06),  transparent 75%),
+    radial-gradient(80% 60% at 50% 100%, rgba(59, 130, 246, 0.05), transparent 70%);
+  --bo-hero-aura:
+    radial-gradient(closest-side, rgba(124, 58, 237, 0.28), transparent 70%);
+}
+
+/* ── Texture utility classes ──────────────────────────────────────
+   Reusable hooks the page (or its wrapper) can opt into. They paint
+   the haze / hero glow without forcing every component to know about
+   the texture stack. */
+
+/* Page-level dark glass. Apply on the page's outermost wrapper. The
+   haze is layered behind the page background color so it stays a
+   subtle wash, not a vibrant overlay. */
+.bo-page-bg {
+  position: relative;
+  background-color: var(--bo-bg);
+  background-image: var(--bo-haze);
+  background-attachment: fixed;
+  color: var(--bo-text-primary);
+}
+
+/* Radial glow behind the hero image. Apply on the figure (or any
+   wrapper containing the cover) — the ::before sits behind the cover
+   and provides the "lit-from-inside" softness. */
+.bo-hero-glow {
+  position: relative;
+}
+.bo-hero-glow::before {
+  content: '';
+  position: absolute;
+  inset: -8% -8% -8% -8%;
+  z-index: 0;
+  background: var(--bo-hero-aura);
+  filter: blur(8px);
+  pointer-events: none;
+  opacity: 0.9;
+}
+.bo-hero-glow > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Texture is purely visual — no animation — so this block is
+     reserved for future motion additions without affecting the
+     current static layers. */
+}
