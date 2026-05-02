@@ -104,7 +104,7 @@ export const translations: Translations = {
   'book.removeBookmark':   { he: 'הסר סימן',        en: 'Remove bookmark',  es: 'Quitar marcador' },
 
   // Book Overview — progress and summary sections.
-  'bookOverview.bookSummary':       { he: 'סיכום הספר',                       en: 'Book summary',                           es: 'Resumen del libro' },
+  'bookOverview.bookSummary':       { he: 'תקציר',                            en: 'Summary',                                es: 'Resumen' },
   'bookOverview.readMore':          { he: 'קרא עוד',                          en: 'Read more',                              es: 'Leer más' },
   'bookOverview.showLess':          { he: 'הצג פחות',                         en: 'Show less',                              es: 'Mostrar menos' },
   'bookOverview.notStarted':        { he: 'טרם התחלת',                        en: 'Not started yet',                        es: 'Aún no empezado' },

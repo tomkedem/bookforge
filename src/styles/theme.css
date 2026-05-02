@@ -2134,8 +2134,10 @@ a, button {
      borders, mirroring how the reading view layers reading-bg →
      bg → surface but in cool tones. */
   --bo-bg:               #05080D;
-  --bo-surface:          #0B111A;
-  --bo-surface-elevated: #101722;
+  /* Card base — very dark teal-charcoal. Slight blue-green lean reads
+     as "deep water" against the warmer charcoal page bg. */
+  --bo-surface:          #0C1416;
+  --bo-surface-elevated: #0F1A1D;
 
   /* ── Borders ────────────────────────────────────────────────
      Cool slate with very low alpha so card outlines read as a hair-
@@ -2217,13 +2219,26 @@ a, button {
    the haze / hero glow without forcing every component to know about
    the texture stack. */
 
-/* Page-level dark glass. Apply on the page's outermost wrapper. The
-   haze is layered behind the page background color so it stays a
-   subtle wash, not a vibrant overlay. */
+/* Page-level dark glass. Apply on the page's outermost wrapper.
+   Background composition (top → bottom):
+   1. A subtle purple-tinted radial accent near the top, kept low alpha
+      so it reads as ambient rather than a glow.
+   2. A vertical linear gradient: warm charcoal at the top, holding
+      most of the page, then easing into a warm steel-blue toward the
+      bottom — gives the impression of a deep room lit by cool lamps
+      below the fold. The warm tones (slight red lean in the charcoal,
+      slight purple lean in the blue) keep the surface from feeling
+      sterile while staying calmly dark. */
 .bo-page-bg {
   position: relative;
-  background-color: var(--bo-bg);
-  background-image: var(--bo-haze);
+  background-color: #0d0d0d;
+  background-image: linear-gradient(
+    180deg,
+    #0d0d0d 0%,
+    #0c0d0f 40%,
+    #0a0c12 75%,
+    #080a10 100%
+  );
   background-attachment: fixed;
   color: var(--bo-text-primary);
 }
@@ -2271,17 +2286,11 @@ a, button {
    ───────────────────────────────────────────────────────────────── */
 .bo-premium-surface {
   position: relative;
-  background-color: var(--bo-surface);
-  background-image:
-    /* 5: very subtle diagonal edge light (ambient catch) */
-    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 38%),
-    /* 4: lower cyan haze, drifts in from the inline-end / block-end */
-    radial-gradient(100% 100% at 100% 100%, rgba(34, 211, 238, 0.04), transparent 70%),
-    /* 3: top purple haze, hugs the upper edge */
-    radial-gradient(120% 90% at 50% 0%, rgba(124, 58, 237, 0.055), transparent 62%),
-    /* 2: vertical depth — a subtle top-light + bottom-shadow */
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.28));
-  background-repeat: no-repeat;
+  /* Flat fill — single solid color across the whole card, no
+     gradients, radials, or grain. Keeps every pixel of the surface
+     at the same tone so the cards read as deep matte rather than
+     lit-from-anywhere. */
+  background: var(--bo-surface);
   border: 1px solid rgba(148, 163, 184, 0.13);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
   transition: border-color 200ms ease;
@@ -2290,33 +2299,6 @@ a, button {
 .bo-premium-surface:hover,
 .bo-premium-surface:focus-within {
   border-color: rgba(148, 163, 184, 0.22);
-}
-
-/* Velvet grain. The SVG noise tile is rendered at near-zero opacity
-   under `mix-blend-mode: overlay`, so it adds the faintest highlight
-   variation across the surface — invisible at a glance, tangible on
-   close inspection. The grain is a static base64-free data URL so it
-   travels with the stylesheet (no external request, no preload). */
-.bo-premium-surface::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.014;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  background-size: 180px 180px;
-}
-
-/* Direct children of a premium-surface card render above the grain
-   without each component having to set its own z-index. The grain
-   sits at z-index: 0 with overlay blending; everything semantic
-   floats above on z-index: 1. */
-.bo-premium-surface > * {
-  position: relative;
-  z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

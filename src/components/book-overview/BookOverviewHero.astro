@@ -89,38 +89,13 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     </figure>
 
     <div class="boh-content">
-      <!-- Top row: optional level badge + bookmark button -->
-      <div class="boh-top">
-        {level && levelKey && (
+      {level && levelKey && (
+        <div class="boh-top">
           <span class="boh-level" data-i18n={levelKey}>
             {levelLabel}
           </span>
-        )}
-        <span class="boh-top-spacer" aria-hidden="true"></span>
-        <button
-          type="button"
-          class="boh-bookmark"
-          data-bookmark-btn
-          data-book-slug={slug}
-          aria-pressed="false"
-          aria-label={t('book.bookmark', language)}
-          data-i18n-aria-label="book.bookmark"
-        >
-          <svg
-            class="boh-bookmark-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
+        </div>
+      )}
 
       <h1 id="boh-title" class="boh-title">{title}</h1>
 
@@ -257,57 +232,8 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     cta.textContent = t(newKey, lang);
   }
 
-  // ── Bookmark toggle ───────────────────────────────────────────────
-  const BOOKMARK_KEY_PREFIX = 'yuval_bookmark_';
-
-  function readBookmark(slug: string): boolean {
-    return localStorage.getItem(BOOKMARK_KEY_PREFIX + slug) === '1';
-  }
-
-  function writeBookmark(slug: string, value: boolean): void {
-    if (value) {
-      localStorage.setItem(BOOKMARK_KEY_PREFIX + slug, '1');
-    } else {
-      localStorage.removeItem(BOOKMARK_KEY_PREFIX + slug);
-    }
-  }
-
-  function applyBookmarkState(
-    btn: HTMLButtonElement,
-    bookmarked: boolean,
-  ): void {
-    btn.dataset.bookmarked = bookmarked ? 'true' : 'false';
-    btn.setAttribute('aria-pressed', bookmarked ? 'true' : 'false');
-    const labelKey: TranslationKey = bookmarked
-      ? 'book.removeBookmark'
-      : 'book.bookmark';
-    btn.dataset.i18nAriaLabel = labelKey;
-    const lang = resolveLanguage(document.documentElement.lang);
-    btn.setAttribute('aria-label', t(labelKey, lang));
-  }
-
-  function syncBookmarkButtons(): void {
-    const buttons = document.querySelectorAll<HTMLButtonElement>(
-      '[data-bookmark-btn]',
-    );
-    buttons.forEach((btn) => {
-      const slug = btn.dataset.bookSlug;
-      if (!slug) return;
-      applyBookmarkState(btn, readBookmark(slug));
-
-      if (btn.dataset.bound === '1') return;
-      btn.dataset.bound = '1';
-      btn.addEventListener('click', () => {
-        const next = !readBookmark(slug);
-        writeBookmark(slug, next);
-        applyBookmarkState(btn, next);
-      });
-    });
-  }
-
   function boot(): void {
     updatePrimaryCta();
-    syncBookmarkButtons();
   }
 
   if (document.readyState === 'loading') {
@@ -404,7 +330,15 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   }
 
   /* ── Content column ──────────────────────────────────────────── */
+  /* Set the editorial font once at the column level — every child
+     (subtitle, credits, meta items, level badge text) inherits unless
+     it explicitly opts out (CTAs do, see below). This is the most
+     resilient way to force the family because no global !important
+     declaration on a child can win against an inline `font-family`
+     on the parent + `font-family: inherit !important` on the child
+     (we use that pattern below for the credit/meta items). */
   .boh-content {
+    font-family: 'Assistant', system-ui, sans-serif;
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
@@ -413,13 +347,18 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     position: relative;
     z-index: 1;
   }
+  /* Force-inherit the column's font on every nested text node. The
+     !important ensures any global rule (Tailwind preflight, reading-
+     typography.css, etc.) loses to the inheritance chain we want. */
+  .boh-content :where(p, h1, h2, h3, h4, h5, h6, span, li, ul, ol, button, a) {
+    font-family: inherit !important;
+  }
 
   .boh-top {
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
-  .boh-top-spacer { flex: 1; }
 
   /* ── Level badge ─────────────────────────────────────────────
      Purple gradient pill with a soft cyan inner highlight. No gold. */
@@ -428,7 +367,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     align-items: center;
     padding: 0.3rem 0.75rem;
     border-radius: 999px;
-    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-family: 'Assistant', system-ui, sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -445,54 +384,10 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
       inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
 
-  /* ── Bookmark button ─────────────────────────────────────────
-     Dark outline square. No gold. Filled-icon state when pressed. */
-  .boh-bookmark {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: 8px;
-    background: var(--bo-surface-elevated);
-    border: 1px solid var(--bo-border);
-    color: var(--bo-text-secondary);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition:
-      background-color 160ms ease,
-      border-color 160ms ease,
-      color 160ms ease,
-      box-shadow 160ms ease,
-      transform 160ms ease;
-  }
-  .boh-bookmark:hover {
-    background: var(--bo-purple-soft);
-    border-color: var(--bo-border-strong);
-    color: var(--bo-text-primary);
-  }
-  .boh-bookmark:focus-visible {
-    outline: 2px solid var(--bo-focus-ring);
-    outline-offset: 2px;
-  }
-  .boh-bookmark[aria-pressed='true'] {
-    background: var(--bo-purple-soft);
-    border-color: var(--bo-border-accent);
-    color: var(--bo-cyan);
-    box-shadow: var(--bo-glow-cyan);
-  }
-  .boh-bookmark[aria-pressed='true'] .boh-bookmark-icon path {
-    fill: currentColor;
-  }
-  .boh-bookmark-icon {
-    width: 18px;
-    height: 18px;
-  }
-
   /* ── Title / subtitle / credits ──────────────────────────────── */
   .boh-title {
     margin: 0;
-    font-family: 'Spectral', 'Frank Ruhl Libre', ui-serif, Georgia, serif;
+    font-family: 'Assistant', system-ui, sans-serif;
     font-weight: 600;
     font-size: clamp(1.6rem, 2.4vw, 2.4rem);
     line-height: 1.15;
@@ -500,8 +395,15 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     color: var(--bo-text-primary);
   }
 
+  /* Editorial elements share the same Hebrew serif as the title
+     (Frank Ruhl Libre via the Spectral stack). Gives the whole hero
+     a unified editorial voice instead of a serif title floating above
+     a sans body. CTAs keep the default sans font for action clarity.
+     !important guards against any global rule (Tailwind preflight,
+     reading-typography, etc.) that might otherwise force a sans font. */
   .boh-subtitle {
     margin: 0;
+    font-family: 'Assistant', system-ui, sans-serif !important;
     font-size: clamp(0.95rem, 1.3vw, 1.05rem);
     line-height: 1.55;
     color: var(--bo-text-secondary);
@@ -509,6 +411,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
 
   .boh-credits {
     margin: 0;
+    font-family: 'Assistant', system-ui, sans-serif !important;
     font-size: 0.85rem;
     color: var(--bo-text-muted);
     font-style: italic;
@@ -530,8 +433,13 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
     display: flex;
     flex-wrap: wrap;
     gap: 0.85rem 1.5rem;
+    font-family: 'Assistant', system-ui, sans-serif !important;
     font-size: 0.875rem;
     color: var(--bo-text-secondary);
+  }
+  .boh-meta-item,
+  .boh-meta-item span {
+    font-family: inherit;
   }
   .boh-meta-item {
     display: inline-flex;
@@ -613,8 +521,7 @@ const levelLabel = level && levelKey ? t(levelKey, language) : '';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .boh-cta,
-    .boh-bookmark {
+    .boh-cta {
       transition: none;
     }
     .boh-cta:hover {

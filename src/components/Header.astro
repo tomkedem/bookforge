@@ -163,7 +163,10 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   }
 
   :global(.dark) .yuval-header {
-    background: linear-gradient(to bottom, #1a1a1f, #141418);
+    /* Flat charcoal black — no gradient, so the surface doesn't pick
+       up perceived warmth from the gold logo / sepia hairline beside
+       it. Single neutral dark gray, near-black. */
+    background: #0d0d0d;
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.15),
       0 4px 12px rgba(0, 0, 0, 0.1);
