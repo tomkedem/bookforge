@@ -493,12 +493,12 @@ export const translations: Translations = {
   // ───────────────────────────────────────────────────────────────────────────
 
   // ── library.galaxy.* — main screen chrome ──────────────────────────────────
-  'library.galaxy.title':           { he: 'הספרייה החיה שלך',                                                 en: 'Your Living Library',                                                          es: 'Tu biblioteca viva' },
-  'library.galaxy.subtitle':        { he: 'כל ספר, קורס, סדרה, סיכום או מאמר שאתה מעלה הופך לחלק ממערכת ידע חכמה', en: 'Every book, course, series, summary or article you add becomes part of one smart knowledge system', es: 'Cada libro, curso, serie, resumen o artículo que añades se vuelve parte de un sistema de conocimiento inteligente' },
-  'library.galaxy.welcome':         { he: 'ברוך הבא למרחב הידע שלך',                                          en: 'Welcome to your knowledge space',                                              es: 'Bienvenido a tu espacio de conocimiento' },
+  'library.galaxy.title':           { he: 'מרחב הידע',                                                        en: 'The Knowledge Space',                                                          es: 'El espacio de conocimiento' },
+  'library.galaxy.subtitle':        { he: 'ספרים, קורסים, סיכומים ומאמרי AI שעובדו ב-BookForge ומתחברים למרחב ידע חכם ומקושר.', en: 'Books, courses, summaries and AI articles processed by BookForge and organized into a connected smart knowledge space.', es: 'Libros, cursos, resúmenes y artículos de IA procesados por BookForge y organizados en un espacio de conocimiento inteligente y conectado.' },
+  'library.galaxy.welcome':         { he: 'ברוך הבא למרחב הידע',                                              en: 'Welcome to the Knowledge Space',                                               es: 'Bienvenido al espacio de conocimiento' },
   'library.galaxy.searchPlaceholder': { he: 'חפש ספרים, קורסים, סדרות, מאמרים ונושאים',                       en: 'Search books, courses, series, articles and topics',                            es: 'Busca libros, cursos, series, artículos y temas' },
-  'library.galaxy.primaryCta':      { he: 'הוסף ספר, מאמר או קורס',                                           en: 'Add a book, article or course',                                                 es: 'Añadir un libro, artículo o curso' },
-  'library.galaxy.secondaryCta':    { he: 'גלה איך זה עובד',                                                 en: 'See how it works',                                                              es: 'Descubre cómo funciona' },
+  'library.galaxy.primaryCta':      { he: 'עיין בתכנים',                                                       en: 'Browse content',                                                                es: 'Explorar contenido' },
+  'library.galaxy.secondaryCta':    { he: 'איך BookForge מעבד תכנים',                                          en: 'How BookForge processes content',                                               es: 'Cómo BookForge procesa contenido' },
   'library.galaxy.loading':         { he: 'טוען את הספרייה שלך',                                              en: 'Loading your library',                                                          es: 'Cargando tu biblioteca' },
   'library.galaxy.error':           { he: 'לא הצלחנו לטעון את הספרייה. נסה שוב בעוד רגע',                     en: "We couldn't load your library. Try again in a moment",                          es: 'No pudimos cargar tu biblioteca. Inténtalo de nuevo en un momento' },
 
@@ -580,7 +580,7 @@ export const translations: Translations = {
   'library.recommendation.basedOnYourLibrary':{ he: 'על בסיס הספרייה שלך',               en: 'Based on your library',                es: 'Basado en tu biblioteca' },
   'library.recommendation.becauseRelatedTo':  { he: 'כי זה קשור ל"{{title}}"',           en: 'Because it is related to "{{title}}"',  es: 'Porque está relacionado con "{{title}}"' },
   'library.recommendation.more':              { he: 'עוד המלצות',                         en: 'More recommendations',                  es: 'Más recomendaciones' },
-  'library.recommendation.none':              { he: 'אין עדיין המלצות. הוסף עוד תכנים והמלצות יופיעו כאן', en: 'No recommendations yet. Add more content and they will appear here', es: 'Aún no hay recomendaciones. Añade más contenido y aparecerán aquí' },
+  'library.recommendation.none':              { he: 'עדיין אין המלצות. ככל שמרחב הידע יתרחב, המלצות יופיעו כאן.', en: 'No recommendations yet. As the knowledge space grows, recommendations will appear here.', es: 'Aún no hay recomendaciones. A medida que el espacio de conocimiento crezca, aparecerán aquí.' },
 
   // ── library.action.* — AI assistant toolbar ────────────────────────────────
   'library.action.aiAssistant':       { he: 'עוזר AI',                       en: 'AI assistant',                  es: 'Asistente IA' },
@@ -602,7 +602,7 @@ export const translations: Translations = {
   'library.search.clear':         { he: 'נקה חיפוש',                   en: 'Clear search',                es: 'Limpiar búsqueda' },
 
   // ── library.empty.* — empty states per content kind ────────────────────────
-  'library.empty.items':       { he: 'אין עדיין פריטים בספרייה. הוסף ספר, מאמר או קורס כדי להתחיל', en: 'No items yet. Add a book, article or course to get started',                  es: 'Aún no hay elementos. Añade un libro, artículo o curso para empezar' },
+  'library.empty.items':       { he: 'עדיין אין פריטים. תכנים שעוברים עיבוד ב-BookForge יופיעו כאן ברגע שיהיו מוכנים.', en: 'No items yet. Content processed by BookForge will appear here once it is ready.',                  es: 'Aún no hay elementos. Los contenidos procesados por BookForge aparecerán aquí en cuanto estén listos.' },
   'library.empty.articles':    { he: 'עדיין אין מאמרים',                                              en: 'No articles yet',                                                              es: 'Aún no hay artículos' },
   'library.empty.series':      { he: 'עדיין אין סדרות',                                               en: 'No series yet',                                                                es: 'Aún no hay series' },
   'library.empty.processing':  { he: 'אין כרגע פריטים בעיבוד',                                       en: 'No items currently processing',                                                es: 'No hay elementos en proceso ahora' },
