@@ -238,8 +238,8 @@ const { language } = Astro.props;
   .lh-cta:disabled { opacity: 0.7; }
   .lh-cta:focus-visible { box-shadow: var(--yuval-galaxy-glow-primary); }
 
-  /* ── Tablet & up: hero header becomes a row, core grows. ─────────── */
-  @media (min-width: 768px) {
+  /* ── Tablet (768–1023px): hero header becomes a row, core grows. ── */
+  @media (min-width: 768px) and (max-width: 1023px) {
     .lh { padding: 2.5rem 2.25rem; }
     .lh-header {
       flex-direction: row;
@@ -255,7 +255,25 @@ const { language } = Astro.props;
     }
   }
 
+  /* ── Desktop (≥1024px): hero text is centered above the galaxy stage.
+        The inline core is hidden because the LARGE central core lives in
+        library.astro's galaxy stage right below this hero. Showing two
+        cores would look duplicated and weaken the central anchor. ─── */
   @media (min-width: 1024px) {
-    .lh-core { width: 180px; height: 180px; }
+    .lh {
+      padding: 2.5rem 2.5rem 2rem;
+      text-align: center;
+    }
+    .lh-header {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0;
+      margin-block-end: 1.5rem;
+    }
+    .lh-text { text-align: center; }
+    .lh-subtitle { margin-inline: auto; }
+    .lh-ctas { justify-content: center; }
+    .lh-core { display: none; }
   }
 </style>

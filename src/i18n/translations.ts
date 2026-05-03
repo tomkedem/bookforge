@@ -501,6 +501,8 @@ export const translations: Translations = {
   'library.galaxy.secondaryCta':    { he: 'איך BookForge מעבד תכנים',                                          en: 'How BookForge processes content',                                               es: 'Cómo BookForge procesa contenido' },
   'library.galaxy.loading':         { he: 'טוען את הספרייה שלך',                                              en: 'Loading your library',                                                          es: 'Cargando tu biblioteca' },
   'library.galaxy.error':           { he: 'לא הצלחנו לטעון את הספרייה. נסה שוב בעוד רגע',                     en: "We couldn't load your library. Try again in a moment",                          es: 'No pudimos cargar tu biblioteca. Inténtalo de nuevo en un momento' },
+  'library.galaxy.explainerTitle':  { he: 'איך זה עובד',                                                       en: 'How it works',                                                                  es: 'Cómo funciona' },
+  'library.galaxy.explainerBody':   { he: 'תכנים שעוברים עיבוד אוטומטי ב-BookForge מתחברים למרחב ידע אחד שניתן לחפש, לקשר ולנווט בו.', en: 'Content automatically processed by BookForge connects into one searchable, navigable knowledge space.', es: 'Los contenidos procesados automáticamente por BookForge se conectan en un único espacio de conocimiento navegable y buscable.' },
 
   // ── library.itemType.* — display label per LibraryItemType ─────────────────
   'library.itemType.book':            { he: 'ספר',              en: 'Book',             es: 'Libro' },

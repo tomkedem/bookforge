@@ -1,0 +1,88 @@
+---
+/**
+ * KnowledgeSpaceCard — small explanation panel for the left sidebar.
+ *
+ * Tells the visitor (in one short sentence) what the knowledge space
+ * is and how content gets into it. Uses the neutral product wording
+ * agreed in the copy correction step:
+ *   - "מרחב הידע" / "The Knowledge Space"
+ *   - content is processed by BookForge (no user-upload phrasing)
+ *   - no payment / pricing implications
+ *
+ * Pure presentation. Accepts only `language`, no data.
+ */
+import type { Language } from '../../types/index';
+import { t } from '../../i18n';
+
+interface Props {
+  language: Language;
+}
+const { language } = Astro.props;
+---
+
+<section class="ksc" aria-label={t('library.galaxy.explainerTitle', language)}>
+  <header class="ksc-header">
+    <span class="ksc-dot" aria-hidden="true"></span>
+    <h2 class="ksc-title">{t('library.galaxy.explainerTitle', language)}</h2>
+  </header>
+  <p class="ksc-body">{t('library.galaxy.explainerBody', language)}</p>
+</section>
+
+<style>
+  .ksc {
+    position: relative;
+    padding: 1.25rem;
+    border: 1px solid var(--yuval-galaxy-border);
+    border-radius: var(--yuval-galaxy-panel-radius);
+    background-color: var(--yuval-galaxy-surface);
+    backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur));
+    box-shadow: var(--yuval-galaxy-glow-card);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  /* Subtle inner accent — uses the soft purple ambience to tie this
+     panel back to the galaxy core thematically. */
+  .ksc::after {
+    content: "";
+    position: absolute;
+    inset-block-start: -50%;
+    inset-inline-end: -30%;
+    width: 80%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle,
+      var(--yuval-galaxy-accent-purple) 0%,
+      transparent 65%);
+    opacity: 0.10;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .ksc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.625rem;
+  }
+  .ksc-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--yuval-galaxy-accent-purple);
+    box-shadow: var(--yuval-galaxy-glow-secondary);
+  }
+  .ksc-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--yuval-galaxy-text-muted);
+  }
+  .ksc-body {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--yuval-galaxy-text-muted);
+    margin: 0;
+  }
+</style>

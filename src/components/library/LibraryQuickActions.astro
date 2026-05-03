@@ -152,4 +152,21 @@ const navActionKeys: TranslationKey[] = [
     border-color: var(--yuval-galaxy-border-glow);
     box-shadow: var(--yuval-galaxy-glow-soft);
   }
+
+  /* ── Desktop (≥1024px): become a slim, glassy floating right rail.
+        Sticky so it stays visible as the galaxy stage scrolls past.
+        Slightly stronger blur and tighter padding fit the rail look. */
+  @media (min-width: 1024px) {
+    .lqa {
+      position: sticky;
+      inset-block-start: 5.5rem; /* clear the global header */
+      padding: 1.125rem 0.875rem;
+      backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur) + 4px));
+      -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur) + 4px));
+    }
+    .lqa-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+  }
 </style>

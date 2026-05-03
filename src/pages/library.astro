@@ -1,33 +1,43 @@
 ---
 /**
- * /library — Living Library, premium-foundation composition.
+ * /library — Living Library, static galaxy composition.
  *
- * Page is composition-only:
- *  • picks language from URL / props
- *  • loads mock catalog data through the utility surface
- *  • lays out the page subtree under .library-dark-showcase
- *  • plugs in the small library/* components
+ * Desktop (≥1024px) reshapes the page toward the visual reference:
  *
- * Visual upgrade in this prompt is mostly *inside* the components.
- * What this page contributes to the upgrade:
- *  - layered ambient backdrop (radial purple/blue + a soft top aurora)
- *  - clearer section rhythm and breathing room
- *  - a hairline divider between the hero band and the content body
+ *   ┌──────────────┬──────────────────────────┬──────────────┐
+ *   │  LEFT RAIL   │      CENTER STAGE        │  RIGHT RAIL  │
+ *   │              │                          │              │
+ *   │  Continue    │  LibraryHero (centered)  │  AI rail     │
+ *   │  KnowSpace   │  ┌──────────────────┐    │  (sticky,    │
+ *   │  Stats       │  │  ⊙ ORBITS + CORE │    │   slim,      │
+ *   │              │  │  + 6 floating    │    │   glassy)    │
+ *   │              │  │    LibraryCards  │    │              │
+ *   │              │  └──────────────────┘    │              │
+ *   ├──────────────┴──────────────────────────┴──────────────┤
+ *   │  Recent items grid (full center column on desktop)     │
+ *   │  Recommendation strip (full width)                      │
+ *   └─────────────────────────────────────────────────────────┘
  *
- * No carousel, no animation, no JS. Header stays controlled by the
- * global theme — out of scope for this step.
+ * Mobile / tablet: same components stack vertically. The galaxy stage
+ * collapses to a normal grid of cards — no absolute positioning, no
+ * core, no orbits (display:none). This keeps the phone usable.
+ *
+ * Composition only. Card rendering, badges, status, hovers all live
+ * inside their components. This page picks featured items, places
+ * them in the stage, and styles the stage geometry — nothing else.
  */
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import LibraryHero from '../components/library/LibraryHero.astro';
 import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
 import ContinueReadingCard from '../components/library/ContinueReadingCard.astro';
+import KnowledgeSpaceCard from '../components/library/KnowledgeSpaceCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import RecommendationStrip from '../components/library/RecommendationStrip.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
 
 import type { Language } from '../types/index';
-import type { LibraryItem, LibraryItemType } from '../types/library';
+import type { LibraryItem } from '../types/library';
 import { DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
 import { t } from '../i18n';
 import {
@@ -52,7 +62,7 @@ const requestedLanguage =
 const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
-// ── Data (only this page touches catalog utilities — DI) ──────────────────
+// ── Data (only this page calls catalog utilities — DI) ────────────────────
 const items = getMockLibraryItems();
 const stats = getLibraryStats(items);
 const continueItem = getContinueReadingItem(items);
@@ -61,10 +71,30 @@ const recommendedItems = continueItem
   ? getRecommendedItems(items, continueItem.id, 6)
   : [];
 
-const showcaseTypes: LibraryItemType[] = ['book', 'course', 'series', 'article'];
-const showcaseItems: LibraryItem[] = showcaseTypes
-  .map((type) => items.find((it) => it.type === type))
+// ── Featured items for the galaxy stage ───────────────────────────────────
+// Pick 6 items by slug to match the visual reference: a course, three
+// books, a course-lesson AI item, and an AI article. Skipped when an
+// item is missing (defensive) — the stage shows whatever it finds.
+const featuredSlugs = [
+  'ai-engineering',                                       // course
+  'Building-AI-Systems-with-MCP',                         // book — MCP
+  'practical-python-for-ai-engineering',                  // book — Python
+  'clean-code',                                           // book — Clean Code
+  'Lesson-1-Introduction-To-AI-Engineering-and-Generative-AI', // course_lesson AI
+  'mcp-tool-design',                                      // article — AI
+];
+const featuredItems: LibraryItem[] = featuredSlugs
+  .map((slug) => items.find((it) => it.slug === slug))
   .filter((it): it is LibraryItem => Boolean(it));
+
+// Pre-computed slot positions on desktop. Keeping this list as data
+// (not in CSS) lets the markup loop stay generic — Open/Closed if the
+// stage layout changes.
+const FEATURED_SLOTS = [
+  'galaxy-card-tl', 'galaxy-card-tr',
+  'galaxy-card-ml', 'galaxy-card-mr',
+  'galaxy-card-bl', 'galaxy-card-br',
+];
 ---
 
 <BaseLayout
@@ -80,47 +110,61 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     .library-dark-showcase scopes --yuval-galaxy-* dark tokens to this
     subtree only. It does not touch html.dark, the user's global theme
     preference, or any other route. Header above remains controlled by
-    the global theme — by design, per Prompt 7 contract.
+    the global theme — out of scope for this prompt.
   */}
   <div class="library-dark-showcase library-root" lang={language} dir={isRtl ? 'rtl' : 'ltr'}>
 
-    {/*
-      Decorative ambient layer. Layered radial gradients drawn on a
-      pseudo-element so they live behind everything, never block input,
-      and stay token-based. aria-hidden via the wrapper's `aria-hidden`
-      element below.
-    */}
+    {/* Decorative ambient backdrop. Aria-hidden, pointer-events:none. */}
     <div class="library-ambient" aria-hidden="true">
       <div class="library-aurora"></div>
     </div>
 
-    <LibraryHero language={language} />
-
-    <div class="library-divider" aria-hidden="true"></div>
-
     <div class="library-body">
 
-      <div class="library-col library-col-side">
+      {/* ── LEFT RAIL ─────────────────────────────────────────────── */}
+      <aside class="library-col library-col-left">
         <ContinueReadingCard item={continueItem} language={language} />
+        <KnowledgeSpaceCard language={language} />
         <LibraryStatsPanel stats={stats} language={language} />
-      </div>
+      </aside>
 
-      <div class="library-col library-col-main">
+      {/* ── CENTER STAGE ──────────────────────────────────────────── */}
+      <div class="library-col library-col-center">
 
-        {showcaseItems.length > 0 && (
-          <section class="library-section" aria-label={t('library.galaxy.welcome', language)}>
-            <header class="library-section-header">
-              <span class="library-section-dot" aria-hidden="true"></span>
-              <h2 class="library-section-title">{t('library.galaxy.welcome', language)}</h2>
-            </header>
-            <div class="library-card-grid">
-              {showcaseItems.map((item) => (
-                <LibraryCard item={item} language={language} />
-              ))}
+        <LibraryHero language={language} />
+
+        {/*
+          Galaxy stage. On desktop this becomes a tall canvas with the
+          core centered, three concentric orbit rings, and 6 floating
+          LibraryCards positioned around the core via .galaxy-card-*
+          slot classes. On mobile it collapses to a simple vertical
+          grid of cards (no core, no orbits — display:none).
+        */}
+        <div class="library-galaxy" aria-label={t('library.galaxy.welcome', language)}>
+
+          {/* Decorative orbits + core (desktop only via CSS). */}
+          <div class="galaxy-orbit galaxy-orbit-1" aria-hidden="true"></div>
+          <div class="galaxy-orbit galaxy-orbit-2" aria-hidden="true"></div>
+          <div class="galaxy-orbit galaxy-orbit-3" aria-hidden="true"></div>
+
+          <div class="galaxy-core" aria-hidden="true">
+            <div class="galaxy-core-aura"></div>
+            <div class="galaxy-core-orb"></div>
+            <div class="galaxy-core-node galaxy-core-node-1"></div>
+            <div class="galaxy-core-node galaxy-core-node-2"></div>
+            <div class="galaxy-core-node galaxy-core-node-3"></div>
+          </div>
+
+          {/* Floating cards. On mobile these are normal grid items;
+              on desktop they jump to absolute positions via slot class. */}
+          {featuredItems.map((item, i) => (
+            <div class={`galaxy-card ${FEATURED_SLOTS[i] ?? ''}`}>
+              <LibraryCard item={item} language={language} variant="compact" />
             </div>
-          </section>
-        )}
+          ))}
+        </div>
 
+        {/* Recent items — sits below the stage on desktop, normal grid */}
         <section class="library-section">
           <header class="library-section-header">
             <span class="library-section-dot library-section-dot-alt" aria-hidden="true"></span>
@@ -135,20 +179,32 @@ const showcaseItems: LibraryItem[] = showcaseTypes
 
       </div>
 
-      <LibraryQuickActions language={language} />
+      {/* ── RIGHT RAIL ────────────────────────────────────────────── */}
+      <div class="library-col library-col-right">
+        <LibraryQuickActions language={language} />
+      </div>
 
     </div>
 
+    {/* ── Bottom recommendation strip — full body width ──────────── */}
     <RecommendationStrip items={recommendedItems} language={language} />
 
   </div>
 </BaseLayout>
 
 <style>
-  /* ──────────────────────────────────────────────────────────────────────
-     Page-level shell only. Component chrome lives inside components.
-     RTL flips automatically via CSS Logical Properties.
-     ────────────────────────────────────────────────────────────────────── */
+  /* ──────────────────────────────────────────────────────────────────
+     Page-level shell + galaxy stage geometry.
+
+     The stage is built from FOUR layers (z-order from back to front):
+       0. Decorative orbits (1px borders, low opacity)
+       1. Decorative core   (radial-gradient orb + aura + 3 nodes)
+       2. Floating cards    (real LibraryCard, real link semantics)
+       3. Hero text         (above the stage in the column)
+
+     On mobile the stage is a normal flex column — orbits/core hidden,
+     cards laid out as a vertical list. No absolute positioning.
+     ────────────────────────────────────────────────────────────────── */
 
   .library-root {
     position: relative;
@@ -165,7 +221,7 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     overflow: hidden;
   }
 
-  /* ── Ambient backdrop layer ───────────────────────────────────────── */
+  /* Ambient backdrop layer */
   .library-ambient {
     position: absolute;
     inset: 0;
@@ -173,9 +229,6 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     z-index: 0;
     overflow: hidden;
   }
-  /* "Aurora" — a wide soft band of cyan light at the upper third of
-     the page. Gives the screen a sense of horizon and depth without
-     adding particles or animation. */
   .library-aurora {
     position: absolute;
     inset-block-start: 8%;
@@ -188,30 +241,19 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     opacity: 0.10;
     filter: blur(60px);
   }
-
-  /* All real content sits above the ambient layer. */
   .library-root > :not(.library-ambient) {
     position: relative;
     z-index: 1;
   }
 
-  /* ── Divider between hero band and content body ───────────────────── */
-  .library-divider {
-    max-width: 1200px;
-    margin: 0 auto 1.5rem;
-    height: 1px;
-    background: var(--yuval-galaxy-divider);
-  }
-
-  /* ── Body grid: mobile vertical, desktop 3-column ──────────────────── */
+  /* ── Body grid: mobile single column, desktop 3-column ─────────── */
   .library-body {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr;
     gap: 1.25rem;
   }
-
   .library-col {
     display: flex;
     flex-direction: column;
@@ -219,8 +261,19 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     min-width: 0;
   }
 
-  /* ── Section wrapper for inline groups in the main column ─────────── */
+  /* ── Galaxy stage — mobile baseline (normal vertical flow) ─────── */
+  .library-galaxy {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+    margin-block: 1rem 0;
+  }
+  /* Mobile: orbits and core are decorative-desktop-only */
+  .galaxy-orbit, .galaxy-core { display: none; }
+
+  /* ── Recent items section ──────────────────────────────────────── */
   .library-section {
+    margin-block-start: 1.5rem;
     padding: 1.375rem;
     border: 1px solid var(--yuval-galaxy-border);
     border-radius: var(--yuval-galaxy-panel-radius);
@@ -255,37 +308,167 @@ const showcaseItems: LibraryItem[] = showcaseTypes
     margin: 0;
     color: var(--yuval-galaxy-text-muted);
   }
-
   .library-card-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.875rem;
   }
 
-  /* ── Tablet (≥640px): 2-up cards, more outer padding ──────────────── */
+  /* ── Tablet (≥640px): 2-up cards, more outer padding ───────────── */
   @media (min-width: 640px) {
     .library-root { padding: 2rem 1.5rem 5rem; }
-    .library-card-grid {
+    .library-card-grid,
+    .library-galaxy {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  /* ── Desktop (≥1024px): 3-column body, fuller rhythm ──────────────── */
+  /* ── Desktop (≥1024px): 3-column rails + tall galaxy stage ─────── */
   @media (min-width: 1024px) {
     .library-root { padding: 2.5rem 2rem 6rem; }
+
     .library-body {
-      grid-template-columns: minmax(260px, 1fr) minmax(0, 2.2fr) minmax(260px, 1fr);
+      grid-template-columns: 240px minmax(0, 1fr) 240px;
       gap: 1.5rem;
+      align-items: start;
     }
-    .library-card-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    /* Each rail keeps a sane min-height anchor without forcing height. */
+    .library-col-left,
+    .library-col-right { min-height: 100%; }
+
+    /*
+      Galaxy stage becomes an absolute canvas. Height is intentional:
+      tall enough for hero+core+cards to breathe, capped to keep the
+      page navigable. The cards inside use absolute positioning per
+      slot class below.
+    */
+    .library-galaxy {
+      position: relative;
+      display: block;
+      height: 640px;
+      margin-block: 1.25rem 0;
+      /* Allow the floating cards to extend slightly outside the
+         column without causing horizontal scroll — the page-level
+         .library-root has overflow:hidden as the safety net. */
+      overflow: visible;
+    }
+
+    /* ── Decorative orbit rings ─────────────────────────────────── */
+    .galaxy-orbit {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid var(--yuval-galaxy-border-strong);
+      pointer-events: none;
+    }
+    .galaxy-orbit-1 { width: 320px; height: 320px; opacity: 0.45; }
+    .galaxy-orbit-2 { width: 480px; height: 480px; opacity: 0.30;
+                      border-color: var(--yuval-galaxy-border-glow); }
+    .galaxy-orbit-3 { width: 640px; height: 640px; opacity: 0.18; }
+
+    /* ── Central knowledge core ─────────────────────────────────── */
+    .galaxy-core {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 240px;
+      height: 240px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .galaxy-core-aura {
+      position: absolute;
+      inset: -30px;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+        var(--yuval-galaxy-accent-purple) 0%,
+        transparent 65%);
+      opacity: 0.55;
+      filter: blur(28px);
+    }
+    .galaxy-core-orb {
+      position: absolute;
+      inset: 25%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%,
+        var(--yuval-galaxy-accent-cyan) 0%,
+        var(--yuval-galaxy-accent-purple) 70%);
+      box-shadow: var(--yuval-galaxy-glow-core);
+    }
+    /* Three small "nodes" sitting on the inner orbit. Decorative
+       only — they do not represent items. */
+    .galaxy-core-node {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--yuval-galaxy-accent-cyan);
+      box-shadow: var(--yuval-galaxy-glow-soft);
+    }
+    .galaxy-core-node-1 { top: -2%;   left: 50%; transform: translateX(-50%); }
+    .galaxy-core-node-2 { top: 50%;   left: -2%; transform: translateY(-50%); }
+    .galaxy-core-node-3 { top: 50%;   right: -2%; transform: translateY(-50%);
+                          background-color: var(--yuval-galaxy-accent-purple); }
+
+    /* ── Floating cards: 6 absolute slots around the core ───────── */
+    .galaxy-card {
+      position: absolute;
+      width: 220px;
+      transition:
+        transform var(--yuval-galaxy-motion-normal) var(--yuval-galaxy-ease-out);
+      z-index: 2;
+    }
+    /* Each slot defines position + tilt via a CSS variable so the
+       hover/focus rule below can compose `rotate(var(--tilt)) translateY(-2px)`. */
+    .galaxy-card-tl { top: 0;        inset-inline-start: 0;   --tilt: -4deg; transform: rotate(-4deg); }
+    .galaxy-card-tr { top: 0;        inset-inline-end:   0;   --tilt:  4deg; transform: rotate( 4deg); }
+    .galaxy-card-ml { top: 38%;      inset-inline-start: -2%; --tilt: -2deg; transform: rotate(-2deg); }
+    .galaxy-card-mr { top: 42%;      inset-inline-end:   -2%; --tilt:  3deg; transform: rotate( 3deg); }
+    .galaxy-card-bl { bottom: 0;     inset-inline-start: 12%; --tilt: -3deg; transform: rotate(-3deg); }
+    .galaxy-card-br { bottom: 0;     inset-inline-end:   12%; --tilt:  3deg; transform: rotate( 3deg); }
+
+    /* On hover/focus a floating card straightens slightly and lifts —
+       reads as "this is real and interactive". Token-based motion. */
+    .galaxy-card:hover,
+    .galaxy-card:focus-within {
+      transform: rotate(calc(var(--tilt) * 0.4)) translateY(-3px);
+      z-index: 3;
     }
   }
 
-  /* ── Wide desktop (≥1280px): 3-up cards in main column ────────────── */
+  /* ── Wide desktop (≥1280px): bigger stage, wider cards ─────────── */
   @media (min-width: 1280px) {
+    .library-body {
+      grid-template-columns: 260px minmax(0, 1fr) 260px;
+      gap: 1.75rem;
+    }
+    .library-galaxy {
+      height: 720px;
+    }
+    .galaxy-card { width: 240px; }
+    .galaxy-orbit-1 { width: 360px; height: 360px; }
+    .galaxy-orbit-2 { width: 520px; height: 520px; }
+    .galaxy-orbit-3 { width: 700px; height: 700px; }
+    .galaxy-core    { width: 280px; height: 280px; }
+
     .library-card-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* ── Reduced motion: drop the hover transform animation ────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .galaxy-card { transition: none; }
+    .galaxy-card:hover,
+    .galaxy-card:focus-within {
+      /* Keep tilt at rest, no lift; the tilt itself is static, not
+         animated, so this is just disabling the hover settle. */
+      transform: rotate(var(--tilt, 0deg));
     }
   }
 </style>
