@@ -8,6 +8,13 @@ interface Props {
   language?: Language;
   availableLanguages?: Language[];
   showLanguageToggle?: boolean;
+  /**
+   * Renders the rotating literary quote (desktop strip + mobile bar).
+   * Defaults to `true` to preserve existing behaviour on every existing
+   * route. /library opts out so the dashboard reads as a focused product
+   * surface, not a content page.
+   */
+  showQuote?: boolean;
   class?: string;
 }
 
@@ -15,6 +22,7 @@ const {
   language = SOURCE_LANGUAGE,
   availableLanguages,
   showLanguageToggle = true,
+  showQuote = true,
   class: className
 } = Astro.props;
 
@@ -68,12 +76,14 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       <span class="logo-ornament" aria-hidden="true">✦</span>
     </a>
 
-    <div class="quote-container hidden sm:block">
-      <div class="quote-stack">
-        <p class="quote-text" id="header-quote"></p>
-        <cite class="quote-author" id="header-quote-author"></cite>
+    {showQuote && (
+      <div class="quote-container hidden sm:block">
+        <div class="quote-stack">
+          <p class="quote-text" id="header-quote"></p>
+          <cite class="quote-author" id="header-quote-author"></cite>
+        </div>
       </div>
-    </div>
+    )}
 
     <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
       <ThemeToggle />
@@ -87,12 +97,14 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   </div>
 </header>
 
-<div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar">
-  <div class="mobile-quote-track" id="mobile-quote-track">
-    <span class="mobile-quote-text" id="mobile-quote"></span>
-    <span class="mobile-quote-author-inline" id="mobile-quote-author"></span>
+{showQuote && (
+  <div class="mobile-quote-bar sm:hidden" id="mobile-quote-bar">
+    <div class="mobile-quote-track" id="mobile-quote-track">
+      <span class="mobile-quote-text" id="mobile-quote"></span>
+      <span class="mobile-quote-author-inline" id="mobile-quote-author"></span>
+    </div>
   </div>
-</div>
+)}
 
 <script is:inline>
   /* Trigger the one-time gold shimmer on the Yuval wordmark.

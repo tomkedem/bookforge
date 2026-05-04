@@ -88,6 +88,42 @@ export function getStatusAccentVar(status: LibraryItemStatus): string {
   return `var(--yuval-galaxy-status-${status})`;
 }
 
+// ── Type → glyph family mapping ────────────────────────────────────────────
+
+/**
+ * A small abstract glyph family for each LibraryItemType. Components can
+ * use this id to pick a generic decorative icon — drives presentation by
+ * type alone, never by item title or slug.
+ *
+ * The list is intentionally short: there are far fewer glyph families than
+ * underlying types so the visual language stays calm. `course_lesson` rolls
+ * up under 'course', `lesson_summary` under 'document', etc.
+ */
+export type LibraryItemGlyph =
+  | 'book'
+  | 'course'
+  | 'article'
+  | 'series'
+  | 'document'
+  | 'slides'
+  | 'lab'
+  | 'transcript';
+
+export function getItemGlyph(type: LibraryItemType): LibraryItemGlyph {
+  switch (type) {
+    case 'book':           return 'book';
+    case 'course':         return 'course';
+    case 'course_lesson':  return 'course';
+    case 'article':        return 'article';
+    case 'series':         return 'series';
+    case 'lesson_summary': return 'document';
+    case 'slides':         return 'slides';
+    case 'lab':            return 'lab';
+    case 'transcript':     return 'transcript';
+    case 'document':       return 'document';
+  }
+}
+
 // ── Formatting ─────────────────────────────────────────────────────────────
 
 /**

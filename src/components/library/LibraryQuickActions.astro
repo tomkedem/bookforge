@@ -20,8 +20,15 @@ import { t } from '../../i18n';
 
 interface Props {
   language: Language;
+  /**
+   * default — full panel with AI sub-actions + nav (mobile / non-rail).
+   * rail    — slim vertical pill toolbar with only the three top-level
+   *           entries: AI assistant, bookmarks, history. Used by /library
+   *           desktop dashboard.
+   */
+  variant?: 'default' | 'rail';
 }
-const { language } = Astro.props;
+const { language, variant = 'default' } = Astro.props;
 
 const aiActionKeys: TranslationKey[] = [
   'library.action.askAboutItem',
@@ -34,38 +41,94 @@ const navActionKeys: TranslationKey[] = [
   'library.action.bookmarks',
   'library.action.history',
 ];
+
+// Rail entries: just three top-level actions, each gets a small inline-SVG
+// glyph. All glyphs are aria-hidden — the accessible name comes from the
+// button's translated text label.
+type RailEntry = {
+  labelKey: TranslationKey;
+  ariaKey: TranslationKey;
+  glyph: 'sparkle' | 'bookmark' | 'clock';
+};
+const railEntries: RailEntry[] = [
+  { labelKey: 'library.action.aiAssistant', ariaKey: 'library.action.openAssistant', glyph: 'sparkle' },
+  { labelKey: 'library.action.bookmarks',   ariaKey: 'library.action.bookmarks',     glyph: 'bookmark' },
+  { labelKey: 'library.action.history',     ariaKey: 'library.action.history',       glyph: 'clock' },
+];
+
+const isRail = variant === 'rail';
 ---
 
-<aside class="lqa" aria-label={t('library.a11y.openAssistant', language)}>
-  <header class="lqa-header">
-    <span class="lqa-dot" aria-hidden="true"></span>
-    <h2 class="lqa-title">{t('library.action.aiAssistant', language)}</h2>
-  </header>
+{isRail ? (
+  <aside class="lqa lqa-rail" aria-label={t('library.action.aiAssistant', language)}>
+    <ul class="lqa-rail-list">
+      {railEntries.map((entry) => (
+        <li>
+          <button
+            type="button"
+            class="lqa-rail-btn"
+            disabled
+            aria-disabled="true"
+            aria-label={t(entry.ariaKey, language)}
+            title={t(entry.labelKey, language)}
+          >
+            <span class="lqa-rail-icon" aria-hidden="true">
+              {entry.glyph === 'sparkle' && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"></path>
+                  <path d="M19 14l.7 1.7L21 16l-1.3.5L19 18l-.7-1.5L17 16l1.3-.3z"></path>
+                </svg>
+              )}
+              {entry.glyph === 'bookmark' && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 4h12v17l-6-4-6 4z"></path>
+                </svg>
+              )}
+              {entry.glyph === 'clock' && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 7v5l3 2"></path>
+                </svg>
+              )}
+            </span>
+            <span class="sr-only">{t(entry.labelKey, language)}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </aside>
+) : (
+  <aside class="lqa" aria-label={t('library.a11y.openAssistant', language)}>
+    <header class="lqa-header">
+      <span class="lqa-dot" aria-hidden="true"></span>
+      <h2 class="lqa-title">{t('library.action.aiAssistant', language)}</h2>
+    </header>
 
-  <ul class="lqa-list">
-    {aiActionKeys.map((key) => (
-      <li>
-        <button type="button" class="lqa-btn" disabled aria-disabled="true">
-          <span class="lqa-btn-label">{t(key, language)}</span>
-          <span class="lqa-chevron" aria-hidden="true">›</span>
-        </button>
-      </li>
-    ))}
-  </ul>
+    <ul class="lqa-list">
+      {aiActionKeys.map((key) => (
+        <li>
+          <button type="button" class="lqa-btn" disabled aria-disabled="true">
+            <span class="lqa-btn-label">{t(key, language)}</span>
+            <span class="lqa-chevron" aria-hidden="true">›</span>
+          </button>
+        </li>
+      ))}
+    </ul>
 
-  <div class="lqa-divider" aria-hidden="true"></div>
+    <div class="lqa-divider" aria-hidden="true"></div>
 
-  <ul class="lqa-list">
-    {navActionKeys.map((key) => (
-      <li>
-        <button type="button" class="lqa-btn lqa-btn-quiet" disabled aria-disabled="true">
-          <span class="lqa-btn-label">{t(key, language)}</span>
-          <span class="lqa-chevron" aria-hidden="true">›</span>
-        </button>
-      </li>
-    ))}
-  </ul>
-</aside>
+    <ul class="lqa-list">
+      {navActionKeys.map((key) => (
+        <li>
+          <button type="button" class="lqa-btn lqa-btn-quiet" disabled aria-disabled="true">
+            <span class="lqa-btn-label">{t(key, language)}</span>
+            <span class="lqa-chevron" aria-hidden="true">›</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </aside>
+)}
 
 <style>
   .lqa {
@@ -167,6 +230,81 @@ const navActionKeys: TranslationKey[] = [
     .lqa-btn {
       padding: 0.5rem 0.75rem;
       font-size: 0.8125rem;
+    }
+  }
+
+  /* ── Rail variant — slim vertical pill toolbar (desktop dashboard) ──
+     Becomes a tall pill that hugs the right edge of the central stage.
+     On mobile we collapse to a horizontal pill so the rail still works
+     when used outside the desktop dashboard.
+  */
+  .lqa-rail {
+    display: inline-flex;
+    padding: 0.5rem;
+    border-radius: 999px;
+    background-color: var(--yuval-galaxy-surface);
+    border: 1px solid var(--yuval-galaxy-border-strong);
+    box-shadow: var(--yuval-galaxy-glow-card);
+    backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur) + 4px));
+    -webkit-backdrop-filter: blur(calc(var(--yuval-galaxy-card-blur) + 4px));
+  }
+  .lqa-rail-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 0.375rem;
+  }
+  .lqa-rail-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--yuval-galaxy-text);
+    background-color: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    cursor: not-allowed;
+    transition:
+      border-color var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out),
+      background-color var(--yuval-galaxy-motion-fast) var(--yuval-galaxy-ease-out);
+  }
+  .lqa-rail-btn:disabled { opacity: 0.85; }
+  .lqa-rail-btn:focus-visible {
+    outline: none;
+    border-color: var(--yuval-galaxy-border-glow);
+    box-shadow: var(--yuval-galaxy-glow-soft);
+  }
+  .lqa-rail-icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    color: var(--yuval-galaxy-text-muted);
+  }
+  .lqa-rail-icon svg { width: 100%; height: 100%; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ── Desktop rail (≥1024px): rotate to vertical pill ─────────────── */
+  @media (min-width: 1024px) {
+    .lqa-rail {
+      flex-direction: column;
+      padding: 0.5rem;
+    }
+    .lqa-rail-list {
+      flex-direction: column;
+      gap: 0.5rem;
     }
   }
 </style>

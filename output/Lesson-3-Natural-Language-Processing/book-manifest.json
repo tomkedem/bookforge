@@ -1,0 +1,191 @@
+{
+  "book": {
+    "titles": {
+      "he": "AI Engineering"
+    },
+    "subtitles": {
+      "he": "Natural Language Processing שיעור 3: סיכום מעמיק ויישום מעשי"
+    },
+    "descriptions": {
+      "he": "**מרצה:** ערן סלע\n\n**תאריך:** 28/04/2026"
+    },
+    "chapters": [
+      {
+        "id": 1,
+        "file_slug": "chapter-01",
+        "type": "content",
+        "titles": {
+          "he": "מה זה בעצם NLP?"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 304,
+        "topics": []
+      },
+      {
+        "id": 2,
+        "file_slug": "chapter-02",
+        "type": "content",
+        "titles": {
+          "he": "אתגרי ה-NLP"
+        },
+        "sections": 4,
+        "has_images": false,
+        "word_count": 1700,
+        "topics": []
+      },
+      {
+        "id": 3,
+        "file_slug": "chapter-03",
+        "type": "content",
+        "titles": {
+          "he": "האבולוציה של ה-NLP:"
+        },
+        "sections": 2,
+        "has_images": true,
+        "word_count": 912,
+        "topics": []
+      },
+      {
+        "id": 4,
+        "file_slug": "chapter-04",
+        "type": "content",
+        "titles": {
+          "he": "זיהוי ישויות חכמות (NER - Named Entity Recognition)"
+        },
+        "sections": 0,
+        "has_images": false,
+        "word_count": 596,
+        "topics": []
+      },
+      {
+        "id": 5,
+        "file_slug": "chapter-05",
+        "type": "content",
+        "titles": {
+          "he": "Inverted Index (אינדקס הפוך)"
+        },
+        "sections": 2,
+        "has_images": true,
+        "word_count": 337,
+        "topics": []
+      },
+      {
+        "id": 6,
+        "file_slug": "chapter-06",
+        "type": "content",
+        "titles": {
+          "he": "Elasticsearch ו-OpenSearch"
+        },
+        "sections": 2,
+        "has_images": true,
+        "word_count": 443,
+        "topics": []
+      },
+      {
+        "id": 7,
+        "file_slug": "chapter-07",
+        "type": "content",
+        "titles": {
+          "he": "BELK Stack כלים עוצמתיים לניהול וניתוח נתונים בזמן אמת"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 241,
+        "topics": []
+      },
+      {
+        "id": 8,
+        "file_slug": "chapter-08",
+        "type": "content",
+        "titles": {
+          "he": "Word2Vec / GloVe"
+        },
+        "sections": 2,
+        "has_images": true,
+        "word_count": 297,
+        "topics": []
+      },
+      {
+        "id": 9,
+        "file_slug": "chapter-09",
+        "type": "content",
+        "titles": {
+          "he": "The Transformer Architecture"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 290,
+        "topics": []
+      },
+      {
+        "id": 10,
+        "file_slug": "chapter-10",
+        "type": "content",
+        "titles": {
+          "he": "GPT Training"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 127,
+        "topics": []
+      },
+      {
+        "id": 11,
+        "file_slug": "chapter-11",
+        "type": "content",
+        "titles": {
+          "he": "GPT Training – Unsupervised Pre-training"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 81,
+        "topics": []
+      },
+      {
+        "id": 12,
+        "file_slug": "chapter-12",
+        "type": "content",
+        "titles": {
+          "he": "GPT Instruction Tuning"
+        },
+        "sections": 0,
+        "has_images": true,
+        "word_count": 151,
+        "topics": []
+      },
+      {
+        "id": 13,
+        "file_slug": "chapter-13",
+        "type": "content",
+        "titles": {
+          "he": "מהתאוריה לקוד: הפרויקט המלווה"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 7795,
+        "topics": []
+      },
+      {
+        "id": 14,
+        "file_slug": "chapter-14",
+        "type": "content",
+        "titles": {
+          "he": "תרגול בית: הרחבת הפרויקט המלווה"
+        },
+        "sections": 5,
+        "has_images": false,
+        "word_count": 5590,
+        "topics": []
+      }
+    ],
+    "languages": [
+      "he"
+    ],
+    "credits": {
+      "author": {
+        "he": "תומר קדם"
+      }
+    }
+  }
+}

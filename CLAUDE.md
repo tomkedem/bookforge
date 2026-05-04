@@ -7,11 +7,14 @@
 1. **BookForge (pipeline)** — מקבלת ספר בעברית בפורמט Word (.docx),
    מפרקת לפרקים, כל פרק קובץ MD נפרד. כל פרק מתורגם לאנגלית אוטומטית.
 
-2. **Yuval (platform)** — פלטפורמת **למידה** דיגיטלית.
-   לא רק קריאת ספרים — אלא ניהול מסעי למידה שלמים:
-   - **קורסים** עם 12-16 ספרים בכל אחד
-   - **מסלולים** מומלצים (curated paths)
-   - **ספרים בודדים** במגוון נושאים
+2. **Yuval (platform)** — מרחב ידע דיגיטלי לתכני AI בלבד.
+   בשלב הנוכחי Yuval אינה פלטפורמת העלאות ציבורית ואינה ספרייה כללית.
+   היא מרכזת תכנים שעובדו דרך BookForge ומציגה אותם כחוויית למידה מסודרת:
+   - **סיכומי קורס מהנדס AI** שתומר לומד
+   - **קורס AI שתומר בונה** עם ספרים, מעבדות והדרכות
+   - **ספרי AI מקצועיים** שנכתבים ונערכים בהדרגה
+   - **מאמרי AI מקוריים** שתומר כותב
+   - **הדרכות מעשיות** סביב עבודה עם AI וכלי קוד
    - **התקדמות אישית**: מה הושלם, מה ממשיך, כמה זמן נשאר
 
 ## טכנולוגיות
@@ -23,6 +26,63 @@
 - Python execution בדפדפן: Pyodide
 - בדיקות: Vitest ליחידה, Playwright לרספונסיביות
 - Breakpoints: sm, md, lg, xl. Mobile-first תמיד.
+
+## Yuval Library Product Constraints
+
+- Yuval היא כרגע ספריית ידע חיה לתכני AI בלבד.
+- כל התוכן ב-Yuval הוא AI-related. אין כרגע תוכן שאינו AI.
+- רק בעל הפרויקט מוסיף תוכן.
+- התוכן מתווסף רק דרך ה-pipeline הקיים של BookForge בקוד.
+- אין כרגע public upload flow.
+- אין user-generated upload UI.
+- אין upload button behavior.
+- אין כרגע database-backed CMS.
+- אין כרגע payment או paywall פעיל.
+- אין להציג את Yuval כפלטפורמת העלאות ציבורית.
+- אין לכתוב UI copy שמרמז שמשתמשים יכולים להעלות ספרים או קבצים.
+- אין להשתמש בניסוחים כמו: upload a book, add your content, upload your files, create your own library.
+- המסגור הנכון: Yuval is a living AI knowledge space generated from AI content processed by the BookForge pipeline.
+
+### תוכן נוכחי ומתוכנן ל-Yuval
+
+- סיכומי קורס מהנדס AI שתומר לומד: כרגע 3 מתוך 16 סיכומים.
+- קורס AI שתומר בונה: כרגע שלב בסיסי עם כמה ספרים פעילים.
+- ספרי הבסיס הפעילים כוללים:
+  - AI Developer Fitness
+  - Building AI Systems with MCP
+  - Practical Python for AI Engineering
+- בנוסף קיימים 4 ספרים בשלבי תיקונים ועריכה אחרונים, ועוד ספר אחד בדרך.
+- Yuval תכלול גם מאמרי AI מקוריים שתומר כותב.
+- Yuval תכלול גם הדרכות מעשיות, למשל:
+  - מפקודה למוצר
+  - בניית מערכות סוכנים עם Claude Code
+
+## Yuval Library Visual Direction
+
+- עמוד `/library` הוא המסך המרכזי של Yuval לתכני AI.
+- היעד הוויזואלי הרשמי הוא dashboard עתידני בסגנון galaxy, לא דף תוכן רגיל.
+- בדסקטופ העמוד צריך להרגיש כמו מסך אחד קולנועי בגובה viewport, לא דף ארוך עם מקטעים מוערמים.
+- מבנה הדסקטופ הרצוי:
+  - top app bar נקי
+  - sidebar שמאלי פונקציונלי
+  - center hero עם galaxy stage
+  - luminous knowledge core במרכז
+  - floating tilted content cards סביב הליבה
+  - right vertical toolbar צר בלבד
+  - bottom recommendation strip משולב במסך
+- הרייל הימני בדסקטופ חייב להיות צר, בסגנון pill toolbar, ולהכיל רק: AI assistant, bookmarks, history.
+- אין לשים סטטיסטיקות, הסבר או המשך קריאה ברייל הימני בדסקטופ.
+- הסיידבר השמאלי בדסקטופ הוא המקום לכרטיסי המשך למידה, הסבר, סטטיסטיקות ותוכן מומלץ.
+- מובייל לא אמור להעתיק את layout ה-orbit של הדסקטופ.
+- מבנה מובייל רצוי:
+  - compact hero
+  - continue reading
+  - horizontal featured carousel
+  - knowledge explanation
+  - stats
+  - recommendations
+  - quick actions
+- כל שינוי עתידי ב-`/library` צריך לקרב את המסך ליעד הוויזואלי הזה ולא להפוך אותו לדשבורד גנרי.
 
 ## הקורס המרכזי שתומר כותב — "AI Developer Path"
 
@@ -149,10 +209,12 @@ ReadingLayout.astro מחבר event listeners ל-DOM
 - **LTR חזק** לכל בלוק קוד, גם בתוך עמוד עברי
 - **מספרי שורות**: תמיד מיושרים לימין (צמודים לקוד), כמו IDE
 
-### פלטפורמה (Yuval Redesign — תכנון, טרם יושם)
-- **דף בית = Galaxy view** ("המרחב שלך לידע אמיתי")
-  - כרטיס מרכזי גדול (recommended) + כרטיסים מסביב
-  - חוקי המרחב: מרחק מהמרכז = רלוונטיות
+### פלטפורמה (Yuval Redesign)
+- **עמוד `/library` = AI Galaxy Dashboard**
+  - מרחב ידע ל-AI בלבד, לא ספרייה כללית
+  - מסך דסקטופ אחד וקולנועי עם sidebar שמאלי, galaxy stage במרכז, toolbar ימני צר ו-recommendation strip תחתון
+  - כרטיסי תוכן מרחפים סביב luminous knowledge core
+  - אין להציג העלאת תכנים על ידי משתמשים
 - **דף ספר**: Hero + timeline פרקים + drawer ימני
 - **דף קריאה**: שני סוגים לפי `book.reading_mode`:
   - `lesson_module`: טאבים אופקיים (סיכום/תרגילים/דוגמאות/Q&A)

@@ -1,0 +1,14 @@
+{
+  "total_substitutions": 157,
+  "rules_fired": 8,
+  "by_rule": {
+    "09_multiple_spaces": 127,
+    "04_bold_dot_eol": 6,
+    "08_close_trailing_unbalanced": 6,
+    "06_hebrew_prefix_before_bold": 6,
+    "05_bold_space_bold": 5,
+    "07_bold_inside_quotes": 5,
+    "02_colon_space_before_close": 1,
+    "detect_code_block_start_fired": 1
+  }
+}

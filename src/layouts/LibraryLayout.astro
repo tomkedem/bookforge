@@ -1,0 +1,90 @@
+---
+/**
+ * LibraryLayout — focused dashboard chrome for /library.
+ *
+ * Composition over duplication: this layout wraps BaseLayout and only
+ * differs in three small ways:
+ *
+ *   1. The rotating literary quote (header strip + mobile bar) is
+ *      suppressed via `showQuote={false}`. Without it the global app
+ *      header reads as a clean top app bar — the way the official
+ *      visual reference for /library shows it.
+ *
+ *   2. Two scoped CSS variables are exposed on the slot wrapper so the
+ *      page can rely on a single source of truth for the dashboard
+ *      viewport math instead of repeating `calc(100dvh - 88px)` in
+ *      multiple places:
+ *        --library-header-offset      — height the global header
+ *                                       reserves above the dashboard
+ *                                       (~64px without quote, ~52px in
+ *                                       reading-mode, but reading-mode
+ *                                       does not apply on /library).
+ *        --library-dashboard-min-height — calc(100dvh - offset).
+ *
+ *   3. Reading progress is force-disabled — the dashboard is not a
+ *      reading surface, so the progress bar would be visual noise.
+ *
+ * No other route is affected. BaseLayout still renders the quote by
+ * default; only the explicit `showQuote={false}` we pass here turns
+ * it off, and only inside this slot subtree.
+ *
+ * The dark theming (`.library-dark-showcase`) stays scoped to the page
+ * content via the existing class on the page root — this layout does
+ * NOT toggle html.dark or any global theme state.
+ */
+import BaseLayout from './BaseLayout.astro';
+import type { Language } from '../types/index';
+
+interface Props {
+  title: string;
+  description?: string;
+  language?: Language;
+  availableLanguages?: Language[];
+  allowClientLanguageOverride?: boolean;
+  showLanguageToggle?: boolean;
+}
+
+const {
+  title,
+  description,
+  language,
+  availableLanguages,
+  allowClientLanguageOverride,
+  showLanguageToggle,
+} = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  language={language}
+  availableLanguages={availableLanguages}
+  allowClientLanguageOverride={allowClientLanguageOverride}
+  showLanguageToggle={showLanguageToggle}
+  showHeader={true}
+  showProgress={false}
+  showQuote={false}
+>
+  <div class="library-layout-shell">
+    <slot />
+  </div>
+</BaseLayout>
+
+<style is:global>
+  /*
+    Tokens for the /library dashboard viewport math.
+    Scoped to .library-layout-shell so they leak into the slotted page
+    subtree only — not into the rest of the app.
+
+    Values rationale:
+      Default Header is `h-16` = 64px. Without the quote strip below it,
+      that 64px is the full chrome the dashboard must clear. We add 8px
+      of breathing room so the central stage never butts directly into
+      the header on hairline-rounded viewport heights.
+  */
+  .library-layout-shell {
+    --library-header-offset: 72px;
+    --library-dashboard-min-height: calc(100dvh - var(--library-header-offset));
+    width: 100%;
+  }
+</style>

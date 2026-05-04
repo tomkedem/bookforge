@@ -19,6 +19,13 @@ interface Props {
   showHeader?: boolean;
   showProgress?: boolean;
   showLanguageToggle?: boolean;
+  /**
+   * Forwarded to Header. When false, the rotating literary quote
+   * (desktop strip + mobile bar) is suppressed. Defaults to true to
+   * preserve every existing route's behaviour. Used by LibraryLayout
+   * so the /library dashboard reads as a focused product surface.
+   */
+  showQuote?: boolean;
   class?: string;
 }
 
@@ -31,6 +38,7 @@ const {
   showHeader = true,
   showProgress = false,
   showLanguageToggle = true,
+  showQuote = true,
   class: className,
 } = Astro.props;
 
@@ -180,6 +188,7 @@ const isDev = import.meta.env.DEV;
         language={language}
         availableLanguages={availableLanguages}
         showLanguageToggle={showLanguageToggle}
+        showQuote={showQuote}
       />
     )}
 
