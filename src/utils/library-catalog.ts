@@ -21,6 +21,8 @@ import type {
   LibraryStats,
 } from '../types/library';
 import { libraryMockCatalog } from '../data/library-mock';
+import { getRealLibraryItems } from './library-adapter';
+import { isReadableLibraryItem } from './library-display';
 
 // ── Source ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,23 @@ export function getMockLibraryItems(): LibraryItem[] {
 /** Returns the full mock catalog (items + series + meta). */
 export function getMockLibraryCatalog(): LibraryCatalog {
   return libraryMockCatalog;
+}
+
+/**
+ * Primary source-of-truth for /library at build time.
+ *
+ * Returns real BookForge-discovered items when output/ contains content,
+ * otherwise falls back to mock data (so unit tests / CI without an
+ * output/ folder still get a populated catalog).
+ *
+ * Mock data is NEVER mixed with real data: it's all-or-nothing. This
+ * keeps the on-screen counts honest — once Tomer has any real content,
+ * the dashboard reflects only that, not made-up clean-code or legacy
+ * placeholders.
+ */
+export function getLibraryItems(): LibraryItem[] {
+  const real = getRealLibraryItems();
+  return real.length > 0 ? real : getMockLibraryItems();
 }
 
 // ── Lookup ──────────────────────────────────────────────────────────────────
@@ -208,6 +227,7 @@ export function filterLibraryItems(
 export function getLibraryStats(items: LibraryItem[]): LibraryStats {
   const stats: LibraryStats = {
     total: items.length,
+    readable: 0,
     byType: {},
     byStatus: {},
     byCategory: {},
@@ -217,6 +237,7 @@ export function getLibraryStats(items: LibraryItem[]): LibraryStats {
   };
 
   for (const it of items) {
+    if (isReadableLibraryItem(it)) stats.readable += 1;
     stats.byType[it.type] = (stats.byType[it.type] ?? 0) + 1;
     stats.byStatus[it.status] = (stats.byStatus[it.status] ?? 0) + 1;
     if (it.categoryKey) {

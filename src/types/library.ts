@@ -214,10 +214,32 @@ export interface LibraryCatalog {
 /** Aggregate counts for the sidebar "library stats" panel. */
 export interface LibraryStats {
   total: number;
+  /**
+   * Subset of `total` that the user can actually open right now (items
+   * with a safe, navigable href). Synthetic organizing items — like a
+   * course meta record without a route yet — are counted in `total`
+   * but excluded from `readable`. The stats panel surfaces this number
+   * as the headline figure to avoid claiming "X items" when only some
+   * of them are openable.
+   */
+  readable: number;
   byType: Partial<Record<LibraryItemType, number>>;
   byStatus: Partial<Record<LibraryItemStatus, number>>;
   byCategory: Record<string, number>;
   byLanguage: Partial<Record<Language, number>>;
   totalReadingMinutes: number;
   totalWordCount: number;
+}
+
+/**
+ * Per-course progress, fed by `_catalog.json` (totalLessons) and the
+ * actual count of discovered lesson items (availableLessons). Used to
+ * tell the user "3 of 16 lesson summaries available" without having
+ * to invent the planned-lesson number anywhere in the UI layer.
+ */
+export interface LibraryCourseProgress {
+  slug: string;
+  titles: LibraryLanguageMap;
+  available: number;
+  total: number;
 }

@@ -494,7 +494,7 @@ export const translations: Translations = {
 
   // ── library.galaxy.* — main screen chrome ──────────────────────────────────
   'library.galaxy.title':           { he: 'מרחב הידע',                                                        en: 'The Knowledge Space',                                                          es: 'El espacio de conocimiento' },
-  'library.galaxy.subtitle':        { he: 'ספרים, קורסים, סיכומים ומאמרי AI שעובדו ב-BookForge ומתחברים למרחב ידע חכם ומקושר.', en: 'Books, courses, summaries and AI articles processed by BookForge and organized into a connected smart knowledge space.', es: 'Libros, cursos, resúmenes y artículos de IA procesados por BookForge y organizados en un espacio de conocimiento inteligente y conectado.' },
+  'library.galaxy.subtitle':        { he: 'מרחב ידע חי לתכני AI: ספרי AI, קורסי AI, סיכומים, מאמרים והדרכות שעובדו ב-BookForge.', en: 'A living AI knowledge space: AI books, AI courses, summaries, articles and guides processed by BookForge.', es: 'Un espacio de conocimiento de IA vivo: libros, cursos, resúmenes, artículos y guías de IA procesados por BookForge.' },
   'library.galaxy.welcome':         { he: 'ברוך הבא למרחב הידע',                                              en: 'Welcome to the Knowledge Space',                                               es: 'Bienvenido al espacio de conocimiento' },
   'library.galaxy.searchPlaceholder': { he: 'חפש ספרים, קורסים, סדרות, מאמרים ונושאים',                       en: 'Search books, courses, series, articles and topics',                            es: 'Busca libros, cursos, series, artículos y temas' },
   'library.galaxy.primaryCta':      { he: 'עיין בתכנים',                                                       en: 'Browse content',                                                                es: 'Explorar contenido' },
@@ -569,10 +569,14 @@ export const translations: Translations = {
   // ── library.stats.* — stats panel (interpolated counts) ────────────────────
   'library.stats.title':            { he: 'סטטיסטיקות הספרייה',     en: 'Library stats',                  es: 'Estadísticas de la biblioteca' },
   'library.stats.totalItems':       { he: '{{n}} פריטים בסך הכל',    en: '{{n}} items in total',           es: '{{n}} elementos en total' },
-  'library.stats.booksCount':       { he: '{{n}} ספרים',             en: '{{n}} books',                    es: '{{n}} libros' },
-  'library.stats.coursesCount':     { he: '{{n}} קורסים',            en: '{{n}} courses',                  es: '{{n}} cursos' },
+  'library.stats.readableItems':    { he: '{{n}} פריטי תוכן זמינים', en: '{{n}} available content items',  es: '{{n}} elementos de contenido disponibles' },
+  'library.stats.booksCount':       { he: '{{n}} ספרי AI',            en: '{{n}} AI books',                 es: '{{n}} libros de IA' },
+  'library.stats.coursesCount':     { he: '{{n}} קורסי AI',           en: '{{n}} AI courses',               es: '{{n}} cursos de IA' },
+  'library.stats.lessonsCount':     { he: '{{n}} סיכומי שיעור',       en: '{{n}} lesson summaries',         es: '{{n}} resúmenes de clase' },
   'library.stats.seriesCount':      { he: '{{n}} סדרות',             en: '{{n}} series',                   es: '{{n}} series' },
   'library.stats.articlesCount':    { he: '{{n}} מאמרים',            en: '{{n}} articles',                 es: '{{n}} artículos' },
+  'library.stats.lessonsAvailable': { he: '{{available}} מתוך {{total}} סיכומי שיעור זמינים', en: '{{available}} of {{total}} lesson summaries available', es: '{{available}} de {{total}} resúmenes de clase disponibles' },
+  'library.stats.courseProgressTitle': { he: 'סיכומי קורס מהנדס AI', en: 'AI Engineer Course Summaries', es: 'Resúmenes del curso de Ingeniero de IA' },
   'library.stats.readingMinutes':   { he: '{{n}} דקות קריאה',        en: '{{n}} reading minutes',          es: '{{n}} minutos de lectura' },
   'library.stats.words':            { he: '{{n}} מילים',              en: '{{n}} words',                    es: '{{n}} palabras' },
   'library.stats.updatedRecently':  { he: 'עודכן לאחרונה {{when}}',   en: 'Updated {{when}}',               es: 'Actualizado {{when}}' },

@@ -23,7 +23,7 @@
         "en": "AI Engineering course with Eran Sela — from ML foundations to practical probabilistic system design.",
         "es": "Curso de AI Engineering con Eran Sela — desde los fundamentos de ML hasta el diseño práctico de sistemas."
       },
-      "totalLessons": 12,
+      "totalLessons": 16,
       "lecturer": {
         "he": "ערן סלע",
         "en": "Eran Sela",
@@ -59,6 +59,11 @@
       "contentType": "course_lesson",
       "course": "ai-engineering",
       "lessonNumber": 2
+    },
+    "Lesson-3-Natural-Language-Processing": {
+      "contentType": "course_lesson",
+      "course": "ai-engineering",
+      "lessonNumber": 3
     }
   }
 }

@@ -33,6 +33,7 @@ import ContinueReadingCard from '../components/library/ContinueReadingCard.astro
 import KnowledgeSpaceCard from '../components/library/KnowledgeSpaceCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
 import RecommendationStrip from '../components/library/RecommendationStrip.astro';
+import RecommendedSidebarList from '../components/library/RecommendedSidebarList.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
 
 import type { Language } from '../types/index';
@@ -40,11 +41,13 @@ import type { LibraryItem } from '../types/library';
 import { DEFAULT_LANGUAGE, getLanguageDirection, isValidLanguage } from '../utils/language';
 import { t } from '../i18n';
 import {
-  getMockLibraryItems,
+  getLibraryItems,
   getLibraryStats,
   getContinueReadingItem,
   getRecommendedItems,
 } from '../utils/library-catalog';
+import { getCourseProgressList } from '../utils/library-adapter';
+import { isReadableLibraryItem } from '../utils/library-display';
 
 // ── Language ──────────────────────────────────────────────────────────────
 const { language: propLanguage } = Astro.props as { language?: Language };
@@ -58,24 +61,45 @@ const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
 // ── Data ──────────────────────────────────────────────────────────────────
-const items = getMockLibraryItems();
+// Primary source = real BookForge content (via library-adapter); falls
+// back to mock when output/ is empty (CI / fresh checkout).
+const items = getLibraryItems();
 const stats = getLibraryStats(items);
-const continueItem = getContinueReadingItem(items);
+// Per-course progress (X of Y lesson summaries available) — empty when
+// no real catalog is in play (mock fallback returns []).
+const courseProgress = getCourseProgressList();
+
+// Continue + recommendations ONLY consider readable items so that we
+// never surface the synthetic ai-engineering course (no /courses route
+// yet) as a clickable-looking suggestion.
+const readableItems = items.filter(isReadableLibraryItem);
+const continueItem = getContinueReadingItem(readableItems);
 const recommendedItems = continueItem
-  ? getRecommendedItems(items, continueItem.id, 6)
+  ? getRecommendedItems(readableItems, continueItem.id, 6)
   : [];
 
 // ── Featured items for the galaxy stage / mobile carousel ────────────────
+// Only readable real content. The synthetic ai-engineering course meta
+// is NOT featured here — it has no /courses route yet, so it would
+// appear as a non-clickable "broken-looking" tile next to clickable
+// books. The course still surfaces through the stats panel and through
+// the per-course progress line.
+//   1. AI-Developer-Fitness                       — real book
+//   2. Building-AI-Systems-with-MCP               — real book
+//   3. practical-python-for-ai-engineering        — real book
+//   4. Lesson-1-...                               — first AI Engineering lesson
+//   5. Lesson-2-Machine-Learning                  — second lesson
+//   6. Lesson-3-Natural-Language-Processing       — newest lesson
 const featuredSlugs = [
-  'ai-engineering',
+  'AI-Developer-Fitness',
   'Building-AI-Systems-with-MCP',
   'practical-python-for-ai-engineering',
-  'clean-code',
   'Lesson-1-Introduction-To-AI-Engineering-and-Generative-AI',
-  'mcp-tool-design',
+  'Lesson-2-Machine-Learning',
+  'Lesson-3-Natural-Language-Processing',
 ];
 const featuredItems: LibraryItem[] = featuredSlugs
-  .map((slug) => items.find((it) => it.slug === slug))
+  .map((slug) => readableItems.find((it) => it.slug === slug))
   .filter((it): it is LibraryItem => Boolean(it));
 
 // Pre-computed slot classes for desktop absolute positioning.
@@ -111,7 +135,14 @@ const FEATURED_SLOTS = [
           <KnowledgeSpaceCard language={language} />
         </div>
         <div class="lb-area-stats">
-          <LibraryStatsPanel stats={stats} language={language} />
+          <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
+        </div>
+        {/* Compact recommendation hint — desktop sidebar only.
+            Mobile suppresses this via CSS to avoid duplicating the
+            featured carousel + bottom RecommendationStrip already in
+            the mobile flow. */}
+        <div class="lb-area-sidebar-recs">
+          <RecommendedSidebarList items={recommendedItems.slice(0, 4)} language={language} />
         </div>
       </aside>
 
@@ -288,6 +319,10 @@ const FEATURED_SLOTS = [
   .lb-area-quick-mobile { order: 7; }
   /* Rail variant is desktop-only; suppress on mobile */
   .lb-area-quick-rail   { display: none; }
+  /* Sidebar recommendation list is desktop-only — mobile already gets
+     the featured carousel and the bottom RecommendationStrip; a third
+     surface for the same items would feel like duplication. */
+  .lb-area-sidebar-recs { display: none; }
 
   /* Desktop-only galaxy variant of each floating card. Mobile gets the
      compact variant in a horizontal scroll-snap rail. */
@@ -364,9 +399,14 @@ const FEATURED_SLOTS = [
     .lb-area-featured,
     .lb-area-knowledge,
     .lb-area-stats,
+    .lb-area-sidebar-recs,
     .lb-area-recs,
     .lb-area-quick-mobile,
     .lb-area-quick-rail { order: initial; }
+
+    /* Re-enable the sidebar recommendation list on desktop. It sits
+       inside .lb-area-left as the fourth panel, after stats. */
+    .lb-area-sidebar-recs { display: block; width: 100%; }
 
     /* 3-column dashboard. Left rail narrow, center stage flexible,
        right rail thin enough to look like a pill. */

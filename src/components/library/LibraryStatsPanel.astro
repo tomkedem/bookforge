@@ -2,48 +2,64 @@
 /**
  * LibraryStatsPanel — premium analytics tile dashboard.
  *
- * Visual upgrade (Prompt 7):
- *   - Total-items hero tile spans full width with a calmly tinted glow.
- *   - Type counts presented as 2×2 mini tiles, each with its type-accent
- *     stripe (book / course / series / article — drives only --tile-accent,
- *     not per-type CSS branches).
- *   - Reading minutes + words shown as a quieter footer row separated
- *     by a hairline divider.
- *   - Defensive: every count falls back to 0; the panel never blanks.
+ * Semantics (Prompt 8.7 update):
+ *   - Hero tile shows "available content items" (readable count) — not
+ *     the raw `total` which now includes synthetic course meta.
+ *   - Type tiles render dynamically: only types with count > 0 appear.
+ *     Avoids the "0 articles / 0 series" awkwardness on a real-content
+ *     library that doesn't have those types yet.
+ *   - When the page passes `courseProgress`, the panel adds an honest
+ *     "X of Y lesson summaries available" line per course.
+ *   - course_lesson is rendered as "lesson summaries" via its own key.
  *
- * Each tile uses the existing fully-formatted i18n string (e.g.
- * "5 books"). We do not split the number from the label — that would
- * require new keys per language and is out of scope here.
+ * Defensive: every count falls back to 0; missing courseProgress is
+ * silently skipped.
  */
 import type { Language } from '../../types/index';
-import type { LibraryStats } from '../../types/library';
+import type { LibraryCourseProgress, LibraryStats } from '../../types/library';
+import type { TranslationKey } from '../../i18n';
 import { t } from '../../i18n';
 import { getTypeAccentVar } from '../../utils/library-display';
 
 interface Props {
   stats: LibraryStats;
   language: Language;
+  /**
+   * Optional per-course progress fed by library-adapter. When omitted,
+   * the panel does not render any "X of Y lessons" lines.
+   */
+  courseProgress?: LibraryCourseProgress[];
 }
-const { stats, language } = Astro.props;
+const { stats, language, courseProgress = [] } = Astro.props;
 
 const counts = {
-  total:    stats.total ?? 0,
+  readable: stats.readable ?? 0,
   books:    stats.byType.book ?? 0,
   courses:  stats.byType.course ?? 0,
+  lessons:  stats.byType.course_lesson ?? 0,
   series:   stats.byType.series ?? 0,
   articles: stats.byType.article ?? 0,
   minutes:  stats.totalReadingMinutes ?? 0,
   words:    stats.totalWordCount ?? 0,
 };
 
-// Tile config — single source of truth keeps the markup loop clean
-// and Liskov-safe: each tile is constructed identically.
-const typeTiles = [
-  { key: 'library.stats.booksCount'   as const, n: counts.books,    accent: getTypeAccentVar('book')    },
-  { key: 'library.stats.coursesCount' as const, n: counts.courses,  accent: getTypeAccentVar('course')  },
-  { key: 'library.stats.seriesCount'  as const, n: counts.series,   accent: getTypeAccentVar('series')  },
-  { key: 'library.stats.articlesCount' as const, n: counts.articles, accent: getTypeAccentVar('article') },
+// Tile config — full set declared declaratively, then filtered to count>0.
+// Order is the order tiles will appear in the 2×N grid: books first
+// (most concrete content), lessons second, course third, then optional
+// types only if they ever land.
+type TileSpec = {
+  key: TranslationKey;
+  n: number;
+  accent: string;
+};
+const allTiles: TileSpec[] = [
+  { key: 'library.stats.booksCount',    n: counts.books,    accent: getTypeAccentVar('book') },
+  { key: 'library.stats.lessonsCount',  n: counts.lessons,  accent: getTypeAccentVar('course_lesson') },
+  { key: 'library.stats.coursesCount',  n: counts.courses,  accent: getTypeAccentVar('course') },
+  { key: 'library.stats.seriesCount',   n: counts.series,   accent: getTypeAccentVar('series') },
+  { key: 'library.stats.articlesCount', n: counts.articles, accent: getTypeAccentVar('article') },
 ];
+const typeTiles: TileSpec[] = allTiles.filter((tile) => tile.n > 0);
 ---
 
 <section class="lsp" aria-label={t('library.a11y.libraryStatsPanel', language)}>
@@ -53,16 +69,28 @@ const typeTiles = [
   </header>
 
   <div class="lsp-hero-tile">
-    {t('library.stats.totalItems', language, { n: counts.total })}
+    {t('library.stats.readableItems', language, { n: counts.readable })}
   </div>
 
-  <ul class="lsp-tiles">
-    {typeTiles.map((tile) => (
-      <li class="lsp-tile" style={`--tile-accent: ${tile.accent};`}>
-        {t(tile.key, language, { n: tile.n })}
-      </li>
-    ))}
-  </ul>
+  {typeTiles.length > 0 && (
+    <ul class="lsp-tiles">
+      {typeTiles.map((tile) => (
+        <li class="lsp-tile" style={`--tile-accent: ${tile.accent};`}>
+          {t(tile.key, language, { n: tile.n })}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {courseProgress.length > 0 && (
+    <ul class="lsp-progress-list" aria-label={t('library.stats.courseProgressTitle', language)}>
+      {courseProgress.map((cp) => (
+        <li class="lsp-progress-row">
+          {t('library.stats.lessonsAvailable', language, { available: cp.available, total: cp.total })}
+        </li>
+      ))}
+    </ul>
+  )}
 
   <div class="lsp-divider" aria-hidden="true"></div>
 
@@ -165,6 +193,24 @@ const typeTiles = [
     width: 3px;
     background-color: var(--tile-accent);
     opacity: 0.85;
+  }
+
+  /* Course progress list — one row per course, styled like a quiet hint
+     so it doesn't compete with the type tiles above. */
+  .lsp-progress-list {
+    list-style: none;
+    margin: 0.625rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .lsp-progress-row {
+    font-size: 0.75rem;
+    color: var(--yuval-galaxy-text-muted);
+    line-height: 1.4;
+    padding-inline-start: 0.625rem;
+    border-inline-start: 2px solid var(--yuval-galaxy-accent-cyan);
   }
 
   .lsp-divider {

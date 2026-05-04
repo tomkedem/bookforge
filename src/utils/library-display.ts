@@ -173,3 +173,18 @@ export function isSafeLibraryHref(href: string | undefined | null): boolean {
   if (!href) return false;
   return href.startsWith('/read/') || href.startsWith('/books/');
 }
+
+/**
+ * Whether an item is a "readable" piece of content the user can actually
+ * open right now. The synthetic course item (organizing entity, no
+ * /courses/{slug} route yet) is NOT readable. Books and course lessons
+ * with /books/{slug} hrefs are readable.
+ *
+ * Used to:
+ *   - keep synthetic items out of orbit cards (no broken-looking tiles)
+ *   - filter recommendations to readable content only
+ *   - count "available content items" honestly in the stats panel
+ */
+export function isReadableLibraryItem(item: LibraryItem): boolean {
+  return isSafeLibraryHref(item.href);
+}
