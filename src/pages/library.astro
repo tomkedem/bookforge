@@ -422,22 +422,29 @@ const FEATURED_SLOTS = [
       max-width: 1440px;
     }
 
-    /* ── Left sidebar: glass column with three stacked panels ───── */
+    /* ── Left sidebar: glass column with four stacked panels ─────
+       (continue → knowledge → stats → recommended). Tighter gap so
+       all four panels fit comfortably on common laptop viewport
+       heights (768-900px) without forcing the dashboard to scroll. */
     .lb-area-left {
       grid-column: 1;
       grid-row: 1;
-      gap: 0.875rem;
+      gap: 0.75rem;
       align-self: stretch;
     }
     .lb-area-continue,
     .lb-area-knowledge,
-    .lb-area-stats { width: 100%; }
+    .lb-area-stats,
+    .lb-area-sidebar-recs { width: 100%; }
 
     /* ── Center stage: hero + galaxy + recs ──────────────────────── */
     .lb-area-stage {
       grid-column: 2;
       grid-row: 1;
-      gap: 0.5rem;
+      /* Tight gap so the hero text and the galaxy core read as one
+         unified stage rather than two stacked blocks. The galaxy stage
+         provides its own internal padding for the orbits. */
+      gap: 0.25rem;
       min-width: 0;
       position: relative;
     }
@@ -468,12 +475,15 @@ const FEATURED_SLOTS = [
     .lb-area-quick-mobile { display: none; }
     .lb-area-quick-rail   { display: block; }
 
-    /* Galaxy stage on desktop: absolute canvas anchored to the stage. */
+    /* Galaxy stage on desktop: absolute canvas anchored to the stage.
+       Min-height bumped to 540 so the ML/MR orbit cards have enough
+       vertical room not to overlap the central core at the narrowest
+       desktop widths (1024-1199px). */
     .library-galaxy {
       position: relative;
       display: block;
       height: 100%;
-      min-height: 480px;
+      min-height: 540px;
       margin: 0;
       overflow: visible;
       flex-direction: initial;
@@ -561,6 +571,10 @@ const FEATURED_SLOTS = [
       height: 240px;
       transform: translate(-50%, -50%);
       pointer-events: none;
+      /* Above the floating cards. If a side card would otherwise crop
+         into the orb on narrow desktop widths, the core wins visually
+         and reads as the single dominant anchor of the stage. */
+      z-index: 3;
     }
     /* Light pool below the core — anchors the core to the stage with
        a soft cyan/purple ground glow. Wider and more luminous than
@@ -659,12 +673,14 @@ const FEATURED_SLOTS = [
         transform var(--yuval-galaxy-motion-normal) var(--yuval-galaxy-ease-out);
       z-index: 2;
     }
-    .galaxy-card-tl { top:  4%;  inset-inline-start: 2%;  --tilt: -5deg; transform: rotate(-5deg); }
-    .galaxy-card-tr { top:  4%;  inset-inline-end:   2%;  --tilt:  5deg; transform: rotate( 5deg); }
-    .galaxy-card-ml { top: 40%;  inset-inline-start: 0;   --tilt: -2deg; transform: rotate(-2deg); }
-    .galaxy-card-mr { top: 40%;  inset-inline-end:   0;   --tilt:  2deg; transform: rotate( 2deg); }
-    .galaxy-card-bl { bottom: 6%; inset-inline-start: 6%; --tilt: -3deg; transform: rotate(-3deg); }
-    .galaxy-card-br { bottom: 6%; inset-inline-end:   6%; --tilt:  3deg; transform: rotate( 3deg); }
+    .galaxy-card-tl { top:  4%;  inset-inline-start: 2%;   --tilt: -5deg; transform: rotate(-5deg); }
+    .galaxy-card-tr { top:  4%;  inset-inline-end:   2%;   --tilt:  5deg; transform: rotate( 5deg); }
+    /* ML/MR sit at the equator. inset slightly outside the stage so
+       the cards don't crop into the central orb at narrow widths. */
+    .galaxy-card-ml { top: 38%;  inset-inline-start: -10px; --tilt: -2deg; transform: rotate(-2deg); }
+    .galaxy-card-mr { top: 38%;  inset-inline-end:   -10px; --tilt:  2deg; transform: rotate( 2deg); }
+    .galaxy-card-bl { bottom: 6%; inset-inline-start: 6%;  --tilt: -3deg; transform: rotate(-3deg); }
+    .galaxy-card-br { bottom: 6%; inset-inline-end:   6%;  --tilt:  3deg; transform: rotate( 3deg); }
 
     .galaxy-card:hover,
     .galaxy-card:focus-within {

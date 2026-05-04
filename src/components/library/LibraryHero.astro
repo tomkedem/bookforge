@@ -270,7 +270,7 @@ const { language } = Astro.props;
         and a readonly pill would look like dead chrome on a clean stage. */
   @media (min-width: 1024px) {
     .lh {
-      padding: 0.5rem 0 0.75rem;
+      padding: 0.25rem 0 0.5rem;
       text-align: center;
       border: 0;
       background-color: transparent;
@@ -285,13 +285,31 @@ const { language } = Astro.props;
       align-items: center;
       text-align: center;
       gap: 0;
-      margin-block-end: 0.75rem;
+      margin-block-end: 0.5rem;
     }
     .lh-text { text-align: center; }
-    .lh-eyebrow { margin-block-end: 0.375rem; }
+    /* Eyebrow gets the same tiny accent treatment as the sidebar
+       section dots, so the page's typographic language stays consistent
+       across hero, sidebar panels and recommendation header. */
+    .lh-eyebrow {
+      margin-block-end: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--yuval-galaxy-text-muted);
+    }
+    .lh-eyebrow::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--yuval-galaxy-accent-cyan);
+      box-shadow: var(--yuval-galaxy-glow-soft);
+    }
     .lh-title {
       font-size: clamp(2rem, 3.4vw, 2.75rem);
-      margin-block-end: 0.4375rem;
+      margin-block-end: 0.375rem;
     }
     .lh-subtitle {
       margin-inline: auto;
@@ -299,7 +317,7 @@ const { language } = Astro.props;
     }
     .lh-ctas {
       justify-content: center;
-      margin-block-start: 0.875rem;
+      margin-block-start: 0.625rem;
     }
     .lh-search { display: none; }
     .lh-core { display: none; }
