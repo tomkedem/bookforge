@@ -29,7 +29,10 @@ const { language } = Astro.props;
 
   <div class="lh-header">
     <div class="lh-text">
-      <p class="lh-eyebrow">{t('library.galaxy.welcome', language)}</p>
+      <p class="lh-eyebrow">
+        <span class="lh-eyebrow-text">{t('library.galaxy.welcome', language)}</span>
+        <span class="lh-eyebrow-spark" aria-hidden="true">✦</span>
+      </p>
       <h1 class="lh-title">{t('library.galaxy.title', language)}</h1>
       <p class="lh-subtitle">{t('library.galaxy.subtitle', language)}</p>
     </div>
@@ -59,11 +62,19 @@ const { language } = Astro.props;
   </form>
 
   <div class="lh-ctas">
-    <button type="button" class="lh-cta lh-cta-primary" disabled aria-disabled="true">
-      {t('library.galaxy.primaryCta', language)}
-    </button>
     <button type="button" class="lh-cta lh-cta-secondary" disabled aria-disabled="true">
-      {t('library.galaxy.secondaryCta', language)}
+      <svg class="lh-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>{t('library.galaxy.secondaryCta', language)}</span>
+    </button>
+    <button type="button" class="lh-cta lh-cta-primary" disabled aria-disabled="true">
+      <svg class="lh-cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"></path>
+        <path d="M19 14l.7 1.7L21 16l-1.3.5L19 18l-.7-1.5L17 16l1.3-.3z"></path>
+      </svg>
+      <span>{t('library.galaxy.primaryCta', language)}</span>
     </button>
   </div>
 </section>
@@ -71,8 +82,10 @@ const { language } = Astro.props;
 <style>
   .lh {
     position: relative;
-    /* Compact mobile padding — minimises vertical space before real content */
-    padding: 1.25rem 1.125rem;
+    /* Compact mobile padding — minimises vertical space so the
+       MobileGalaxyCarousel beneath it lands above the fold on
+       common phone heights (640-740px). */
+    padding: 0.875rem 1.125rem 1rem;
     border: 1px solid var(--yuval-galaxy-border);
     border-radius: var(--yuval-galaxy-panel-radius);
     background-color: var(--yuval-galaxy-surface);
@@ -102,8 +115,8 @@ const { language } = Astro.props;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
-    margin-block-end: 0.875rem;
+    gap: 0.5rem;
+    margin-block-end: 0.625rem;
   }
   .lh-text { min-width: 0; flex: 1 1 auto; }
 
@@ -188,7 +201,7 @@ const { language } = Astro.props;
   .lh-core-ring-3 { inset: 28%; opacity: 0.30; }
 
   /* ── Search ─────────────────────────────────────────────────────── */
-  .lh-search { position: relative; z-index: 1; margin: 0 0 1rem; }
+  .lh-search { position: relative; z-index: 1; margin: 0 0 0.75rem; }
   .lh-search-input {
     width: 100%;
     /* 16px font-size prevents iOS Safari from auto-zooming on focus. */
@@ -239,8 +252,18 @@ const { language } = Astro.props;
     background-color: var(--yuval-galaxy-surface-muted);
     color: var(--yuval-galaxy-text);
   }
-  .lh-cta:disabled { opacity: 0.7; }
+  .lh-cta:disabled { opacity: 0.78; }
   .lh-cta:focus-visible { box-shadow: var(--yuval-galaxy-glow-primary); }
+  .lh-cta-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .lh-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
   /* ── Tablet (768–1023px): hero header becomes a row, core revealed. ── */
   @media (min-width: 768px) and (max-width: 1023px) {
@@ -269,8 +292,12 @@ const { language } = Astro.props;
         because the desktop dashboard surfaces no functional search yet
         and a readonly pill would look like dead chrome on a clean stage. */
   @media (min-width: 1024px) {
+    /* Hero acts as the title strip of the galaxy stage. Vertical
+       budget tightened again: the entire block now occupies roughly
+       the height of the title + one subtitle line + one CTA row,
+       with the smallest gaps that still feel intentional. */
     .lh {
-      padding: 0.25rem 0 0.5rem;
+      padding: 0;
       text-align: center;
       border: 0;
       background-color: transparent;
@@ -285,39 +312,58 @@ const { language } = Astro.props;
       align-items: center;
       text-align: center;
       gap: 0;
-      margin-block-end: 0.5rem;
+      margin-block-end: 0.125rem;
     }
     .lh-text { text-align: center; }
-    /* Eyebrow gets the same tiny accent treatment as the sidebar
-       section dots, so the page's typographic language stays consistent
-       across hero, sidebar panels and recommendation header. */
+    /* Eyebrow — cyan→violet gradient text + accent spark. */
     .lh-eyebrow {
-      margin-block-end: 0.375rem;
+      margin-block-end: 0.1875rem;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      color: var(--yuval-galaxy-text-muted);
+      font-size: 0.875rem;
+      letter-spacing: 0.06em;
+      text-transform: none;
+      font-weight: 500;
+      background: linear-gradient(
+        90deg,
+        var(--yuval-galaxy-accent-cyan) 0%,
+        var(--yuval-galaxy-accent-purple) 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
-    .lh-eyebrow::before {
-      content: "";
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--yuval-galaxy-accent-cyan);
-      box-shadow: var(--yuval-galaxy-glow-soft);
+    .lh-eyebrow-spark {
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--yuval-galaxy-accent-cyan);
+      -webkit-text-fill-color: var(--yuval-galaxy-accent-cyan);
+      text-shadow: 0 0 12px var(--yuval-galaxy-accent-cyan);
     }
+    /* Title — strong but tighter clamp; line-height 1 so the
+       title block is exactly its glyph height + nothing extra. */
     .lh-title {
-      font-size: clamp(2rem, 3.4vw, 2.75rem);
-      margin-block-end: 0.375rem;
+      font-size: clamp(1.625rem, 2.6vw, 2.25rem);
+      line-height: 1;
+      margin-block-end: 0.1875rem;
     }
     .lh-subtitle {
       margin-inline: auto;
-      max-width: 52ch;
+      max-width: 60ch;
+      font-size: 0.875rem;
+      line-height: 1.35;
     }
+    /* Tighter CTA row — closer to subtitle, closer to the stage. */
     .lh-ctas {
       justify-content: center;
-      margin-block-start: 0.625rem;
+      gap: 0.4375rem;
+      margin-block-start: 0.4375rem;
+    }
+    .lh-cta {
+      min-height: 36px;
+      padding: 0.375rem 0.875rem;
+      font-size: 0.875rem;
     }
     .lh-search { display: none; }
     .lh-core { display: none; }

@@ -493,16 +493,23 @@ export const translations: Translations = {
   // ───────────────────────────────────────────────────────────────────────────
 
   // ── library.galaxy.* — main screen chrome ──────────────────────────────────
-  'library.galaxy.title':           { he: 'מרחב הידע',                                                        en: 'The Knowledge Space',                                                          es: 'El espacio de conocimiento' },
-  'library.galaxy.subtitle':        { he: 'מרחב ידע חי לתכני AI: ספרי AI, קורסי AI, סיכומים, מאמרים והדרכות שעובדו ב-BookForge.', en: 'A living AI knowledge space: AI books, AI courses, summaries, articles and guides processed by BookForge.', es: 'Un espacio de conocimiento de IA vivo: libros, cursos, resúmenes, artículos y guías de IA procesados por BookForge.' },
-  'library.galaxy.welcome':         { he: 'ברוך הבא למרחב הידע',                                              en: 'Welcome to the Knowledge Space',                                               es: 'Bienvenido al espacio de conocimiento' },
+  'library.galaxy.title':           { he: 'מרחב הידע',                                                        en: 'Knowledge Space',                                                              es: 'Espacio de conocimiento' },
+  // Hero subtitle: short, AI-only, Yuval-led. BookForge (the internal
+  // pipeline) is intentionally NOT mentioned here — it surfaces only in
+  // technical/explainer surfaces, never in the user-facing hero.
+  'library.galaxy.subtitle':        { he: 'ספרי AI, סיכומי שיעור, מאמרים והדרכות במרחב ידע חי אחד.',          en: 'AI books, lesson summaries, articles, and guides in one living knowledge space.',                       es: 'Libros de IA, resúmenes de clase, artículos y guías en un espacio de conocimiento vivo.' },
+  'library.galaxy.welcome':         { he: 'ברוך הבא ל Yuval',                                                  en: 'Welcome to Yuval',                                                             es: 'Bienvenido a Yuval' },
   'library.galaxy.searchPlaceholder': { he: 'חפש ספרים, קורסים, סדרות, מאמרים ונושאים',                       en: 'Search books, courses, series, articles and topics',                            es: 'Busca libros, cursos, series, artículos y temas' },
   'library.galaxy.primaryCta':      { he: 'עיין בתכנים',                                                       en: 'Browse content',                                                                es: 'Explorar contenido' },
-  'library.galaxy.secondaryCta':    { he: 'איך BookForge מעבד תכנים',                                          en: 'How BookForge processes content',                                               es: 'Cómo BookForge procesa contenido' },
+  'library.galaxy.secondaryCta':    { he: 'איך Yuval מסדרת ידע',                                              en: 'How Yuval organizes knowledge',                                                 es: 'Cómo Yuval organiza el conocimiento' },
   'library.galaxy.loading':         { he: 'טוען את הספרייה שלך',                                              en: 'Loading your library',                                                          es: 'Cargando tu biblioteca' },
   'library.galaxy.error':           { he: 'לא הצלחנו לטעון את הספרייה. נסה שוב בעוד רגע',                     en: "We couldn't load your library. Try again in a moment",                          es: 'No pudimos cargar tu biblioteca. Inténtalo de nuevo en un momento' },
   'library.galaxy.explainerTitle':  { he: 'איך זה עובד',                                                       en: 'How it works',                                                                  es: 'Cómo funciona' },
   'library.galaxy.explainerBody':   { he: 'תכנים שעוברים עיבוד אוטומטי ב-BookForge מתחברים למרחב ידע אחד שניתן לחפש, לקשר ולנווט בו.', en: 'Content automatically processed by BookForge connects into one searchable, navigable knowledge space.', es: 'Los contenidos procesados automáticamente por BookForge se conectan en un único espacio de conocimiento navegable y buscable.' },
+
+  // ── library.mobileGalaxy.* — mobile-only horizontal carousel ──────────────
+  'library.mobileGalaxy.title':     { he: 'תכני AI זמינים',                                            en: 'Available AI content',                                       es: 'Contenido de IA disponible' },
+  'library.mobileGalaxy.subtitle':  { he: 'החלק ימינה או שמאלה כדי לעבור בין הספרים וסיכומי השיעור', en: 'Swipe to explore books and lesson summaries',                es: 'Desliza para explorar libros y resúmenes de clase' },
 
   // ── library.itemType.* — display label per LibraryItemType ─────────────────
   'library.itemType.book':            { he: 'ספר',              en: 'Book',             es: 'Libro' },

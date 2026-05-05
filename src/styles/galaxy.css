@@ -122,6 +122,85 @@
   --yuval-galaxy-surface:            rgba(18, 22, 44, 0.72);
   --yuval-galaxy-surface-elevated:   rgba(28, 34, 64, 0.82);
   --yuval-galaxy-surface-muted:      rgba(12, 16, 32, 0.55);
+}
+
+/* ── Library-only override: darker, sharper palette per the approved
+   /library reference. These values cover only `.library-dark-showcase`
+   subtree, keeping every other route's galaxy mood unchanged. */
+.library-dark-showcase {
+  /* ── Asset-calibrated palette ─────────────────────────────────────────────
+     Hex values sampled directly from galaxy-stage-core-medium.png.
+     These are the visual truth of the page — every non-accent surface
+     should resolve to one of these tones. */
+  --yuval-galaxy-bg-deep:            #000010; /* deepest navy-black, edges */
+  --yuval-galaxy-bg-navy:            #000018; /* deep navy, gradient stops  */
+  --yuval-galaxy-bg-navy-soft:       #000020; /* lighter navy, transitions  */
+
+  /* Page base = median sampled tone. */
+  --yuval-galaxy-bg:                 #01051b;
+  --yuval-galaxy-bg-soft:            #02051e;
+
+  /* ── Unified page backdrop system ──────────────────────────────────────────
+     Whole-screen harmonization: every layer is anchored relative to the
+     desktop center stage so the asset's palette radiates outward into
+     the entire viewport. The user reads the screen as one cosmic field
+     instead of "image inside a different page".
+
+     Cascade pattern: primary (centered violet bloom) → secondary (deep
+     blue bottom horizon) → side accents (very soft violet behind the
+     sidebar / rail areas) → vignette (gentle corner darkening that
+     frames the dashboard). All four are designed to layer additively,
+     and to reduce gracefully on routes that don't need them. */
+
+  /* PRIMARY: small violet accent centered on the stage. The asset
+     carries its own violet glow; this layer just extends that glow a
+     little outward into the surrounding navy so the accent feels
+     organic. Tightened from 65%×55% @ 0.22 to 40%×35% @ 0.14 — the
+     page base is now a continuous dark-navy field, with violet
+     showing up only where the asset is. */
+  --yuval-galaxy-bg-radial-primary:  radial-gradient(
+                                       ellipse 40% 35% at 50% 45%,
+                                       rgba(124, 58, 237, 0.14) 0%,
+                                       rgba(124, 58, 237, 0.00) 75%
+                                     );
+
+  /* SECONDARY: bottom-edge deep-navy fade that uses the sampled
+     #000010 tone. Replaces the previous indigo "blue horizon glow"
+     because the asset itself does not carry a brighter horizon —
+     it darkens toward the edge. Now the page bottom reads as the
+     same near-black navy as the asset's edges. */
+  --yuval-galaxy-bg-radial-secondary: radial-gradient(
+                                       ellipse 110% 28% at 50% 100%,
+                                       rgba(0, 0, 16, 0.50) 0%,
+                                       rgba(0, 0, 16, 0.00) 80%
+                                     );
+
+  /* VIGNETTE: corner darkening using the sampled deepest navy
+     (#000010) instead of pure black. The corners now blend into the
+     same color the asset uses at its outer edge, so there's no
+     palette break between page corner and asset corner. */
+  --yuval-galaxy-bg-vignette: radial-gradient(
+                                ellipse 110% 110% at 50% 50%,
+                                rgba(0, 0, 16, 0.00) 50%,
+                                rgba(0, 0, 16, 0.55) 100%
+                              );
+
+  /* The previous side-accent and hero-halo violet layers were removed:
+     the asset is not violet on the sides or above the book, so
+     splashing violet there created palette mismatch. The page base
+     #01051b — itself sampled from the asset — now provides one
+     continuous canvas for the sidebar, rail, hero, and recs areas. */
+  --yuval-galaxy-bg-radial-side: none;
+  --yuval-galaxy-bg-radial-hero: none;
+  --yuval-galaxy-surface:            rgba(10, 12, 20, 0.82);
+  --yuval-galaxy-surface-elevated:   rgba(16, 18, 28, 0.86);
+  --yuval-galaxy-surface-muted:      rgba(6, 8, 14, 0.70);
+  --yuval-galaxy-border:             rgba(167, 139, 250, 0.14);
+  --yuval-galaxy-border-strong:      rgba(167, 139, 250, 0.28);
+  --yuval-galaxy-border-glow:        rgba(34, 211, 238, 0.45);
+  --yuval-galaxy-card-surface:       rgba(12, 14, 24, 0.72);
+  --yuval-galaxy-card-surface-hover: rgba(20, 22, 38, 0.84);
+  --yuval-galaxy-card-border:        rgba(167, 139, 250, 0.18);
 
   /* ── 2. Text tokens ─────────────────────────────────────────────────────── */
   --yuval-galaxy-text:               #eaf0ff;
