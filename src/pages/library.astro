@@ -185,30 +185,6 @@ const FEATURED_SLOTS = [
 
     <div class="library-body">
 
-      {/* ── Left sidebar (desktop) / mid-flow blocks (mobile) ──
-            Two cards only:
-              1. ContinueReadingCard ("מומלץ להתחיל מכאן")
-              2. LibraryStatsPanel ("סטטיסטיקות הספרייה")
-            The "איך זה עובד" explainer and the compact sidebar
-            recommendation list were removed to keep the column
-            calm and premium. */}
-      <aside class="lb-area-left">
-        <div class="lb-area-continue">
-          <ContinueLearningCard
-            language={language}
-            courseTitle={courseTitleForCard}
-            metaLine1={metaLine1ForCard}
-            metaLine2={metaLine2ForCard}
-            lessonsAvailable={isLesson ? courseProgress[0]?.available : undefined}
-            lessonsTotal={isLesson ? courseProgress[0]?.total : undefined}
-            href={continueItem?.href}
-          />
-        </div>
-        <div class="lb-area-stats">
-          <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
-        </div>
-      </aside>
-
       {/* ── Center stage: hero floats over galaxy ── */}
       <main class="lb-area-stage">
 
@@ -274,6 +250,24 @@ const FEATURED_SLOTS = [
       </aside>
 
     </div>
+
+    {/* ── Desktop fixed support panels (≥769px) ──
+          Both panels are `position: fixed` from inside their own
+          component CSS, anchored to the inline-start edge of the
+          viewport (right in RTL, left in LTR). Stacked: ContinueLearningCard
+          above, LibraryStatsPanel below it. Hidden at ≤768px from inside
+          each component. Live outside `.library-body` so they never
+          claim a column or contribute to the grid. */}
+    <ContinueLearningCard
+      language={language}
+      courseTitle={courseTitleForCard}
+      metaLine1={metaLine1ForCard}
+      metaLine2={metaLine2ForCard}
+      lessonsAvailable={isLesson ? courseProgress[0]?.available : undefined}
+      lessonsTotal={isLesson ? courseProgress[0]?.total : undefined}
+      href={continueItem?.href}
+    />
+    <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
 
     {/* ── Desktop floating rail (≥769px) ──
           Pinned to the inline-end edge via `position: fixed` from the
@@ -371,7 +365,6 @@ const FEATURED_SLOTS = [
 
   /* On mobile the wrapper aside/main elements are not layout containers;
      reset their flex behaviour and let their children act as siblings. */
-  .lb-area-left,
   .lb-area-stage,
   .lb-area-right {
     display: contents;
@@ -380,16 +373,15 @@ const FEATURED_SLOTS = [
   /* Mobile order — discovery-first.
        1 hero
        2 mobile-discovery (MobileGalaxyCarousel — readable AI content)
-       3 continue (recommended starting card)
-       4 stats
        5 recs (RecommendationStrip)
        6 quick actions
+     ContinueLearningCard + LibraryStatsPanel are now position: fixed
+     and hidden on mobile (≤768px) from inside each component, so they
+     no longer participate in this flex chain.
      The desktop-only `.lb-area-featured` is hidden on mobile via
      `display: none` below. */
   .lb-area-hero              { order: 1; }
   .lb-area-mobile-discovery  { order: 2; display: block; width: 100%; }
-  .lb-area-continue          { order: 3; }
-  .lb-area-stats             { order: 4; }
   .lb-area-recs              { order: 5; }
   .lb-area-quick-mobile      { order: 6; }
 
@@ -411,10 +403,11 @@ const FEATURED_SLOTS = [
          (which sits at the visual center of the body) a perfectly
          viewport-centered anchor. The clamp value also clears the
          FloatingSidebar at the inline-end side (rail width ~92px
-         + ~16px gap from edge). Independent from this: the
-         absolute `.lb-area-left` anchors directly to the viewport
-         edge via `inset-inline-start: 20px` below, so its 20px gap
-         stays constant regardless of this padding. */
+         + ~16px gap from edge). Independent from this: the two
+         support panels (ContinueLearningCard + LibraryStatsPanel)
+         are `position: fixed` from inside their own components and
+         anchor directly to the viewport edge via `inset-inline-start: 20px`,
+         so their 20px gap stays constant regardless of this padding. */
       padding-block-start: 1.25rem;
       padding-block-end: 1.5rem;
       padding-inline: clamp(60px, 8vw, 120px);
@@ -491,16 +484,15 @@ const FEATURED_SLOTS = [
       z-index: 0;
     }
 
-    /* Re-enable real flex containers on the wrapper aside/main.
+    /* Re-enable real flex container on the center stage main.
        `.lb-area-right` stays as `display: contents` (inherited from the
        mobile baseline) — its only child `.lb-area-quick-mobile` is
        `display: none` on desktop, so the aside contributes nothing
        to the grid. The desktop floating rail lives outside the grid
-       entirely (`<FloatingSidebar>` with `position: fixed`). */
-    .lb-area-left {
-      display: flex;
-      flex-direction: column;
-    }
+       entirely (`<FloatingSidebar>` with `position: fixed`). The two
+       support panels (ContinueLearningCard + LibraryStatsPanel) also
+       live outside the grid via `position: fixed` from inside their
+       own components. */
     .lb-area-stage {
       display: flex;
       flex-direction: column;
@@ -508,9 +500,7 @@ const FEATURED_SLOTS = [
 
     /* Reset mobile order — explicit grid placement takes over. */
     .lb-area-hero,
-    .lb-area-continue,
     .lb-area-featured,
-    .lb-area-stats,
     .lb-area-recs,
     .lb-area-quick-mobile { order: initial; }
 
@@ -541,15 +531,15 @@ const FEATURED_SLOTS = [
        No physical-direction lock. Grid resolves natively to the
        page's `dir` attribute. */
     .library-body {
-      /* Single-column body — the support sidebar is taken OUT of the
-         body's flow (position: absolute on `.lb-area-left` below, anchored
-         to `.library-root` which already has `position: relative`).
-         No inline padding here: the SYMMETRIC inline padding lives on
-         `.library-root` instead, so the body's max-width + margin: 0 auto
-         centers it perfectly on the viewport. The galaxy core (image
-         centered at left:50% of `.library-galaxy` inside the body) thus
-         lands exactly at the viewport's center — independent of where
-         the absolute support sidebar sits. */
+      /* Single-column body — the two support panels are taken OUT of
+         the body's flow (each is `position: fixed` from inside its
+         own component CSS). No inline padding here: the SYMMETRIC
+         inline padding lives on `.library-root` instead, so the body's
+         max-width + margin: 0 auto centers it perfectly on the
+         viewport. The galaxy core (image centered at left:50% of
+         `.library-galaxy` inside the body) thus lands exactly at the
+         viewport's center — independent of where the fixed support
+         panels sit. */
       display: block;
       min-height: calc(var(--library-dashboard-min-height, 100dvh) - 2.75rem);
       max-width: 1440px;
@@ -564,27 +554,11 @@ const FEATURED_SLOTS = [
     .library-galaxy { direction: ltr; }
     .galaxy-card    { direction: var(--page-direction, ltr); }
 
-    /* ── Outer support sidebar: floating glass column with two stacked
-       panels (continue → stats). Pinned to the inline-start edge of
-       `.library-root` (anchor: library-root has position: relative).
-       For absolute positioning the containing block is library-root's
-       PADDING BOX, which spans the full viewport (library-root has no
-       border and 100% width). So `inset-inline-start: 20px` literally
-       means 20px from the viewport's inline-start edge — that resolves
-       to 20px from physical RIGHT in RTL Hebrew and 20px from physical
-       LEFT in LTR English. Independent of body's centering math.
-       The class name `.lb-area-left` is historical (kept to minimise
-       diff scope); semantically it's the "outer support sidebar". */
-    .lb-area-left {
-      position: absolute;
-      inset-block-start: 1.25rem;
-      inset-inline-start: 20px;
-      width: 280px;
-      gap: 1rem;
-      z-index: 5;
-    }
-    .lb-area-continue,
-    .lb-area-stats { width: 100%; }
+    /* The two support panels (ContinueLearningCard + LibraryStatsPanel)
+       are anchored individually via `position: fixed` from inside
+       their own component CSS (inset-inline-start: 20px,
+       top: header-offset + 20px, stacked via --continue-learning-card-height).
+       No wrapper needed here. */
 
     /* ── Center stage: hero + galaxy + recs ──────────────────────── */
     .lb-area-stage {
@@ -747,12 +721,8 @@ const FEATURED_SLOTS = [
     }
   }
 
-  /* ── Wide desktop (≥1280px): bigger sidebar + stage, wider cards. ─── */
+  /* ── Wide desktop (≥1280px): wider orbit cards + stage. ─── */
   @media (min-width: 1280px) {
-    /* Sidebar widens to 320 — its viewport-relative anchor (20px gap)
-       stays unchanged. No body padding to bump anymore: the body
-       centers freely on the viewport regardless of sidebar width. */
-    .lb-area-left      { width: 320px; }
     .galaxy-card        { width: 240px; }
     .galaxy-stage-image { max-width: 880px; }
   }
