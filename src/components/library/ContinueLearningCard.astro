@@ -133,7 +133,7 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     inset-inline-start: 20px;
     inset-inline-end: auto;
     z-index: 30;
-    max-width: 320px;
+    width: var(--floating-card-width);
     padding: 20px;
     border: 1px solid rgba(120, 140, 200, 0.18);
     border-radius: var(--yuval-galaxy-panel-radius, 22px);
@@ -200,7 +200,8 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
      hairline so it reads as nested rather than floating on its own. */
   .continue-learning-card__body {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 14px;
     padding: 14px;
     background-color: var(--yuval-galaxy-surface-elevated);
@@ -212,6 +213,7 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
   .continue-learning-card__progress {
     position: relative;
     flex: 0 0 auto;
+    align-self: center;
     width: 80px;
     height: 80px;
     color: var(--yuval-galaxy-accent-purple);
@@ -229,7 +231,8 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
 
   .continue-learning-card__info {
     min-width: 0;
-    flex: 1 1 auto;
+    width: 100%;
+    text-align: start;
   }
   .continue-learning-card__course-title {
     margin: 0 0 4px;
@@ -237,12 +240,20 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     font-weight: 700;
     line-height: 1.25;
     color: var(--yuval-galaxy-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .continue-learning-card__meta {
     margin: 0;
     font-size: 0.75rem;
     line-height: 1.35;
     color: var(--yuval-galaxy-text-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .continue-learning-card__cta {
@@ -264,6 +275,12 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
   }
   .continue-learning-card__cta:hover {
     opacity: 0.9;
+  }
+  .continue-learning-card__cta > span:not(.continue-learning-card__cta-icon) {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   .continue-learning-card__cta-icon {
     display: inline-flex;

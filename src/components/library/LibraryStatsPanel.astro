@@ -100,8 +100,8 @@ const showCourseGroup = visibleCourses.length > 0;
     top: calc(
       var(--library-header-offset, 72px)
       + 20px
-      + var(--continue-learning-card-height, 280px)
-      + 20px
+      + var(--continue-learning-card-height, 360px)
+      + var(--floating-card-gap)
     );
     inset-inline-start: 20px;
     inset-inline-end: auto;
@@ -136,8 +136,7 @@ const showCourseGroup = visibleCourses.length > 0;
     -webkit-backdrop-filter: blur(var(--yuval-galaxy-card-blur, 20px));
     isolation: isolate;
     padding: 20px;
-    width: 100%;
-    max-width: 320px;
+    width: var(--floating-card-width);
     display: flex;
     flex-direction: column;
     gap: 16px;
