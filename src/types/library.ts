@@ -173,6 +173,12 @@ export interface LibraryItem {
   /** Reading effort. Articles/summaries primarily; books optional. */
   readingMinutes?: number;
   wordCount?: number;
+  /**
+   * Number of content chapters in the source artifact (books / lessons).
+   * Surfaced on /library orbit cards as the "X chapters" count line.
+   * Optional because non-pipeline items (articles, slides) don't have one.
+   */
+  chapterCount?: number;
 
   /** Link to the existing reading route (or external URL). */
   href: string;

@@ -54,19 +54,58 @@ const wordCount = typeof item.wordCount === 'number' ? item.wordCount : undefine
 // Two CSS vars on the card: type accent (stripe + type label colour)
 // and status accent (badge tint + border). Inline style is the only
 // way to set them dynamically per-item without per-type CSS branches.
+//
+// Orbit variant intentionally omits `--card-accent` inline so the
+// parent `.galaxy-card` slot can hand each card a unique glow colour
+// via CSS rules (per-slot accent rotation in /library). Inline styles
+// win over external CSS, so the only way to let the slot override is
+// to leave the inline declaration off and rely on inheritance through
+// the parent. Default is still the type accent — we set it on the
+// parent in the orbit composition CSS so type-based fallback still
+// applies if the per-slot rule is missing.
 const cardStyle = [
-  `--card-accent: ${getTypeAccentVar(item.type)};`,
+  variant === 'orbit'
+    ? `--card-accent-fallback: ${getTypeAccentVar(item.type)};`
+    : `--card-accent: ${getTypeAccentVar(item.type)};`,
   `--card-status: ${getStatusAccentVar(item.status)};`,
 ].join(' ');
 
-// Orbit per reference: bare type icon + title + bottom type pill ONLY.
-// No summary, no meta, no status pill, no topics. Maximum quiet.
+// Orbit (rich BookCard): icon + type pill, title, count line, progress bar.
+// Default still shows full meta; compact stays minimal. Each section has
+// its own gate so a missing field never leaves an empty row.
 const showStatus = variant === 'default';
 const showMeta   = variant === 'default';
 const showTopics = variant === 'default' && topics.length > 0;
 const showSummary = variant !== 'orbit';
 const showOrbitVisual = variant === 'orbit';
 const showOrbitFooter = variant === 'orbit';
+
+// Course-lesson cards labelled with "Lesson N" carry more identity than
+// the generic type label "Course lesson", which would otherwise be
+// identical across every lesson card on the orbit and read as repetition.
+const orbitTypeLabel =
+  variant === 'orbit' && item.type === 'course_lesson' && item.orderInSeries
+    ? t('courses.lessonNumber', language, { n: item.orderInSeries })
+    : typeLabel;
+
+// Count line: structural chapter count when known, reading-minutes
+// fallback otherwise. The card always has SOMETHING under the title —
+// never a blank row.
+let orbitCount: string | undefined;
+if (variant === 'orbit') {
+  if (typeof item.chapterCount === 'number' && item.chapterCount > 0) {
+    orbitCount = t('library.galaxy.chaptersCount', language, { n: item.chapterCount });
+  } else if (minutes !== undefined) {
+    orbitCount = t('library.stats.readingMinutes', language, { n: minutes });
+  }
+}
+
+// Progress bar is hydrated on the client from localStorage (per-chapter
+// reading progress, see scripts/progress-tracker.ts). SSR ships 0% so
+// the bar is visible without flicker; the hydration script averages
+// chapter percentages and writes the result back as `--progress`. The
+// data-* attributes drive that lookup.
+const orbitProgressKey = item.slug;
 
 const isSafe = isSafeLibraryHref(item.href);
 const wrapperClass = ['lc', `lc-${variant}`, isSafe ? 'lc-link' : 'lc-static'].join(' ');
@@ -172,7 +211,23 @@ const extraTopics = topics.length - topicChips.length;
       </p>
     )}
     {showOrbitFooter && (
-      <p class="lc-orbit-typebadge"><span>{typeLabel}</span></p>
+      <div class="lc-orbit-footer">
+        <p class="lc-orbit-typebadge"><span>{orbitTypeLabel}</span></p>
+        {orbitCount && <p class="lc-orbit-count">{orbitCount}</p>}
+        <div
+          class="lc-orbit-progress"
+          data-orbit-progress
+          data-book-slug={orbitProgressKey}
+          data-chapter-count={item.chapterCount ?? 0}
+          aria-label={t('library.galaxy.progressLabel', language)}
+          style="--progress: 0%;"
+        >
+          <span class="lc-orbit-progress-track" aria-hidden="true">
+            <span class="lc-orbit-progress-fill"></span>
+          </span>
+          <span class="lc-orbit-progress-pct" data-orbit-progress-pct>0%</span>
+        </div>
+      </div>
     )}
   </a>
 ) : (
@@ -268,7 +323,23 @@ const extraTopics = topics.length - topicChips.length;
       </p>
     )}
     {showOrbitFooter && (
-      <p class="lc-orbit-typebadge"><span>{typeLabel}</span></p>
+      <div class="lc-orbit-footer">
+        <p class="lc-orbit-typebadge"><span>{orbitTypeLabel}</span></p>
+        {orbitCount && <p class="lc-orbit-count">{orbitCount}</p>}
+        <div
+          class="lc-orbit-progress"
+          data-orbit-progress
+          data-book-slug={orbitProgressKey}
+          data-chapter-count={item.chapterCount ?? 0}
+          aria-label={t('library.galaxy.progressLabel', language)}
+          style="--progress: 0%;"
+        >
+          <span class="lc-orbit-progress-track" aria-hidden="true">
+            <span class="lc-orbit-progress-fill"></span>
+          </span>
+          <span class="lc-orbit-progress-pct" data-orbit-progress-pct>0%</span>
+        </div>
+      </div>
     )}
   </article>
 )}
@@ -361,6 +432,10 @@ const extraTopics = topics.length - topicChips.length;
      elevated surface with backdrop blur.
   */
   .lc-orbit {
+    /* Resolve --card-accent inside the orbit variant. Parent slot can
+       set --card-accent directly (preferred); otherwise we fall back
+       to the type colour written into --card-accent-fallback inline. */
+    --card-accent: var(--card-accent-slot, var(--card-accent-fallback, var(--yuval-galaxy-accent)));
     padding: 1rem 1rem 1.125rem;
     border-radius: var(--yuval-galaxy-card-radius);
     background:
@@ -500,8 +575,17 @@ const extraTopics = topics.length - topicChips.length;
   .lc-orbit .lc-summary { display: none; }
   .lc-orbit .lc-meta { display: none; }
 
-  /* Bottom type badge — the only label the orbit card carries. Glass
-     pill in --card-accent, sized small. */
+  /* Bottom block — type pill + count line + progress bar. Sits below
+     the title; everything inside reads in the page direction so Hebrew
+     digits and labels stay aligned with the title above. */
+  .lc-orbit-footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+    margin-block-start: 0.125rem;
+  }
   .lc-orbit-typebadge {
     margin: 0;
     padding: 0;
@@ -516,6 +600,57 @@ const extraTopics = topics.length - topicChips.length;
     color: var(--card-accent);
     background-color: color-mix(in srgb, var(--card-accent) 12%, transparent);
     border: 1px solid color-mix(in srgb, var(--card-accent) 32%, transparent);
+  }
+
+  /* Count line — "12 chapters" / "Lesson 3" — quiet caption sitting
+     just under the title. Color follows the regular muted text token,
+     not the accent, so the accent stays reserved for the pill + bar. */
+  .lc-orbit-count {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--yuval-galaxy-text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Progress block — luminous accent bar + numeric percentage. The
+     parent <div> carries `--progress: <pct>%` (set by the inline
+     hydration script in /library); both the fill width and the pct
+     text bind to that variable so a single update keeps them in sync. */
+  .lc-orbit-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .lc-orbit-progress-track {
+    position: relative;
+    flex: 1 1 auto;
+    height: 4px;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--card-accent) 14%, var(--yuval-galaxy-surface-muted));
+    overflow: hidden;
+  }
+  .lc-orbit-progress-fill {
+    display: block;
+    height: 100%;
+    width: var(--progress, 0%);
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--card-accent) 70%, transparent) 0%,
+      var(--card-accent) 100%);
+    box-shadow: 0 0 8px -1px color-mix(in srgb, var(--card-accent) 75%, transparent);
+    transition: width 0.4s var(--yuval-galaxy-ease-out, ease-out);
+  }
+  .lc-orbit-progress-pct {
+    flex: 0 0 auto;
+    min-width: 2.25em;
+    text-align: end;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--card-accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
   }
 
   .lc-orbit::after,

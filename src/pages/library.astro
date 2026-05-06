@@ -742,42 +742,84 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s ease;
       z-index: 2;
-      transform: translate(-50%, -50%) rotate(var(--tilt, 0deg));
-      will-change: transform, left, top;
+      /* Composite transform: center + slot rotation + slot depth scale.
+         --slot-scale defaults to 1 so cards without a per-slot rule
+         (queue / center) still render correctly. */
+      transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(var(--slot-scale, 1));
+      opacity: var(--slot-opacity, 1);
+      will-change: transform, left, top, opacity;
     }
 
-    /* Books column — inline-start side. --galaxy-dir is +1 in LTR
-       (visual-left) and -1 in RTL (visual-right). */
+    /* Per-slot variation rules.
+       Each of the six visible slots carries its own:
+         - position (some pulled tighter to the core, others held back)
+         - rotation (alternating tilts so no two adjacent cards mirror)
+         - scale + opacity (depth: front cards bigger/brighter, back
+           cards slightly smaller and softer so the central scene
+           background stays readable)
+         - --card-accent-slot (a unique glow hue rotation across the
+           palette). Each .galaxy-card composes this with its --tilt
+           via the shared transform on `.galaxy-card`.
+
+       Tighter-orbit slots (book-0, lesson-2) sit at 26% from the
+       center; the rest stay at 32%/36% so the composition has visible
+       depth instead of a flat ring. The 6th outer accent uses the
+       lavender/cyan/gold/mint/magenta/blue rotation defined in
+       galaxy.css — calling them by name keeps the palette token-
+       driven (no hex here).
+
+       --galaxy-dir is +1 in LTR (visual-left) and -1 in RTL
+       (visual-right); books column stays on the inline-start side. */
+
+    /* Books column — inline-start side. */
     .galaxy-card[data-column="book"][data-pos="slot-0"] {
-      left: calc(50% - (32% * var(--galaxy-dir, 1)));
-      top: 18%;
-      --tilt: calc(-5deg * var(--galaxy-dir, 1));
+      left: calc(50% - (26% * var(--galaxy-dir, 1)));
+      top: 16%;
+      --tilt: calc(-6deg * var(--galaxy-dir, 1));
+      --slot-scale: 1;
+      --slot-opacity: 1;
+      --card-accent-slot: var(--yuval-galaxy-accent-gold);
     }
     .galaxy-card[data-column="book"][data-pos="slot-1"] {
-      left: calc(50% - (38% * var(--galaxy-dir, 1)));
+      left: calc(50% - (36% * var(--galaxy-dir, 1)));
       top: 50%;
-      --tilt: calc(-2deg * var(--galaxy-dir, 1));
+      --tilt: calc(-1deg * var(--galaxy-dir, 1));
+      --slot-scale: 0.96;
+      --slot-opacity: 0.94;
+      --card-accent-slot: var(--yuval-galaxy-accent-purple);
     }
     .galaxy-card[data-column="book"][data-pos="slot-2"] {
-      left: calc(50% - (32% * var(--galaxy-dir, 1)));
-      top: 82%;
-      --tilt: calc(-3deg * var(--galaxy-dir, 1));
+      left: calc(50% - (30% * var(--galaxy-dir, 1)));
+      top: 84%;
+      --tilt: calc(-4deg * var(--galaxy-dir, 1));
+      --slot-scale: 0.92;
+      --slot-opacity: 0.88;
+      --card-accent-slot: var(--yuval-galaxy-accent-blue);
     }
-    /* Lessons column — inline-end side. Sign flipped against books. */
+    /* Lessons column — inline-end side. */
     .galaxy-card[data-column="lesson"][data-pos="slot-0"] {
       left: calc(50% + (32% * var(--galaxy-dir, 1)));
       top: 18%;
-      --tilt: calc(5deg * var(--galaxy-dir, 1));
+      --tilt: calc(4deg * var(--galaxy-dir, 1));
+      --slot-scale: 0.95;
+      --slot-opacity: 0.92;
+      --card-accent-slot: var(--yuval-galaxy-type-lesson_summary);
     }
     .galaxy-card[data-column="lesson"][data-pos="slot-1"] {
-      left: calc(50% + (38% * var(--galaxy-dir, 1)));
+      left: calc(50% + (36% * var(--galaxy-dir, 1)));
       top: 50%;
       --tilt: calc(2deg * var(--galaxy-dir, 1));
+      --slot-scale: 1;
+      --slot-opacity: 1;
+      --card-accent-slot: var(--yuval-galaxy-type-series);
     }
     .galaxy-card[data-column="lesson"][data-pos="slot-2"] {
-      left: calc(50% + (32% * var(--galaxy-dir, 1)));
+      left: calc(50% + (26% * var(--galaxy-dir, 1)));
       top: 82%;
-      --tilt: calc(3deg * var(--galaxy-dir, 1));
+      --tilt: calc(5deg * var(--galaxy-dir, 1));
+      --slot-scale: 0.94;
+      --slot-opacity: 0.9;
+      --card-accent-slot: var(--yuval-galaxy-accent-cyan);
     }
 
     /* Queue — collapsed at center, transparent, no pointer events.
@@ -806,7 +848,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     .galaxy-card:hover:not([data-pos="queue"]):not([data-pos="center"]),
     .galaxy-card:focus-visible:not([data-pos="queue"]):not([data-pos="center"]) {
-      transform: translate(-50%, -50%) rotate(calc(var(--tilt, 0deg) * 0.4)) translateY(-3px);
+      /* On hover the slot's depth-scale gives a small extra lift so the
+         back cards still feel like they push forward (not just brighten). */
+      transform:
+        translate(-50%, -50%)
+        rotate(calc(var(--tilt, 0deg) * 0.4))
+        translateY(-3px)
+        scale(calc(var(--slot-scale, 1) * 1.04));
+      opacity: 1;
       z-index: 3;
     }
     .galaxy-card:focus-visible {
@@ -956,7 +1005,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-pager-btn { transition: none; }
     .galaxy-card:hover:not([data-pos="queue"]):not([data-pos="center"]),
     .galaxy-card:focus-visible:not([data-pos="queue"]):not([data-pos="center"]) {
-      transform: translate(-50%, -50%) rotate(var(--tilt, 0deg));
+      transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(var(--slot-scale, 1));
     }
   }
 </style>
@@ -1150,5 +1199,50 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     }
 
     document.querySelectorAll<HTMLElement>('[data-galaxy-stage]').forEach(initStage);
+
+    /**
+     * Hydrate orbit-card progress bars from localStorage.
+     *
+     * Reading progress is stored per-chapter as
+     *   yuval_reading_progress_{bookSlug}_ch{n}
+     * with a `percentage` field (see scripts/progress-tracker.ts).
+     * Book-level progress on the orbit card is the average percentage
+     * across all chapters [1..chapterCount]; chapters with no entry
+     * count as 0%, so a brand-new book reads 0% — never "no data".
+     *
+     * SSR ships every bar at 0%; this hydrator updates the
+     * `--progress` CSS variable + the inline percentage text. Bars
+     * with chapterCount=0 (defensive) are left at 0% as well.
+     */
+    function hydrateOrbitProgress() {
+      const bars = document.querySelectorAll<HTMLElement>('[data-orbit-progress]');
+      bars.forEach((bar) => {
+        const slug = bar.dataset.bookSlug;
+        const total = Number(bar.dataset.chapterCount || '0');
+        if (!slug || !Number.isFinite(total) || total <= 0) return;
+
+        let sum = 0;
+        for (let i = 1; i <= total; i++) {
+          const raw = localStorage.getItem(`yuval_reading_progress_${slug}_ch${i}`);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            const pct = Number(parsed?.percentage);
+            if (Number.isFinite(pct)) sum += Math.max(0, Math.min(100, pct));
+          } catch {
+            /* malformed entry — treat as 0 */
+          }
+        }
+
+        const avg = Math.round(sum / total);
+        bar.style.setProperty('--progress', `${avg}%`);
+        const pctEl = bar.querySelector<HTMLElement>('[data-orbit-progress-pct]');
+        if (pctEl) pctEl.textContent = `${avg}%`;
+      });
+    }
+
+    // Defer one frame so the layout pass settles before we paint the
+    // progress fills — avoids a brief 0% → real% flash on slow boots.
+    requestAnimationFrame(hydrateOrbitProgress);
   })();
 </script>

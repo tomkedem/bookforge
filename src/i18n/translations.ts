@@ -515,6 +515,10 @@ export const translations: Translations = {
   'library.galaxy.nextLessons':     { he: 'שיעורים הבאים',    en: 'Next lessons',        es: 'Siguientes lecciones' },
   'library.galaxy.prevLessons':     { he: 'שיעורים קודמים',   en: 'Previous lessons',    es: 'Lecciones anteriores' },
 
+  // ── library.galaxy.* — orbit BookCard inner labels (count + progress) ─────
+  'library.galaxy.chaptersCount':   { he: '{{n}} פרקים',        en: '{{n}} chapters',      es: '{{n}} capítulos' },
+  'library.galaxy.progressLabel':   { he: 'התקדמות',            en: 'Progress',            es: 'Progreso' },
+
   // ── library.mobileGalaxy.* — mobile-only horizontal carousel ──────────────
   'library.mobileGalaxy.title':     { he: 'תכני AI זמינים',                                            en: 'Available AI content',                                       es: 'Contenido de IA disponible' },
   'library.mobileGalaxy.subtitle':  { he: 'החלק ימינה או שמאלה כדי לעבור בין הספרים וסיכומי השיעור', en: 'Swipe to explore books and lesson summaries',                es: 'Desliza para explorar libros y resúmenes de clase' },

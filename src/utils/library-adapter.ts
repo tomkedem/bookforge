@@ -150,6 +150,7 @@ export function mapDiscoveredBookToLibraryItem(
     href: `/books/${book.slug}`,
     readingMinutes: estimateMinutes(wordCount) || undefined,
     wordCount: wordCount > 0 ? wordCount : undefined,
+    chapterCount: Array.isArray(book.chapters) ? book.chapters.length : undefined,
   };
 }
 
