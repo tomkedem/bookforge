@@ -61,7 +61,7 @@ const hasItems = items.length > 0;
 
       <ul class="mgc-rail" role="list">
         {items.map((item) => (
-          <li class="mgc-row" role="listitem">
+          <li class="mgc-row" role="listitem" data-slug={item.slug}>
             <LibraryCard item={item} language={language} variant="orbit" />
           </li>
         ))}

@@ -39,3 +39,34 @@ export interface ContentMetadataStore {
 }
 
 export const CONTENT_METADATA_VERSION = 1;
+
+/**
+ * Series metadata layer.
+ *
+ * A series is implicitly created the moment two or more items share a
+ * non-empty `seriesName` in their `ContentMetadata`. The series name
+ * itself lives on each item; this layer stores the *presentation*
+ * properties of the series — its visual type and an optional color —
+ * so that derived series can be styled without duplicating the name
+ * onto every item.
+ *
+ * Stored under its own localStorage key so neither item metadata nor
+ * reader progress is affected when a series record is added or
+ * edited.
+ */
+
+export type SeriesVisualType = 'capsule';
+
+export interface SeriesMetadata {
+  name: string;
+  visualType: SeriesVisualType;
+  /** Optional CSS color (hex like '#c9a96e'). Undefined = use default. */
+  color?: string;
+}
+
+export interface SeriesMetadataStore {
+  version: number;
+  items: Record<string, SeriesMetadata>;
+}
+
+export const SERIES_METADATA_VERSION = 1;

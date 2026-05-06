@@ -519,6 +519,13 @@ export const translations: Translations = {
   'library.galaxy.chaptersCount':   { he: '{{n}} פרקים',        en: '{{n}} chapters',      es: '{{n}} capítulos' },
   'library.galaxy.progressLabel':   { he: 'התקדמות',            en: 'Progress',            es: 'Progreso' },
 
+  // ── library.series.* — series capsule on the orbit ───────────────────────
+  // Labels are intentionally short so they fit inside the orbit-card
+  // footprint (190–210px wide). The number is rendered separately and
+  // bolded in DOM, so these keys carry only the trailing noun phrase.
+  'library.series.itemsLabel':      { he: 'פריטים בסדרה',     en: 'items in series',     es: 'elementos en la serie' },
+  'library.series.availableLabel':  { he: 'זמינים במערכת',    en: 'available in system', es: 'disponibles en el sistema' },
+
   // ── library.mobileGalaxy.* — mobile-only horizontal carousel ──────────────
   'library.mobileGalaxy.title':     { he: 'תכני AI זמינים',                                            en: 'Available AI content',                                       es: 'Contenido de IA disponible' },
   'library.mobileGalaxy.subtitle':  { he: 'החלק ימינה או שמאלה כדי לעבור בין הספרים וסיכומי השיעור', en: 'Swipe to explore books and lesson summaries',                es: 'Desliza para explorar libros y resúmenes de clase' },

@@ -70,31 +70,62 @@ const courseProgress = getCourseProgressList();
 const readableItems = items.filter(isReadableLibraryItem);
 const continueItem = getContinueReadingItem(readableItems);
 
-// ── Galaxy stage carousels ──────────────────────────────────────────────
-// The orbit on desktop is split into two columns. Visual sides flip with
-// page direction; --galaxy-dir handles the mirror in CSS:
-//   inline-start side → books   (data-column="book")
-//   inline-end side   → lessons (data-column="lesson")
-// Each column shows up to VISIBLE_PER_COLUMN cards at a time. Items
-// beyond that sit in a hidden "queue" and rotate in via the small
-// pagination arrows next to each column. Click on a slot card brings it
-// to a centered "focus" state with an explicit Open CTA — the central
-// PNG dims behind it, a backdrop catches outside clicks.
+// ── Galaxy orbit — every item visible at once ────────────────────────────
+// Every readable item sits on its own point along an elliptical orbit
+// around the central glowing core. The arrangement is dynamic over
+// `readableItems`: 7 items → 7 evenly-spaced angles, 12 items → 12.
+// No carousel, no queue, no pager — adding a book to output/ simply
+// adds a new station on the orbit.
 //
-// This is dynamic over `readableItems`. Adding a new book under output/
-// automatically surfaces it here — no edit to this file required. The
-// synthetic ai-engineering course meta (type 'course' with a /courses/
-// href) is filtered out by `readableItems` already, so it never appears
-// on the stage as a non-clickable tile.
+// Books occupy the inline-start arc (visual-left in LTR, visual-right
+// in RTL — matches the existing convention via --galaxy-dir).
+// Lessons occupy the inline-end arc.
+// Cards retain their type tint (gold for books, cyan for lessons) so
+// the two groups stay visually distinguishable even without columns.
+//
+// Click-to-center still works: a clicked card flies to the middle and
+// the rest dim under the backdrop.
 const bookItems = readableItems.filter((it) => it.type === 'book');
 const lessonItems = readableItems.filter((it) => it.type === 'course_lesson');
-const VISIBLE_PER_COLUMN = 3;
-// One shared pager controls BOTH columns. Each click cycles both
-// columns by 1 (cyclic, mod column length), so a column whose items
-// already fit (length ≤ VISIBLE_PER_COLUMN) still animates as the user
-// paginates — items rotate among the slots. Hidden only when there's
-// no content at all.
-const showPager = bookItems.length > 0 || lessonItems.length > 0;
+
+// Math helpers — angles in degrees, math convention
+//   (0 = right, 90 = down, 180 = left, 270 = up).
+// The inline-start arc is angles 270 → 90 going COUNTER-clockwise via
+// 180 (the visually-left half). The inline-end arc is angles 270 → 90
+// going CLOCKWISE via 0 (the visually-right half).
+//   bookAngle(i, B) places book i on the inline-start arc, top-to-bottom.
+//   lessonAngle(i, L) places lesson i on the inline-end arc, top-to-bottom.
+function bookAngle(i: number, total: number): number {
+  // (i + 0.5)/total in [0, 1]; map to a 180° span starting from the
+  // top with margin so the first/last items don't hug 12 o'clock.
+  const t = (i + 0.5) / Math.max(total, 1);
+  return 270 - t * 180; // 270° (top) → 90° (bottom) via 180° (left)
+}
+function lessonAngle(i: number, total: number): number {
+  const t = (i + 0.5) / Math.max(total, 1);
+  return (270 + t * 180) % 360; // 270° (top) → 90° (bottom) via 0° (right)
+}
+
+// One unified list rendered as a single block of orbit cards. Books
+// first then lessons keeps the source order stable; angle is what
+// drives layout, not DOM order.
+type OrbitItem = {
+  item: typeof readableItems[number];
+  angle: number;
+  kind: 'book' | 'lesson';
+};
+const orbitItems: OrbitItem[] = [
+  ...bookItems.map((item, i) => ({
+    item,
+    angle: bookAngle(i, bookItems.length),
+    kind: 'book' as const,
+  })),
+  ...lessonItems.map((item, i) => ({
+    item,
+    angle: lessonAngle(i, lessonItems.length),
+    kind: 'lesson' as const,
+  })),
+];
 
 // ── ContinueLearningCard data ─────────────────────────────────────────────
 // Real values are derived from `continueItem` + `courseProgress`. Two modes:
@@ -202,6 +233,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           <div
             class="library-galaxy"
             data-galaxy-stage
+            data-series-badge={t('library.itemType.series', language)}
+            data-series-items-label={t('library.series.itemsLabel', language)}
+            data-series-available-label={t('library.series.availableLabel', language)}
             style={`--galaxy-dir: ${isRtl ? -1 : 1};`}
           >
 
@@ -215,19 +249,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 center. Click anywhere on it closes the focus state. */}
             <div class="galaxy-backdrop" data-galaxy-backdrop aria-hidden="true"></div>
 
-            {/* Books column. Every readable book gets a card; the first
-                VISIBLE_PER_COLUMN sit in slots 0/1/2, the rest start in
-                "queue" (hidden). Pagination arrows below cycle the
-                queue. data-pos is the single source of truth for state
-                and is mutated by the page-level orbit script. */}
-            {bookItems.map((item, i) => (
+            {/* Orbit cards — every readable item gets one station on
+                the elliptical orbit around the central core. Position
+                is set per-card via inline `--orbit-angle`; CSS handles
+                the rest with cos()/sin(). No queue, no carousel —
+                everything is on screen at once. */}
+            {orbitItems.map(({ item, angle, kind }) => (
               <div
                 class="galaxy-card"
                 data-galaxy-card
-                data-column="book"
-                data-index={i}
-                data-pos={i < VISIBLE_PER_COLUMN ? `slot-${i}` : 'queue'}
-                inert={i < VISIBLE_PER_COLUMN ? undefined : true}
+                data-kind={kind}
+                data-slug={item.slug}
+                style={`--orbit-angle: ${angle}deg;`}
               >
                 <LibraryCard item={item} language={language} variant="orbit" />
                 <div class="galaxy-cta" aria-hidden="true">
@@ -245,56 +278,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 </div>
               </div>
             ))}
-
-            {/* Lessons column. Same machinery, opposite side of stage. */}
-            {lessonItems.map((item, i) => (
-              <div
-                class="galaxy-card"
-                data-galaxy-card
-                data-column="lesson"
-                data-index={i}
-                data-pos={i < VISIBLE_PER_COLUMN ? `slot-${i}` : 'queue'}
-                inert={i < VISIBLE_PER_COLUMN ? undefined : true}
-              >
-                <LibraryCard item={item} language={language} variant="orbit" />
-                <div class="galaxy-cta" aria-hidden="true">
-                  <a
-                    class="galaxy-cta-open"
-                    href={item.href}
-                    data-galaxy-cta-open
-                  >{t('library.galaxy.openItem', language)}</a>
-                  <button
-                    type="button"
-                    class="galaxy-cta-close"
-                    data-galaxy-cta-close
-                    aria-label={t('library.galaxy.closeItem', language)}
-                  >×</button>
-                </div>
-              </div>
-            ))}
-
-            {/* Shared pager — single pair of arrows centered at the
-                bottom of the stage. Each click rotates BOTH columns
-                cyclically by 1, so the user always sees motion on both
-                sides regardless of how many items each column holds. */}
-            {showPager && (
-              <div class="galaxy-pager galaxy-pager-center" aria-hidden="false">
-                <button
-                  type="button"
-                  class="galaxy-pager-btn"
-                  data-galaxy-pager-shared
-                  data-direction="prev"
-                  aria-label={t('library.galaxy.prevBooks', language)}
-                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                <button
-                  type="button"
-                  class="galaxy-pager-btn"
-                  data-galaxy-pager-shared
-                  data-direction="next"
-                  aria-label={t('library.galaxy.nextBooks', language)}
-                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-              </div>
-            )}
           </div>
         </section>
 
@@ -707,141 +690,209 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        reduced-motion rules that targeted `.galaxy-stage-image` were
        removed alongside the markup. */
 
-    /* ── Floating cards: dynamic carousel.
-          Cards live at the stage center (top:50%, left:50%) and are
-          shifted into one of three slot anchor points per column via
-          `left`/`top` percentages. --galaxy-dir flips the X sign so
-          the books column stays on the inline-start side regardless
-          of page direction (visual-right in RTL Hebrew, visual-left
-          in LTR English). N>3 cards are routed to the hidden "queue"
-          state and rotate into slots via the pager arrows. */
+    /* ── Floating cards: elliptical orbit.
+          Every readable item has its own station along an ellipse around
+          the central area. Position is computed in CSS via cos()/sin()
+          from each card's `--orbit-angle` (set inline per card in the
+          markup). --galaxy-dir mirrors the X axis so the inline-start
+          arc stays visual-left in LTR and visual-right in RTL.
+          Depth is angle-derived: cards at the bottom of the orbit
+          (sin > 0) read as nearer (slightly larger, fully opaque); cards
+          at the top read as farther (smaller, slightly dimmed). All
+          cards are visible at once — no carousel, no queue. */
     .galaxy-card {
       position: absolute;
       flex: initial;
       max-width: none;
-      width: 220px;
+      width: 190px;
       cursor: pointer;
-      /* Animate position (left/top) AND the composite transform
-         together so the click-to-center flight reads as one motion. */
+      top: 50%;
+      left: 50%;
+      /* Ellipse radii — clamped so the orbit shrinks gracefully on
+         narrow desktop widths and grows on wide ones. */
+      --orbit-rx: clamp(280px, 32vw, 380px);
+      --orbit-ry: clamp(180px, 28vh, 230px);
+      /* Depth from angle: --orbit-depth ranges 0 (top of orbit, farthest)
+         to 1 (bottom, nearest). sin(angle) is -1 at the top and +1 at
+         the bottom; remap to [0, 1]. */
+      --orbit-depth: calc((sin(var(--orbit-angle, 0deg)) + 1) / 2);
+      --slot-scale: calc(0.9 + 0.12 * var(--orbit-depth));
+      --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
+      /* Subtle perpendicular tilt: cards on the inline-start arc
+         (cos < 0 in default LTR, after dir flip) lean inward. */
+      --tilt: calc(cos(var(--orbit-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
+      opacity: var(--slot-opacity);
       transition:
-        left 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-        top  0.5s cubic-bezier(0.4, 0, 0.2, 1),
-        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s ease;
       z-index: 2;
-      /* Composite transform: center + slot rotation + slot depth scale.
-         --slot-scale defaults to 1 so cards without a per-slot rule
-         (queue / center) still render correctly. */
-      transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(var(--slot-scale, 1));
-      opacity: var(--slot-opacity, 1);
-      will-change: transform, left, top, opacity;
+      will-change: transform, opacity;
     }
 
-    /* Per-slot variation rules.
-       Each of the six visible slots carries its own:
-         - position (some pulled tighter to the core, others held back)
-         - rotation (alternating tilts so no two adjacent cards mirror)
-         - scale + opacity (depth: front cards bigger/brighter, back
-           cards slightly smaller and softer so the central scene
-           background stays readable)
-         - --card-accent-slot (a unique glow hue rotation across the
-           palette). Each .galaxy-card composes this with its --tilt
-           via the shared transform on `.galaxy-card`.
+    /* Type tint — books pick the gold accent rotation, lessons the
+       cyan one. Keeps the two groups visually distinct on the orbit
+       without needing column-based layout. */
+    .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
+    .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
 
-       Tighter-orbit slots (book-0, lesson-2) sit at 26% from the
-       center; the rest stay at 32%/36% so the composition has visible
-       depth instead of a flat ring. The 6th outer accent uses the
-       lavender/cyan/gold/mint/magenta/blue rotation defined in
-       galaxy.css — calling them by name keeps the palette token-
-       driven (no hex here).
-
-       --galaxy-dir is +1 in LTR (visual-left) and -1 in RTL
-       (visual-right); books column stays on the inline-start side. */
-
-    /* Books column — inline-start side. */
-    .galaxy-card[data-column="book"][data-pos="slot-0"] {
-      left: calc(50% - (26% * var(--galaxy-dir, 1)));
-      top: 16%;
-      --tilt: calc(-6deg * var(--galaxy-dir, 1));
-      --slot-scale: 1;
-      --slot-opacity: 1;
-      --card-accent-slot: var(--yuval-galaxy-accent-gold);
+    /* ── Series capsule —
+          Painted client-side when ≥2 visible items share a seriesName
+          (see metadata layer + the hydrator script below). The wrapper
+          .galaxy-card keeps all orbit positioning/tilt/depth machinery,
+          so the capsule lives at a real station on the ellipse exactly
+          like a single-book card would.
+          The capsule is informational-only at this iteration: no Open
+          CTA, no click-to-center (the [data-galaxy-card] attribute is
+          stripped on hydration), no carousel expansion. Hover lift is
+          also reset so the card doesn't suggest interactivity that
+          isn't wired yet. */
+    .galaxy-card[data-role="series"] {
+      cursor: default;
     }
-    .galaxy-card[data-column="book"][data-pos="slot-1"] {
-      left: calc(50% - (36% * var(--galaxy-dir, 1)));
-      top: 50%;
-      --tilt: calc(-1deg * var(--galaxy-dir, 1));
-      --slot-scale: 0.96;
-      --slot-opacity: 0.94;
-      --card-accent-slot: var(--yuval-galaxy-accent-purple);
-    }
-    .galaxy-card[data-column="book"][data-pos="slot-2"] {
-      left: calc(50% - (30% * var(--galaxy-dir, 1)));
-      top: 84%;
-      --tilt: calc(-4deg * var(--galaxy-dir, 1));
-      --slot-scale: 0.92;
-      --slot-opacity: 0.88;
-      --card-accent-slot: var(--yuval-galaxy-accent-blue);
-    }
-    /* Lessons column — inline-end side. */
-    .galaxy-card[data-column="lesson"][data-pos="slot-0"] {
-      left: calc(50% + (32% * var(--galaxy-dir, 1)));
-      top: 18%;
-      --tilt: calc(4deg * var(--galaxy-dir, 1));
-      --slot-scale: 0.95;
-      --slot-opacity: 0.92;
-      --card-accent-slot: var(--yuval-galaxy-type-lesson_summary);
-    }
-    .galaxy-card[data-column="lesson"][data-pos="slot-1"] {
-      left: calc(50% + (36% * var(--galaxy-dir, 1)));
-      top: 50%;
-      --tilt: calc(2deg * var(--galaxy-dir, 1));
-      --slot-scale: 1;
-      --slot-opacity: 1;
-      --card-accent-slot: var(--yuval-galaxy-type-series);
-    }
-    .galaxy-card[data-column="lesson"][data-pos="slot-2"] {
-      left: calc(50% + (26% * var(--galaxy-dir, 1)));
-      top: 82%;
-      --tilt: calc(5deg * var(--galaxy-dir, 1));
-      --slot-scale: 0.94;
-      --slot-opacity: 0.9;
-      --card-accent-slot: var(--yuval-galaxy-accent-cyan);
+    .galaxy-card[data-role="series"]:hover:not([data-pos="center"]),
+    .galaxy-card[data-role="series"]:focus-visible:not([data-pos="center"]) {
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
+      opacity: var(--slot-opacity);
     }
 
-    /* Queue — collapsed at center, transparent, no pointer events.
-       Cards stay in the DOM so the pager can rotate them into slots
-       without re-rendering. */
-    .galaxy-card[data-pos="queue"] {
-      left: 50%;
-      top: 50%;
-      --tilt: 0deg;
-      transform: translate(-50%, -50%) scale(0.6);
-      opacity: 0;
-      pointer-events: none;
-      z-index: 1;
+    .galaxy-series-capsule {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.95rem 0.95rem 0.85rem;
+      border-radius: 14px;
+      /* Use the editorial series color when set; fall back to the gold
+         accent so a freshly-tagged series still reads as a series. */
+      --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--series-color-resolved) 14%, transparent) 0%,
+          color-mix(in srgb, var(--series-color-resolved) 6%, transparent) 60%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent) 100%
+        ),
+        var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78));
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 45%, transparent);
+      box-shadow:
+        0 14px 38px -14px color-mix(in srgb, var(--series-color-resolved) 55%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
-    /* Centered focus state — card flies to the middle, scales up,
-       drops its tilt, sits above the dimmed PNG and the backdrop. */
+    /* Capsule edge indicator — a thin colored bar along the inline-start
+       side, painted in the series color. Echoes the series swatch on
+       /admin so the same color identifies the same series everywhere. */
+    .galaxy-series-capsule::before {
+      content: "";
+      position: absolute;
+      inset-block: 12px;
+      inset-inline-start: 0;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--series-color-resolved);
+      opacity: 0.85;
+    }
+    [dir="rtl"] .galaxy-series-capsule::before {
+      border-radius: 3px 0 0 3px;
+    }
+
+    .galaxy-series-badge {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--series-color-resolved) 18%, transparent);
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 55%, transparent);
+      color: var(--series-color-resolved);
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+
+    .galaxy-series-name {
+      margin: 0;
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 1.02rem;
+      font-weight: 500;
+      line-height: 1.25;
+      color: var(--yuval-galaxy-text, #ececea);
+      letter-spacing: -0.005em;
+      /* Allow up to 2 lines — series names tend to be longer than book titles. */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .galaxy-series-counts {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 2px;
+    }
+
+    .galaxy-series-count-line {
+      font-size: 0.74rem;
+      color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-muted, #a8a8a4));
+      line-height: 1.4;
+      letter-spacing: 0.005em;
+    }
+
+    .galaxy-series-count-line strong {
+      color: var(--yuval-galaxy-text, #ececea);
+      font-weight: 600;
+      margin-inline-end: 0.25rem;
+    }
+
+    .galaxy-series-count-available strong {
+      color: var(--series-color-resolved);
+    }
+
+    /* Centered focus state — overrides the orbit transform so the card
+       flies to the middle, scales up, drops its tilt. Sits above the
+       backdrop and other cards. */
     .galaxy-card[data-pos="center"] {
-      left: 50%;
-      top: 50%;
-      --tilt: 0deg;
       transform: translate(-50%, -50%) scale(1.35);
+      opacity: 1;
       z-index: 30;
       cursor: default;
     }
 
-    .galaxy-card:hover:not([data-pos="queue"]):not([data-pos="center"]),
-    .galaxy-card:focus-visible:not([data-pos="queue"]):not([data-pos="center"]) {
-      /* On hover the slot's depth-scale gives a small extra lift so the
-         back cards still feel like they push forward (not just brighten). */
+    /* Hover lift — small bump along the radial direction (cards move
+       slightly further from center) plus a brightness/scale bump.
+       Skipped when the card is focused to avoid double transforms. */
+    .galaxy-card:hover:not([data-pos="center"]),
+    .galaxy-card:focus-visible:not([data-pos="center"]) {
       transform:
         translate(-50%, -50%)
-        rotate(calc(var(--tilt, 0deg) * 0.4))
-        translateY(-3px)
-        scale(calc(var(--slot-scale, 1) * 1.04));
+        translate(
+          calc(cos(var(--orbit-angle, 0deg)) * (var(--orbit-rx) + 8px) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-angle, 0deg)) * (var(--orbit-ry) + 8px))
+        )
+        rotate(calc(var(--tilt) * 0.5))
+        scale(calc(var(--slot-scale) * 1.04));
       opacity: 1;
       z-index: 3;
     }
@@ -935,69 +986,239 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        darken layer above the orbit already provides that focal lift,
        so no extra dimming is wired here. */
 
-    /* Pagination chips — single shared pair, centered at the bottom of
-       the stage. Drives BOTH columns at once so any click animates
-       motion on both sides (cyclic rotation per column). */
-    .galaxy-pager {
-      position: absolute;
-      inset-block-end: -1.5rem;
-      display: flex;
-      gap: 0.5rem;
-      z-index: 4;
-    }
-    .galaxy-pager-center {
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    .galaxy-pager-btn {
-      width: 32px;
-      height: 32px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      color: var(--yuval-galaxy-text-soft);
-      background: var(--yuval-galaxy-surface-muted);
-      border: 1px solid var(--yuval-galaxy-border);
-      cursor: pointer;
-      padding: 0;
-      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-    }
-    .galaxy-pager-btn:hover:not(:disabled),
-    .galaxy-pager-btn:focus-visible:not(:disabled) {
-      color: var(--yuval-galaxy-text);
-      background: var(--yuval-galaxy-card-surface-hover);
-      border-color: var(--yuval-galaxy-border-strong);
-      transform: translateY(-1px);
-      outline: none;
-    }
-    .galaxy-pager-btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-    /* Mirror chevrons on RTL pages so "next" still points toward where
-       new items come from. The stage itself is direction:ltr; only the
-       icons need the manual flip. */
-    [dir="rtl"] .galaxy-pager-btn svg { transform: scaleX(-1); }
   }
 
-  /* ── Wide desktop (≥1280px): wider orbit cards. ─── */
+  /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
   @media (min-width: 1280px) {
-    .galaxy-card { width: 240px; }
+    .galaxy-card {
+      width: 210px;
+      --orbit-rx: clamp(320px, 30vw, 440px);
+      --orbit-ry: clamp(200px, 26vh, 250px);
+    }
   }
 
   /* ── Reduced motion — drop transitions, keep state changes instant ── */
   @media (prefers-reduced-motion: reduce) {
     .galaxy-card,
     .galaxy-cta,
-    .galaxy-backdrop,
-    .galaxy-pager-btn { transition: none; }
-    .galaxy-card:hover:not([data-pos="queue"]):not([data-pos="center"]),
-    .galaxy-card:focus-visible:not([data-pos="queue"]):not([data-pos="center"]) {
-      transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(var(--slot-scale, 1));
+    .galaxy-backdrop { transition: none; }
+    .galaxy-card:hover:not([data-pos="center"]),
+    .galaxy-card:focus-visible:not([data-pos="center"]) {
+      /* Restore base orbit transform — drop the radial bump. */
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
     }
   }
 </style>
+
+<script>
+  /**
+   * Metadata hydration for the Knowledge Universe.
+   *
+   * Runs once on page load, BEFORE the stage-interactions script below
+   * reads the orbit cards. SSR ships every readable item as its own
+   * orbit station with default behaviour (visible, no series). This
+   * pass overlays the editorial metadata (yuval_content_metadata,
+   * yuval_series_metadata) and:
+   *
+   *   1. Removes cards whose item metadata says isVisibleInUniverse=false
+   *      or visualMode='hidden'. Visibility filtering also applies to
+   *      the mobile carousel rows — same data-slug attribute on both.
+   *   2. Groups orbit cards that share a non-empty seriesName: keeps
+   *      the FIRST card's DOM node as the station for the series, and
+   *      replaces its inner content with a SeriesCapsule. Removes the
+   *      siblings so books from one series can never be scattered
+   *      across the orbit. Single-item "series" stay as normal book
+   *      cards (a series of one isn't really a series).
+   *   3. Recomputes --orbit-angle for each kind ('book' / 'lesson')
+   *      after the hide+group pass, so the surviving stations stay
+   *      evenly distributed on their respective arcs and the orbit
+   *      keeps its existing floating layout.
+   *
+   * The hydrator does NOT change reading data, navigation, or layout
+   * geometry beyond the angle recomputation. It is purely a metadata
+   * read pass.
+   */
+  import {
+    getMetadata,
+    getSeriesMetadata,
+  } from '../utils/content-metadata';
+
+  (() => {
+    function isHidden(slug: string): boolean {
+      const meta = getMetadata(slug);
+      return !meta.isVisibleInUniverse || meta.visualMode === 'hidden';
+    }
+
+    // ── Phase 1 — Collect every slug currently in the DOM, BEFORE we
+    //    remove anything. The mobile carousel renders the same item
+    //    list as the desktop orbit (`readableItems`), so the union of
+    //    .galaxy-card[data-slug] and .mgc-row[data-slug] is the full
+    //    knowable set of items on this page. We need this snapshot to
+    //    compute series totals correctly: an item that is hidden by
+    //    metadata still belongs to its series and must count toward
+    //    the series total. Removing it first would undercount. ───────
+    const slugSet = new Set<string>();
+    document
+      .querySelectorAll<HTMLElement>('.galaxy-card[data-slug], .mgc-row[data-slug]')
+      .forEach(el => {
+        const s = el.dataset.slug;
+        if (s) slugSet.add(s);
+      });
+
+    const seriesTotal = new Map<string, number>();
+    const seriesAvailable = new Map<string, number>();
+    slugSet.forEach(slug => {
+      const m = getMetadata(slug);
+      const sn = m.seriesName.trim();
+      if (!sn) return;
+      seriesTotal.set(sn, (seriesTotal.get(sn) || 0) + 1);
+      if (m.isVisibleInUniverse && m.visualMode !== 'hidden') {
+        seriesAvailable.set(sn, (seriesAvailable.get(sn) || 0) + 1);
+      }
+    });
+
+    // ── Phase 2 — Visibility filter. Drop hidden rows from both the
+    //    desktop orbit and the mobile carousel. The series totals
+    //    above already factored these in. ─────────────────────────────
+    document
+      .querySelectorAll<HTMLElement>('.galaxy-card[data-slug], .mgc-row[data-slug]')
+      .forEach(row => {
+        const slug = row.dataset.slug;
+        if (slug && isHidden(slug)) row.remove();
+      });
+
+    // ── Phase 3 — Series grouping (desktop orbit only). ──────────────
+    const stage = document.querySelector<HTMLElement>('[data-galaxy-stage]');
+    if (!stage) return;
+
+    const badgeLabel = stage.dataset.seriesBadge || 'Series';
+    const itemsLabel = stage.dataset.seriesItemsLabel || 'items';
+    const availableLabel = stage.dataset.seriesAvailableLabel || 'available';
+
+    // Build the ordered list of currently-rendered orbit cards.
+    const liveCards = Array.from(
+      stage.querySelectorAll<HTMLElement>('.galaxy-card[data-slug]'),
+    );
+
+    // First pass: keep the first card per series, mark others for
+    // removal. Single-item series stay as normal book cards.
+    const seenSeries = new Set<string>();
+    liveCards.forEach(card => {
+      const slug = card.dataset.slug!;
+      const m = getMetadata(slug);
+      const sn = m.seriesName.trim();
+      if (!sn) return;
+
+      const total = seriesTotal.get(sn) || 0;
+      if (total < 2) return; // not a real series
+
+      if (seenSeries.has(sn)) {
+        card.remove();
+        return;
+      }
+      seenSeries.add(sn);
+
+      const seriesMeta = getSeriesMetadata(sn);
+      const totalCount = seriesTotal.get(sn) || 0;
+      const availableCount = seriesAvailable.get(sn) || 0;
+      replaceWithCapsule(
+        card,
+        sn,
+        totalCount,
+        availableCount,
+        seriesMeta.color,
+      );
+    });
+
+    // Second pass: recompute --orbit-angle for each kind across the
+    // surviving stations, so the orbit stays evenly distributed.
+    const surviving = Array.from(
+      stage.querySelectorAll<HTMLElement>('.galaxy-card'),
+    );
+    const byKind: Record<string, HTMLElement[]> = { book: [], lesson: [] };
+    surviving.forEach(card => {
+      const k = card.dataset.kind;
+      if (k === 'book' || k === 'lesson') byKind[k].push(card);
+    });
+
+    function bookAngle(i: number, total: number): number {
+      const t = (i + 0.5) / Math.max(total, 1);
+      return 270 - t * 180;
+    }
+    function lessonAngle(i: number, total: number): number {
+      const t = (i + 0.5) / Math.max(total, 1);
+      return (270 + t * 180) % 360;
+    }
+
+    byKind.book.forEach((card, i) => {
+      const angle = bookAngle(i, byKind.book.length);
+      card.style.setProperty('--orbit-angle', `${angle}deg`);
+    });
+    byKind.lesson.forEach((card, i) => {
+      const angle = lessonAngle(i, byKind.lesson.length);
+      card.style.setProperty('--orbit-angle', `${angle}deg`);
+    });
+
+    function replaceWithCapsule(
+      card: HTMLElement,
+      seriesName: string,
+      total: number,
+      available: number,
+      color: string | undefined,
+    ): void {
+      // Mark as series: keeps orbit positioning (.galaxy-card class +
+      // data-kind), but disables click-to-center by stripping the
+      // attribute the existing handler queries for.
+      card.dataset.role = 'series';
+      card.dataset.seriesName = seriesName;
+      card.removeAttribute('data-galaxy-card');
+      card.removeAttribute('data-slug');
+      if (color) card.style.setProperty('--series-color', color);
+
+      card.replaceChildren();
+
+      const capsule = document.createElement('div');
+      capsule.className = 'galaxy-series-capsule';
+
+      const badge = document.createElement('span');
+      badge.className = 'galaxy-series-badge';
+      badge.textContent = badgeLabel;
+      capsule.appendChild(badge);
+
+      const name = document.createElement('h3');
+      name.className = 'galaxy-series-name';
+      name.textContent = seriesName;
+      capsule.appendChild(name);
+
+      const counts = document.createElement('div');
+      counts.className = 'galaxy-series-counts';
+
+      const totalLine = document.createElement('span');
+      totalLine.className = 'galaxy-series-count-line';
+      const totalNum = document.createElement('strong');
+      totalNum.textContent = String(total);
+      totalLine.append(totalNum, document.createTextNode(' ' + itemsLabel));
+      counts.appendChild(totalLine);
+
+      const availLine = document.createElement('span');
+      availLine.className = 'galaxy-series-count-line galaxy-series-count-available';
+      const availNum = document.createElement('strong');
+      availNum.textContent = String(available);
+      availLine.append(availNum, document.createTextNode(' ' + availableLabel));
+      counts.appendChild(availLine);
+
+      capsule.appendChild(counts);
+      card.appendChild(capsule);
+    }
+  })();
+</script>
 
 <script>
   /**
@@ -1008,106 +1229,41 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
    * which is what the CSS reads — no inline styles, no React/Astro
    * round-trips.
    *
-   * Per-column state is the offset into a sorted item list. Slot N
-   * displays item at (offset + N). Items outside [offset, offset+3) get
-   * data-pos="queue" and are visually collapsed at center with opacity 0.
+   * Layout is fully CSS-driven: each card's position on the elliptical
+   * orbit is computed from its inline `--orbit-angle` via cos()/sin().
+   * The script only manages the click-to-center / focus state.
    *
-   * Click on a slot card  → that card becomes data-pos="center", stage
-   *                         gets [data-galaxy-focused] (CSS shows the
-   *                         backdrop and dims the central PNG).
-   * Click on backdrop / × → return centered card to its previous slot.
+   * Click on an orbit card → data-pos="center", stage gets
+   *                          [data-galaxy-focused] (CSS reveals the
+   *                          backdrop and lifts the card above siblings).
+   * Click on backdrop / × → return the centered card to its orbit.
    * Esc                   → same.
    * Click on Open CTA     → propagate normally; the <a> navigates.
-   * Pager prev/next       → recompute data-pos for every card in that
-   *                         column based on the new offset.
    */
   (() => {
-    const VISIBLE = 3;
-
     /** Scope every operation to a single stage. The page only renders
      *  one stage today, but coding it like a component keeps it safe
      *  if `/library` ever embeds two. */
     function initStage(stage: HTMLElement) {
-      const cards = Array.from(
-        stage.querySelectorAll<HTMLElement>('[data-galaxy-card]'),
-      );
-
-      // Column → sorted card list (by data-index). Cards rendered with
-      // higher data-index are later in the queue.
-      const byColumn: Record<string, HTMLElement[]> = { book: [], lesson: [] };
-      for (const card of cards) {
-        const col = card.dataset.column;
-        if (col === 'book' || col === 'lesson') byColumn[col].push(card);
-      }
-      for (const col of Object.keys(byColumn)) {
-        byColumn[col].sort(
-          (a, b) => Number(a.dataset.index) - Number(b.dataset.index),
-        );
-      }
-
-      // Per-column carousel offset (start index for the visible window).
-      // Cyclic: each click on the shared pager bumps both offsets by 1
-      // mod length, so even a column with length === VISIBLE rotates
-      // its cards through the slots and animates on every click.
-      const offset: Record<string, number> = { book: 0, lesson: 0 };
       // Card currently in center.
-      let focused: { card: HTMLElement; column: string } | null = null;
-
-      // Apply offset → set data-pos for every card in the column. Cards
-      // currently in "center" are skipped so a paginate doesn't yank a
-      // focused card back to a slot mid-flight.
-      function applyColumn(column: string) {
-        const list = byColumn[column];
-        const len = list.length;
-        if (len === 0) return;
-        const off = offset[column];
-        for (let i = 0; i < len; i++) {
-          const card = list[i];
-          if (focused && focused.card === card) continue;
-          // Cyclic slot — wraps around so length === VISIBLE still
-          // rotates the cards visually instead of staying static.
-          const slot = ((i - off) % len + len) % len;
-          if (slot < VISIBLE) {
-            card.dataset.pos = `slot-${slot}`;
-            card.removeAttribute('inert');
-          } else {
-            card.dataset.pos = 'queue';
-            card.setAttribute('inert', '');
-          }
-        }
-      }
+      let focused: HTMLElement | null = null;
 
       function openCenter(card: HTMLElement) {
-        if (focused && focused.card === card) return;
+        if (focused === card) return;
         if (focused) closeCenter();
-        const column = card.dataset.column;
-        if (!column) return;
-        focused = { card, column };
+        focused = card;
         card.dataset.pos = 'center';
         stage.dataset.galaxyFocused = 'true';
       }
 
       function closeCenter() {
         if (!focused) return;
-        const { column } = focused;
+        // Removing data-pos drops the card back to its CSS-driven orbit
+        // position — angle is encoded in the card's inline style, so
+        // there's no per-card state to restore.
+        delete focused.dataset.pos;
         focused = null;
         delete stage.dataset.galaxyFocused;
-        // applyColumn reassigns the now-unfocused card to its proper
-        // slot/queue based on current offset. No need to remember the
-        // original slot — cyclic positioning recomputes from scratch.
-        applyColumn(column);
-      }
-
-      // One click → both columns rotate cyclically by `step`.
-      function paginate(step: number) {
-        for (const column of ['book', 'lesson']) {
-          const len = byColumn[column].length;
-          if (len === 0) continue;
-          offset[column] = ((offset[column] + step) % len + len) % len;
-        }
-        if (focused) closeCenter();
-        applyColumn('book');
-        applyColumn('lesson');
       }
 
       // Card click — capture phase so we beat the inner <a>'s native
@@ -1134,14 +1290,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           return;
         }
 
-        // Shared pager — drives both columns at once.
-        const pagerBtn = target.closest<HTMLButtonElement>('[data-galaxy-pager-shared]');
-        if (pagerBtn) {
-          e.preventDefault();
-          paginate(pagerBtn.dataset.direction === 'prev' ? -1 : 1);
-          return;
-        }
-
         // Card click.
         const card = target.closest<HTMLElement>('[data-galaxy-card]');
         if (!card) return;
@@ -1153,7 +1301,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           // tap to dismiss the spotlight). The Open CTA is the only way
           // to actually navigate.
           closeCenter();
-        } else if (card.dataset.pos !== 'queue') {
+        } else {
           openCenter(card);
         }
       }, true);

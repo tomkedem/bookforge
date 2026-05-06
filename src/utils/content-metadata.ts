@@ -13,11 +13,22 @@
 
 import {
   CONTENT_METADATA_VERSION,
+  SERIES_METADATA_VERSION,
   type ContentMetadata,
   type ContentMetadataStore,
+  type SeriesMetadata,
+  type SeriesMetadataStore,
 } from '../types/content-metadata';
 
 export const CONTENT_METADATA_STORAGE_KEY = 'yuval_content_metadata';
+
+/**
+ * Series metadata uses its own key so editing a series cannot touch
+ * item metadata or reader progress. The key has no slug substring, so
+ * the existing cleanBook(slug) sweep in /admin will not match it; it
+ * is also intentionally excluded from GLOBAL_KEYS.
+ */
+export const SERIES_METADATA_STORAGE_KEY = 'yuval_series_metadata';
 
 /**
  * Build a safe defaults record from the current book id and (optional)
@@ -125,5 +136,90 @@ export function setMetadata(
   store.items[slug] = next;
   store.version = CONTENT_METADATA_VERSION;
   writeStore(store);
+  return next;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Series metadata
+//
+// Mirrors the item API. A series record is keyed by series name (the
+// `seriesName` field on items). Reads return defaults when nothing is
+// stored; writes happen only via setSeriesMetadata.
+// ─────────────────────────────────────────────────────────────────
+
+export function defaultSeriesMetadataFor(name: string): SeriesMetadata {
+  return {
+    name,
+    visualType: 'capsule',
+  };
+}
+
+function emptySeriesStore(): SeriesMetadataStore {
+  return { version: SERIES_METADATA_VERSION, items: {} };
+}
+
+function readSeriesStore(): SeriesMetadataStore {
+  if (!isBrowser()) return emptySeriesStore();
+  try {
+    const raw = localStorage.getItem(SERIES_METADATA_STORAGE_KEY);
+    if (!raw) return emptySeriesStore();
+    const parsed = JSON.parse(raw) as Partial<SeriesMetadataStore> | null;
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.items ||
+      typeof parsed.items !== 'object'
+    ) {
+      return emptySeriesStore();
+    }
+    return {
+      version:
+        typeof parsed.version === 'number' ? parsed.version : SERIES_METADATA_VERSION,
+      items: parsed.items as Record<string, SeriesMetadata>,
+    };
+  } catch {
+    return emptySeriesStore();
+  }
+}
+
+function writeSeriesStore(store: SeriesMetadataStore): void {
+  if (!isBrowser()) return;
+  try {
+    localStorage.setItem(SERIES_METADATA_STORAGE_KEY, JSON.stringify(store));
+  } catch {
+    // Quota / private mode — silent no-op, same as item metadata.
+  }
+}
+
+export function getAllSeriesMetadata(): Record<string, SeriesMetadata> {
+  return readSeriesStore().items;
+}
+
+/**
+ * Returns a complete `SeriesMetadata` for `name`, defaulting any
+ * missing fields. Stored fields take priority. Never mutates storage.
+ */
+export function getSeriesMetadata(name: string): SeriesMetadata {
+  const stored = readSeriesStore().items[name];
+  const defaults = defaultSeriesMetadataFor(name);
+  if (!stored) return defaults;
+  return { ...defaults, ...stored, name };
+}
+
+/**
+ * Merges `patch` into the stored series record (creating it from
+ * defaults if absent) and writes the store. The name is always
+ * re-pinned so it cannot be patched away.
+ */
+export function setSeriesMetadata(
+  name: string,
+  patch: Partial<SeriesMetadata>,
+): SeriesMetadata {
+  const store = readSeriesStore();
+  const current = store.items[name] ?? defaultSeriesMetadataFor(name);
+  const next: SeriesMetadata = { ...current, ...patch, name };
+  store.items[name] = next;
+  store.version = SERIES_METADATA_VERSION;
+  writeSeriesStore(store);
   return next;
 }
