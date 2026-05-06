@@ -521,6 +521,80 @@ export const translations: Translations = {
   'library.galaxy.chaptersCount':   { he: '{{n}} פרקים',        en: '{{n}} chapters',      es: '{{n}} capítulos' },
   'library.galaxy.progressLabel':   { he: 'התקדמות',            en: 'Progress',            es: 'Progreso' },
 
+  // ── admin.* — Knowledge Control Center (/admin) ─────────────────────────
+  // Internal control surface for the project owner. Strings here drive
+  // every visible text node: header, sections, buttons, drawer fields,
+  // delete modal, and runtime toast messages. Runtime toasts are exposed
+  // to the page script via a JSON data-attribute on the wrapper, so the
+  // same translation table feeds both SSR and client pieces — no parallel
+  // string source.
+  'admin.eyebrow':                       { he: 'Yuval · פנים',                                      en: 'Yuval · Internal',                                      es: 'Yuval · Interno' },
+  'admin.title':                         { he: 'מרכז בקרת הידע',                                    en: 'Knowledge Control Center',                              es: 'Centro de control del conocimiento' },
+  'admin.subtitle':                      { he: 'ניהול תוכן, מצב קריאה ומטא־דאטה של הידע.',           en: 'Manage content, reader state and knowledge metadata.', es: 'Administra contenido, estado del lector y metadatos del conocimiento.' },
+
+  'admin.section.libraryContent':        { he: 'תוכן הספרייה',          en: 'Library Content',         es: 'Contenido de la biblioteca' },
+  'admin.section.globalSettings':        { he: 'הגדרות כלליות',         en: 'Global Settings',         es: 'Configuración global' },
+  'admin.section.bookCount':             { he: '{{n}} ספרים',           en: '{{n}} books',             es: '{{n}} libros' },
+
+  'admin.action.editMetadata':           { he: 'עריכת מטא־דאטה',                          en: 'Edit metadata',                         es: 'Editar metadatos' },
+  'admin.action.editAriaLabel':          { he: 'עריכת מטא־דאטה עבור {{title}}',            en: 'Edit metadata for {{title}}',           es: 'Editar metadatos de {{title}}' },
+  'admin.action.editTitle':              { he: 'עריכת מטא־דאטה',                          en: 'Edit metadata',                         es: 'Editar metadatos' },
+  'admin.action.cleanData':              { he: 'ניקוי נתונים',                            en: 'Clean data',                            es: 'Limpiar datos' },
+  'admin.action.cleanDataTitle':         { he: 'ניקוי נתוני קריאה מקומיים לספר זה',       en: 'Clean local reader data for this book', es: 'Limpiar datos locales del lector para este libro' },
+  'admin.action.delete':                 { he: 'מחיקה',                                   en: 'Delete',                                es: 'Eliminar' },
+  'admin.action.deleteAriaLabel':        { he: 'מחיקת {{title}}',                         en: 'Delete {{title}}',                      es: 'Eliminar {{title}}' },
+  'admin.action.deleteTitle':            { he: 'מחיקת ספר',                               en: 'Delete book',                           es: 'Eliminar libro' },
+
+  'admin.stat.loading':                  { he: '…',                  en: '…',                       es: '…' },
+  'admin.stat.noData':                   { he: 'אין נתונים',         en: 'No data',                 es: 'Sin datos' },
+  'admin.stat.itemsOne':                 { he: 'פריט אחד',           en: '1 item',                  es: '1 elemento' },
+  'admin.stat.itemsMany':                { he: '{{n}} פריטים',       en: '{{n}} items',             es: '{{n}} elementos' },
+
+  'admin.global.title':                  { he: 'העדפות קריאה',                                                                en: 'Reader preferences',                                                       es: 'Preferencias del lector' },
+  'admin.global.description':            { he: 'שפה, ערכת נושא, טיפוגרפיה, קול ומהירות TTS, מצב היכרות.',                       en: 'Language, theme, typography, TTS voice & speed, onboarding state.',          es: 'Idioma, tema, tipografía, voz y velocidad de TTS, estado de presentación.' },
+  'admin.global.cleanButton':            { he: 'ניקוי הגדרות כלליות',                                                          en: 'Clean global settings',                                                      es: 'Limpiar configuración global' },
+
+  'admin.drawer.eyebrow':                { he: 'עריכת מטא־דאטה',     en: 'Edit metadata',           es: 'Editar metadatos' },
+  'admin.drawer.close':                  { he: 'סגירת עורך',         en: 'Close editor',            es: 'Cerrar editor' },
+
+  'admin.field.displayTitle':            { he: 'כותרת לתצוגה',                                                  en: 'Display title',                                                       es: 'Título mostrado' },
+  'admin.field.displayTitleHint':        { he: 'כיצד פריט זה יופיע במרחב הידע.',                                  en: 'How this item will appear in the Knowledge Universe.',                es: 'Cómo aparecerá este elemento en el Espacio de conocimiento.' },
+  'admin.field.contentType':             { he: 'סוג תוכן',                                                       en: 'Content type',                                                        es: 'Tipo de contenido' },
+  'admin.field.category':                { he: 'קטגוריה',                                                        en: 'Category',                                                            es: 'Categoría' },
+  'admin.field.categoryPlaceholder':     { he: 'לדוגמה: הנדסת AI',                                              en: 'e.g. AI Engineering',                                                 es: 'p. ej. Ingeniería de IA' },
+  'admin.field.seriesName':              { he: 'שם הסדרה',                                                       en: 'Series name',                                                         es: 'Nombre de la serie' },
+  'admin.field.seriesPlaceholder':       { he: 'לדוגמה: AI Developer Path',                                      en: 'e.g. AI Developer Path',                                              es: 'p. ej. AI Developer Path' },
+  'admin.field.visibleInUniverse':       { he: 'גלוי במרחב הידע',                                                en: 'Visible in universe',                                                 es: 'Visible en el Espacio' },
+  'admin.field.visibleInUniverseHint':   { he: 'כיבוי מסתיר פריט זה ממרחב הידע.',                                en: 'Off hides this item from the Knowledge Universe.',                    es: 'Apagado oculta este elemento del Espacio de conocimiento.' },
+  'admin.field.visibleInUniverseAria':   { he: 'החלפת גלויות במרחב הידע',                                        en: 'Toggle visibility in universe',                                       es: 'Alternar visibilidad en el Espacio' },
+  'admin.field.visualMode':              { he: 'מצב תצוגה',                                                      en: 'Visual mode',                                                         es: 'Modo visual' },
+
+  'admin.option.book':                   { he: 'ספר',         en: 'Book',     es: 'Libro' },
+  'admin.option.course':                 { he: 'קורס',        en: 'Course',   es: 'Curso' },
+  'admin.option.article':                { he: 'מאמר',        en: 'Article',  es: 'Artículo' },
+  'admin.option.card':                   { he: 'כרטיסייה',    en: 'Card',     es: 'Tarjeta' },
+  'admin.option.hidden':                 { he: 'מוסתר',       en: 'Hidden',   es: 'Oculto' },
+
+  'admin.button.cancel':                 { he: 'ביטול',                  en: 'Cancel',                  es: 'Cancelar' },
+  'admin.button.save':                   { he: 'שמירת מטא־דאטה',         en: 'Save metadata',           es: 'Guardar metadatos' },
+
+  'admin.modal.title':                   { he: 'מחיקת ספר',                                                                              en: 'Delete book',                                                          es: 'Eliminar libro' },
+  'admin.modal.body':                    { he: 'האם אתה בטוח שברצונך למחוק את הספר {{title}}?',                                          en: 'Are you sure you want to delete the book {{title}}?',                  es: '¿Estás seguro de que quieres eliminar el libro {{title}}?' },
+  'admin.modal.warning':                 { he: 'פעולה זו תמחק את כל הקבצים בכל השפות ולא ניתנת לביטול.',                                  en: 'This action will delete all files in all languages and cannot be undone.', es: 'Esta acción eliminará todos los archivos en todos los idiomas y no se puede deshacer.' },
+  'admin.modal.cancel':                  { he: 'ביטול',                                                                                  en: 'Cancel',                                                               es: 'Cancelar' },
+  'admin.modal.confirm':                 { he: 'מחק לצמיתות',                                                                            en: 'Delete permanently',                                                   es: 'Eliminar permanentemente' },
+  'admin.modal.deleting':                { he: 'מוחק…',                                                                                 en: 'Deleting…',                                                            es: 'Eliminando…' },
+
+  'admin.toast.cleanedBook':             { he: 'נוקו {{n}} פריטים עבור "{{slug}}"',                  en: 'Cleaned {{n}} items for "{{slug}}"',                                  es: 'Se limpiaron {{n}} elementos para "{{slug}}"' },
+  'admin.toast.noBookData':              { he: 'לא נמצאו נתונים עבור "{{slug}}"',                    en: 'No data found for "{{slug}}"',                                        es: 'No se encontraron datos para "{{slug}}"' },
+  'admin.toast.cleanedGlobal':           { he: 'נוקו {{n}} הגדרות כלליות',                            en: 'Cleaned {{n}} global settings',                                       es: 'Se limpiaron {{n}} configuraciones globales' },
+  'admin.toast.noGlobalData':            { he: 'לא נמצאו הגדרות כלליות',                              en: 'No global settings found',                                            es: 'No se encontraron configuraciones globales' },
+  'admin.toast.bookDeleted':             { he: 'הספר "{{slug}}" נמחק בהצלחה',                         en: 'Book "{{slug}}" deleted successfully',                                es: 'El libro "{{slug}}" se eliminó correctamente' },
+  'admin.toast.deleteError':             { he: 'שגיאה: {{msg}}',                                      en: 'Error: {{msg}}',                                                      es: 'Error: {{msg}}' },
+  'admin.toast.deleteFailed':            { he: 'לא ניתן למחוק',                                       en: 'Could not delete',                                                    es: 'No se pudo eliminar' },
+  'admin.toast.networkError':            { he: 'שגיאת רשת: {{msg}}',                                  en: 'Network error: {{msg}}',                                              es: 'Error de red: {{msg}}' },
+  'admin.toast.metadataSaved':           { he: 'המטא־דאטה נשמרה עבור "{{title}}"',                    en: 'Metadata saved for "{{title}}"',                                      es: 'Metadatos guardados para "{{title}}"' },
+
   // ── library.series.* — series capsule on the orbit ───────────────────────
   // Labels are intentionally short so they fit inside the orbit-card
   // footprint (190–210px wide). The number is rendered separately and

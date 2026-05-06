@@ -1,31 +1,83 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { discoverAllBooks } from '../utils/book-discovery';
+import type { Language } from '../types/index';
+import {
+  DEFAULT_LANGUAGE,
+  getLanguageDirection,
+  isValidLanguage,
+} from '../utils/language';
+import { t } from '../i18n';
 
 const books = discoverAllBooks();
+
+// Language resolution mirrors the pattern used by /library and the
+// chapter pages: ?lang=he|en|es overrides everything; otherwise fall
+// back to DEFAULT_LANGUAGE. allowClientLanguageOverride below lets the
+// LanguageSelector flip languages via ?lang=X without the URL needing
+// to match the server-rendered default.
+const urlLang = Astro.url.searchParams.get('lang')?.trim().toLowerCase();
+const language: Language = (urlLang && isValidLanguage(urlLang))
+  ? urlLang
+  : DEFAULT_LANGUAGE;
+const isRtl = getLanguageDirection(language) === 'rtl';
+
+// Pre-translate strings that are emitted into client-side data-attrs
+// or DOM-built nodes. Toast templates keep their {{n}}/{{slug}} markers
+// — the script does the substitution at runtime so a single key serves
+// every variant. This is the single source of strings: the i18n table
+// in src/i18n/translations.ts. The script must NOT hardcode any user-
+// facing copy of its own.
+const i18nBundle = {
+  statNoData:        t('admin.stat.noData', language),
+  statItemsOne:      t('admin.stat.itemsOne', language),
+  statItemsManyTpl:  t('admin.stat.itemsMany', language),
+  toastCleanedBook:  t('admin.toast.cleanedBook', language),
+  toastNoBookData:   t('admin.toast.noBookData', language),
+  toastCleanedGlobal:t('admin.toast.cleanedGlobal', language),
+  toastNoGlobalData: t('admin.toast.noGlobalData', language),
+  toastBookDeleted:  t('admin.toast.bookDeleted', language),
+  toastDeleteError:  t('admin.toast.deleteError', language),
+  toastDeleteFailed: t('admin.toast.deleteFailed', language),
+  toastNetworkError: t('admin.toast.networkError', language),
+  toastMetadataSaved:t('admin.toast.metadataSaved', language),
+  modalDeleting:     t('admin.modal.deleting', language),
+  modalConfirmText:  t('admin.modal.confirm', language),
+};
 ---
 
-<BaseLayout title="Knowledge Control Center - Yuval">
-  <div class="kcc-shell">
+<BaseLayout
+  title={`${t('admin.title', language)} - Yuval`}
+  language={language}
+  availableLanguages={['he', 'en', 'es']}
+  allowClientLanguageOverride={true}
+>
+  <div
+    class="kcc-shell"
+    lang={language}
+    dir={isRtl ? 'rtl' : 'ltr'}
+    data-i18n-bundle={JSON.stringify(i18nBundle)}
+  >
     <div class="kcc-wrap">
       <header class="kcc-header">
         <div class="kcc-eyebrow">
           <span class="kcc-eyebrow-dot"></span>
-          <span class="kcc-eyebrow-text">Yuval · Internal</span>
+          <span class="kcc-eyebrow-text">{t('admin.eyebrow', language)}</span>
         </div>
-        <h1 class="kcc-title">Knowledge Control Center</h1>
-        <p class="kcc-subtitle">Manage content, reader state and knowledge metadata.</p>
+        <h1 class="kcc-title">{t('admin.title', language)}</h1>
+        <p class="kcc-subtitle">{t('admin.subtitle', language)}</p>
       </header>
 
       <section class="kcc-section">
         <div class="kcc-section-head">
-          <h2 class="kcc-section-title">Library Content</h2>
-          <span class="kcc-section-meta">{books.length} {books.length === 1 ? 'book' : 'books'}</span>
+          <h2 class="kcc-section-title">{t('admin.section.libraryContent', language)}</h2>
+          <span class="kcc-section-meta">{t('admin.section.bookCount', language, { n: books.length })}</span>
         </div>
 
         <div class="books-grid" id="books-grid">
           {books.map(book => {
-            const initial = (book.title_en || book.slug).trim().charAt(0).toUpperCase();
+            const displayName = book.title_en || book.slug;
+            const initial = displayName.trim().charAt(0).toUpperCase();
             return (
               <article class="book-card" data-slug={book.slug}>
                 <div class="book-monogram" aria-hidden="true">{initial}</div>
@@ -34,31 +86,35 @@ const books = discoverAllBooks();
                   <span class="book-slug">{book.slug}</span>
                 </div>
                 <div class="book-stats">
-                  <span class="stat" id={`stat-${book.slug}`}>…</span>
+                  <span class="stat" id={`stat-${book.slug}`}>{t('admin.stat.loading', language)}</span>
                 </div>
                 <div class="book-actions">
                   <button
                     class="edit-btn"
                     data-slug={book.slug}
                     data-title={book.title_en}
-                    aria-label={`Edit metadata for ${book.title_en || book.slug}`}
-                    title="Edit metadata"
+                    aria-label={t('admin.action.editAriaLabel', language, { title: displayName })}
+                    title={t('admin.action.editTitle', language)}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M12 20h9"></path>
                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                     </svg>
-                    <span class="edit-btn-label">Edit metadata</span>
+                    <span class="edit-btn-label">{t('admin.action.editMetadata', language)}</span>
                   </button>
-                  <button class="clean-btn" data-slug={book.slug} title="Clean local reader data for this book">
-                    Clean data
+                  <button
+                    class="clean-btn"
+                    data-slug={book.slug}
+                    title={t('admin.action.cleanDataTitle', language)}
+                  >
+                    {t('admin.action.cleanData', language)}
                   </button>
                   <button
                     class="delete-btn"
                     data-slug={book.slug}
                     data-title={book.title_en}
-                    aria-label={`Delete ${book.title_en}`}
-                    title="Delete book"
+                    aria-label={t('admin.action.deleteAriaLabel', language, { title: displayName })}
+                    title={t('admin.action.deleteTitle', language)}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <polyline points="3 6 5 6 21 6"></polyline>
@@ -67,7 +123,7 @@ const books = discoverAllBooks();
                       <path d="M14 11v6"></path>
                       <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
                     </svg>
-                    <span class="delete-btn-label">Delete</span>
+                    <span class="delete-btn-label">{t('admin.action.delete', language)}</span>
                   </button>
                 </div>
               </article>
@@ -78,15 +134,15 @@ const books = discoverAllBooks();
 
       <section class="kcc-section global-section">
         <div class="kcc-section-head">
-          <h2 class="kcc-section-title">Global Settings</h2>
+          <h2 class="kcc-section-title">{t('admin.section.globalSettings', language)}</h2>
         </div>
         <div class="global-card">
           <div class="global-card-info">
-            <p class="global-card-title">Reader preferences</p>
-            <p class="global-card-desc">Language, theme, typography, TTS voice &amp; speed, onboarding state.</p>
+            <p class="global-card-title">{t('admin.global.title', language)}</p>
+            <p class="global-card-desc">{t('admin.global.description', language)}</p>
           </div>
           <button class="clean-btn clean-btn--global" id="clean-global-btn">
-            Clean global settings
+            {t('admin.global.cleanButton', language)}
           </button>
         </div>
       </section>
@@ -100,11 +156,16 @@ const books = discoverAllBooks();
       <div class="meta-drawer-panel" role="document">
         <header class="meta-drawer-header">
           <div class="meta-drawer-heading">
-            <p class="meta-drawer-eyebrow">Edit metadata</p>
+            <p class="meta-drawer-eyebrow">{t('admin.drawer.eyebrow', language)}</p>
             <h2 id="meta-drawer-title" class="meta-drawer-title">—</h2>
             <p class="meta-drawer-slug" id="meta-drawer-slug">—</p>
           </div>
-          <button type="button" class="meta-drawer-close" data-meta-close aria-label="Close editor">
+          <button
+            type="button"
+            class="meta-drawer-close"
+            data-meta-close
+            aria-label={t('admin.drawer.close', language)}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -114,53 +175,67 @@ const books = discoverAllBooks();
 
         <form class="meta-form" id="meta-form" autocomplete="off" novalidate>
           <label class="meta-field">
-            <span class="meta-label">Display title</span>
+            <span class="meta-label">{t('admin.field.displayTitle', language)}</span>
             <input class="meta-input" type="text" name="displayTitle" />
-            <span class="meta-hint">How this item will appear in the Knowledge Universe.</span>
+            <span class="meta-hint">{t('admin.field.displayTitleHint', language)}</span>
           </label>
 
           <label class="meta-field">
-            <span class="meta-label">Content type</span>
+            <span class="meta-label">{t('admin.field.contentType', language)}</span>
             <select class="meta-select" name="contentType">
-              <option value="book">Book</option>
-              <option value="course">Course</option>
-              <option value="article">Article</option>
+              <option value="book">{t('admin.option.book', language)}</option>
+              <option value="course">{t('admin.option.course', language)}</option>
+              <option value="article">{t('admin.option.article', language)}</option>
             </select>
           </label>
 
           <label class="meta-field">
-            <span class="meta-label">Category</span>
-            <input class="meta-input" type="text" name="category" placeholder="e.g. AI Engineering" />
+            <span class="meta-label">{t('admin.field.category', language)}</span>
+            <input
+              class="meta-input"
+              type="text"
+              name="category"
+              placeholder={t('admin.field.categoryPlaceholder', language)}
+            />
           </label>
 
           <label class="meta-field">
-            <span class="meta-label">Series name</span>
-            <input class="meta-input" type="text" name="seriesName" placeholder="e.g. AI Developer Path" />
+            <span class="meta-label">{t('admin.field.seriesName', language)}</span>
+            <input
+              class="meta-input"
+              type="text"
+              name="seriesName"
+              placeholder={t('admin.field.seriesPlaceholder', language)}
+            />
           </label>
 
           <div class="meta-field meta-field--toggle">
             <div class="meta-field-text">
-              <span class="meta-label">Visible in universe</span>
-              <span class="meta-hint">Off hides this item from the Knowledge Universe.</span>
+              <span class="meta-label">{t('admin.field.visibleInUniverse', language)}</span>
+              <span class="meta-hint">{t('admin.field.visibleInUniverseHint', language)}</span>
             </div>
-            <label class="meta-toggle" aria-label="Toggle visibility in universe">
+            <label class="meta-toggle" aria-label={t('admin.field.visibleInUniverseAria', language)}>
               <input type="checkbox" name="isVisibleInUniverse" />
               <span class="meta-toggle-track" aria-hidden="true"></span>
             </label>
           </div>
 
           <label class="meta-field">
-            <span class="meta-label">Visual mode</span>
+            <span class="meta-label">{t('admin.field.visualMode', language)}</span>
             <select class="meta-select" name="visualMode">
-              <option value="card">Card</option>
-              <option value="hidden">Hidden</option>
+              <option value="card">{t('admin.option.card', language)}</option>
+              <option value="hidden">{t('admin.option.hidden', language)}</option>
             </select>
           </label>
         </form>
 
         <footer class="meta-drawer-footer">
-          <button type="button" class="meta-btn meta-btn--ghost" data-meta-close>Cancel</button>
-          <button type="button" class="meta-btn meta-btn--primary" id="meta-save">Save metadata</button>
+          <button type="button" class="meta-btn meta-btn--ghost" data-meta-close>
+            {t('admin.button.cancel', language)}
+          </button>
+          <button type="button" class="meta-btn meta-btn--primary" id="meta-save">
+            {t('admin.button.save', language)}
+          </button>
         </footer>
       </div>
     </aside>
@@ -169,12 +244,16 @@ const books = discoverAllBooks();
     <div id="delete-modal" class="modal hidden">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <h3>⚠️ מחיקת ספר</h3>
-        <p>האם אתה בטוח שברצונך למחוק את הספר <strong id="modal-book-title"></strong>?</p>
-        <p class="modal-warning">פעולה זו תמחק את כל הקבצים בכל השפות ולא ניתנת לביטול!</p>
+        <h3>⚠️ {t('admin.modal.title', language)}</h3>
+        <p set:html={t('admin.modal.body', language, { title: '<strong id="modal-book-title"></strong>' })}></p>
+        <p class="modal-warning">{t('admin.modal.warning', language)}</p>
         <div class="modal-actions">
-          <button class="modal-btn modal-btn--cancel" id="modal-cancel">ביטול</button>
-          <button class="modal-btn modal-btn--delete" id="modal-confirm">מחק לצמיתות</button>
+          <button class="modal-btn modal-btn--cancel" id="modal-cancel">
+            {t('admin.modal.cancel', language)}
+          </button>
+          <button class="modal-btn modal-btn--delete" id="modal-confirm">
+            {t('admin.modal.confirm', language)}
+          </button>
         </div>
       </div>
     </div>
@@ -1133,6 +1212,47 @@ const books = discoverAllBooks();
   } from '../utils/content-metadata';
   import type { ContentMetadata } from '../types/content-metadata';
 
+  // ── i18n bundle ──────────────────────────────────────────────
+  // The single source of admin runtime strings is the i18n table at
+  // src/i18n/translations.ts. The .astro frontmatter resolves the
+  // active language, calls t() per key, and emits the bundle as a
+  // JSON blob on `.kcc-shell[data-i18n-bundle]`. This script reads
+  // it once and substitutes placeholders at runtime — no parallel
+  // string source, no hardcoded user-facing copy in the script.
+  type AdminI18nBundle = {
+    statNoData: string;
+    statItemsOne: string;
+    statItemsManyTpl: string;
+    toastCleanedBook: string;
+    toastNoBookData: string;
+    toastCleanedGlobal: string;
+    toastNoGlobalData: string;
+    toastBookDeleted: string;
+    toastDeleteError: string;
+    toastDeleteFailed: string;
+    toastNetworkError: string;
+    toastMetadataSaved: string;
+    modalDeleting: string;
+    modalConfirmText: string;
+  };
+
+  const i18nRoot = document.querySelector<HTMLElement>('.kcc-shell');
+  const i18n: AdminI18nBundle = (() => {
+    try {
+      const raw = i18nRoot?.dataset.i18nBundle;
+      return raw ? (JSON.parse(raw) as AdminI18nBundle) : ({} as AdminI18nBundle);
+    } catch {
+      return {} as AdminI18nBundle;
+    }
+  })();
+
+  function fmt(tpl: string | undefined, params: Record<string, string | number>): string {
+    if (!tpl) return '';
+    return tpl.replace(/\{\{(\w+)\}\}/g, (_, name) =>
+      params[name] !== undefined ? String(params[name]) : `{{${name}}}`,
+    );
+  }
+
   const BOOK_PREFIXES = (slug: string) => [
     `yuval_bookmarks_${slug}`,
     `yuval_highlights_${slug}`,   // prefix - will match all chapters
@@ -1195,7 +1315,11 @@ const books = discoverAllBooks();
       const slug = card.dataset.slug!;
       const count = countBookKeys(slug);
       const el = document.getElementById(`stat-${slug}`);
-      if (el) el.textContent = count === 0 ? 'No data' : `${count} item${count !== 1 ? 's' : ''}`;
+      if (el) {
+        el.textContent = count === 0
+          ? i18n.statNoData
+          : (count === 1 ? i18n.statItemsOne : fmt(i18n.statItemsManyTpl, { n: count }));
+      }
     });
   }
 
@@ -1205,13 +1329,21 @@ const books = discoverAllBooks();
       const slug = btn.dataset.slug!;
       const removed = cleanBook(slug);
       updateStats();
-      showToast(removed > 0 ? `Cleaned ${removed} items for "${slug}"` : `No data found for "${slug}"`);
+      showToast(
+        removed > 0
+          ? fmt(i18n.toastCleanedBook, { n: removed, slug })
+          : fmt(i18n.toastNoBookData, { slug }),
+      );
     });
   });
 
   document.getElementById('clean-global-btn')?.addEventListener('click', () => {
     const removed = cleanGlobal();
-    showToast(removed > 0 ? `Cleaned ${removed} global settings` : 'No global settings found');
+    showToast(
+      removed > 0
+        ? fmt(i18n.toastCleanedGlobal, { n: removed })
+        : i18n.toastNoGlobalData,
+    );
   });
 
   // Delete book functionality
@@ -1226,7 +1358,7 @@ const books = discoverAllBooks();
     modalTitle.textContent = title;
     modal.classList.remove('hidden');
     modalConfirm.disabled = false;
-    modalConfirm.textContent = 'מחק לצמיתות';
+    modalConfirm.textContent = i18n.modalConfirmText;
   }
 
   function hideModal() {
@@ -1251,7 +1383,7 @@ const books = discoverAllBooks();
     
     const slug = pendingDeleteSlug;
     modalConfirm.disabled = true;
-    modalConfirm.textContent = 'מוחק...';
+    modalConfirm.textContent = i18n.modalDeleting;
 
     try {
       const response = await fetch('/api/delete-book', {
@@ -1269,13 +1401,13 @@ const books = discoverAllBooks();
           card.remove();
         }
         hideModal();
-        showToast(`✅ הספר "${slug}" נמחק בהצלחה`);
+        showToast(`✅ ${fmt(i18n.toastBookDeleted, { slug })}`);
       } else {
-        showToast(`❌ שגיאה: ${result.error || 'לא ניתן למחוק'}`);
+        showToast(`❌ ${fmt(i18n.toastDeleteError, { msg: result.error || i18n.toastDeleteFailed })}`);
         hideModal();
       }
     } catch (error: any) {
-      showToast(`❌ שגיאת רשת: ${error.message}`);
+      showToast(`❌ ${fmt(i18n.toastNetworkError, { msg: error.message })}`);
       hideModal();
     }
   });
@@ -1424,6 +1556,6 @@ const books = discoverAllBooks();
     const saved = setMetadata(slug, patch, fallback);
     paintCardFromMetadata(slug, saved);
     closeMetaDrawer();
-    showToast(`Metadata saved for "${saved.displayTitle}"`);
+    showToast(fmt(i18n.toastMetadataSaved, { title: saved.displayTitle }));
   });
 </script>
