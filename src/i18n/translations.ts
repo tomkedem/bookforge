@@ -497,15 +497,23 @@ export const translations: Translations = {
   // Hero subtitle: short, AI-only, Yuval-led. BookForge (the internal
   // pipeline) is intentionally NOT mentioned here — it surfaces only in
   // technical/explainer surfaces, never in the user-facing hero.
-  'library.galaxy.subtitle':        { he: 'ספרי AI, סיכומי שיעור, מאמרים והדרכות במרחב ידע חי אחד.',          en: 'AI books, lesson summaries, articles, and guides in one living knowledge space.',                       es: 'Libros de IA, resúmenes de clase, artículos y guías en un espacio de conocimiento vivo.' },
+  'library.galaxy.subtitle':        { he: 'כל הידע שלך במרחב אחד חי ומתפתח.',                                  en: 'All your knowledge in one living, evolving space.',                                                     es: 'Todo tu conocimiento en un espacio vivo y en evolución.' },
   'library.galaxy.welcome':         { he: 'ברוך הבא ל Yuval',                                                  en: 'Welcome to Yuval',                                                             es: 'Bienvenido a Yuval' },
   'library.galaxy.searchPlaceholder': { he: 'חפש ספרים, קורסים, סדרות, מאמרים ונושאים',                       en: 'Search books, courses, series, articles and topics',                            es: 'Busca libros, cursos, series, artículos y temas' },
-  'library.galaxy.primaryCta':      { he: 'עיין בתכנים',                                                       en: 'Browse content',                                                                es: 'Explorar contenido' },
+  'library.galaxy.primaryCta':      { he: 'חקור את המרחב',                                                     en: 'Explore the space',                                                             es: 'Explora el espacio' },
   'library.galaxy.secondaryCta':    { he: 'איך Yuval מסדרת ידע',                                              en: 'How Yuval organizes knowledge',                                                 es: 'Cómo Yuval organiza el conocimiento' },
   'library.galaxy.loading':         { he: 'טוען את הספרייה שלך',                                              en: 'Loading your library',                                                          es: 'Cargando tu biblioteca' },
   'library.galaxy.error':           { he: 'לא הצלחנו לטעון את הספרייה. נסה שוב בעוד רגע',                     en: "We couldn't load your library. Try again in a moment",                          es: 'No pudimos cargar tu biblioteca. Inténtalo de nuevo en un momento' },
   'library.galaxy.explainerTitle':  { he: 'איך זה עובד',                                                       en: 'How it works',                                                                  es: 'Cómo funciona' },
   'library.galaxy.explainerBody':   { he: 'תכנים שעוברים עיבוד אוטומטי ב-BookForge מתחברים למרחב ידע אחד שניתן לחפש, לקשר ולנווט בו.', en: 'Content automatically processed by BookForge connects into one searchable, navigable knowledge space.', es: 'Los contenidos procesados automáticamente por BookForge se conectan en un único espacio de conocimiento navegable y buscable.' },
+
+  // ── library.galaxy.* — orbit interactions (click-to-center, pagination) ──
+  'library.galaxy.openItem':        { he: 'פתח את הספר',      en: 'Open',                es: 'Abrir' },
+  'library.galaxy.closeItem':       { he: 'סגור',             en: 'Close',               es: 'Cerrar' },
+  'library.galaxy.nextBooks':       { he: 'ספרים הבאים',      en: 'Next books',          es: 'Siguientes libros' },
+  'library.galaxy.prevBooks':       { he: 'ספרים קודמים',     en: 'Previous books',      es: 'Libros anteriores' },
+  'library.galaxy.nextLessons':     { he: 'שיעורים הבאים',    en: 'Next lessons',        es: 'Siguientes lecciones' },
+  'library.galaxy.prevLessons':     { he: 'שיעורים קודמים',   en: 'Previous lessons',    es: 'Lecciones anteriores' },
 
   // ── library.mobileGalaxy.* — mobile-only horizontal carousel ──────────────
   'library.mobileGalaxy.title':     { he: 'תכני AI זמינים',                                            en: 'Available AI content',                                       es: 'Contenido de IA disponible' },
