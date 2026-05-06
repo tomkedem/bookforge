@@ -1,0 +1,129 @@
+/**
+ * Editorial metadata storage for Yuval content items.
+ *
+ * Storage key intentionally does NOT contain a slug — the existing
+ * `cleanBook(slug)` sweep in /admin matches `_${slug}` substrings, and
+ * editorial state must survive both "Clean data" and "Clean global
+ * settings". See src/types/content-metadata.ts for the rationale.
+ *
+ * Read returns defaults when nothing is stored. Writes happen only via
+ * `setMetadata`, so opening a page that calls `getMetadata` does not
+ * mutate localStorage.
+ */
+
+import {
+  CONTENT_METADATA_VERSION,
+  type ContentMetadata,
+  type ContentMetadataStore,
+} from '../types/content-metadata';
+
+export const CONTENT_METADATA_STORAGE_KEY = 'yuval_content_metadata';
+
+/**
+ * Build a safe defaults record from the current book id and (optional)
+ * title. Defaults preserve the pre-metadata behaviour of every existing
+ * book: visible in the Knowledge Universe, rendered as a card, typed
+ * as a book, with no editorial overrides.
+ */
+export function defaultMetadataFor(
+  slug: string,
+  fallbackTitle?: string,
+): ContentMetadata {
+  const trimmed = fallbackTitle?.trim();
+  return {
+    slug,
+    displayTitle: trimmed && trimmed.length > 0 ? trimmed : slug,
+    contentType: 'book',
+    category: '',
+    seriesName: '',
+    isVisibleInUniverse: true,
+    visualMode: 'card',
+  };
+}
+
+function isBrowser(): boolean {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+}
+
+function emptyStore(): ContentMetadataStore {
+  return { version: CONTENT_METADATA_VERSION, items: {} };
+}
+
+function readStore(): ContentMetadataStore {
+  if (!isBrowser()) return emptyStore();
+  try {
+    const raw = localStorage.getItem(CONTENT_METADATA_STORAGE_KEY);
+    if (!raw) return emptyStore();
+    const parsed = JSON.parse(raw) as Partial<ContentMetadataStore> | null;
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.items ||
+      typeof parsed.items !== 'object'
+    ) {
+      return emptyStore();
+    }
+    return {
+      version:
+        typeof parsed.version === 'number' ? parsed.version : CONTENT_METADATA_VERSION,
+      items: parsed.items as Record<string, ContentMetadata>,
+    };
+  } catch {
+    return emptyStore();
+  }
+}
+
+function writeStore(store: ContentMetadataStore): void {
+  if (!isBrowser()) return;
+  try {
+    localStorage.setItem(CONTENT_METADATA_STORAGE_KEY, JSON.stringify(store));
+  } catch {
+    // Quota exceeded / private mode — non-critical, editorial work can
+    // be re-saved next session. Silent no-op is the right default here.
+  }
+}
+
+/**
+ * Returns the raw stored map. Items not yet edited by the user are
+ * absent. Callers that need a defaults-merged view per slug should use
+ * `getMetadata(slug, fallbackTitle)` instead.
+ */
+export function getAllMetadata(): Record<string, ContentMetadata> {
+  return readStore().items;
+}
+
+/**
+ * Returns a complete `ContentMetadata` for `slug`, defaulting any
+ * missing fields. Stored fields take priority. Never mutates storage.
+ */
+export function getMetadata(
+  slug: string,
+  fallbackTitle?: string,
+): ContentMetadata {
+  const stored = readStore().items[slug];
+  const defaults = defaultMetadataFor(slug, fallbackTitle);
+  if (!stored) return defaults;
+  // Defaults provide the floor so a future schema field gain does not
+  // hand callers a partial object. Stored values overlay; slug is
+  // re-pinned to the requested slug so renamed keys can never lie.
+  return { ...defaults, ...stored, slug };
+}
+
+/**
+ * Merges `patch` into the stored record for `slug` (creating it from
+ * defaults if absent) and writes the store. Returns the resulting
+ * record. The slug is always re-pinned so it cannot be patched away.
+ */
+export function setMetadata(
+  slug: string,
+  patch: Partial<ContentMetadata>,
+  fallbackTitle?: string,
+): ContentMetadata {
+  const store = readStore();
+  const current = store.items[slug] ?? defaultMetadataFor(slug, fallbackTitle);
+  const next: ContentMetadata = { ...current, ...patch, slug };
+  store.items[slug] = next;
+  store.version = CONTENT_METADATA_VERSION;
+  writeStore(store);
+  return next;
+}
