@@ -43,6 +43,16 @@ const i18nBundle = {
   toastMetadataSaved:t('admin.toast.metadataSaved', language),
   modalDeleting:     t('admin.modal.deleting', language),
   modalConfirmText:  t('admin.modal.confirm', language),
+  // Series Management labels — used by the JS that renders detected
+  // series cards and by the toast emitted after a series is saved.
+  seriesEmpty:       t('admin.series.empty', language),
+  seriesCountTpl:    t('admin.series.count', language),
+  seriesItemsTpl:    t('admin.series.itemsLabel', language),
+  seriesAvailableTpl:t('admin.series.availableLabel', language),
+  seriesEditAriaTpl: t('admin.series.editAriaLabel', language),
+  seriesEditTitle:   t('admin.series.editTitle', language),
+  seriesTagCapsule:  t('admin.series.tagCapsule', language),
+  toastSeriesSaved:  t('admin.series.toast.saved', language),
 };
 ---
 
@@ -129,6 +139,16 @@ const i18nBundle = {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section class="kcc-section">
+        <div class="kcc-section-head">
+          <h2 class="kcc-section-title">{t('admin.series.section', language)}</h2>
+          <span class="kcc-section-meta" id="series-count">{t('admin.series.count', language, { n: 0 })}</span>
+        </div>
+        <div id="series-list" class="series-grid">
+          <p class="series-empty">{t('admin.series.empty', language)}</p>
         </div>
       </section>
 
@@ -235,6 +255,103 @@ const i18nBundle = {
           </button>
           <button type="button" class="meta-btn meta-btn--primary" id="meta-save">
             {t('admin.button.save', language)}
+          </button>
+        </footer>
+      </div>
+    </aside>
+
+    <!-- Series Edit Drawer.
+         Reuses the .meta-drawer / .meta-form class system from the item
+         drawer so the slide-from-inline-end animation, dark glass panel
+         and form field styling work without duplication. JS targets this
+         drawer by its own #series-drawer id. -->
+    <aside id="series-drawer" class="meta-drawer hidden" role="dialog" aria-labelledby="series-drawer-title" aria-hidden="true">
+      <div class="meta-drawer-backdrop" data-series-close></div>
+      <div class="meta-drawer-panel" role="document">
+        <header class="meta-drawer-header">
+          <div class="meta-drawer-heading">
+            <p class="meta-drawer-eyebrow">{t('admin.series.drawer.eyebrow', language)}</p>
+            <h2 id="series-drawer-title" class="meta-drawer-title">—</h2>
+            <p class="meta-drawer-slug" id="series-drawer-name">—</p>
+          </div>
+          <button
+            type="button"
+            class="meta-drawer-close"
+            data-series-close
+            aria-label={t('admin.series.drawer.close', language)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+
+        <form class="meta-form" id="series-form" autocomplete="off" novalidate>
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.displayTitle', language)}</span>
+            <input class="meta-input" type="text" name="displayTitle" />
+            <span class="meta-hint">{t('admin.series.field.displayTitleHint', language)}</span>
+          </label>
+
+          <div class="meta-field">
+            <span class="meta-label">{t('admin.series.field.color', language)}</span>
+            <div class="meta-color-row">
+              <button
+                type="button"
+                id="series-color-swatch"
+                class="meta-color-swatch"
+                aria-label={t('admin.series.field.color', language)}
+              >
+                <span class="meta-color-dot" id="series-color-dot"></span>
+              </button>
+              <input
+                type="color"
+                id="series-color-input"
+                class="meta-color-input"
+                aria-hidden="true"
+                tabindex="-1"
+              />
+              <button
+                type="button"
+                id="series-color-clear"
+                class="meta-color-clear"
+              >{t('admin.series.field.colorClear', language)}</button>
+            </div>
+            <span class="meta-hint">{t('admin.series.field.colorHint', language)}</span>
+          </div>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.order', language)}</span>
+            <input class="meta-input" type="number" name="order" inputmode="numeric" step="1" placeholder="—" />
+            <span class="meta-hint">{t('admin.series.field.orderHint', language)}</span>
+          </label>
+
+          <div class="meta-field meta-field--toggle">
+            <div class="meta-field-text">
+              <span class="meta-label">{t('admin.series.field.visibleInUniverse', language)}</span>
+              <span class="meta-hint">{t('admin.series.field.visibleHint', language)}</span>
+            </div>
+            <label class="meta-toggle" aria-label={t('admin.series.field.visibleAria', language)}>
+              <input type="checkbox" name="isVisibleInUniverse" />
+              <span class="meta-toggle-track" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <label class="meta-field">
+            <span class="meta-label">{t('admin.series.field.visualMode', language)}</span>
+            <select class="meta-select" name="visualMode">
+              <option value="capsule">{t('admin.series.option.capsule', language)}</option>
+            </select>
+          </label>
+        </form>
+
+        <footer class="meta-drawer-footer">
+          <button type="button" class="meta-btn meta-btn--ghost" data-series-close>
+            {t('admin.button.cancel', language)}
+          </button>
+          <button type="button" class="meta-btn meta-btn--primary" id="series-save">
+            {t('admin.series.button.save', language)}
           </button>
         </footer>
       </div>
@@ -775,6 +892,278 @@ const i18nBundle = {
     cursor: not-allowed;
   }
 
+  /* ── Series Management ──────────────────────────────────── */
+
+  .series-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .series-empty {
+    margin: 0;
+    padding: 22px 20px;
+    text-align: center;
+    border: 1px dashed var(--kcc-rim);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.015);
+    color: var(--kcc-text-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .series-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--kcc-surface);
+    border: 1px solid var(--kcc-rim);
+    border-radius: 14px;
+    padding: 14px 18px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition:
+      background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .series-card:hover {
+    background: var(--kcc-surface-strong);
+    border-color: var(--kcc-rim-strong);
+  }
+
+  /* Capsule edge indicator on the inline-start side, painted in the
+     series color. Hints at the "capsule" visual mode without rendering
+     an actual capsule. */
+  .series-card::before {
+    content: "";
+    position: absolute;
+    inset-block: 14px;
+    inset-inline-start: 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--series-color, var(--kcc-gold));
+    opacity: 0.85;
+  }
+
+  [dir="rtl"] .series-card::before {
+    border-radius: 3px 0 0 3px;
+  }
+
+  .series-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .series-card-name {
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--kcc-text);
+    margin: 0;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .series-card-slug {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 0.7rem;
+    color: var(--kcc-text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  .series-card-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+
+  .series-tag {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(201, 169, 110, 0.1);
+    border: 1px solid var(--kcc-gold-rim);
+    color: var(--kcc-gold);
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .series-order-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--kcc-rim);
+    color: var(--kcc-text-secondary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .series-hidden-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(220, 38, 38, 0.12);
+    border: 1px solid rgba(220, 38, 38, 0.32);
+    color: #f87171;
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .series-dot-sep {
+    color: var(--kcc-text-muted);
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .series-card-counts {
+    font-size: 0.76rem;
+    color: var(--kcc-text-secondary);
+    letter-spacing: 0.01em;
+  }
+
+  .series-card-counts strong {
+    color: var(--kcc-text);
+    font-weight: 600;
+  }
+
+  .series-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* The series-edit-btn shares its visual treatment with the per-item
+     .edit-btn (gold-tinted primary action) but has its own selector so
+     class-list changes on items don't accidentally tweak the series row. */
+  .series-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--kcc-gold-rim);
+    background: rgba(201, 169, 110, 0.14);
+    color: var(--kcc-gold);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    transition:
+      background 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 160ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .series-edit-btn svg {
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+
+  .series-edit-btn:hover {
+    background: rgba(201, 169, 110, 0.22);
+    border-color: rgba(201, 169, 110, 0.55);
+    color: #e8d39a;
+    box-shadow: 0 4px 12px -4px rgba(184, 146, 63, 0.35);
+  }
+
+  .series-edit-btn:focus-visible {
+    outline: none;
+    border-color: rgba(201, 169, 110, 0.7);
+    box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.22);
+  }
+
+  /* Color-picker row inside the Series Edit drawer. The native color
+     input is hidden and triggered by the swatch button so the visual
+     stays in the dark premium palette. */
+  .meta-color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .meta-color-swatch {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.02);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: border-color 160ms, transform 160ms;
+  }
+
+  .meta-color-swatch:hover {
+    border-color: var(--kcc-gold-rim);
+    transform: scale(1.04);
+  }
+
+  .meta-color-swatch:focus-visible {
+    outline: none;
+    border-color: var(--kcc-gold-rim);
+    box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.18);
+  }
+
+  .meta-color-dot {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--meta-color-current, var(--kcc-gold));
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
+  }
+
+  .meta-color-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+  }
+
+  .meta-color-clear {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--kcc-rim);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--kcc-text-secondary);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 160ms, color 160ms, border-color 160ms;
+  }
+
+  .meta-color-clear:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--kcc-rim-strong);
+    color: var(--kcc-text);
+  }
+
+  .meta-color-clear:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
   /* ── Edit Metadata drawer ───────────────────────────────── */
 
   .meta-drawer {
@@ -1209,8 +1598,13 @@ const i18nBundle = {
   import {
     getMetadata,
     setMetadata,
+    getSeriesMetadata,
+    setSeriesMetadata,
   } from '../utils/content-metadata';
-  import type { ContentMetadata } from '../types/content-metadata';
+  import type {
+    ContentMetadata,
+    SeriesMetadata,
+  } from '../types/content-metadata';
 
   // ── i18n bundle ──────────────────────────────────────────────
   // The single source of admin runtime strings is the i18n table at
@@ -1234,6 +1628,15 @@ const i18nBundle = {
     toastMetadataSaved: string;
     modalDeleting: string;
     modalConfirmText: string;
+    // Series Management
+    seriesEmpty: string;
+    seriesCountTpl: string;
+    seriesItemsTpl: string;
+    seriesAvailableTpl: string;
+    seriesEditAriaTpl: string;
+    seriesEditTitle: string;
+    seriesTagCapsule: string;
+    toastSeriesSaved: string;
   };
 
   const i18nRoot = document.querySelector<HTMLElement>('.kcc-shell');
@@ -1555,7 +1958,351 @@ const i18nBundle = {
 
     const saved = setMetadata(slug, patch, fallback);
     paintCardFromMetadata(slug, saved);
+    // A series is implicitly defined by items sharing a non-empty
+    // seriesName, so an item save can create / move / drain a series.
+    // Re-derive and repaint the Series Management list.
+    renderSeries();
     closeMetaDrawer();
     showToast(fmt(i18n.toastMetadataSaved, { title: saved.displayTitle }));
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // Series Management
+  //
+  // A series is detected when one or more visible book cards share the
+  // same non-empty `seriesName` in their item metadata. The detection
+  // walks the rendered .book-card[data-slug] elements (which are the
+  // items the project owner can currently see in /admin) and groups
+  // them. Series presentation properties (displayTitle, color, order,
+  // visibility, visualMode) live in their own metadata layer accessed
+  // via getSeriesMetadata / setSeriesMetadata. Saving a series writes
+  // ONLY to yuval_series_metadata — never to item metadata, never to
+  // reader progress.
+  // ─────────────────────────────────────────────────────────────
+
+  const DEFAULT_SERIES_COLOR = '#c9a96e';
+
+  type SeriesGroup = {
+    name: string;
+    members: ContentMetadata[];
+    available: number;
+    seriesMeta: SeriesMetadata;
+  };
+
+  function detectSeriesGroups(): SeriesGroup[] {
+    const groups = new Map<string, ContentMetadata[]>();
+    document.querySelectorAll<HTMLElement>('.book-card[data-slug]').forEach(card => {
+      const slug = card.dataset.slug;
+      if (!slug) return;
+      const titleEl = card.querySelector<HTMLElement>('.book-title');
+      const fallback = titleEl?.textContent?.trim() || slug;
+      const m = getMetadata(slug, fallback);
+      const sn = m.seriesName.trim();
+      if (!sn) return;
+      const bucket = groups.get(sn);
+      if (bucket) bucket.push(m);
+      else groups.set(sn, [m]);
+    });
+
+    const result: SeriesGroup[] = [];
+    groups.forEach((members, name) => {
+      const available = members.filter(
+        m => m.isVisibleInUniverse && m.visualMode !== 'hidden',
+      ).length;
+      const seriesMeta = getSeriesMetadata(name);
+      result.push({ name, members, available, seriesMeta });
+    });
+
+    // Sort by editorial order if set on EITHER side, then alphabetical
+    // by displayTitle as a stable tiebreaker. Series without an order
+    // sink to the bottom of the ordered group.
+    result.sort((a, b) => {
+      const ao = a.seriesMeta.order;
+      const bo = b.seriesMeta.order;
+      const aHas = typeof ao === 'number';
+      const bHas = typeof bo === 'number';
+      if (aHas && bHas) {
+        if (ao !== bo) return ao - bo;
+      } else if (aHas !== bHas) {
+        return aHas ? -1 : 1;
+      }
+      return a.seriesMeta.displayTitle.localeCompare(b.seriesMeta.displayTitle);
+    });
+
+    return result;
+  }
+
+  function renderSeries(): void {
+    const list = document.getElementById('series-list');
+    const countEl = document.getElementById('series-count');
+    if (!list || !countEl) return;
+
+    const groups = detectSeriesGroups();
+    countEl.textContent = fmt(i18n.seriesCountTpl, { n: groups.length });
+
+    // Use DOM APIs (not innerHTML) so series names typed by the user
+    // are never interpreted as HTML.
+    list.replaceChildren();
+
+    if (groups.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'series-empty';
+      empty.textContent = i18n.seriesEmpty;
+      list.appendChild(empty);
+      return;
+    }
+
+    groups.forEach(group => {
+      list.appendChild(buildSeriesCard(group));
+    });
+  }
+
+  function buildSeriesCard(group: SeriesGroup): HTMLElement {
+    const { name, members, available, seriesMeta } = group;
+    const total = members.length;
+    const color = seriesMeta.color || DEFAULT_SERIES_COLOR;
+
+    const card = document.createElement('article');
+    card.className = 'series-card';
+    card.dataset.seriesName = name;
+    card.style.setProperty('--series-color', color);
+
+    const info = document.createElement('div');
+    info.className = 'series-card-info';
+
+    const heading = document.createElement('h3');
+    heading.className = 'series-card-name';
+    heading.textContent = seriesMeta.displayTitle || name;
+    info.appendChild(heading);
+
+    // Show the underlying series name (the keyed identifier) when it
+    // differs from the display title — the user needs to know which
+    // raw seriesName an item must carry to land in this series.
+    if (seriesMeta.displayTitle && seriesMeta.displayTitle !== name) {
+      const slug = document.createElement('span');
+      slug.className = 'series-card-slug';
+      slug.textContent = name;
+      info.appendChild(slug);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'series-card-meta';
+
+    const tag = document.createElement('span');
+    tag.className = 'series-tag';
+    tag.textContent = i18n.seriesTagCapsule;
+    meta.appendChild(tag);
+
+    if (typeof seriesMeta.order === 'number') {
+      const order = document.createElement('span');
+      order.className = 'series-order-tag';
+      order.textContent = '#' + String(seriesMeta.order);
+      meta.appendChild(order);
+    }
+
+    if (!seriesMeta.isVisibleInUniverse) {
+      const hidden = document.createElement('span');
+      hidden.className = 'series-hidden-tag';
+      hidden.textContent = '○';
+      hidden.setAttribute('aria-hidden', 'true');
+      meta.appendChild(hidden);
+    }
+
+    const sep = document.createElement('span');
+    sep.className = 'series-dot-sep';
+    sep.textContent = '·';
+    sep.setAttribute('aria-hidden', 'true');
+    meta.appendChild(sep);
+
+    const counts = document.createElement('span');
+    counts.className = 'series-card-counts';
+    const totalStrong = document.createElement('strong');
+    totalStrong.textContent = String(total);
+    counts.append(totalStrong, document.createTextNode(' '));
+    counts.append(
+      document.createTextNode(
+        fmt(i18n.seriesItemsTpl, { n: total }).replace(String(total), '').trim() || 'items',
+      ),
+    );
+    counts.appendChild(document.createTextNode(' · '));
+    const availStrong = document.createElement('strong');
+    availStrong.textContent = String(available);
+    counts.append(availStrong, document.createTextNode(' '));
+    counts.append(
+      document.createTextNode(
+        fmt(i18n.seriesAvailableTpl, { n: available }).replace(String(available), '').trim() || 'available',
+      ),
+    );
+    meta.appendChild(counts);
+
+    info.appendChild(meta);
+    card.appendChild(info);
+
+    // Edit action — opens the series drawer for this series name.
+    const actions = document.createElement('div');
+    actions.className = 'series-card-actions';
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'series-edit-btn';
+    editBtn.title = i18n.seriesEditTitle;
+    editBtn.setAttribute('aria-label', fmt(i18n.seriesEditAriaTpl, { name }));
+    editBtn.dataset.seriesName = name;
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('width', '14');
+    svg.setAttribute('height', '14');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    const p1 = document.createElementNS(svgNs, 'path');
+    p1.setAttribute('d', 'M12 20h9');
+    const p2 = document.createElementNS(svgNs, 'path');
+    p2.setAttribute('d', 'M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z');
+    svg.append(p1, p2);
+    editBtn.appendChild(svg);
+    const editLabel = document.createElement('span');
+    editLabel.textContent = i18n.seriesEditTitle;
+    editBtn.appendChild(editLabel);
+    editBtn.addEventListener('click', () => openSeriesDrawer(name, editBtn));
+    actions.appendChild(editBtn);
+    card.appendChild(actions);
+
+    return card;
+  }
+
+  // Series drawer — reuses the .meta-drawer slide animation/CSS class
+  // structure but is a separate aside (#series-drawer) with its own
+  // open/close/save flow that writes only to yuval_series_metadata.
+
+  const seriesDrawer = document.getElementById('series-drawer')!;
+  const seriesTitleEl = document.getElementById('series-drawer-title')!;
+  const seriesNameEl = document.getElementById('series-drawer-name')!;
+  const seriesForm = document.getElementById('series-form') as HTMLFormElement;
+  const seriesSaveBtn = document.getElementById('series-save') as HTMLButtonElement;
+  const seriesColorSwatch = document.getElementById('series-color-swatch') as HTMLButtonElement;
+  const seriesColorInput = document.getElementById('series-color-input') as HTMLInputElement;
+  const seriesColorDot = document.getElementById('series-color-dot')!;
+  const seriesColorClear = document.getElementById('series-color-clear') as HTMLButtonElement;
+
+  const seriesFields = {
+    displayTitle: seriesForm.elements.namedItem('displayTitle') as HTMLInputElement,
+    order: seriesForm.elements.namedItem('order') as HTMLInputElement,
+    isVisibleInUniverse: seriesForm.elements.namedItem('isVisibleInUniverse') as HTMLInputElement,
+    visualMode: seriesForm.elements.namedItem('visualMode') as HTMLSelectElement,
+  };
+
+  // Local form state for the optional `color` field. Tracked outside
+  // the form because <input type="color"> always produces a value;
+  // setting it back to "no override" requires our own tri-state.
+  let editingSeriesName: string | null = null;
+  let editingColorOverride: string | undefined = undefined;
+  let returnFocusElForSeries: HTMLElement | null = null;
+
+  function paintColorSwatch(color: string | undefined): void {
+    const applied = color || DEFAULT_SERIES_COLOR;
+    seriesColorDot.style.setProperty('--meta-color-current', applied);
+    seriesColorInput.value = applied;
+    seriesColorClear.disabled = !color;
+  }
+
+  function openSeriesDrawer(name: string, trigger: HTMLElement | null): void {
+    editingSeriesName = name;
+    returnFocusElForSeries = trigger;
+    const meta = getSeriesMetadata(name);
+
+    seriesTitleEl.textContent = meta.displayTitle || name;
+    seriesNameEl.textContent = name;
+
+    seriesFields.displayTitle.value = meta.displayTitle || name;
+    seriesFields.order.value = typeof meta.order === 'number' ? String(meta.order) : '';
+    seriesFields.isVisibleInUniverse.checked = meta.isVisibleInUniverse;
+    seriesFields.visualMode.value = meta.visualMode;
+    editingColorOverride = meta.color;
+    paintColorSwatch(editingColorOverride);
+
+    seriesDrawer.classList.remove('hidden');
+    seriesDrawer.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      seriesDrawer.classList.add('is-open');
+      seriesFields.displayTitle.focus();
+      seriesFields.displayTitle.select();
+    });
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSeriesDrawer(): void {
+    if (seriesDrawer.classList.contains('hidden')) return;
+    editingSeriesName = null;
+    seriesDrawer.classList.remove('is-open');
+    seriesDrawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    window.setTimeout(() => {
+      seriesDrawer.classList.add('hidden');
+      if (returnFocusElForSeries && typeof returnFocusElForSeries.focus === 'function') {
+        returnFocusElForSeries.focus();
+      }
+      returnFocusElForSeries = null;
+    }, 280);
+  }
+
+  seriesDrawer.querySelectorAll<HTMLElement>('[data-series-close]').forEach(el => {
+    el.addEventListener('click', closeSeriesDrawer);
+  });
+
+  // Esc — only when the series drawer is the active one. The other
+  // Esc handlers (item drawer, delete modal) already guard on their
+  // own visibility.
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && seriesDrawer.classList.contains('is-open')) {
+      closeSeriesDrawer();
+    }
+  });
+
+  seriesForm.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+      e.preventDefault();
+      seriesSaveBtn.click();
+    }
+  });
+
+  // Color picker wiring — clicking the swatch opens the native picker;
+  // committing a new color updates both the override and the swatch
+  // preview. Reset clears the override back to "use default".
+  seriesColorSwatch.addEventListener('click', () => seriesColorInput.click());
+  seriesColorInput.addEventListener('change', () => {
+    editingColorOverride = seriesColorInput.value;
+    paintColorSwatch(editingColorOverride);
+  });
+  seriesColorClear.addEventListener('click', () => {
+    editingColorOverride = undefined;
+    paintColorSwatch(undefined);
+  });
+
+  seriesSaveBtn.addEventListener('click', () => {
+    if (!editingSeriesName) return;
+    const name = editingSeriesName;
+    const orderRaw = seriesFields.order.value.trim();
+    const orderNum = orderRaw === '' ? undefined : Number(orderRaw);
+    const orderValid = orderNum === undefined || Number.isFinite(orderNum);
+
+    const patch: Partial<SeriesMetadata> = {
+      displayTitle: seriesFields.displayTitle.value.trim() || name,
+      visualMode: seriesFields.visualMode.value as SeriesMetadata['visualMode'],
+      color: editingColorOverride,
+      order: orderValid ? orderNum : undefined,
+      isVisibleInUniverse: seriesFields.isVisibleInUniverse.checked,
+    };
+
+    const saved = setSeriesMetadata(name, patch);
+    renderSeries();
+    closeSeriesDrawer();
+    showToast(fmt(i18n.toastSeriesSaved, { name: saved.displayTitle }));
+  });
+
+  // Boot — paint the section once item-metadata overlay has run.
+  renderSeries();
 </script>

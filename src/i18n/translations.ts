@@ -595,6 +595,39 @@ export const translations: Translations = {
   'admin.toast.networkError':            { he: 'שגיאת רשת: {{msg}}',                                  en: 'Network error: {{msg}}',                                              es: 'Error de red: {{msg}}' },
   'admin.toast.metadataSaved':           { he: 'המטא-דאטה נשמרה עבור "{{title}}"',                    en: 'Metadata saved for "{{title}}"',                                      es: 'Metadatos guardados para "{{title}}"' },
 
+  // ── admin.series.* — Series Management on /admin ───────────────────────
+  // A series is detected when ≥1 content items share the same non-empty
+  // seriesName. The admin section lets the project owner edit the
+  // editorial properties of each detected series (display title, color,
+  // order, visibility, visual mode). Admin-only — the Knowledge Universe
+  // rendering does not consume these new fields yet.
+  'admin.series.section':                  { he: 'ניהול סדרות',                                                                            en: 'Series Management',                                                                  es: 'Gestión de series' },
+  'admin.series.empty':                    { he: 'אין סדרות עדיין. הוסף שם סדרה בעריכת ספר כדי לקבץ פריטים.',                              en: 'No series yet. Add a series name when editing a book to group items.',               es: 'Sin series todavía. Añade un nombre de serie al editar un libro para agruparlos.' },
+  'admin.series.count':                    { he: '{{n}} סדרות',                                                                            en: '{{n}} series',                                                                       es: '{{n}} series' },
+  'admin.series.itemsLabel':               { he: '{{n}} פריטים',                                                                           en: '{{n}} items',                                                                        es: '{{n}} elementos' },
+  'admin.series.availableLabel':           { he: '{{n}} זמינים',                                                                           en: '{{n}} available',                                                                    es: '{{n}} disponibles' },
+  'admin.series.editAriaLabel':            { he: 'עריכת סדרה {{name}}',                                                                    en: 'Edit series {{name}}',                                                               es: 'Editar serie {{name}}' },
+  'admin.series.editTitle':                { he: 'עריכת סדרה',                                                                             en: 'Edit series',                                                                        es: 'Editar serie' },
+  'admin.series.tagCapsule':               { he: 'קפסולה',                                                                                en: 'Capsule',                                                                            es: 'Cápsula' },
+
+  'admin.series.drawer.eyebrow':           { he: 'עריכת סדרה',                                                                             en: 'Edit series',                                                                        es: 'Editar serie' },
+  'admin.series.drawer.close':             { he: 'סגירת עורך',                                                                            en: 'Close editor',                                                                       es: 'Cerrar editor' },
+
+  'admin.series.field.displayTitle':       { he: 'כותרת לתצוגה',                                                                          en: 'Display title',                                                                      es: 'Título mostrado' },
+  'admin.series.field.displayTitleHint':   { he: 'כיצד הסדרה תופיע במרחב הידע.',                                                          en: 'How this series appears in the Knowledge Universe.',                                 es: 'Cómo aparecerá esta serie en el Espacio de conocimiento.' },
+  'admin.series.field.color':              { he: 'צבע',                                                                                   en: 'Color',                                                                              es: 'Color' },
+  'admin.series.field.colorHint':          { he: 'אופציונלי. השאר ריק לצבע ברירת המחדל (זהב).',                                          en: 'Optional. Leave empty for the default gold.',                                        es: 'Opcional. Déjalo vacío para usar el dorado por defecto.' },
+  'admin.series.field.colorClear':         { he: 'איפוס',                                                                                 en: 'Reset',                                                                              es: 'Restablecer' },
+  'admin.series.field.order':              { he: 'סדר תצוגה',                                                                             en: 'Order',                                                                              es: 'Orden' },
+  'admin.series.field.orderHint':          { he: 'ערכים נמוכים מופיעים תחילה. השאר ריק לסדר אלפביתי.',                                    en: 'Lower values appear first. Leave empty for alphabetical order.',                     es: 'Los valores más bajos aparecen primero. Déjalo vacío para orden alfabético.' },
+  'admin.series.field.visibleInUniverse':  { he: 'גלויה במרחב הידע',                                                                      en: 'Visible in universe',                                                                es: 'Visible en el Espacio' },
+  'admin.series.field.visibleHint':        { he: 'כיבוי מסתיר את הסדרה ממרחב הידע.',                                                       en: 'Off hides this series from the Knowledge Universe.',                                 es: 'Apagado oculta esta serie del Espacio de conocimiento.' },
+  'admin.series.field.visibleAria':        { he: 'החלפת גלויות סדרה',                                                                     en: 'Toggle series visibility',                                                           es: 'Alternar visibilidad de la serie' },
+  'admin.series.field.visualMode':         { he: 'מצב תצוגה',                                                                             en: 'Visual mode',                                                                        es: 'Modo visual' },
+  'admin.series.option.capsule':           { he: 'קפסולה',                                                                                en: 'Capsule',                                                                            es: 'Cápsula' },
+  'admin.series.button.save':              { he: 'שמירת סדרה',                                                                            en: 'Save series',                                                                        es: 'Guardar serie' },
+  'admin.series.toast.saved':              { he: 'הסדרה "{{name}}" נשמרה',                                                                en: 'Series "{{name}}" saved',                                                            es: 'Serie "{{name}}" guardada' },
+
   // ── library.series.* — series capsule on the orbit ───────────────────────
   // Labels are intentionally short so they fit inside the orbit-card
   // footprint (190–210px wide). The number is rendered separately and

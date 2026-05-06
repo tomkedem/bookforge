@@ -55,13 +55,40 @@ export const CONTENT_METADATA_VERSION = 1;
  * edited.
  */
 
-export type SeriesVisualType = 'capsule';
+/**
+ * Visual mode for a series, single value for now (`'capsule'`) so the
+ * type can grow later (e.g. 'shelf', 'tile') without breaking callers.
+ */
+export type SeriesVisualMode = 'capsule';
 
 export interface SeriesMetadata {
+  /**
+   * Primary key — the `seriesName` typed by the user on a content item.
+   * This is the identifier that links items together; do NOT replace it
+   * with a synthetic id.
+   */
   name: string;
-  visualType: SeriesVisualType;
+  /**
+   * Human-readable label rendered in the admin Series Management
+   * section and (in a future phase) on the universe capsule. Defaults
+   * to the same value as `name` so a freshly-detected series reads
+   * sensibly until the project owner overrides it.
+   */
+  displayTitle: string;
+  /** Visual rendering mode. Default: 'capsule'. */
+  visualMode: SeriesVisualMode;
   /** Optional CSS color (hex like '#c9a96e'). Undefined = use default. */
   color?: string;
+  /**
+   * Optional integer that the universe will use to sort series. Lower
+   * comes first. Undefined = fall back to alphabetical by displayTitle.
+   * The universe rendering does NOT consume this yet — Phase 3 is
+   * admin-only — but the field is editable now so editorial intent is
+   * captured before downstream rendering wires up.
+   */
+  order?: number;
+  /** Default true — when false, the universe should hide the series. */
+  isVisibleInUniverse: boolean;
 }
 
 export interface SeriesMetadataStore {

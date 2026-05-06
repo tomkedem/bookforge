@@ -150,7 +150,12 @@ export function setMetadata(
 export function defaultSeriesMetadataFor(name: string): SeriesMetadata {
   return {
     name,
-    visualType: 'capsule',
+    displayTitle: name,
+    visualMode: 'capsule',
+    isVisibleInUniverse: true,
+    // color and order are intentionally left undefined — they are
+    // editorial overrides, not always-present values. A consumer that
+    // reads `meta.color` should treat falsy as "use default".
   };
 }
 
