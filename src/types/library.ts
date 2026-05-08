@@ -149,6 +149,12 @@ export interface LibraryItem {
   subtitles?: LibraryLanguageMap;
   summaries?: LibraryLanguageMap;
   topics?: LibraryLanguageListMap;
+  /**
+   * Localized author / byline. Sourced from `credits.author` in the
+   * book manifest for pipeline books; absent otherwise. Surfaced as
+   * a real text byline on the focused-artifact orbit card.
+   */
+  author?: LibraryLanguageMap;
 
   /** Machine-readable category key (e.g. 'foundations'). */
   categoryKey?: string;

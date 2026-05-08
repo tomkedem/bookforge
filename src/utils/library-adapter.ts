@@ -61,6 +61,30 @@ function toLanguageMap(
   return result;
 }
 
+/**
+ * Map a `LocalizedOrPlain` author value (string OR per-language map) into
+ * a `LibraryLanguageMap`. A plain string is replicated across the
+ * supported languages so any UI language picks it up. Missing or empty
+ * input → undefined so consumers can short-circuit without rendering
+ * an empty byline.
+ */
+function toAuthorMap(
+  input: string | Record<string, string> | undefined,
+): LibraryLanguageMap | undefined {
+  if (input == null) return undefined;
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (trimmed.length === 0) return undefined;
+    const out: LibraryLanguageMap = {};
+    for (const code of SUPPORTED_LANG_CODES) {
+      out[code as Language] = trimmed;
+    }
+    return out;
+  }
+  const mapped = toLanguageMap(input);
+  return Object.keys(mapped).length > 0 ? mapped : undefined;
+}
+
 /** Filter raw string[] to only valid Language codes. */
 function toLanguagesList(arr: string[] | undefined): Language[] {
   if (!Array.isArray(arr)) return [SOURCE_LANGUAGE as Language];
@@ -139,6 +163,7 @@ export function mapDiscoveredBookToLibraryItem(
     subtitles: toLanguageMap(book.subtitles),
     summaries: toLanguageMap(book.descriptions),
     topics: collectTopics(book),
+    author: toAuthorMap(book.credits?.author),
     categoryKey: book.categoryKey,
     level: book.level,
     seriesId: book.courseSlug ? `course-${book.courseSlug}` : undefined,
