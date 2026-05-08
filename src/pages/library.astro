@@ -44,6 +44,7 @@ import {
 import { getCourseProgressList } from '../utils/library-adapter';
 import { isReadableLibraryItem } from '../utils/library-display';
 import { bookAngle, lessonAngle } from '../utils/library/universe-angle-utils';
+import { getKnowledgeCardAssets } from '../utils/library/knowledge-cards';
 
 // ── Language ──────────────────────────────────────────────────────────────
 const { language: propLanguage } = Astro.props as { language?: Language };
@@ -86,8 +87,16 @@ const continueItem = getContinueReadingItem(readableItems);
 //
 // Click-to-center still works: a clicked card flies to the middle and
 // the rest dim under the backdrop.
-const bookItems = readableItems.filter((it) => it.type === 'book');
-const lessonItems = readableItems.filter((it) => it.type === 'course_lesson');
+// Orbit eligibility: only items with a COMPLETE artifact folder
+// (front.png + left.png + right.png) appear in the knowledge universe.
+// Items without assets are intentionally excluded — no medallion
+// fallback, no placeholder, no broken images. Mobile views (e.g.
+// MobileGalaxyCarousel) keep their unfiltered `readableItems` source
+// and are not affected by this filter.
+const hasOrbitArtifact = (slug: string) => getKnowledgeCardAssets(slug) !== undefined;
+const orbitItemsSource = readableItems.filter((it) => hasOrbitArtifact(it.slug));
+const bookItems = orbitItemsSource.filter((it) => it.type === 'book');
+const lessonItems = orbitItemsSource.filter((it) => it.type === 'course_lesson');
 
 // Math helpers — see ../utils/library/universe-angle-utils.ts. The same
 // functions are imported by the universe hydrator below so SSR initial
@@ -258,7 +267,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 data-slug={item.slug}
                 style={`--orbit-angle: ${angle}deg;`}
               >
-                <LibraryCard item={item} language={language} variant="orbit" />
+                <LibraryCard
+                  item={item}
+                  language={language}
+                  variant="orbit"
+                  artifact={getKnowledgeCardAssets(item.slug)}
+                />
                 <div class="galaxy-cta" aria-hidden="true">
                   <a
                     class="galaxy-cta-open"
@@ -1270,7 +1284,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        flies to the middle, scales up, drops its tilt. Sits above the
        backdrop and other cards. */
     .galaxy-card[data-pos="center"] {
-      transform: translate(-50%, -50%) scale(1.35);
+      transform: translate(-50%, -50%) scale(1.5);
       opacity: 1;
       z-index: 30;
       cursor: default;

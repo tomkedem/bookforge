@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(*)",
-      "WebSearch"
+      "WebSearch",
+      "PowerShell(Rename-Item -Path \"public\\\\assets\\\\knowledge-cards\\\\python-ai-engineering\" -NewName \"practical-python-for-ai-engineering\")"
     ]
   }
 }

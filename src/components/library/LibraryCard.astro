@@ -28,6 +28,7 @@ import {
   formatReadingMinutes,
   getItemGlyph,
   isSafeLibraryHref,
+  getLocalizedLibraryText,
 } from '../../utils/library-display';
 
 interface Props {
@@ -39,8 +40,15 @@ interface Props {
    * orbit   — denser premium "floating" card for the desktop galaxy stage.
    */
   variant?: 'default' | 'compact' | 'orbit';
+  /**
+   * Optional three-face artifact (front / left / right). When supplied
+   * AND `variant === 'orbit'`, the dominant card visual switches from
+   * the abstract medallion+glyph to a real card artifact whose visible
+   * face tracks the card's position around the orbit.
+   */
+  artifact?: { front: string; left: string; right: string };
 }
-const { item, language, variant = 'default' } = Astro.props;
+const { item, language, variant = 'default', artifact } = Astro.props;
 
 const title = getItemTitle(item, language);
 const summary = getItemSummary(item, language);
@@ -77,7 +85,16 @@ const showStatus = variant === 'default';
 const showMeta   = variant === 'default';
 const showTopics = variant === 'default' && topics.length > 0;
 const showSummary = variant !== 'orbit';
-const showOrbitVisual = variant === 'orbit';
+const showOrbitArtifact = variant === 'orbit' && !!artifact;
+// Real subtitle (the short tagline from the manifest's `subtitles`,
+// NOT the long `summaries` text). Only used by the artifact-focused
+// state, where it sits below the artwork as a real HTML caption.
+const orbitSubtitle = showOrbitArtifact
+  ? getLocalizedLibraryText(item.subtitles, language)
+  : '';
+// The medallion glyph is the fallback visual; suppress it when a
+// real artifact is shown so we never paint two competing visuals.
+const showOrbitVisual = variant === 'orbit' && !artifact;
 const showOrbitFooter = variant === 'orbit';
 
 // Course-lesson cards labelled with "Lesson N" carry more identity than
@@ -108,7 +125,12 @@ if (variant === 'orbit') {
 const orbitProgressKey = item.slug;
 
 const isSafe = isSafeLibraryHref(item.href);
-const wrapperClass = ['lc', `lc-${variant}`, isSafe ? 'lc-link' : 'lc-static'].join(' ');
+const wrapperClass = [
+  'lc',
+  `lc-${variant}`,
+  isSafe ? 'lc-link' : 'lc-static',
+  showOrbitArtifact ? 'lc-has-artifact' : '',
+].filter(Boolean).join(' ');
 
 // Generic abstract glyph by item type (never by item title/slug).
 const glyph = getItemGlyph(item.type);
@@ -183,6 +205,44 @@ const extraTopics = topics.length - topicChips.length;
             )}
           </span>
         </span>
+      </span>
+    )}
+    {showOrbitArtifact && (
+      <p class="lc-orbit-corner-badge"><span>{orbitTypeLabel}</span></p>
+    )}
+    {showOrbitArtifact && orbitSubtitle && (
+      <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
+    )}
+    {showOrbitArtifact && artifact && (
+      <span class="lc-orbit-artifact" aria-hidden="true">
+        {/* The front face is rendered first and `position: relative`
+            so it gives the artifact its natural box dimensions. The
+            two side faces overlay it absolutely; CSS picks which face
+            is visible from the card's live `--orbit-active-angle`. */}
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+          src={artifact.front}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
+          src={artifact.left}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-right"
+          src={artifact.right}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
       </span>
     )}
     <header class="lc-header">
@@ -295,6 +355,44 @@ const extraTopics = topics.length - topicChips.length;
             )}
           </span>
         </span>
+      </span>
+    )}
+    {showOrbitArtifact && (
+      <p class="lc-orbit-corner-badge"><span>{orbitTypeLabel}</span></p>
+    )}
+    {showOrbitArtifact && orbitSubtitle && (
+      <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
+    )}
+    {showOrbitArtifact && artifact && (
+      <span class="lc-orbit-artifact" aria-hidden="true">
+        {/* The front face is rendered first and `position: relative`
+            so it gives the artifact its natural box dimensions. The
+            two side faces overlay it absolutely; CSS picks which face
+            is visible from the card's live `--orbit-active-angle`. */}
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+          src={artifact.front}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
+          src={artifact.left}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-right"
+          src={artifact.right}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
       </span>
     )}
     <header class="lc-header">
@@ -561,6 +659,124 @@ const extraTopics = topics.length - topicChips.length;
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--card-accent) 60%, transparent));
   }
 
+  /* ── Three-face orbit artifact ───────────────────────────────────────
+        Replaces the abstract medallion+glyph when knowledge-card assets
+        exist for the item. All three faces are present in the DOM; CSS
+        picks which is visible by reading the card's live position on
+        the orbit:
+
+          --side-x = cos(orbit-active-angle) · galaxy-dir   ∈ [-1, +1]
+
+        The opacity math uses a *deadband* + *narrow crossfade*, not a
+        linear ramp:
+
+          |--side-x| ≤ DEADBAND          → front=1, sides=0   (single face)
+          DEADBAND < |--side-x| < EDGE   → front + active side cross-fade
+                                            (their opacities sum to 1)
+          |--side-x| ≥ EDGE              → active side=1, others=0
+
+        The crossfade band is intentionally narrow so two faces are
+        never visibly competing for long; outside the band, exactly
+        one face has opacity > 0 — no muddy double-image, no flicker.
+
+        Both --orbit-active-angle (per .galaxy-card) and --galaxy-dir
+        (per .library-galaxy) reach this element through normal custom
+        property inheritance — the rotation logic in universe-layout.ts
+        does not need to know about the artifact. */
+  .lc-orbit-artifact {
+    --side-x: calc(cos(var(--orbit-active-angle, 0deg)) * var(--galaxy-dir, 1));
+    /* Window where the front face is the sole visible face. Tunable. */
+    --front-deadband: 0.22;
+    /* Width of the cross-fade window between the deadband and full
+       side-face. Narrow keeps the handoff snappy; widening it makes
+       the blend more gradual but introduces longer competition. */
+    --cross-band: 0.12;
+    /* Bleed the artifact to the card's inline edges and the top edge
+       so it reads as a hero/cover, replacing the corner medallion as
+       the dominant visual. The bottom is left in flow with a short
+       gap before the title. The card already has overflow: hidden, so
+       any pixel outside its border-radius is clipped cleanly. */
+    position: relative;
+    display: block;
+    margin-inline: -1.125rem;
+    margin-block-start: -1.125rem;
+    margin-block-end: 0.625rem;
+    z-index: 0;
+    pointer-events: none;
+    /* Soft fade at the bottom edge of the artifact area so the image
+       blends into the card surface where the text starts, instead of
+       presenting a hard image/text boundary. Pure mask, no extra DOM. */
+    -webkit-mask-image: linear-gradient(to bottom,
+      black 0%, black 78%, transparent 100%);
+    mask-image: linear-gradient(to bottom,
+      black 0%, black 78%, transparent 100%);
+  }
+  .lc-orbit-artifact-face {
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    /* Match the orbit's transform timing so face and position glide
+       together when chevron rotation runs. During an active drag the
+       transition is killed (rule below) so opacity tracks the cursor
+       in real time. */
+    transition: opacity 540ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lc-orbit-artifact-face-front {
+    /* In flow — defines the artifact's natural box dimensions. */
+    position: relative;
+    display: block;
+  }
+  .lc-orbit-artifact-face-left,
+  .lc-orbit-artifact-face-right {
+    position: absolute;
+    inset: 0;
+    object-fit: contain;
+    object-position: center;
+  }
+  /* Opacity ladder. Each face's opacity is a clamped linear ramp over
+     the cross-band; outside the band it is hard-clamped to 0 or 1. */
+  .lc-orbit-artifact-face-right {
+    opacity: clamp(0,
+      calc((var(--side-x) - var(--front-deadband)) / var(--cross-band)),
+      1);
+  }
+  .lc-orbit-artifact-face-left {
+    opacity: clamp(0,
+      calc((-1 * var(--side-x) - var(--front-deadband)) / var(--cross-band)),
+      1);
+  }
+  .lc-orbit-artifact-face-front {
+    opacity: clamp(0,
+      calc((var(--front-deadband) + var(--cross-band) - abs(var(--side-x)))
+        / var(--cross-band)),
+      1);
+  }
+
+  /* Selected / focused state — `.galaxy-card[data-pos="center"]` is
+     set by the orbit when a card is click-focused into the middle.
+     Force the front face on regardless of where on the orbit the card
+     came from. `:global()` opts out of Astro scoping so the rule can
+     reach `.galaxy-card` (rendered by /library) from this component. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit-artifact-face-front {
+    opacity: 1;
+  }
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit-artifact-face-left,
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit-artifact-face-right {
+    opacity: 0;
+  }
+
+  /* Live drag — kill transitions so the active face tracks the cursor
+     with no lag. Mirrors the existing pattern in /library that drops
+     `transform` transitions on `.galaxy-card` while dragging. */
+  :global(.library-galaxy[data-galaxy-dragging]) .lc-orbit-artifact-face {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lc-orbit-artifact-face { transition: none; }
+  }
+
   /* Reference uses ONE bottom-anchored type badge per card. The top
      row (type pill + status) is hidden in orbit because it duplicates
      information and clutters the small floating tile. */
@@ -571,6 +787,11 @@ const extraTopics = topics.length - topicChips.length;
     margin-block: 0 0.625rem;
     /* Indent the title so it doesn't overlap the inline-start icon. */
     padding-inline-start: 2.25rem;
+  }
+  /* When an artifact is present, the corner glyph is gone, so the
+     title doesn't need its left indent any more. */
+  .lc-has-artifact .lc-title {
+    padding-inline-start: 0;
   }
   .lc-orbit .lc-summary { display: none; }
   .lc-orbit .lc-meta { display: none; }
@@ -655,6 +876,345 @@ const extraTopics = topics.length - topicChips.length;
 
   .lc-orbit::after,
   .lc-orbit::before { z-index: 0; }
+
+  /* ── Artifact mode — the artifact IS the card ─────────────────────
+        When `.lc-has-artifact` is set (orbit + complete artifact set
+        for the slug), every piece of orbit-card chrome is suppressed
+        so the PNG artwork itself is the visible card surface. The
+        relevant chrome that has to die in this mode (set by the base
+        `.lc` rule and the more-specific `.lc-orbit` rule):
+          - the linear-gradient `background:` (NOT just background-color)
+          - the accent `border` colour
+          - the layered `box-shadow` stack
+          - the `backdrop-filter` blur
+          - the `.lc-orbit::before` hairline highlight (top edge)
+          - the `.lc-orbit::after` type-tinted halo (top corner)
+          - the `padding`
+        Title and footer are then absolutely positioned above the
+        artwork as real HTML text, with a bottom scrim painted in a
+        repurposed `::before` to keep them readable across any colour
+        in the artwork.
+        Only the orbit variant gets this treatment — fallback orbit
+        cards (no artifact) and every non-orbit variant are untouched. */
+  .lc-orbit.lc-has-artifact {
+    /* Hoist the orbit-position signal to the wrapper so siblings of
+       the artifact (the corner badge) can read it via inheritance.
+       Same formula the artifact uses: `cos(active-angle) · galaxy-dir`,
+       saturated to ±1 at the equator of the orbit and ≈ 0 at the
+       top/bottom (center). */
+    --side-x: calc(cos(var(--orbit-active-angle, 0deg)) * var(--galaxy-dir, 1));
+    /* Register this card as an inline-size query container so the
+       corner badge can express its slide as a percentage of the card's
+       own width (`cqi`). That keeps the badge inside the card for any
+       label length — short ("Book") and long ("שיעור 3" / "Lesson 12")
+       alike — without hand-tuning a px shift per breakpoint. */
+    container-type: inline-size;
+    /* `background:` (not `background-color:`) is the right reset —
+       `.lc-orbit` sets the shorthand with a gradient image, and a
+       background-color override leaves the gradient image painting. */
+    background: none;
+    border-color: transparent;
+    padding: 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    /* Replace the orbit's layered glass box-shadow with a single soft
+       drop + a 1 px tint ring keyed on the type accent. The card's
+       existing border-radius + overflow:hidden still clip the artwork
+       to a rounded silhouette, so the shadow follows the silhouette. */
+    box-shadow:
+      0 10px 30px -12px rgba(0, 0, 0, 0.55),
+      0 0 0 1px color-mix(in srgb, var(--card-accent-fallback, var(--yuval-galaxy-accent)) 22%, transparent);
+  }
+  /* Hover/focus on the linked card: the translateY(-2px) lift survives
+     from `.lc-link:hover` higher up; the surface swap that the base
+     rule applies has nothing to swap any more — keep the chrome
+     transparent so the artwork itself reads as the card. */
+  .lc-orbit.lc-has-artifact.lc-link:hover {
+    background: none;
+    border-color: transparent;
+  }
+
+  /* Repurpose `::before` as the bottom scrim. The base `.lc-orbit::before`
+     rule sets `inset-block-start: 0; inset-inline: 12%; height: 1px`
+     for a hairline highlight — every one of those values is overridden
+     here so the pseudo anchors to the bottom edge instead of stretching
+     full-height. */
+  .lc-orbit.lc-has-artifact::before {
+    content: "";
+    position: absolute;
+    inset-block-start: auto;
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    width: auto;
+    height: 58%;
+    z-index: 1;
+    opacity: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 88%, transparent) 0%,
+      color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent) 38%,
+      color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 18%, transparent) 72%,
+      transparent 100%);
+  }
+  /* Kill the type-tinted halo `::after` so the artwork isn't tinted. */
+  .lc-orbit.lc-has-artifact::after { display: none; }
+
+  /* Artifact container: explicit aspect-ratio so the card silhouette
+     is defined by the wrapper, not by an in-flow image. All three
+     faces are then absolutely positioned and `object-fit: cover` so
+     the artwork fills the silhouette edge-to-edge with no letterbox.
+     This also drops the earlier negative margins (no padding to
+     escape) and the bottom mask (the scrim does that job now). */
+  .lc-has-artifact .lc-orbit-artifact {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin: 0;
+    aspect-ratio: 1 / 1;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .lc-has-artifact .lc-orbit-artifact-face {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  /* Floating title — overlaid on the artwork. Indent reset (corner
+     glyph is gone in artifact mode) and a soft text-shadow for
+     legibility against any artwork color. */
+  .lc-orbit.lc-has-artifact .lc-title {
+    position: absolute;
+    inset-inline: 0.875rem;
+    inset-block-end: 3rem;
+    margin: 0;
+    z-index: 2;
+    padding-inline-start: 0;
+    color: var(--yuval-galaxy-text, #ececea);
+    font-size: 0.875rem;
+    line-height: 1.25;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.7),
+      0 0 10px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Floating footer — type pill, count, progress bar all stay as
+     real UI text. Anchored to the bottom edge of the artwork. */
+  .lc-orbit.lc-has-artifact .lc-orbit-footer {
+    position: absolute;
+    inset-inline: 0.875rem;
+    inset-block-end: 0.625rem;
+    margin: 0;
+    z-index: 2;
+    /* Tighten vertical rhythm in the overlay — the original 0.4375rem
+       gap was tuned for an in-flow footer. */
+    gap: 0.3125rem;
+  }
+
+  /* Hide the count line in artifact mode — it duplicated the type
+     pill's information density on a card that's now mostly artwork.
+     The progress bar + pill carry enough signal. Comment-out trivial
+     rules instead of removing them so the structure is reversible. */
+  .lc-orbit.lc-has-artifact .lc-orbit-count {
+    display: none;
+  }
+
+  /* In artifact mode, the type pill is also moved to the corner badge
+     above the artwork (see `.lc-orbit-corner-badge` below). Hide the
+     in-footer copy so the same label doesn't appear twice. */
+  .lc-orbit.lc-has-artifact .lc-orbit-typebadge {
+    display: none;
+  }
+
+  /* ── Corner badge — book / lesson category label ─────────────────
+        Floats over the artwork at the top edge, with its horizontal
+        position driven by the card's live orbit side:
+          card on the visual-RIGHT arc (side-x → +1) → badge slides LEFT
+          card on the visual-LEFT arc  (side-x → -1) → badge slides RIGHT
+          card at the top/bottom apex  (side-x ≈  0) → badge stays CENTERED
+        The slide tracks rotation in lockstep with the artifact face
+        cross-fade because both read the same `--side-x` from the
+        wrapper. Uses `--card-accent` so books stay gold and lessons
+        cyan, and a darkened backdrop so the chip stays legible across
+        any colour in the artwork below. */
+  .lc-orbit-corner-badge {
+    position: absolute;
+    inset-block-start: 0.625rem;
+    /* PHYSICAL `left` (not `inset-inline-start`) — combined with a
+       physical `translateX(-50%)`, this centers correctly in BOTH
+       LTR and RTL. Mixing logical positioning with a physical
+       transform-percentage was the bug that made the badge land
+       off-center on Hebrew pages. */
+    left: 50%;
+    /* Slide proportional to the card's own inline size (`cqi`):
+         |side-x| ≤ 1, shift = 22% of card width.
+       At a 190 px orbit card that is ≈ 42 px — far enough to lean
+       the badge clearly toward the opposite side of the artwork
+       without ever pushing the chip past the card's inline edge,
+       even for the longer Hebrew labels (e.g. "שיעור 3"). The clamp
+       on side-x is defensive — `cos × dir` is naturally bounded to
+       [-1, +1], but the clamp guarantees the slide can never overshoot. */
+    transform: translateX(
+      calc(-50% - clamp(-1, var(--side-x, 0), 1) * 22cqi));
+    transform-origin: center;
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    pointer-events: none;
+    /* Slide animation matches the orbit transform timing so badge,
+       artifact, and card all glide together when chevron rotation
+       runs. Killed during pointer drag (rule below). */
+    transition: transform 540ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* Kill the slide transition while the user is actively dragging the
+     orbit so the badge tracks the cursor in real time, mirroring the
+     artifact-face rule. */
+  :global(.library-galaxy[data-galaxy-dragging]) .lc-orbit-corner-badge {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lc-orbit-corner-badge { transition: none; }
+  }
+
+  /* ── Focused artifact card — click-to-center layout pivot ────────
+        When the orbit promotes a card to the stage's center
+        (`.galaxy-card[data-pos="center"]`), the artifact mode pivots
+        from "artwork as full surface, text overlaid" to:
+
+           ┌──────────────┐
+           │   [TITLE]    │   ← real text, above the book
+           │ ┌──────────┐ │
+           │ │ ARTIFACT │ │   ← the PNG, in the middle
+           │ └──────────┘ │
+           │  [SUBTITLE]  │   ← real text, below the book
+           └──────────────┘
+
+        The corner category badge, the bottom scrim, the in-flow type
+        pill / count / progress all step out of the way — the focused
+        view is for reading the book's identity, not its in-orbit
+        chrome. The wrapper's `scale(1.5)` (set on .galaxy-card in
+        /library) handles the size bump. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact {
+    /* Switch from absolute-overlay layout to a vertical flow. */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem 0.75rem;
+  }
+  /* Hide the corner category badge — focused state has its own header. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit-corner-badge {
+    display: none;
+  }
+  /* Hide the bottom scrim — text is no longer overlaying the artwork. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact::before {
+    display: none;
+  }
+  /* Title pivots to in-flow at the top, no shadow / no overlay anymore. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-title {
+    position: static;
+    inset: auto;
+    margin: 0;
+    order: 1;
+    text-align: center;
+    text-shadow: none;
+    color: var(--yuval-galaxy-text, #ececea);
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+    padding-inline-start: 0;
+  }
+  /* Artifact stays in the middle of the stack. Round its corners so it
+     reads as a discrete object inside the card, not as the card surface
+     itself.
+     Scale the artwork itself by 1.5× on top of the card-level scale —
+     `transform: scale(1.5)` only affects the visual; `margin-block: 25%`
+     reserves the matching vertical space in the flex flow so the title
+     above and subtitle below don't collide with the larger image. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-artifact {
+    order: 2;
+    border-radius: 14px;
+    overflow: hidden;
+    transform: scale(1.5);
+    transform-origin: center;
+    margin-block: 25%;
+    /* Smooth scale-in when the card is promoted to the center, matching
+       the orbit's transform timing so the card-scale and image-scale
+       glide together. */
+    transition: transform 540ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* Allow the scaled artwork to bleed outside the card's outer outline
+     — the card's chrome is transparent in artifact mode, so there's
+     no panel to clip against, and the image's own border-radius
+     handles its rounded silhouette regardless. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact {
+    overflow: visible;
+  }
+  /* Live drag should not animate the image scale — it's the focus
+     transition that drives this. Drop the transition during drag so
+     the orbit handler remains in full control of motion. */
+  :global(.library-galaxy[data-galaxy-dragging]) .lc-orbit.lc-has-artifact .lc-orbit-artifact {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-artifact {
+      transition: none;
+    }
+  }
+  /* Subtitle node — rendered for artifact-mode cards but hidden in the
+     resting orbit state. Revealed below the artifact in focused state.
+     Sourced from `item.subtitles` (the real short tagline), NOT from
+     the long `summaries` description. */
+  .lc-orbit-subtitle {
+    display: none;
+    margin: 0;
+  }
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-subtitle {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    order: 3;
+    text-align: center;
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.78125rem;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-soft, #c8c8c4));
+  }
+  /* Hide the in-flow footer — type / count / progress are not part of
+     the focused presentation. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-footer {
+    display: none;
+  }
+  .lc-orbit-corner-badge > span {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.1875rem 0.625rem;
+    border-radius: 999px;
+    color: var(--card-accent);
+    background-color: color-mix(
+      in srgb,
+      var(--yuval-galaxy-bg, #00010d) 65%,
+      color-mix(in srgb, var(--card-accent) 22%, transparent)
+    );
+    border: 1px solid color-mix(in srgb, var(--card-accent) 50%, transparent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
+  }
 
   .lc-header {
     display: flex;
