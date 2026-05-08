@@ -41,12 +41,19 @@ interface Props {
    */
   variant?: 'default' | 'compact' | 'orbit';
   /**
-   * Optional three-face artifact (front / left / right). When supplied
-   * AND `variant === 'orbit'`, the dominant card visual switches from
-   * the abstract medallion+glyph to a real card artifact whose visible
-   * face tracks the card's position around the orbit.
+   * Optional four-face artifact (front / left / right / selected).
+   * When supplied AND `variant === 'orbit'`, the dominant card visual
+   * switches from the abstract medallion+glyph to a real card artifact
+   * whose visible face tracks the card's position around the orbit.
+   * `selected.png` is reserved for the click-focused / centered state
+   * and overrides the angle-based face selection.
    */
-  artifact?: { front: string; left: string; right: string };
+  artifact?: {
+    front: string;
+    left: string;
+    right: string;
+    selected: string;
+  };
 }
 const { item, language, variant = 'default', artifact } = Astro.props;
 
@@ -253,6 +260,14 @@ const extraTopics = topics.length - topicChips.length;
           decoding="async"
           draggable={false}
         />
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-selected"
+          src={artifact.selected}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
       </span>
     )}
     <header class="lc-header">
@@ -401,6 +416,14 @@ const extraTopics = topics.length - topicChips.length;
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-right"
           src={artifact.right}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+        />
+        <img
+          class="lc-orbit-artifact-face lc-orbit-artifact-face-selected"
+          src={artifact.selected}
           alt=""
           loading="lazy"
           decoding="async"
@@ -790,17 +813,45 @@ const extraTopics = topics.length - topicChips.length;
       1);
   }
 
+  /* Selected face — hidden by default. Specificity: `.lc-has-artifact
+     .lc-orbit-artifact-face-selected` (2 classes = 20) matches the
+     base artifact-face rule's specificity, and the `opacity: 0` here
+     overrides the default `1`. We use opacity (not display:none)
+     because (a) the layered .lc-has-artifact rule sets `display:
+     block` later in source with equal specificity, which would beat
+     a single-class display:none, and (b) opacity also drives the
+     existing 540 ms cross-fade transition for free. */
+  .lc-has-artifact .lc-orbit-artifact-face-selected {
+    opacity: 0;
+  }
+
   /* Selected / focused state — `.galaxy-card[data-pos="center"]` is
      set by the orbit when a card is click-focused into the middle.
-     Force the front face on regardless of where on the orbit the card
-     came from. `:global()` opts out of Astro scoping so the rule can
+     The selected face takes over and the angle-based faces step out
+     of the way. `:global()` opts out of Astro scoping so the rule can
      reach `.galaxy-card` (rendered by /library) from this component. */
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit-artifact-face-front {
-    opacity: 1;
-  }
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit-artifact-face-left,
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit-artifact-face-right {
+  :global(.galaxy-card[data-pos="center"]) .lc-has-artifact .lc-orbit-artifact-face-front,
+  :global(.galaxy-card[data-pos="center"]) .lc-has-artifact .lc-orbit-artifact-face-left,
+  :global(.galaxy-card[data-pos="center"]) .lc-has-artifact .lc-orbit-artifact-face-right {
     opacity: 0;
+  }
+  /* Selected face renders IN-FLOW (position: relative) when active,
+     so its natural intrinsic size drives the artifact container's
+     height. Combined with the container's `aspect-ratio: auto`
+     override (focused-state rule below), this lets `selected.png`
+     show at whatever taller aspect it was authored at without being
+     clipped or letterboxed. The selector includes `.lc-has-artifact`
+     to beat the base artifact-face rule's `position: absolute;
+     inset: 0` (same 2-class specificity, plus the `[data-pos]`
+     attribute selector pushes us higher overall). */
+  :global(.galaxy-card[data-pos="center"]) .lc-has-artifact .lc-orbit-artifact-face-selected {
+    opacity: 1;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    object-fit: unset;
+    object-position: center;
   }
 
   /* Live drag — kill transitions so the active face tracks the cursor
@@ -812,6 +863,21 @@ const extraTopics = topics.length - topicChips.length;
 
   @media (prefers-reduced-motion: reduce) {
     .lc-orbit-artifact-face { transition: none; }
+  }
+
+  /* ── TEMP TEST OVERRIDE — always show front.png ──────────────────
+     Pins the front face fully visible and forces the angle-based and
+     selected faces fully transparent at every orbit position AND in
+     the focused state. Use `!important` to beat every prior opacity
+     rule (the angle ramp, the focused-state overrides, etc.).
+     To revert: delete this block. */
+  .lc-has-artifact .lc-orbit-artifact-face-front {
+    opacity: 1 !important;
+  }
+  .lc-has-artifact .lc-orbit-artifact-face-left,
+  .lc-has-artifact .lc-orbit-artifact-face-right,
+  .lc-has-artifact .lc-orbit-artifact-face-selected {
+    opacity: 0 !important;
   }
 
   /* Reference uses ONE bottom-anchored type badge per card. The top
@@ -956,13 +1022,11 @@ const extraTopics = topics.length - topicChips.length;
     padding: 0;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    /* Replace the orbit's layered glass box-shadow with a single soft
-       drop + a 1 px tint ring keyed on the type accent. The card's
-       existing border-radius + overflow:hidden still clip the artwork
-       to a rounded silhouette, so the shadow follows the silhouette. */
-    box-shadow:
-      0 10px 30px -12px rgba(0, 0, 0, 0.55),
-      0 0 0 1px color-mix(in srgb, var(--card-accent-fallback, var(--yuval-galaxy-accent)) 22%, transparent);
+    /* No frame at all — the artwork PNG is the entire visual.
+       The orbit's layered glass shadow + accent ring used to sit
+       around the card; both are removed so the artifact reads as
+       a free-floating object on the cosmic field. */
+    box-shadow: none;
   }
   /* Hover/focus on the linked card: the translateY(-2px) lift survives
      from `.lc-link:hover` higher up; the surface swap that the base
@@ -973,31 +1037,11 @@ const extraTopics = topics.length - topicChips.length;
     border-color: transparent;
   }
 
-  /* Repurpose `::before` as the bottom scrim. The base `.lc-orbit::before`
-     rule sets `inset-block-start: 0; inset-inline: 12%; height: 1px`
-     for a hairline highlight — every one of those values is overridden
-     here so the pseudo anchors to the bottom edge instead of stretching
-     full-height. */
-  .lc-orbit.lc-has-artifact::before {
-    content: "";
-    position: absolute;
-    inset-block-start: auto;
-    inset-block-end: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    width: auto;
-    height: 58%;
-    z-index: 1;
-    opacity: 1;
-    pointer-events: none;
-    background: linear-gradient(
-      to top,
-      color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 88%, transparent) 0%,
-      color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent) 38%,
-      color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 18%, transparent) 72%,
-      transparent 100%);
-  }
-  /* Kill the type-tinted halo `::after` so the artwork isn't tinted. */
+  /* Both pseudo-elements that the base `.lc` and `.lc-orbit` rules
+     used for chrome (the top hairline `::before` highlight and the
+     accent-tinted `::after` halo) are killed in artifact mode. The
+     PNG carries every visual cue the card needs. */
+  .lc-orbit.lc-has-artifact::before,
   .lc-orbit.lc-has-artifact::after { display: none; }
 
   /* Artifact container — taller 1:1 frame on top of a 3:2 asset.
@@ -1029,10 +1073,26 @@ const extraTopics = topics.length - topicChips.length;
   /* Floating title — overlaid on the artwork. Indent reset (corner
      glyph is gone in artifact mode) and a soft text-shadow for
      legibility against any artwork color. */
+  /* Floating footer — type pill + progress bar, anchored higher up
+     so the book title can sit BELOW it. Real HTML, not baked into
+     the image. */
+  .lc-orbit.lc-has-artifact .lc-orbit-footer {
+    position: absolute;
+    inset-inline: 0.875rem;
+    inset-block-end: 2.25rem;
+    margin: 0;
+    z-index: 2;
+    /* Tighten vertical rhythm in the overlay — the original 0.4375rem
+       gap was tuned for an in-flow footer. */
+    gap: 0.3125rem;
+  }
+
+  /* Title sits at the very bottom edge of the card, beneath the
+     progress bar. Same legibility shadow as before. */
   .lc-orbit.lc-has-artifact .lc-title {
     position: absolute;
     inset-inline: 0.875rem;
-    inset-block-end: 3rem;
+    inset-block-end: 0.625rem;
     margin: 0;
     z-index: 2;
     padding-inline-start: 0;
@@ -1042,19 +1102,6 @@ const extraTopics = topics.length - topicChips.length;
     text-shadow:
       0 1px 2px rgba(0, 0, 0, 0.7),
       0 0 10px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Floating footer — type pill, count, progress bar all stay as
-     real UI text. Anchored to the bottom edge of the artwork. */
-  .lc-orbit.lc-has-artifact .lc-orbit-footer {
-    position: absolute;
-    inset-inline: 0.875rem;
-    inset-block-end: 0.625rem;
-    margin: 0;
-    z-index: 2;
-    /* Tighten vertical rhythm in the overlay — the original 0.4375rem
-       gap was tuned for an in-flow footer. */
-    gap: 0.3125rem;
   }
 
   /* Hide the count line in artifact mode — it duplicated the type
@@ -1218,6 +1265,13 @@ const extraTopics = topics.length - topicChips.length;
     overflow: visible;
     width: calc(100% + 1.5rem);
     margin-inline: -0.75rem;
+    /* Relax the resting 1:1 aspect-ratio so `selected.png` (authored
+       ~50 % taller than `front.png`) drives the container height via
+       its natural intrinsic size instead of being clipped or letter-
+       boxed inside the resting square. The selected face is rendered
+       in flow (rule above), so the container's height comes directly
+       from the image's aspect at the rendered width. */
+    aspect-ratio: auto;
     transform: scale(1.5);
     transform-origin: center;
     /* Tight vertical reservation. The PNG has internal transparent
