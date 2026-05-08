@@ -746,6 +746,30 @@ const extraTopics = topics.length - topicChips.length;
     inset: 0;
     object-fit: contain;
     object-position: center;
+    /* Up-scale the side artwork inside its artifact box so the book
+       reads larger and clearer at the orbit's side stations. The
+       PNG sits at an angle, so the visible book area is naturally
+       narrower than the box; scaling 1.18× recovers most of that
+       lost size. The card's own `overflow: hidden` clips any bleed
+       outside the rounded silhouette, and front face / focused
+       state are unaffected (they have their own scale rule). */
+    transform: scale(1.18);
+    transform-origin: center;
+    /* Sharpening hints for the side faces — they sit at the orbit's
+       smaller stations and can read as soft after the browser's
+       default down-scale interpolation. Gentle on purpose so the
+       artwork still looks like the same book, just with more visual
+       definition:
+         - `image-rendering` hints the browser to favour edge
+           sharpness over the default bilinear smoothing.
+         - `filter: contrast() saturate() brightness()` adds a small
+           perceived crispness boost without baking new pixels. */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    filter:
+      contrast(1.08)
+      saturate(1.08)
+      brightness(1.03);
   }
   /* Opacity ladder. Each face's opacity is a clamped linear ramp over
      the cross-band; outside the band it is hard-clamped to 0 or 1. */
@@ -910,12 +934,14 @@ const extraTopics = topics.length - topicChips.length;
         Only the orbit variant gets this treatment — fallback orbit
         cards (no artifact) and every non-orbit variant are untouched. */
   .lc-orbit.lc-has-artifact {
-    /* Hoist the orbit-position signal to the wrapper so siblings of
-       the artifact (the corner badge) can read it via inheritance.
-       Same formula the artifact uses: `cos(active-angle) · galaxy-dir`,
-       saturated to ±1 at the equator of the orbit and ≈ 0 at the
-       top/bottom (center). */
+    /* Hoist the orbit-position signal AND the cross-fade band to
+       the wrapper so siblings of the artifact (the corner badge)
+       can read them via inheritance. Same formula the artifact
+       uses: `cos(active-angle) · galaxy-dir`, saturated to ±1 at
+       the equator of the orbit and ≈ 0 at the top/bottom (center). */
     --side-x: calc(cos(var(--orbit-active-angle, 0deg)) * var(--galaxy-dir, 1));
+    --front-deadband: 0.22;
+    --cross-band: 0.12;
     /* Register this card as an inline-size query container so the
        corner badge can express its slide as a percentage of the card's
        own width (`cqi`). That keeps the badge inside the card for any
@@ -974,12 +1000,13 @@ const extraTopics = topics.length - topicChips.length;
   /* Kill the type-tinted halo `::after` so the artwork isn't tinted. */
   .lc-orbit.lc-has-artifact::after { display: none; }
 
-  /* Artifact container: explicit aspect-ratio so the card silhouette
-     is defined by the wrapper, not by an in-flow image. All three
-     faces are then absolutely positioned and `object-fit: cover` so
-     the artwork fills the silhouette edge-to-edge with no letterbox.
-     This also drops the earlier negative margins (no padding to
-     escape) and the bottom mask (the scrim does that job now). */
+  /* Artifact container — taller 1:1 frame on top of a 3:2 asset.
+     The PNGs are authored at 1536×1024 (3:2 landscape), but a
+     wide-and-short box on the orbit reads as a slab rather than a
+     book card. A 1:1 frame gives the side stations more vertical
+     presence; the actual artwork sits centered inside via
+     `object-fit: contain` (rule below) with breathing room above
+     and below — never cropped. */
   .lc-has-artifact .lc-orbit-artifact {
     position: relative;
     display: block;
@@ -994,7 +1021,7 @@ const extraTopics = topics.length - topicChips.length;
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     display: block;
   }
@@ -1056,7 +1083,13 @@ const extraTopics = topics.length - topicChips.length;
         wrapper. Uses `--card-accent` so books stay gold and lessons
         cyan, and a darkened backdrop so the chip stays legible across
         any colour in the artwork below. */
+  /* Corner badge is intentionally suppressed in artifact mode — the
+     PNG carries enough identity on its own and the badge competed
+     with the artwork at every orbit position. The element still
+     renders so SSR / hydration / future styling don't see a missing
+     node. */
   .lc-orbit-corner-badge {
+    display: none;
     position: absolute;
     inset-block-start: 0.625rem;
     /* PHYSICAL `left` (not `inset-inline-start`) — combined with a
@@ -1081,10 +1114,21 @@ const extraTopics = topics.length - topicChips.length;
     padding: 0;
     line-height: 1;
     pointer-events: none;
-    /* Slide animation matches the orbit transform timing so badge,
+    /* Visibility tracks the front-face opacity formula: shown at the
+       orbit's top / bottom (where front.png is the visible face),
+       faded out on the visual-left and visual-right arcs (where
+       left.png or right.png show). Same deadband + crossband the
+       faces use, so the badge cross-fades with the artwork it labels. */
+    opacity: clamp(0,
+      calc((var(--front-deadband) + var(--cross-band) - abs(var(--side-x, 0)))
+        / var(--cross-band)),
+      1);
+    /* Slide AND fade match the orbit transform timing so badge,
        artifact, and card all glide together when chevron rotation
        runs. Killed during pointer drag (rule below). */
-    transition: transform 540ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform 540ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity   540ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   /* Kill the slide transition while the user is actively dragging the
      orbit so the badge tracks the cursor in real time, mirroring the
@@ -1158,17 +1202,22 @@ const extraTopics = topics.length - topicChips.length;
     letter-spacing: -0.005em;
     padding-inline-start: 0;
   }
-  /* Artifact stays in the middle of the stack. Round its corners so it
-     reads as a discrete object inside the card, not as the card surface
-     itself.
-     Scale the artwork itself by 1.5× on top of the card-level scale —
-     `transform: scale(1.5)` only affects the visual; `margin-block: 25%`
-     reserves the matching vertical space in the flex flow so the title
-     above and subtitle below don't collide with the larger image. */
+  /* Focused-state artifact: no clipping at all — the artwork's own
+     glowing card design is the silhouette. Any CSS border-radius +
+     overflow-hidden combo on top of the design clips its corners
+     (e.g. the Python logo on `practical-python-for-ai-engineering`
+     sits close to the artwork's right edge and was being eaten by
+     the rounded clip). Removing the corner clip and the box shadow
+     ring lets the PNG show in full, exactly as authored.
+     The artifact also bleeds beyond the card's inline padding so
+     it has more visual room without making the title and subtitle
+     touch the card edges. */
   :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-artifact {
     order: 2;
-    border-radius: 14px;
-    overflow: hidden;
+    border-radius: 0;
+    overflow: visible;
+    width: calc(100% + 1.5rem);
+    margin-inline: -0.75rem;
     transform: scale(1.5);
     transform-origin: center;
     /* Tight vertical reservation. The PNG has internal transparent

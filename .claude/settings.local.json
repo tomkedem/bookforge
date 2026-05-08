@@ -3,7 +3,8 @@
     "allow": [
       "Bash(*)",
       "WebSearch",
-      "PowerShell(Rename-Item -Path \"public\\\\assets\\\\knowledge-cards\\\\python-ai-engineering\" -NewName \"practical-python-for-ai-engineering\")"
+      "PowerShell(Rename-Item -Path \"public\\\\assets\\\\knowledge-cards\\\\python-ai-engineering\" -NewName \"practical-python-for-ai-engineering\")",
+      "PowerShell(if \\(-not \\(Test-Path \"src\\\\assets\"\\)\\) { New-Item -ItemType Directory -Path \"src\\\\assets\" | Out-Null }; Move-Item -Path \"public\\\\assets\\\\knowledge-cards\" -Destination \"src\\\\assets\\\\knowledge-cards\" -Force; Get-ChildItem \"src\\\\assets\\\\knowledge-cards\" | Select-Object Name)"
     ]
   }
 }

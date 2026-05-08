@@ -95,6 +95,18 @@ const continueItem = getContinueReadingItem(readableItems);
 // and are not affected by this filter.
 const hasOrbitArtifact = (slug: string) => getKnowledgeCardAssets(slug) !== undefined;
 const orbitItemsSource = readableItems.filter((it) => hasOrbitArtifact(it.slug));
+
+// Build-time match report — printed alongside the discovery report
+// in `knowledge-cards.ts` so it's clear which catalog slugs landed
+// on the orbit and which were filtered out for missing assets.
+console.log(
+  `[knowledge-cards] orbit match report: ${orbitItemsSource.length} of ${readableItems.length} items have artifacts.`,
+);
+for (const it of readableItems) {
+  const matched = hasOrbitArtifact(it.slug);
+  const status = matched ? 'MATCH   ' : 'no-match';
+  console.log(`[knowledge-cards]   [${status}] slug="${it.slug}" type=${it.type}`);
+}
 const bookItems = orbitItemsSource.filter((it) => it.type === 'book');
 const lessonItems = orbitItemsSource.filter((it) => it.type === 'course_lesson');
 
@@ -273,12 +285,31 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                   variant="orbit"
                   artifact={getKnowledgeCardAssets(item.slug)}
                 />
-                <div class="galaxy-cta" aria-hidden="true">
+                <div class="galaxy-cta">
                   <a
                     class="galaxy-cta-open"
                     href={item.href}
                     data-galaxy-cta-open
-                  >{t('library.galaxy.openItem', language)}</a>
+                    aria-label={t('library.galaxy.openItem', language)}
+                  >
+                    <span class="galaxy-cta-open-ring" aria-hidden="true"></span>
+                    <span class="galaxy-cta-open-core" aria-hidden="true"></span>
+                    <svg
+                      class="galaxy-cta-open-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="9 6 15 12 9 18"></polyline>
+                    </svg>
+                    <span class="galaxy-cta-open-label" aria-hidden="true">
+                      {t('library.galaxy.openItem', language)}
+                    </span>
+                  </a>
                   <button
                     type="button"
                     class="galaxy-cta-close"
@@ -1315,11 +1346,25 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        card-level handler never fires for Open/Close. */
     .galaxy-cta {
       position: absolute;
-      inset-inline: 0;
-      inset-block-end: -3.25rem;
+      /* Anchor outside the focused card on its inline-start edge,
+         near the top. In RTL Hebrew that's visually top-right (what
+         was requested); in LTR English the same logical position
+         lands at top-left, mirroring with the page direction.
+         `inset-inline-end: 100%` puts the element's inline-end side
+         at the card's inline-start edge, so the whole CTA sits
+         just outside; the negative margin then pulls it slightly
+         further out so it doesn't touch the card. */
+      inset-block-start: 0;
+      inset-inline-end: 100%;
+      inset-inline-start: auto;
+      inset-block-end: auto;
+      margin-inline-end: 0.625rem;
+      /* Stack orb + X vertically — orb on top (primary), close below
+         (secondary). */
       display: flex;
-      gap: 0.5rem;
-      justify-content: center;
+      flex-direction: column;
+      gap: 0.625rem;
+      justify-content: flex-start;
       align-items: center;
       opacity: 0;
       pointer-events: none;
@@ -1329,62 +1374,183 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       opacity: 1;
       pointer-events: auto;
     }
-    /* Premium pill — same family as the project's other primary CTAs.
-       Layered visuals (top inner highlight, bottom inner shade,
-       gradient body, accent halo, hairline ring) so the button reads
-       as a luminous pressed pill rather than a flat colour fill. The
-       Spectral serif on the label is the project's premium-typography
-       signal (matches series capsule, knowledge core etc). */
+    /* ── Knowledge activation orb ─────────────────────────────────────
+          Compact circular CTA that replaces the previous pill — feels
+          native to the holographic knowledge-card universe rather than
+          a generic web button. Layered structure:
+            .galaxy-cta-open        — the orb body (translucent glass)
+            .galaxy-cta-open-core   — inner radial light
+            .galaxy-cta-open-ring   — outer dashed ring (rotates on hover)
+            .galaxy-cta-open-icon   — the open/access glyph
+            .galaxy-cta-open-label  — hover/focus tooltip
+          Real <a> element with `aria-label`, so keyboard + screen-reader
+          paths work exactly like the previous button (Enter/Space follow
+          the link, focus-visible draws the same activated state). */
     .galaxy-cta-open {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.625rem 1.375rem;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      color: var(--yuval-galaxy-accent, #5eead4);
+      cursor: pointer;
+      text-decoration: none;
+      /* Translucent glass body — inner glow rooted on the accent,
+         fading into the page background colour at the edges. The
+         core layer (::core span below) handles the brighter centre. */
+      background:
+        radial-gradient(
+          circle at 50% 38%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 24%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 8%, transparent) 55%,
+          transparent 100%
+        ),
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) inset,
+        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent) inset,
+        0 0 18px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition:
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 220ms cubic-bezier(0.4, 0, 0.2, 1);
+      /* Subtle continuous breathing — the orb feels alive even at rest. */
+      animation: galaxy-cta-open-pulse 3.6s ease-in-out infinite;
+    }
+    @keyframes galaxy-cta-open-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) inset,
+          0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent) inset,
+          0 0 18px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
+      }
+      50% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 26%, transparent) inset,
+          0 0 8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent) inset,
+          0 0 24px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
+      }
+    }
+    /* Inner core highlight — small luminous spot toward the upper-left
+       of the orb, like a glass marble's reflected light source. */
+    .galaxy-cta-open-core {
+      position: absolute;
+      inset: 18%;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 38% 30%,
+        color-mix(in srgb, white 35%, transparent) 0%,
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) 28%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+    /* Outer dashed ring — sits just outside the orb. Rotates slowly
+       on hover/focus; static + slightly dimmer at rest. */
+    .galaxy-cta-open-ring {
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 1px dashed
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
+      opacity: 0.7;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    @keyframes galaxy-cta-open-ring-rotate {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    /* Open/access glyph — chevron into the inline-end direction. RTL
+       mirroring is handled below so "→" stays reading-flow forward. */
+    .galaxy-cta-open-icon {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      z-index: 1;
+      filter: drop-shadow(
+        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent));
+      transition: opacity 180ms ease;
+    }
+    [dir="rtl"] .galaxy-cta-open-icon { transform: scaleX(-1); }
+
+    /* Hover label — floats to the PHYSICAL RIGHT of the orb,
+       vertically centered on the orb. Physical `left` + `top` (not
+       `inset-inline-*`) so the side stays the same in both RTL and
+       LTR — the user explicitly asked for visual-right. The 4px
+       inward initial translation gives a small slide-in entry. */
+    .galaxy-cta-open-label {
+      position: absolute;
+      top: 50%;
+      left: calc(100% + 0.5rem);
+      bottom: auto;
+      right: auto;
+      inset-block-start: auto;
+      inset-block-end: auto;
+      inset-inline-start: auto;
+      inset-inline-end: auto;
+      transform: translateY(-50%) translateX(-4px);
+      padding: 0.25rem 0.625rem;
       border-radius: 999px;
       font-family: 'Spectral', 'Cardo', Georgia, serif;
-      font-size: 0.9rem;
+      font-size: 0.78125rem;
       font-weight: 500;
-      letter-spacing: 0.005em;
-      color: var(--yuval-galaxy-bg, #00010d);
-      background: linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 92%, white 8%) 0%,
-        var(--yuval-galaxy-accent, #5eead4) 55%,
-        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 88%, black 12%) 100%
-      );
-      border: 1px solid color-mix(
-        in srgb, var(--yuval-galaxy-accent, #5eead4) 75%, white 25%);
-      box-shadow:
-        0 1px 0 color-mix(in srgb, white 55%, transparent) inset,
-        0 -1px 0 color-mix(in srgb, black 14%, transparent) inset,
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 28%, transparent),
-        0 8px 22px -8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 70%, transparent);
-      text-decoration: none;
-      cursor: pointer;
+      letter-spacing: 0.01em;
+      color: var(--yuval-galaxy-text, #ececea);
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent);
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 28%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
       transition:
-        transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1),
-        filter    180ms cubic-bezier(0.4, 0, 0.2, 1);
+        opacity 180ms ease,
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
     }
+
     .galaxy-cta-open:hover,
     .galaxy-cta-open:focus-visible {
-      transform: translateY(-1px);
-      filter: brightness(1.04);
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 80%, transparent);
       box-shadow:
-        0 1px 0 color-mix(in srgb, white 65%, transparent) inset,
-        0 -1px 0 color-mix(in srgb, black 14%, transparent) inset,
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent),
-        0 14px 30px -10px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 78%, transparent),
-        0 0 26px -4px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent);
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) inset,
+        0 0 8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 70%, transparent) inset,
+        0 0 28px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent),
+        0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
       outline: none;
+      /* Pause the rest pulse — hover/focus drives its own glow now. */
+      animation-play-state: paused;
+    }
+    .galaxy-cta-open:hover .galaxy-cta-open-ring,
+    .galaxy-cta-open:focus-visible .galaxy-cta-open-ring {
+      opacity: 1;
+      animation: galaxy-cta-open-ring-rotate 12s linear infinite;
+    }
+    /* Icon stays visible on hover — the label is its own bubble
+       above the orb now, no swap needed. */
+    .galaxy-cta-open:hover .galaxy-cta-open-label,
+    .galaxy-cta-open:focus-visible .galaxy-cta-open-label {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
     }
     .galaxy-cta-open:active {
       transform: translateY(0);
-      filter: brightness(0.98);
-      box-shadow:
-        0 1px 0 color-mix(in srgb, black 18%, transparent) inset,
-        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent),
-        0 4px 14px -6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent);
+      transition-duration: 80ms;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .galaxy-cta-open,
+      .galaxy-cta-open-icon,
+      .galaxy-cta-open-label,
+      .galaxy-cta-open-ring { transition: none; animation: none; }
+      .galaxy-cta-open:hover .galaxy-cta-open-ring,
+      .galaxy-cta-open:focus-visible .galaxy-cta-open-ring { animation: none; }
     }
     .galaxy-cta-close {
       width: 28px;
@@ -1548,18 +1714,41 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     hydrateOrbitProgress,
   } from '../utils/library/universe-layout';
 
-  document
-    .querySelectorAll<HTMLElement>('[data-galaxy-stage]')
-    .forEach((stage) => {
-      const state = hydrateUniverse(stage);
-      // Order matters: series-mode click handler must register BEFORE
-      // the layout's card-click handler so it runs first in capture
-      // phase. See architecture comments in universe-series-mode.ts.
-      initSeriesMode(stage, state);
-      initStageLayout(stage);
-    });
+  /**
+   * Re-bind the orbit on every page-load — including the one that
+   * happens after the user comes BACK from a book page via the
+   * browser's back button. Astro's View Transitions swap in a fresh
+   * DOM, so the listeners attached during the previous mount are
+   * gone with the previous stage element; without re-running the
+   * init the orbit cards just navigate directly via their inner <a>
+   * (the click-to-center handler isn't there to swallow the click).
+   *
+   * `astro:page-load` fires once on first visit AND once after every
+   * view-transition completes, so a single listener covers both
+   * cases. Each fresh stage element gets exactly one init pass —
+   * no double-binding, because old stages were removed from the DOM.
+   */
+  function initOrbit() {
+    document
+      .querySelectorAll<HTMLElement>('[data-galaxy-stage]')
+      .forEach((stage) => {
+        // Defensive: skip stages that have already been wired in this
+        // mount. The flag is on the element, so it dies with the DOM
+        // when a new transition swaps in a fresh stage.
+        if (stage.dataset.galaxyInit === 'true') return;
+        const state = hydrateUniverse(stage);
+        // Order matters: series-mode click handler must register BEFORE
+        // the layout's card-click handler so it runs first in capture
+        // phase. See architecture comments in universe-series-mode.ts.
+        initSeriesMode(stage, state);
+        initStageLayout(stage);
+        stage.dataset.galaxyInit = 'true';
+      });
 
-  // Defer one frame so the layout pass settles before we paint the
-  // progress fills — avoids a brief 0% → real% flash on slow boots.
-  requestAnimationFrame(hydrateOrbitProgress);
+    // Defer one frame so the layout pass settles before we paint the
+    // progress fills — avoids a brief 0% → real% flash on slow boots.
+    requestAnimationFrame(hydrateOrbitProgress);
+  }
+
+  document.addEventListener('astro:page-load', initOrbit);
 </script>
