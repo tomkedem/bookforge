@@ -219,6 +219,18 @@ export function createInteractiveEarth(
   const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
   camera.position.set(0, 0, 3.85);
 
+  // ── Scene-level sun position ─────────────────────────────────────
+  // Declared once and reused in two places: the atmosphere shader's
+  // uSunDir uniform (so the rim glow knows where the lit limb vs
+  // night limb is on the planet) AND the DirectionalLight below (the
+  // actual surface key light). Keeping them in lockstep means the
+  // atmospheric scatter ring lines up exactly with the surface
+  // terminator — visually critical for the planet to read as a real
+  // body rather than a sphere with a UI border drawn around it. If
+  // you ever retune the sun angle in a future lighting pass, change
+  // this vector and both the atmosphere and the surface follow.
+  const SUN_WORLD_POSITION = new THREE.Vector3(-1.5, 1.5, 2.7);
+
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: true,
@@ -398,41 +410,90 @@ export function createInteractiveEarth(
   // feel hazy and cheap. A real cloud WebP comes back in Step D.
 
   // ── Atmospheric glow ─────────────────────────────────────────────
-  // Single back-side sphere at radius 1.06 with an additive Fresnel
-  // shader. No post-processing pass — this is one mesh, ~12 KB on
-  // GPU, and reads as "atmosphere" without bloom or HDR. The shader
-  // is unchanged in structure from the earlier step but tuned to a
-  // cooler tint (less cyan-saturated, more hazy) and a slightly
-  // sharper falloff so the atmosphere becomes a thinner halo
-  // instead of a soft cloud around the planet.
+  // Single back-side sphere at radius 1.06, additive blend, no
+  // post-processing. The shader is now SUN-AWARE: the rim glow is
+  // brightest on the lit limb (cyan-white, like real Rayleigh
+  // scatter at sunrise/sunset from orbit) and decays to a thin
+  // blue-violet haze on the night limb (the faint glow astronauts
+  // see along the dark hemisphere's edge). This is the single
+  // biggest "premium space photo" cue — uniform halos read as UI
+  // borders, sun-modulated halos read as real atmosphere.
+  //
+  // Geometry, blend mode, depth, and additive contract are
+  // unchanged. The math is two terms multiplied together:
+  //   • A tightened Fresnel that confines the glow to a thin band
+  //     right at the silhouette and dies quickly inward, so nothing
+  //     spills across the continents.
+  //   • A sun-side factor (dot of world-space normal with the sun
+  //     direction) that drives both color and intensity.
   const atmosphereGeometry = new THREE.SphereGeometry(1.06, 64, 64);
   const atmosphereMaterial = new THREE.ShaderMaterial({
-    uniforms: {},
+    uniforms: {
+      // World-space direction from the planet origin toward the sun.
+      // Computed once from SUN_WORLD_POSITION above — the same vector
+      // the surface DirectionalLight uses for its world position —
+      // so the atmospheric scatter ring aligns exactly with the
+      // surface terminator. Static for the lifetime of the scene.
+      uSunDir: { value: SUN_WORLD_POSITION.clone().normalize() },
+    },
     vertexShader: /* glsl */ `
-      varying vec3 vNormal;
+      varying vec3 vNormalView;
+      varying vec3 vNormalWorld;
       void main() {
-        vNormal = normalize(normalMatrix * normal);
+        // View-space normal — used to compute the camera-relative
+        // Fresnel rim. The atmosphere mesh lives at the scene root
+        // with no rotation, so its world normal IS its local normal;
+        // no model-matrix multiply needed for vNormalWorld.
+        vNormalView = normalize(normalMatrix * normal);
+        vNormalWorld = normalize(normal);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
     fragmentShader: /* glsl */ `
-      varying vec3 vNormal;
+      uniform vec3 uSunDir;
+      varying vec3 vNormalView;
+      varying vec3 vNormalWorld;
       void main() {
-        float rim = 1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0));
-        // Falloff tightened from pow(rim, 4.0) to pow(rim, 6.0) and
-        // the intensity ceiling pulled from 0.78 to 0.55 in the
-        // clarity-cleanup pass. The previous halo was bleeding a
-        // faint cyan haze across the outer ~10% of the day-side disc
-        // and washing out continent edges. Keeping pow at 6 and the
-        // ceiling at 0.55 leaves a thin, premium rim glow that dies
-        // quickly inward — atmosphere as silhouette accent, not as
-        // global wash.
-        float intensity = pow(clamp(rim, 0.0, 1.0), 6.0);
-        // Two-tone halo: cooler core, warmer edge as it fades out.
-        vec3 inner = vec3(0.36, 0.58, 0.96);
-        vec3 outer = vec3(0.62, 0.82, 1.00);
-        vec3 col = mix(inner, outer, smoothstep(0.0, 1.0, intensity));
-        gl_FragColor = vec4(col, 1.0) * clamp(intensity * 0.55, 0.0, 1.0);
+        // Fresnel — 1.0 at the silhouette, 0.0 at the camera-facing
+        // pole. pow(rim, 5.0) is slightly softer than the previous
+        // 6.0 to give the glow a little more thickness for the
+        // sun-side bright band, while still dying quickly inward.
+        // No spill across continents.
+        float rim = 1.0 - dot(vNormalView, vec3(0.0, 0.0, 1.0));
+        float rimI = pow(clamp(rim, 0.0, 1.0), 5.0);
+
+        // Sun-side factor — 1 where this point of the atmosphere
+        // faces the sun, 0 where it points opposite. The smoothstep
+        // window (-0.2 → 0.4) places the crossfade right around the
+        // terminator and prevents a hard color seam.
+        float sunFacing = dot(vNormalWorld, uSunDir);
+        float sunSide = smoothstep(-0.2, 0.4, sunFacing);
+
+        // Day-limb palette — saturated atmospheric cyan-blue at the
+        // inner band, cool white at the very edge. This mimics the
+        // real-orbit look where the limb fades to a thin pale
+        // crescent against space.
+        vec3 dayInner = vec3(0.30, 0.62, 1.05);
+        vec3 dayOuter = vec3(0.72, 0.92, 1.10);
+        vec3 dayCol = mix(dayInner, dayOuter, smoothstep(0.0, 1.0, rimI));
+
+        // Night-limb tint — desaturated blue-violet, no white edge.
+        // Subtle by design; it's just enough to keep the night limb
+        // from looking like an absence of geometry.
+        vec3 nightTint = vec3(0.16, 0.24, 0.55);
+
+        vec3 col = mix(nightTint, dayCol, sunSide);
+
+        // Intensity ceiling lifts with the sun side. The lit limb
+        // can punch up to 0.78 (brighter than the previous uniform
+        // 0.55 cap — gives the "thin bright edge" the rim now needs
+        // to feel premium). The night limb tops out at 0.18, which
+        // is visible against the dark backdrop but never competes
+        // with the planet for attention.
+        float maxIntensity = mix(0.18, 0.78, sunSide);
+        float alpha = clamp(rimI * maxIntensity, 0.0, 1.0);
+
+        gl_FragColor = vec4(col, 1.0) * alpha;
       }
     `,
     blending: THREE.AdditiveBlending,
@@ -484,7 +545,10 @@ export function createInteractiveEarth(
   scene.add(ambient);
 
   const sun = new THREE.DirectionalLight(0xffffff, 1.45);
-  sun.position.set(-1.5, 1.5, 2.7);
+  // Reuses the scene-level SUN_WORLD_POSITION so the surface key
+  // light and the atmosphere shader's uSunDir uniform always agree
+  // on where the sun is. See the const declaration near the camera.
+  sun.position.copy(SUN_WORLD_POSITION);
   scene.add(sun);
 
   const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.42);
