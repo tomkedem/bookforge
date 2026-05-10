@@ -5,7 +5,9 @@
       "WebSearch",
       "PowerShell(Rename-Item -Path \"public\\\\assets\\\\knowledge-cards\\\\python-ai-engineering\" -NewName \"practical-python-for-ai-engineering\")",
       "PowerShell(if \\(-not \\(Test-Path \"src\\\\assets\"\\)\\) { New-Item -ItemType Directory -Path \"src\\\\assets\" | Out-Null }; Move-Item -Path \"public\\\\assets\\\\knowledge-cards\" -Destination \"src\\\\assets\\\\knowledge-cards\" -Force; Get-ChildItem \"src\\\\assets\\\\knowledge-cards\" | Select-Object Name)",
-      "PowerShell(npx astro check --minimumSeverity error 2>&1)"
+      "PowerShell(npx astro check --minimumSeverity error 2>&1)",
+      "PowerShell(npm install three)",
+      "PowerShell(npm install --save-dev \"@types/three\")"
     ]
   }
 }

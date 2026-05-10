@@ -164,6 +164,16 @@ export const translations: Translations = {
 
   // ── Header ─────────────────────────────────────────────────────────────────
   'header.skipToContent':  { he: 'דלג לתוכן',       en: 'Skip to content',  es: 'Saltar al contenido' },
+  'header.searchPlaceholder': {
+    he: 'חפש ספרים, קורסים, סדרות, מאמרים...',
+    en: 'Search books, courses, series, articles...',
+    es: 'Busca libros, cursos, series, artículos...',
+  },
+  'header.searchAriaLabel': {
+    he: 'חיפוש במרחב הידע',
+    en: 'Search the knowledge space',
+    es: 'Buscar en el espacio de conocimiento',
+  },
 
   // ── Breadcrumbs ─────────────────────────────────────────────────────────────
   'breadcrumb.books':      { he: 'ספרים',          en: 'Books',            es: 'Libros' },

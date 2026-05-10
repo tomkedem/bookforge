@@ -4,6 +4,7 @@ import LanguageSelector from './LanguageSelector.astro';
 import LanguageGlobeSelector from './language/LanguageGlobeSelector.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { SOURCE_LANGUAGE, SUPPORTED_LANGUAGES, getLanguageDirection, getLanguageMeta } from '../utils/language';
+import { t } from '../i18n';
 
 interface Props {
   language?: Language;
@@ -43,6 +44,9 @@ const effectiveLanguages = (availableLanguages && availableLanguages.length > 0)
   : SUPPORTED_LANGUAGES.map(l => l.code as Language);
 
 const isRtl = getLanguageDirection(language) === 'rtl';
+
+const searchPlaceholder = t('header.searchPlaceholder', language);
+const searchAriaLabel = t('header.searchAriaLabel', language);
 ---
 
 <header
@@ -70,7 +74,6 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       'flex',
       'items-center',
       'justify-between',
-      'h-16',
       'px-4',
       'sm:px-6',
       'lg:px-8',
@@ -83,18 +86,94 @@ const isRtl = getLanguageDirection(language) === 'rtl';
       class="yuval-logo"
       aria-label="Yuval"
     >
-      <span class="logo-letter">Y</span><span class="logo-rest">uval</span>
-      <span class="logo-ornament" aria-hidden="true">✦</span>
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 32" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <defs>
+            <linearGradient id="yvl-book-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#7A5A22" />
+              <stop offset="35%" stop-color="#D8BE75" />
+              <stop offset="60%" stop-color="#F3DE9B" />
+              <stop offset="100%" stop-color="#B8903E" />
+            </linearGradient>
+            <linearGradient id="yvl-book-page" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="rgba(243, 222, 155, 0.18)" />
+              <stop offset="100%" stop-color="rgba(184, 144, 62, 0.04)" />
+            </linearGradient>
+            <radialGradient id="yvl-book-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(243, 222, 155, 0.55)" />
+              <stop offset="60%" stop-color="rgba(216, 190, 117, 0.18)" />
+              <stop offset="100%" stop-color="rgba(216, 190, 117, 0)" />
+            </radialGradient>
+          </defs>
+
+          <!-- Soft warm glow behind the book -->
+          <circle cx="20" cy="16" r="15" fill="url(#yvl-book-glow)" />
+
+          <!-- Spine highlight -->
+          <line x1="20" y1="6" x2="20" y2="28" stroke="url(#yvl-book-stroke)" stroke-width="0.6" stroke-linecap="round" opacity="0.55" />
+
+          <!-- Left page (filled with subtle holographic gradient) -->
+          <path
+            d="M20 7.5 C 16 6, 11 5.6, 6.5 6.5 L 6.5 25 C 11 24.1, 16 24.5, 20 26 Z"
+            fill="url(#yvl-book-page)"
+            stroke="url(#yvl-book-stroke)"
+            stroke-width="0.9"
+            stroke-linejoin="round"
+          />
+          <!-- Right page -->
+          <path
+            d="M20 7.5 C 24 6, 29 5.6, 33.5 6.5 L 33.5 25 C 29 24.1, 24 24.5, 20 26 Z"
+            fill="url(#yvl-book-page)"
+            stroke="url(#yvl-book-stroke)"
+            stroke-width="0.9"
+            stroke-linejoin="round"
+          />
+
+          <!-- Thin holographic text lines on the left page -->
+          <line x1="9" y1="11" x2="17.5" y2="10.4" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.7" />
+          <line x1="9" y1="13.5" x2="17.5" y2="13" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.55" />
+          <line x1="9" y1="16" x2="16" y2="15.6" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.4" />
+          <line x1="9" y1="18.5" x2="17.5" y2="18.1" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.55" />
+          <line x1="9" y1="21" x2="15" y2="20.7" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.35" />
+
+          <!-- Thin holographic text lines on the right page -->
+          <line x1="22.5" y1="10.4" x2="31" y2="11" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.7" />
+          <line x1="22.5" y1="13" x2="31" y2="13.5" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.55" />
+          <line x1="24" y1="15.6" x2="31" y2="16" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.4" />
+          <line x1="22.5" y1="18.1" x2="31" y2="18.5" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.55" />
+          <line x1="25" y1="20.7" x2="31" y2="21" stroke="url(#yvl-book-stroke)" stroke-width="0.4" stroke-linecap="round" opacity="0.35" />
+
+          <!-- Tiny knowledge particles drifting up from the open spread -->
+          <circle cx="14" cy="4.5" r="0.5" fill="#F3DE9B" opacity="0.85" />
+          <circle cx="20" cy="3" r="0.55" fill="#F3DE9B" opacity="0.95" />
+          <circle cx="26.5" cy="4.2" r="0.45" fill="#D8BE75" opacity="0.75" />
+          <circle cx="23" cy="5.5" r="0.3" fill="#F3DE9B" opacity="0.6" />
+          <circle cx="17" cy="5.8" r="0.3" fill="#D8BE75" opacity="0.55" />
+        </svg>
+      </span>
+      <span class="logo-word">Yuval</span>
     </a>
 
-    {showQuote && (
-      <div class="quote-container hidden sm:block">
-        <div class="quote-stack">
-          <p class="quote-text" id="header-quote"></p>
-          <cite class="quote-author" id="header-quote-author"></cite>
-        </div>
-      </div>
-    )}
+    <div class="header-search" data-rtl={isRtl ? 'true' : 'false'}>
+      <label class="header-search-field">
+        <span class="header-search-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" focusable="false">
+            <circle cx="9" cy="9" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <line x1="13.6" y1="13.6" x2="17.2" y2="17.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+          </svg>
+        </span>
+        <input
+          id="yuval-header-search"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          class="header-search-input"
+          placeholder={searchPlaceholder}
+          aria-label={searchAriaLabel}
+          dir={isRtl ? 'rtl' : 'ltr'}
+        />
+      </label>
+    </div>
 
     <div class:list={['flex', 'items-center', 'gap-3', isRtl && 'flex-row-reverse']}>
       {/* Source order is [Language, Theme] so the physical layout in
@@ -157,13 +236,104 @@ const isRtl = getLanguageDirection(language) === 'rtl';
 </script>
 
 <style>
+  /* ── Cosmic glass surface ─────────────────────────────────────
+     The Yuval header is a deep-space control layer: layered
+     midnight-navy base + a faint warm gold halo behind the brand
+     (inline-start) + a faint cool blue halo behind the search.
+     The same look applies in both light and dark mode — Yuval is a
+     dark-shell product even when the rest of the page is parchment.
+     Reading mode flattens this back to the cream shell via the
+     `:global(body.reading-mode) .yuval-header` overrides further down. */
   .yuval-header {
-    background: linear-gradient(to bottom, #faf8f5, #f5f3f0);
+    position: relative;
+    isolation: isolate;
+    /* Layered cosmic surface — five stacked layers, painted bottom-up:
+         (5) edge vignette  – deep navy at the corners pulls the eye
+                              toward the center, gives the panel a
+                              "framed window" quality.
+         (4) gold halo      – warm glow behind the inline-start brand
+                              area; matches the wordmark's gold without
+                              competing with it.
+         (3) blue halo      – cooler glow behind the centered search,
+                              positions the search visually as the
+                              "knowledge gateway" focal point.
+         (2) navy gradient  – top-to-bottom darkening gives the surface
+                              dimension instead of a flat fill.
+         (1) abyss base     – the deepest navy, only visible at the
+                              corners where the vignette wins.
+       Order in the `background:` shorthand is top-down, so the
+       gradients here render in this sequence. */
+    /* Cool cosmic glass — no warm wash across the surface. The
+       background is built entirely from blues and navy:
+         (1) cool blue beam under the search (focal point).
+         (2) indigo lift on the inline-end side for depth.
+         (3) corner vignette pulls the eye to center.
+         (4) navy linear base.
+         (5) abyss floor.
+       Gold lives only on the brand and on the bottom divider. */
+    background:
+      radial-gradient(
+        80% 200% at 50% 70%,
+        rgba(90, 140, 255, 0.36) 0%,
+        rgba(53, 109, 216, 0.20) 22%,
+        rgba(53, 109, 216, 0.08) 42%,
+        transparent 65%
+      ),
+      radial-gradient(
+        70% 180% at 100% 50%,
+        rgba(53, 75, 160, 0.22) 0%,
+        rgba(7, 17, 38, 0) 60%
+      ),
+      radial-gradient(
+        70% 180% at 0% 50%,
+        rgba(36, 60, 130, 0.16) 0%,
+        rgba(7, 17, 38, 0) 60%
+      ),
+      radial-gradient(
+        160% 220% at 50% 50%,
+        transparent 0%,
+        transparent 55%,
+        rgba(0, 0, 0, 0.65) 100%
+      ),
+      linear-gradient(180deg, #050A18 0%, #071126 55%, #0B1633 100%),
+      #030711;
     box-shadow:
-      0 2px 6px rgba(0, 0, 0, 0.06),
-      0 4px 12px rgba(0, 0, 0, 0.04);
+      0 1px 0 rgba(255, 255, 255, 0.07) inset,
+      0 -1px 0 rgba(0, 0, 0, 0.45) inset,
+      0 14px 40px rgba(0, 0, 0, 0.60),
+      0 4px 12px rgba(0, 0, 0, 0.45);
   }
 
+  /* Top reflection line — the "glass edge" that makes the surface read
+     as a polished pane rather than a flat panel. Two-stop double line:
+     a brighter cream highlight in the center, a soft cyan-white halo
+     on either side. */
+  .yuval-header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    /* Cool top reflection — pure cool whites/blues, no warm peak. */
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(170, 195, 255, 0.28) 14%,
+      rgba(220, 230, 255, 0.55) 40%,
+      rgba(240, 248, 255, 0.65) 50%,
+      rgba(220, 230, 255, 0.55) 60%,
+      rgba(170, 195, 255, 0.28) 86%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 3;
+    box-shadow: 0 1px 0 rgba(180, 200, 255, 0.06);
+  }
+
+  /* Bottom gold divider — refined hairline accent. Single 1px line
+     with a soft 50% peak; no outer bloom radiating into the surface
+     above or the page below. */
   .yuval-header::before {
     content: '';
     position: absolute;
@@ -171,70 +341,122 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     left: 0;
     right: 0;
     height: 1px;
-    /* Uniform gold hairline — runs edge-to-edge at the same alpha so
-       the line that visually separates the navbar from the chapter
-       strip below reads as a single, continuous boundary. The earlier
-       gradient (transparent at 0-20 % + 80-100 %) made the line
-       "fade out" at the screen edges, which read as inconsistent
-       across the width. */
-    background: rgba(201, 169, 110, 0.5);
-    z-index: 2;
-  }
-
-  .yuval-header::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 10%;
-    right: 10%;
-    height: 8px;
     background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.06) 0%,
-      rgba(0, 0, 0, 0.02) 50%,
+      90deg,
+      transparent 0%,
+      rgba(122, 90, 34, 0.40) 8%,
+      rgba(216, 190, 117, 0.65) 28%,
+      rgba(243, 222, 155, 0.78) 50%,
+      rgba(216, 190, 117, 0.65) 72%,
+      rgba(122, 90, 34, 0.40) 92%,
       transparent 100%
     );
-    border-radius: 50%;
     pointer-events: none;
-    z-index: 1;
+    z-index: 3;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.50);
+  }
+
+  /* Faint star specks layered over the surface — pure CSS, no images.
+     A constellation of 10 tiny radial gradients at varied sizes and
+     opacities. The result reads as ambient particle dust around the
+     brand and search without competing for attention. */
+  .yuval-header > .header-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Cool-only constellation — whites and pale blues. The previous
+       pass scattered warm gold dots across the surface, which read
+       as gold haze; ambient particles are now strictly cool so the
+       header background stays disciplined. */
+    background-image:
+      radial-gradient(1.1px 1.1px at 8%  32%, rgba(255, 255, 255, 0.65), transparent 60%),
+      radial-gradient(0.9px 0.9px at 16% 78%, rgba(200, 220, 255, 0.50), transparent 60%),
+      radial-gradient(1.3px 1.3px at 24% 24%, rgba(220, 230, 255, 0.55), transparent 60%),
+      radial-gradient(0.9px 0.9px at 33% 64%, rgba(255, 255, 255, 0.45), transparent 60%),
+      radial-gradient(1.0px 1.0px at 44% 18%, rgba(200, 220, 255, 0.50), transparent 60%),
+      radial-gradient(1.2px 1.2px at 56% 72%, rgba(255, 255, 255, 0.55), transparent 60%),
+      radial-gradient(1.4px 1.4px at 67% 30%, rgba(220, 230, 255, 0.55), transparent 60%),
+      radial-gradient(0.9px 0.9px at 76% 80%, rgba(200, 220, 255, 0.45), transparent 60%),
+      radial-gradient(1.5px 1.5px at 86% 46%, rgba(220, 230, 255, 0.55), transparent 60%),
+      radial-gradient(1.0px 1.0px at 94% 28%, rgba(255, 255, 255, 0.45), transparent 60%);
+    background-repeat: no-repeat;
+    opacity: 0.85;
+    z-index: 0;
   }
 
   :global(.dark) .yuval-header {
-    /* Flat charcoal black — no gradient, so the surface doesn't pick
-       up perceived warmth from the gold logo / sepia hairline beside
-       it. Single neutral dark gray, near-black. */
-    background: #0d0d0d;
-    box-shadow:
-      0 2px 6px rgba(0, 0, 0, 0.15),
-      0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  :global(.dark) .yuval-header::before {
-    /* Same uniform-line treatment as light mode. */
-    background: rgba(139, 115, 85, 0.5);
-  }
-
-  :global(.dark) .yuval-header::after {
-    background: linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.12) 0%,
-      rgba(0, 0, 0, 0.04) 50%,
-      transparent 100%
-    );
+    background:
+      radial-gradient(
+        80% 200% at 50% 70%,
+        rgba(90, 140, 255, 0.38) 0%,
+        rgba(53, 109, 216, 0.22) 22%,
+        rgba(53, 109, 216, 0.09) 42%,
+        transparent 65%
+      ),
+      radial-gradient(
+        70% 180% at 100% 50%,
+        rgba(53, 75, 160, 0.22) 0%,
+        rgba(3, 7, 17, 0) 60%
+      ),
+      radial-gradient(
+        70% 180% at 0% 50%,
+        rgba(36, 60, 130, 0.16) 0%,
+        rgba(3, 7, 17, 0) 60%
+      ),
+      radial-gradient(
+        160% 220% at 50% 50%,
+        transparent 0%,
+        transparent 55%,
+        rgba(0, 0, 0, 0.75) 100%
+      ),
+      linear-gradient(180deg, #030711 0%, #050A18 55%, #071126 100%),
+      #020610;
   }
 
   .header-inner {
     position: relative;
     z-index: 1;
+    height: 72px;
+  }
+
+  @media (max-width: 767px) {
+    .header-inner {
+      height: auto;
+      min-height: 64px;
+    }
   }
 
   .yuval-logo {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
+    gap: 14px;
     text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 10px;
-    transition: all 300ms var(--ease-standard);
+    padding: 8px 16px;
+    border-radius: 16px;
+    transition: background-color 300ms var(--ease-standard),
+                box-shadow 300ms var(--ease-standard);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Tight warm halo — concentrated on the logo, falls off fast so it
+     does NOT bleed into the surrounding header surface. The halo is
+     a small breath that hugs the brand, not an atmospheric wash. */
+  .yuval-logo::before {
+    content: '';
+    position: absolute;
+    inset: -2px -4px;
+    background: radial-gradient(
+      55% 70% at 50% 50%,
+      rgba(243, 222, 155, 0.10) 0%,
+      rgba(216, 190, 117, 0.04) 35%,
+      transparent 65%
+    );
+    border-radius: 18px;
+    pointer-events: none;
+    z-index: -1;
   }
 
   :global([dir="rtl"]) .yuval-logo {
@@ -242,11 +464,377 @@ const isRtl = getLanguageDirection(language) === 'rtl';
   }
 
   .yuval-logo:hover {
-    background: rgba(139, 115, 85, 0.1);
+    background: rgba(216, 190, 117, 0.06);
+    box-shadow: 0 0 24px -4px rgba(243, 222, 155, 0.18);
   }
 
   :global(.dark) .yuval-logo:hover {
-    background: rgba(212, 196, 168, 0.1);
+    background: rgba(216, 190, 117, 0.07);
+  }
+
+  /* ── Open-book holographic mark ─────────────────────────────── */
+  .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 34px;
+    flex-shrink: 0;
+    /* Tight luminous rim + grounding shadow only. No wide outer halo,
+       so the gold doesn't bleed into the surrounding header surface. */
+    filter:
+      drop-shadow(0 0 1px rgba(255, 250, 230, 0.65))
+      drop-shadow(0 0 6px rgba(243, 222, 155, 0.45))
+      drop-shadow(0 2px 3px rgba(0, 0, 0, 0.65));
+    transition: filter 320ms var(--ease-standard),
+                transform 320ms var(--ease-standard);
+  }
+
+  .logo-mark svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .yuval-logo:hover .logo-mark {
+    filter:
+      drop-shadow(0 0 1px rgba(255, 250, 230, 0.85))
+      drop-shadow(0 0 10px rgba(243, 222, 155, 0.65))
+      drop-shadow(0 2px 3px rgba(0, 0, 0, 0.65));
+    transform: translateY(-1px);
+  }
+
+  @media (min-width: 640px) {
+    .logo-mark {
+      width: 54px;
+      height: 44px;
+    }
+  }
+
+  /* ── Yuval wordmark — engraved metallic gold ─────────────────
+     Two-layer background: an animated cream sweep stripe over a
+     refined seven-stop gold bevel. The bevel runs deep umber → warm
+     bronze → mid gold → cream specular peak at 50 % → mid gold →
+     warm bronze → deep umber, so the glyph looks like polished
+     metal rather than flat color. The stacked drop-shadows give it
+     bevelled depth (highlight above, shadow below) plus a soft
+     warm halo so it reads as part of the cosmic surface. */
+  .logo-word {
+    font-family: 'Cinzel', 'Trajan Pro', 'Playfair Display', Georgia, serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    color: #F3DE9B;
+    /* Higher-contrast metallic bevel: the dark stops are deeper and the
+       cream specular peak is a pure cream-white, so the gold reads as
+       polished gold leaf rather than a quiet bronze. */
+    background:
+      linear-gradient(
+        105deg,
+        transparent 32%,
+        rgba(255, 252, 235, 1.0) 50%,
+        transparent 68%
+      ),
+      linear-gradient(
+        140deg,
+        #3A2708 0%,
+        #6E4F18 12%,
+        #B8903E 28%,
+        #F3DE9B 44%,
+        #FFFAE6 50%,
+        #F3DE9B 56%,
+        #B8903E 72%,
+        #6E4F18 88%,
+        #3A2708 100%
+      );
+    background-size: 220% 100%, 100% 100%;
+    background-position: -110% 0%, 0% 0%;
+    background-repeat: no-repeat, no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Engraved bevel: cream highlight above + dark line below + a
+       small grounding shadow. The warm halo is intentionally tight
+       (8px) so the gold stays on the glyph itself. */
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 250, 220, 0.75))
+      drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.75))
+      drop-shadow(0 2px 5px rgba(0, 0, 0, 0.65))
+      drop-shadow(0 0 8px rgba(243, 222, 155, 0.32));
+    transition: letter-spacing 300ms var(--ease-standard),
+                filter 300ms var(--ease-standard);
+  }
+
+  @media (min-width: 640px) {
+    .logo-word {
+      font-size: 2.2rem;
+      letter-spacing: 0.20em;
+    }
+  }
+
+  /* Page-load + hover shimmer — reused keyframe targets the new
+     wordmark span. The first background layer (cream stripe) animates
+     while the base bevel stays put. */
+  .yuval-logo.is-mounted .logo-word {
+    animation: yuval-shimmer-sweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.30s 1 backwards;
+  }
+
+  .yuval-logo:hover .logo-word {
+    animation: yuval-shimmer-sweep 1.0s cubic-bezier(0.4, 0, 0.2, 1) 1;
+    filter:
+      drop-shadow(0 1px 0 rgba(255, 248, 220, 0.85))
+      drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.75))
+      drop-shadow(0 2px 5px rgba(0, 0, 0, 0.65))
+      drop-shadow(0 0 12px rgba(243, 222, 155, 0.45));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .yuval-logo .logo-word {
+      animation: none !important;
+    }
+  }
+
+  /* ── Integrated header search bar ─────────────────────────────
+     Wide pill embedded in the cosmic surface. Dark glass with a
+     thin midnight-blue border that lifts on focus. The container
+     flex-grows to fill the space between the brand and the right
+     controls so the bar reads as part of the header rather than a
+     dropped-in widget. */
+  .header-search {
+    flex: 1 1 auto;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 0 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Strong scoped cool halo behind the search — visible at viewport
+     scale, not just on close inspection. Positions the search as the
+     primary focal point of the header. */
+  .header-search::before {
+    content: '';
+    position: absolute;
+    inset: -16px 8px;
+    background: radial-gradient(
+      60% 130% at 50% 55%,
+      rgba(53, 109, 216, 0.32) 0%,
+      rgba(36, 74, 143, 0.18) 30%,
+      rgba(36, 74, 143, 0.08) 55%,
+      transparent 78%
+    );
+    border-radius: 9999px;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  @media (min-width: 768px) {
+    .header-search {
+      display: flex;
+    }
+  }
+
+  .header-search-field {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 720px;
+    height: 48px;
+    padding: 0 22px;
+    border-radius: 9999px;
+    /* Deep dark glass — three vertical stops, near-black at the floor.
+       More dimensional than a flat fill. */
+    background:
+      linear-gradient(
+        180deg,
+        rgba(13, 27, 60, 0.78) 0%,
+        rgba(5, 10, 24, 0.94) 55%,
+        rgba(0, 2, 8, 0.98) 100%
+      );
+    /* 1.5px cyan-blue border — clearly visible at viewport scale. */
+    border: 1.5px solid rgba(90, 140, 255, 0.55);
+    box-shadow:
+      inset 0 1px 0 rgba(200, 215, 255, 0.18),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.65),
+      inset 0 0 28px rgba(53, 109, 216, 0.34),
+      0 1px 0 rgba(0, 0, 0, 0.55),
+      0 0 0 0 rgba(53, 109, 216, 0),
+      0 0 24px rgba(53, 109, 216, 0.20),
+      0 4px 14px rgba(0, 0, 0, 0.45);
+    transition:
+      border-color 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      box-shadow 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+      background 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+    cursor: text;
+  }
+
+  .header-search-field:hover {
+    border-color: rgba(120, 165, 255, 0.72);
+    box-shadow:
+      inset 0 1px 0 rgba(200, 215, 255, 0.22),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.65),
+      inset 0 0 32px rgba(53, 109, 216, 0.42),
+      0 1px 0 rgba(0, 0, 0, 0.55),
+      0 0 32px rgba(90, 140, 255, 0.28),
+      0 4px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  .header-search-field:focus-within {
+    border-color: rgba(150, 185, 255, 0.92);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(17, 34, 75, 0.92) 0%,
+        rgba(8, 16, 36, 0.96) 55%,
+        rgba(3, 7, 17, 0.98) 100%
+      );
+    box-shadow:
+      inset 0 1px 0 rgba(200, 215, 255, 0.26),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.65),
+      inset 0 0 36px rgba(53, 109, 216, 0.50),
+      0 1px 0 rgba(0, 0, 0, 0.55),
+      0 0 0 4px rgba(53, 109, 216, 0.28),
+      0 0 36px rgba(120, 165, 255, 0.44),
+      0 4px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  .header-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: rgba(195, 210, 245, 1);
+    filter: drop-shadow(0 0 6px rgba(90, 140, 255, 0.40));
+    transition: color 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+                filter 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  }
+
+  .header-search-field:focus-within .header-search-icon {
+    color: rgba(240, 245, 255, 1);
+    filter: drop-shadow(0 0 8px rgba(120, 165, 255, 0.65));
+  }
+
+  .header-search-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .header-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: #F0F3FF;
+    font-family: inherit;
+    font-size: 1.02rem;
+    font-weight: 400;
+    line-height: 1;
+    padding: 0;
+    letter-spacing: 0.005em;
+  }
+
+  .header-search-input::placeholder {
+    color: #A5AED1;
+    opacity: 1;
+    font-weight: 400;
+  }
+
+  /* Native search-input clear button — hidden so we own the visual. */
+  .header-search-input::-webkit-search-cancel-button,
+  .header-search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* RTL: keep input text aligned to the inline-start so the placeholder
+     reads naturally in Hebrew. The icon sits on the inline-start side
+     of the field (already correct because flex follows direction). */
+  .header-search[data-rtl="true"] .header-search-input {
+    text-align: right;
+  }
+
+  /* ── Mobile: compact header layout ────────────────────────────
+     Brand + selectors stay on the top row. Search drops to a
+     second row inside the same header so the bar remains
+     reachable without hiding the language or theme toggle. */
+  @media (max-width: 767px) {
+    .header-inner {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: 64px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      row-gap: 8px;
+    }
+
+    .header-search {
+      display: flex;
+      flex: 1 0 100%;
+      order: 3;
+      padding: 0;
+    }
+
+    .header-search-field {
+      max-width: 100%;
+      height: 44px;
+      padding: 0 18px;
+    }
+
+    .logo-word {
+      font-size: 1.55rem;
+      letter-spacing: 0.16em;
+    }
+  }
+
+  /* ── Reading-mode reset ───────────────────────────────────────
+     The reading shell is parchment cream — the cosmic surface and
+     the ambient star particles must not bleed in. The existing
+     `body.reading-mode .yuval-header` rule already overrides the
+     background; here we silence the new pseudo-element layers and
+     soften the search field to the cream palette. */
+  :global(body.reading-mode) .yuval-header::after,
+  :global(body.reading-mode) .yuval-header > .header-inner::before {
+    display: none;
+  }
+
+  :global(body.reading-mode) .header-search-field {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(201, 169, 110, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  :global(body.reading-mode) .header-search-input {
+    color: #4a3f35;
+  }
+
+  :global(body.reading-mode) .header-search-input::placeholder {
+    color: #8b7355;
+  }
+
+  :global(body.reading-mode) .header-search-icon {
+    color: #8b7355;
+  }
+
+  :global(.dark body.reading-mode) .header-search-field {
+    background: rgba(20, 20, 24, 0.6);
+    border-color: rgba(139, 115, 85, 0.35);
+  }
+
+  :global(.dark body.reading-mode) .header-search-input {
+    color: #d4c4a8;
+  }
+
+  :global(.dark body.reading-mode) .header-search-input::placeholder {
+    color: #8b7355;
   }
 
   .logo-letter {
@@ -349,53 +937,6 @@ const isRtl = getLanguageDirection(language) === 'rtl';
                 filter 300ms var(--ease-standard);
   }
 
-  .logo-ornament {
-    display: inline-block;
-    margin-inline-start: 0.55rem;
-    font-size: 0.75rem;
-    color: #c9a96e;
-    opacity: 0.85;
-    transform: translateY(-0.35em);
-    /* Glow that sells the gold ornament as an actual jewel —
-       the warm halo reads as light, not just colored text. */
-    text-shadow:
-      0 0 6px rgba(201, 169, 110, 0.55),
-      0 0 14px rgba(201, 169, 110, 0.25);
-    transition: opacity 300ms var(--ease-standard),
-                transform 300ms var(--ease-standard),
-                color 300ms var(--ease-standard),
-                text-shadow 300ms var(--ease-standard);
-    user-select: none;
-  }
-
-  :global(.dark) .logo-ornament {
-    color: #d4c4a8;
-    opacity: 0.95;
-    text-shadow:
-      0 0 8px rgba(212, 196, 168, 0.6),
-      0 0 16px rgba(201, 169, 110, 0.3);
-  }
-
-  /* Hover: the ornament rotates AND brightens — it's the
-     small flourish that makes the whole wordmark feel alive. */
-  .yuval-logo:hover .logo-ornament {
-    opacity: 1;
-    transform: translateY(-0.35em) rotate(20deg) scale(1.15);
-    text-shadow:
-      0 0 10px rgba(201, 169, 110, 0.85),
-      0 0 22px rgba(201, 169, 110, 0.45);
-  }
-
-  :global(.dark) .yuval-logo:hover .logo-ornament {
-    text-shadow:
-      0 0 12px rgba(212, 168, 92, 0.9),
-      0 0 24px rgba(212, 168, 92, 0.5);
-  }
-
-  @media (max-width: 640px) {
-    .logo-ornament { display: none; }
-  }
-
   /* ── Yuval logo shimmer ────────────────────────────────────────
      Single sweep of a bright cream stripe across the engraved gold
      wordmark. Triggers on:
@@ -430,28 +971,9 @@ const isRtl = getLanguageDirection(language) === 'rtl';
     animation: yuval-shimmer-sweep 1.0s cubic-bezier(0.4, 0, 0.2, 1) 0.05s 1;
   }
 
-  /* The ornament gets a one-time glow pulse alongside the shimmer
-     so the whole wordmark animates as a unit. */
-  @keyframes yuval-ornament-pulse {
-    0%   { text-shadow:
-             0 0 6px rgba(201, 169, 110, 0.55),
-             0 0 14px rgba(201, 169, 110, 0.25); }
-    50%  { text-shadow:
-             0 0 14px rgba(255, 235, 170, 1),
-             0 0 28px rgba(212, 175, 85, 0.65),
-             0 0 44px rgba(212, 175, 85, 0.30); }
-    100% { text-shadow:
-             0 0 6px rgba(201, 169, 110, 0.55),
-             0 0 14px rgba(201, 169, 110, 0.25); }
-  }
-  .yuval-logo.is-mounted .logo-ornament {
-    animation: yuval-ornament-pulse 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.85s 1 both;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .yuval-logo .logo-letter,
-    .yuval-logo .logo-rest,
-    .yuval-logo .logo-ornament {
+    .yuval-logo .logo-rest {
       animation: none !important;
     }
   }

@@ -57,6 +57,29 @@ const triggerDisabled = disabled || onlyOne;
 const triggerAriaLabel = onlyOne
   ? `Only one language available: ${activeMeta.labelEn}`
   : `Change language. Current: ${activeMeta.labelEn}`;
+
+/**
+ * Per-language focus points used to rotate the 3D Earth on overlay
+ * open. The map is intentionally small and additive — adding a new
+ * platform language adds an entry here and nothing else. A code
+ * missing from the map opens the globe at lat=0/lng=0 (no special
+ * rotation), which is a safe degraded-but-functional state.
+ *
+ * Rules of thumb when adding entries:
+ *   - Use the country/region most commonly associated with the
+ *     language for the platform's audience, not the most populous.
+ *   - Stay in the front hemisphere of the initial camera; extreme
+ *     latitudes feel disorienting before the user touches the globe.
+ */
+const LANGUAGE_FOCUS: Record<string, { lat: number; lng: number; label: string }> = {
+  he: { lat: 32, lng: 35, label: 'Israel / Eastern Mediterranean' },
+  en: { lat: 54, lng: -2, label: 'United Kingdom' },
+  es: { lat: 40, lng: -3, label: 'Spain' },
+};
+
+const focusByCode = JSON.stringify(
+  Object.fromEntries(options.map((o) => [o.code, LANGUAGE_FOCUS[o.code] ?? null]))
+);
 ---
 
 <div
@@ -77,54 +100,153 @@ const triggerAriaLabel = onlyOne
     <span class="lgs-disc" aria-hidden="true">
       <svg class="lgs-globe" viewBox="0 0 32 32" aria-hidden="true">
         <defs>
-          <radialGradient id="lgs-globe-fill" cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stop-color="#3a5e8f" />
-            <stop offset="55%" stop-color="#1c2f55" />
-            <stop offset="100%" stop-color="#0a1024" />
+          {/* Ocean — radial blue with the lit pole pulled toward the
+              upper-left so the globe reads as a sphere, not a disc.
+              Deeper trough at the terminator gives the sense of
+              curvature without any 3D math. */}
+          <radialGradient id="lgs-globe-fill" cx="38%" cy="32%" r="70%">
+            <stop offset="0%" stop-color="#2e578a" />
+            <stop offset="42%" stop-color="#163461" />
+            <stop offset="80%" stop-color="#0a1834" />
+            <stop offset="100%" stop-color="#03081a" />
           </radialGradient>
+
+          {/* Land — muted forest-green to teal so continents read as
+              "land" without going cartoon-green. Vertical gradient
+              gives each continent a slight top-lit feel. */}
+          <linearGradient id="lgs-land-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6aab84" />
+            <stop offset="55%" stop-color="#3d8161" />
+            <stop offset="100%" stop-color="#214a3a" />
+          </linearGradient>
+
+          {/* Atmospheric rim halo — fades in only near the edge so the
+              sphere has a soft cyan terminator without a hard line. */}
+          <radialGradient id="lgs-globe-atmo" cx="50%" cy="50%" r="50%">
+            <stop offset="78%" stop-color="rgba(140, 200, 240, 0)" />
+            <stop offset="94%" stop-color="rgba(140, 200, 240, 0.20)" />
+            <stop offset="100%" stop-color="rgba(140, 200, 240, 0.06)" />
+          </radialGradient>
+
+          {/* Single clip path applied to every detail layer so nothing
+              has to be drawn pixel-perfect — a path can spill past the
+              globe edge and still render as a clean circle. */}
+          <clipPath id="lgs-globe-clip">
+            <circle cx="16" cy="16" r="12" />
+          </clipPath>
         </defs>
+
+        {/* Ocean disc */}
         <circle cx="16" cy="16" r="12" fill="url(#lgs-globe-fill)" />
-        <ellipse cx="16" cy="16" rx="12" ry="12" fill="none" stroke="rgba(180,200,240,0.55)" stroke-width="0.5"/>
-        <ellipse cx="16" cy="16" rx="4.5" ry="12" fill="none" stroke="rgba(180,200,240,0.32)" stroke-width="0.4"/>
-        <ellipse cx="16" cy="16" rx="8.5" ry="12" fill="none" stroke="rgba(180,200,240,0.22)" stroke-width="0.4"/>
-        <ellipse cx="16" cy="16" rx="12" ry="4.5" fill="none" stroke="rgba(180,200,240,0.22)" stroke-width="0.4"/>
-        <ellipse cx="16" cy="16" rx="12" ry="8.5" fill="none" stroke="rgba(180,200,240,0.18)" stroke-width="0.4"/>
-        <circle cx="12" cy="12" r="2.5" fill="rgba(255,255,255,0.18)" />
+
+        {/* Latitude/longitude — kept for the "globe" cue but pulled WAY
+            down in opacity so the continents become the focal point. */}
+        <g clip-path="url(#lgs-globe-clip)" fill="none">
+          <ellipse cx="16" cy="16" rx="12" ry="12" stroke="rgba(180,200,240,0.18)" stroke-width="0.4"/>
+          <ellipse cx="16" cy="16" rx="4.5" ry="12" stroke="rgba(180,200,240,0.10)" stroke-width="0.35"/>
+          <ellipse cx="16" cy="16" rx="8.5" ry="12" stroke="rgba(180,200,240,0.08)" stroke-width="0.35"/>
+          <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke="rgba(180,200,240,0.08)" stroke-width="0.35"/>
+          <ellipse cx="16" cy="16" rx="12" ry="8.5" stroke="rgba(180,200,240,0.07)" stroke-width="0.35"/>
+        </g>
+
+        {/* Continents — abstract organic blobs, NOT cartographically
+            accurate. Three masses (right-center "Eurasia/Africa", left
+            "Americas", small lower-right island) plus a tiny upper
+            speck. The goal is "this reads as Earth at 46px," not a map.
+            All paths are clipped so the silhouette stays a clean
+            circle no matter how the curves run. */}
+        <g clip-path="url(#lgs-globe-clip)" fill="url(#lgs-land-fill)">
+          <path d="M 19,7 Q 23,8 23,12 Q 22,15 23,17 Q 22,20 19,19 Q 17,17 18,14 Q 17,11 19,7 Z" />
+          <path d="M 11,8 Q 13,10 12,13 Q 13,16 12,19 Q 9,21 8,18 Q 9,14 10,10 Q 10,8 11,8 Z" />
+          <path d="M 19,21.5 Q 21,21 21,23 Q 20,24 19,21.5 Z" />
+          <path d="M 13.5,7 Q 15,6.5 15,8 Q 13.5,8.5 13.5,7 Z" />
+        </g>
+
+        {/* Atmospheric rim halo on top of land so the curvature reads
+            even where a continent meets the terminator. */}
+        <circle cx="16" cy="16" r="12" fill="url(#lgs-globe-atmo)" />
+
+        {/* Focus glow — placeholder for future per-language flyto.
+            Neutral / hidden today (data-focus="off"). A later step will
+            position this group via transform and toggle visibility
+            based on LanguageOption.globeFocus. Kept inside the globe
+            clip so any future glow stays inside the sphere. */}
+        <g class="lgs-focus" data-focus="off" clip-path="url(#lgs-globe-clip)">
+          <circle cx="16" cy="16" r="1.6" fill="rgba(232,197,71,0.55)" />
+          <circle cx="16" cy="16" r="0.8" fill="rgba(255,240,180,0.85)" />
+        </g>
+
+        {/* Specular sunlight — soft cool-white pool at the upper-left
+            quadrant. Two stacked circles read as a small halo + glint,
+            cheaper and crisper than a Gaussian blur filter. */}
+        <circle cx="11.5" cy="11" r="2.2" fill="rgba(255,255,255,0.18)" />
+        <circle cx="11.8" cy="11.3" r="1" fill="rgba(255,253,240,0.32)" />
       </svg>
     </span>
   </button>
 
-  {!onlyOne && (
-    <div class="lgs-panel" role="listbox" aria-label="Available languages">
-      <div class="lgs-panel-inner">
-        {options.map((option) => (
-          <button
-            type="button"
-            class:list={['lgs-option', option.code === activeLanguage && 'is-active']}
-            data-language={option.code}
-            data-dir={option.dir}
-            role="option"
-            aria-selected={option.code === activeLanguage}
-            aria-label={option.labelEn}
-          >
-            <span class="lgs-option-flag" aria-hidden="true">{option.flag}</span>
-            <span class="lgs-option-labels">
-              <span class="lgs-option-native">{option.label}</span>
-              <span class="lgs-option-en">{option.labelEn}</span>
-            </span>
-            {option.code === activeLanguage && (
-              <span class="lgs-option-check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                </svg>
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  )}
+
 </div>
+
+{!onlyOne && (
+  <div
+    class="lgs-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Choose language"
+    data-open="false"
+    data-initial-language={activeLanguage}
+    data-language-focus={focusByCode}
+    hidden
+  >
+    {/* Backdrop. Click outside the stage closes without changing
+        language. data-lgs-close marks any element that should trigger
+        the close handler — keeps the JS tiny. */}
+    <div class="lgs-overlay-backdrop" data-lgs-close="true" aria-hidden="true"></div>
+
+    {/* Cinematic stage: language row above, 3D Earth canvas below.
+        Sized to viewport via vh/vw so the stage stays centered on
+        any screen without absolute pixel math. */}
+    <div class="lgs-overlay-stage">
+      <ul
+        class="lgs-overlay-row"
+        role="listbox"
+        aria-label="Available languages"
+      >
+        {options.map((option) => (
+          <li class="lgs-overlay-item">
+            <button
+              type="button"
+              class:list={['lgs-overlay-option', option.code === activeLanguage && 'is-active']}
+              data-language={option.code}
+              data-dir={option.dir}
+              role="option"
+              aria-selected={option.code === activeLanguage}
+              aria-label={option.labelEn}
+            >
+              <span class="lgs-overlay-flag" aria-hidden="true">{option.flag}</span>
+              <span class="lgs-overlay-native">{option.label}</span>
+              <span class="lgs-overlay-en">{option.labelEn}</span>
+              {option.code === activeLanguage && (
+                <span class="lgs-overlay-check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                </span>
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {/* Mount point for the Three.js canvas. The 3D module appends
+          a <canvas> here on first overlay open. The empty inner div
+          gives the canvas a stable container with explicit pixel size
+          set by ResizeObserver in the module. */}
+      <div class="lgs-overlay-earth" data-earth-stage="true" aria-hidden="true"></div>
+    </div>
+  </div>
+)}
 
 <style>
   .lgs-root {
@@ -151,22 +273,41 @@ const triggerAriaLabel = onlyOne
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    /* Mixed gold + silver ring built from a multi-stop conic so the
-       metal reads as multi-toned rather than two concentric stripes.
-       Gold at 0/270/360°, silver at 130/320°, deep bronze shadow at 200°. */
-    background: conic-gradient(
-      from 210deg,
-      #c9a227 0deg,
-      #f0e3b0 60deg,
-      #c0c4cc 130deg,
-      #8b7355 200deg,
-      #d4af55 270deg,
-      #e8eaee 320deg,
-      #c9a227 360deg
-    );
+    /* Two layered backgrounds:
+       (1) An upper-rim highlight — a faint cool-cream radial parked at
+           the top of the disc. This is the only "light from above" cue
+           on the ring; it gives the metal a soft bevel without any
+           literal gloss reflection. Sits ON TOP of the conic so it
+           lifts whichever stop currently lies along the upper arc.
+       (2) Softened gold/silver conic. Versus the previous palette
+           (saturated #c9a227 and near-white #f0e3b0 / #e8eaee), the
+           lightness range is compressed and saturations are pulled
+           down so the metal reads as brushed champagne/pewter rather
+           than polished jewelry. Same hue rotation (gold → champagne
+           → silver → deep taupe → gold → warm-silver) so the
+           multi-toned identity survives. */
+    background:
+      radial-gradient(
+        ellipse 80% 55% at 50% 0%,
+        rgba(255, 250, 235, 0.22) 0%,
+        rgba(255, 250, 235, 0) 48%
+      ),
+      conic-gradient(
+        from 210deg,
+        #a89060 0deg,
+        #c8b890 60deg,
+        #afb2b8 130deg,
+        #7e6f5c 200deg,
+        #b39872 270deg,
+        #c1bdb4 320deg,
+        #a89060 360deg
+      );
+    /* Outer shadow trimmed: drop softer + tighter, gold halo removed
+       from the resting state. The ring should ground the disc, not
+       glow on its own. Hover/focus restore a touch of warmth. */
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.45),
-      0 0 14px rgba(201, 169, 110, 0.20);
+      0 2px 5px rgba(0, 0, 0, 0.32),
+      0 1px 2px rgba(0, 0, 0, 0.18);
     transition:
       transform 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
       box-shadow 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
@@ -175,15 +316,16 @@ const triggerAriaLabel = onlyOne
   .lgs-trigger:hover {
     transform: translateY(-1px);
     box-shadow:
-      0 6px 16px rgba(0, 0, 0, 0.5),
-      0 0 22px rgba(201, 169, 110, 0.32);
+      0 4px 10px rgba(0, 0, 0, 0.38),
+      0 1px 3px rgba(0, 0, 0, 0.20),
+      0 0 14px rgba(201, 169, 110, 0.16);
   }
 
   .lgs-trigger:focus-visible {
     outline: none;
     box-shadow:
-      0 0 0 3px rgba(232, 197, 71, 0.45),
-      0 6px 16px rgba(0, 0, 0, 0.5);
+      0 0 0 3px rgba(232, 197, 71, 0.40),
+      0 4px 10px rgba(0, 0, 0, 0.35);
   }
 
   .lgs-trigger[aria-disabled="true"] {
@@ -194,7 +336,12 @@ const triggerAriaLabel = onlyOne
     transform: none;
   }
 
-  /* Inner space disc — sits 2px inside the conic ring. */
+  /* Inner space disc — sits 2px inside the conic ring. The inset
+     shadows are the second 3D cue: a darker arc inside the upper rim
+     (light-from-above blocked by the ring's lip) plus a faint cool
+     blue lift along the bottom (atmospheric bounce). Together they
+     make the disc read as recessed inside the ring rather than pasted
+     onto it, without any literal bevel chrome. */
   .lgs-disc {
     position: absolute;
     inset: 2px;
@@ -205,6 +352,9 @@ const triggerAriaLabel = onlyOne
       #04070f 65%,
       #000000 100%
     );
+    box-shadow:
+      inset 0 2px 3px rgba(0, 0, 0, 0.55),
+      inset 0 -1px 2px rgba(60, 90, 140, 0.10);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -221,140 +371,646 @@ const triggerAriaLabel = onlyOne
     width: 42px;
     height: 42px;
     display: block;
+    transition: opacity 200ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
   }
 
-  /* ── Dropdown panel ── */
-  .lgs-panel {
-    position: absolute;
-    top: calc(100% + 10px);
-    inset-inline-start: 0;
-    min-width: 200px;
-    background: var(--yuval-surface, #1a1a1a);
-    border: 1.5px solid rgba(201, 162, 39, 0.35);
-    border-radius: 14px;
-    box-shadow:
-      0 12px 32px rgba(0, 0, 0, 0.35),
-      0 4px 12px rgba(0, 0, 0, 0.2),
-      0 0 0 1px rgba(201, 162, 39, 0.18);
+  /* Header globe is hidden whenever the cinematic overlay is "out" —
+     during launch, while open, and during return. The class is added
+     by JS at the start of openOverlay and removed at the end of
+     closeOverlay (after the return animation completes), so the
+     small SVG fades out as the big Earth launches and fades back in
+     only after the big Earth has fully returned to the trigger. */
+  .lgs-trigger.is-launched-out .lgs-globe {
     opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px) scale(0.96);
-    transition: all 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
-    pointer-events: none;
-    z-index: 99;
-    backdrop-filter: blur(8px);
+  }
+
+  /* Future per-language focus glow. Hidden until a later step opts in
+     by setting data-focus="<lang-code>" (or any non-"off" value) on the
+     .lgs-focus group AND positioning it via a transform. Defined here
+     so the SVG markup can stay declarative — no inline styles to fight
+     when the dynamic step lands. */
+  .lgs-focus[data-focus="off"] {
+    display: none;
+  }
+
+  /* Lock background scroll while the overlay is open. Applied to
+     <html> from JS (toggle a class) so it lifts even on routes whose
+     <body> uses overflow-driven layout. The overlay itself is fixed
+     so locking scroll doesn't shift the dialog. */
+  :global(html.lgs-overlay-open),
+  :global(html.lgs-overlay-open body) {
     overflow: hidden;
   }
 
-  .lgs-trigger[aria-expanded="true"] + .lgs-panel {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
+  /* ── Cinematic overlay ───────────────────────────────────────────
+     A full-viewport modal that dims the page and centers the 3D
+     Earth + the language row. The whole thing is fixed-position so
+     it floats above any page chrome (sidebars, sticky header, etc.)
+     without needing a portal — Astro doesn't have one anyway.
+
+     Visibility model:
+       - The element starts with the `hidden` HTML attribute set so
+         AT users don't encounter it before opening.
+       - On open, JS clears `hidden` and sets data-open="true" in the
+         next frame, which triggers the CSS transitions to fade the
+         backdrop and lift the stage.
+       - On close, JS sets data-open="false" → CSS transitions out;
+         after the transition completes, JS re-applies `hidden`.
+
+     The 3D canvas inside is created lazily on first open by the
+     interactive-earth-3d module and then re-used across subsequent
+     opens (only paused / resumed). Full disposal happens on Astro
+     view transitions and on page unload, never on a normal close. */
+  .lgs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .lgs-overlay[data-open="true"] {
     pointer-events: auto;
   }
 
-  /* RTL: anchor panel to the inline-end side instead of inline-start. */
-  .lgs-root[data-rtl="true"] .lgs-panel {
-    inset-inline-start: auto;
-    inset-inline-end: 0;
+  .lgs-overlay-backdrop {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(8, 10, 18, 0.78) 0%,
+      rgba(2, 3, 8, 0.92) 70%
+    );
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    opacity: 0;
+    transition: opacity 260ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
   }
 
-  .lgs-panel-inner {
+  .lgs-overlay[data-open="true"] .lgs-overlay-backdrop {
+    opacity: 1;
+  }
+
+  .lgs-overlay-stage {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
-    padding: 6px;
+    align-items: center;
+    gap: clamp(20px, 3.5vh, 36px);
+    padding: clamp(16px, 4vh, 36px);
+    width: min(720px, 92vw);
+    /* The stage container has no own animation. Children animate
+       independently:
+         - .lgs-overlay-earth: WAAPI flight on open/close (driven by JS)
+         - .lgs-overlay-row: opacity + translate transition gated by
+           the .is-revealed class (revealed only after the earth lands).
+       The backdrop's fade-in still runs from CSS on data-open. */
   }
 
-  .lgs-option {
+  /* ── Language row (above the globe) ─────────────────────────────
+     Compact horizontal pills. Native label is the primary text;
+     English label is a subtitle that wraps under in narrower row
+     widths. Active state stacks four non-color cues: gold border,
+     gold glow, gradient background, checkmark — plus aria-selected
+     and font-weight. */
+  .lgs-overlay-row {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(8px, 1.5vw, 14px);
+    /* Hidden on render. Revealed by JS once the launch animation
+       lands, via the .is-revealed class. On close JS removes the
+       class first, waits for the fade-out, then runs the return
+       animation on the earth. */
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+      opacity 240ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
+      transform 240ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+    pointer-events: none;
+  }
+
+  .lgs-overlay-row.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .lgs-overlay-item {
+    display: contents;
+  }
+
+  .lgs-overlay-option {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    padding: 10px 12px;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 180ms var(--ease-standard, ease);
+    gap: 10px;
+    padding: 10px 16px;
+    border: 1px solid rgba(201, 162, 39, 0.28);
+    border-radius: 999px;
+    background: rgba(18, 18, 24, 0.72);
     color: var(--yuval-text-secondary, #c4b8a8);
     font-family: var(--font-heading, inherit);
     font-size: 13px;
-    text-align: start;
-    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    transition:
+      background 180ms var(--ease-standard, ease),
+      border-color 180ms var(--ease-standard, ease),
+      color 180ms var(--ease-standard, ease),
+      box-shadow 180ms var(--ease-standard, ease),
+      transform 180ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
   }
 
-  .lgs-option:hover {
-    background: linear-gradient(135deg, rgba(201, 162, 39, 0.10), rgba(232, 197, 71, 0.05));
+  .lgs-overlay-option:hover {
+    background: rgba(28, 28, 38, 0.85);
+    border-color: rgba(232, 197, 71, 0.50);
     color: var(--yuval-text, #f0e6d0);
+    transform: translateY(-1px);
   }
 
-  .lgs-option:focus-visible {
-    outline: 2px solid rgba(232, 197, 71, 0.6);
-    outline-offset: -2px;
+  .lgs-overlay-option:focus-visible {
+    outline: 2px solid rgba(232, 197, 71, 0.7);
+    outline-offset: 3px;
   }
 
-  /* Active option: multiple non-color cues (background, weight, checkmark, aria-selected). */
-  .lgs-option.is-active {
-    background: linear-gradient(135deg, rgba(201, 162, 39, 0.16), rgba(232, 197, 71, 0.10));
+  .lgs-overlay-option.is-active {
+    background: linear-gradient(
+      135deg,
+      rgba(201, 162, 39, 0.22),
+      rgba(232, 197, 71, 0.10)
+    );
+    border-color: rgba(232, 197, 71, 0.65);
     color: var(--yuval-text, #f0e6d0);
     font-weight: 700;
+    box-shadow:
+      0 0 16px rgba(232, 197, 71, 0.25),
+      0 4px 12px rgba(0, 0, 0, 0.35);
   }
 
-  .lgs-option-flag {
-    font-size: 18px;
-    flex-shrink: 0;
+  .lgs-overlay-flag {
+    font-size: 16px;
+    line-height: 1;
   }
 
-  .lgs-option-labels {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-    gap: 2px;
-  }
-
-  .lgs-option-native {
+  .lgs-overlay-native {
+    font-size: 14px;
     font-weight: 600;
-    font-size: 13px;
   }
 
-  .lgs-option-en {
+  .lgs-overlay-en {
     font-size: 11px;
     color: var(--yuval-text-tertiary, #9a8e7c);
     font-weight: 500;
+    margin-inline-start: 2px;
   }
 
-  .lgs-option-check {
-    width: 20px;
-    height: 20px;
-    display: flex;
+  .lgs-overlay-option.is-active .lgs-overlay-en {
+    color: var(--yuval-text-secondary, #c4b8a8);
+  }
+
+  .lgs-overlay-check {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     background: linear-gradient(135deg, #e8c547, #c9a227);
     color: #1a1a1a;
     flex-shrink: 0;
+    margin-inline-start: 2px;
   }
 
-  .lgs-option-check svg {
-    width: 12px;
-    height: 12px;
+  .lgs-overlay-check svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* ── 3D Earth stage ─────────────────────────────────────────────
+     Square viewport on desktop, capped to viewport height/width on
+     small screens so the canvas always fits inside the overlay
+     without clipping or overflowing. Three.js mounts a <canvas>
+     directly inside this element on first open. */
+  .lgs-overlay-earth {
+    position: relative;
+    width: min(440px, 70vw, 60vh);
+    aspect-ratio: 1 / 1;
+    /* Keeps the rAF/render contained so the rest of the page can
+       paint independently. */
+    contain: layout paint;
+  }
+
+  .lgs-overlay-earth canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  @media (max-width: 480px) {
+    .lgs-overlay-stage {
+      width: 96vw;
+      gap: 16px;
+      padding: 12px;
+    }
+    .lgs-overlay-option {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .lgs-overlay-native {
+      font-size: 13px;
+    }
+    .lgs-overlay-en {
+      display: none;
+    }
+    .lgs-overlay-earth {
+      width: min(80vw, 60vh);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .lgs-trigger,
-    .lgs-panel {
+    .lgs-trigger {
       transition: none !important;
     }
     .lgs-trigger:hover {
+      transform: none;
+    }
+    .lgs-overlay-backdrop,
+    .lgs-overlay-stage,
+    .lgs-overlay-option {
+      transition: none !important;
+    }
+    .lgs-overlay-option:hover {
       transform: none;
     }
   }
 </style>
 
 <script>
-  function initGlobeSelectors() {
+  import type { InteractiveEarthHandle, FocusPoint } from '../../scripts/interactive-earth-3d';
+
+  // Single shared Earth instance per page. We keep the canvas alive
+  // across open/close so reopening is instant and no second canvas is
+  // ever created (per the spec's "do not create duplicate canvases"
+  // rule). True teardown happens only on view transitions / unload.
+  let earthHandle: InteractiveEarthHandle | null = null;
+  let earthLoading: Promise<InteractiveEarthHandle | null> | null = null;
+  let lastFocusedBeforeOpen: HTMLElement | null = null;
+
+  // ── Animation state machine ────────────────────────────────────
+  // The launch and return animations cover ~500ms and ~480ms. During
+  // those windows, additional opens, closes, and language picks must
+  // be ignored — otherwise we get duplicate animations, half-flown
+  // globes, and language switches firing while the user can't see
+  // what they picked. The state guard makes every transition explicit:
+  //
+  //   closed   → open click   → launching → launch ends → open
+  //   open     → close click  → returning → return ends → closed
+  //   open     → language pick → returning (with pendingLanguageChange)
+  //   any      → astro:before-swap → closed (forced reset on teardown)
+  type AnimationState = 'closed' | 'launching' | 'open' | 'returning';
+  let state: AnimationState = 'closed';
+
+  // When set, the close path will trigger this language change AFTER
+  // the return animation completes (rather than at click time). This
+  // is what lets the user see the small globe land back in the header
+  // before the page reloads / re-renders for the new language.
+  let pendingLanguageChange: string | null = null;
+
+  // The single in-flight WAAPI handle, so we can cancel it cleanly on
+  // teardown even if state still says 'launching' or 'returning'.
+  let activeAnimation: Animation | null = null;
+
+  type LanguageFocusMap = Record<string, FocusPoint | null>;
+
+  const LAUNCH_DURATION_MS = 540;
+  const RETURN_DURATION_MS = 460;
+  const FLIGHT_EASING = 'cubic-bezier(0.32, 0.72, 0.18, 1)';
+  // Time the language row needs to fade out before we start the
+  // return flight — must be ≥ the row's CSS transition duration so
+  // the row is visually gone when the globe begins shrinking back.
+  const ROW_FADEOUT_MS = 200;
+
+  function isReducedMotion(): boolean {
+    return typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function nextFrame(): Promise<void> {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  }
+
+  function wait(ms: number): Promise<void> {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  function readFocusMap(overlay: HTMLElement): LanguageFocusMap {
+    const raw = overlay.dataset.languageFocus;
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw) as LanguageFocusMap;
+    } catch {
+      return {};
+    }
+  }
+
+  async function ensureEarth(stage: HTMLElement, focus: FocusPoint | null): Promise<InteractiveEarthHandle | null> {
+    if (earthHandle) return earthHandle;
+    if (earthLoading) return earthLoading;
+    earthLoading = import('../../scripts/interactive-earth-3d')
+      .then(({ createInteractiveEarth }) =>
+        createInteractiveEarth(stage, { initialFocus: focus })
+      )
+      .then((handle) => {
+        earthHandle = handle;
+        earthLoading = null;
+        return handle;
+      })
+      .catch((err) => {
+        // We swallow the error after logging because the overlay's
+        // language list is the actual functional UI — the 3D globe is
+        // visual decoration. A WebGL-context failure on a niche device
+        // shouldn't break language switching.
+        console.warn('[LanguageGlobeSelector] 3D Earth failed to initialize:', err);
+        earthLoading = null;
+        return null;
+      });
+    return earthLoading;
+  }
+
+  function destroyEarth(): void {
+    if (activeAnimation) {
+      activeAnimation.cancel();
+      activeAnimation = null;
+    }
+    if (earthHandle) {
+      earthHandle.destroy();
+      earthHandle = null;
+    }
+    earthLoading = null;
+    state = 'closed';
+    pendingLanguageChange = null;
+  }
+
+  function triggerLanguageChange(lang: string): void {
+    // Step-1 invariant: localStorage is written ONLY on user selection,
+    // never on render-time fallbacks.
+    localStorage.setItem('yuval_language', lang);
+
+    // Mirror the legacy LanguageSelector dual-mode behavior:
+    // chapter pages pre-render every translation and switch
+    // client-side via Header.astro's `language-selector-change` →
+    // `language-changed` bridge. Other pages re-render per-language
+    // server-side, so a full reload with ?lang=xx is the only safe
+    // way to swap content. Either way the existing event surface
+    // and storage keys stay 100% unchanged.
+    const supportsClientSwitch = !!document.getElementById('chapter-container');
+    if (supportsClientSwitch) {
+      window.dispatchEvent(
+        new CustomEvent('language-selector-change', {
+          detail: { language: lang },
+          bubbles: true,
+        })
+      );
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', lang);
+      window.location.href = url.toString();
+    }
+  }
+
+  /**
+   * Compute the FLIP transform that places the stage element so it
+   * visually aligns with the trigger element (same center, same
+   * width). Returns the inverted transform — when applied to the
+   * stage, the stage appears at the trigger's position and size; an
+   * animation back to identity then "flies" it to its natural place.
+   */
+  function flipTransformFromTrigger(stage: HTMLElement, trigger: HTMLElement): string {
+    const tr = trigger.getBoundingClientRect();
+    const sr = stage.getBoundingClientRect();
+    if (sr.width === 0 || sr.height === 0) {
+      // Element not laid out yet — no useful transform we can compute.
+      return 'none';
+    }
+    const dx = (tr.left + tr.width / 2) - (sr.left + sr.width / 2);
+    const dy = (tr.top + tr.height / 2) - (sr.top + sr.height / 2);
+    const scale = tr.width / sr.width;
+    return `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) scale(${scale.toFixed(4)})`;
+  }
+
+  /**
+   * Run the launch flight from `trigger` rect → stage's natural rect.
+   * The stage starts pinned to the trigger (transform applied inline
+   * before WAAPI runs to avoid a one-frame flash at natural size).
+   */
+  async function runLaunchFlight(stage: HTMLElement, trigger: HTMLElement): Promise<void> {
+    const startTransform = flipTransformFromTrigger(stage, trigger);
+    if (startTransform === 'none') return;
+
+    // Pin the stage at the trigger position SYNCHRONOUSLY so the next
+    // paint shows it small at the trigger, not full-size in the center.
+    stage.style.transform = startTransform;
+    stage.style.opacity = '0.92';
+    // Force a reflow so the browser commits the start state before
+    // we begin the animation. Without this, some browsers collapse
+    // the start frame and the canvas snaps to natural size.
+    void stage.offsetWidth;
+
+    const anim = stage.animate(
+      [
+        { transform: startTransform, opacity: 0.92 },
+        { transform: 'none', opacity: 1 },
+      ],
+      { duration: LAUNCH_DURATION_MS, easing: FLIGHT_EASING, fill: 'forwards' }
+    );
+    activeAnimation = anim;
+    try {
+      await anim.finished;
+    } catch {
+      // Cancelled (e.g. teardown). Bail without touching state — the
+      // teardown path resets state already.
+      return;
+    }
+    activeAnimation = null;
+    // Commit to the natural state and clear inline so the element is
+    // back to its CSS-only state with no leftover transform.
+    stage.style.transform = '';
+    stage.style.opacity = '';
+    anim.cancel();
+  }
+
+  /**
+   * Run the return flight from the stage's natural rect → `trigger` rect.
+   */
+  async function runReturnFlight(stage: HTMLElement, trigger: HTMLElement): Promise<void> {
+    const endTransform = flipTransformFromTrigger(stage, trigger);
+    if (endTransform === 'none') return;
+
+    const anim = stage.animate(
+      [
+        { transform: 'none', opacity: 1 },
+        { transform: endTransform, opacity: 0.85 },
+      ],
+      { duration: RETURN_DURATION_MS, easing: FLIGHT_EASING, fill: 'forwards' }
+    );
+    activeAnimation = anim;
+    try {
+      await anim.finished;
+    } catch {
+      return;
+    }
+    activeAnimation = null;
+    // We DON'T commit the end transform inline — the overlay will be
+    // hidden right after this and the next open recomputes fresh.
+    anim.cancel();
+    // Clear any leftover inline styles from a previous launch.
+    stage.style.transform = '';
+    stage.style.opacity = '';
+  }
+
+  async function openOverlay(_root: HTMLElement, overlay: HTMLElement, trigger: HTMLButtonElement): Promise<void> {
+    // Guard: ignore re-opens while launching/open/returning.
+    if (state !== 'closed') return;
+    state = 'launching';
+
+    lastFocusedBeforeOpen = (document.activeElement as HTMLElement) ?? trigger;
+
+    // Hide the small SVG globe inside the trigger immediately, so the
+    // big Earth visually appears to leave the button.
+    trigger.classList.add('is-launched-out');
+
+    overlay.removeAttribute('hidden');
+    // rAF lets the browser apply `hidden=false` styles before we flip
+    // data-open, so the backdrop transition actually runs instead of
+    // snapping to fully opaque.
+    await nextFrame();
+    overlay.dataset.open = 'true';
+    trigger.setAttribute('aria-expanded', 'true');
+    document.documentElement.classList.add('lgs-overlay-open');
+
+    const stage = overlay.querySelector<HTMLElement>('.lgs-overlay-earth');
+    const row = overlay.querySelector<HTMLElement>('.lgs-overlay-row');
+
+    // Lazy-init the 3D Earth on first open. Subsequent opens reuse
+    // the existing canvas — we just resume idle rotation.
+    let handle: InteractiveEarthHandle | null = null;
+    if (stage) {
+      const focusMap = readFocusMap(overlay);
+      const initialLang = overlay.dataset.initialLanguage || '';
+      const initialFocus = focusMap[initialLang] ?? null;
+      handle = await ensureEarth(stage, initialFocus);
+      if (handle) handle.setIdleRotation(true);
+    }
+
+    // If we were torn down mid-init, abort cleanly.
+    if (state !== 'launching') return;
+
+    if (stage) {
+      if (isReducedMotion()) {
+        // Reduced motion: no flight. Just reveal the row alongside
+        // the backdrop fade-in (which is CSS-driven and harmless).
+        if (row) row.classList.add('is-revealed');
+      } else {
+        // Run the flight, then reveal the row a beat after it lands.
+        await runLaunchFlight(stage, trigger);
+        // If we got cancelled mid-flight, bail.
+        if (state !== 'launching') return;
+        if (row) row.classList.add('is-revealed');
+      }
+    }
+
+    state = 'open';
+
+    // Move focus to the active language option so keyboard users can
+    // commit / cancel without an extra Tab.
+    const active = overlay.querySelector<HTMLButtonElement>('.lgs-overlay-option.is-active')
+      ?? overlay.querySelector<HTMLButtonElement>('.lgs-overlay-option');
+    if (active) active.focus();
+  }
+
+  async function closeOverlay(overlay: HTMLElement, trigger: HTMLButtonElement): Promise<void> {
+    // Guard: only close from the open state. Calls during launching
+    // or returning are ignored — we never strand the user mid-flight.
+    if (state !== 'open') return;
+    state = 'returning';
+
+    const stage = overlay.querySelector<HTMLElement>('.lgs-overlay-earth');
+    const row = overlay.querySelector<HTMLElement>('.lgs-overlay-row');
+
+    // 1. Fade language row out first.
+    if (row) row.classList.remove('is-revealed');
+
+    if (stage) {
+      if (isReducedMotion()) {
+        // Reduced motion: skip the flight. Just close the overlay.
+      } else {
+        // 2. Wait for the row to fade out before starting the flight,
+        //    so the user sees a clean "row vanishes → globe departs"
+        //    sequence rather than both happening together.
+        await wait(ROW_FADEOUT_MS);
+        if (state !== 'returning') return;
+        await runReturnFlight(stage, trigger);
+        if (state !== 'returning') return;
+      }
+    }
+
+    // 3. Tear down overlay state.
+    overlay.dataset.open = 'false';
+    trigger.setAttribute('aria-expanded', 'false');
+    document.documentElement.classList.remove('lgs-overlay-open');
+
+    if (earthHandle) {
+      // Pause the rAF loop. Don't destroy — the next open will reuse
+      // this canvas. Full disposal happens on view-transition / unload.
+      earthHandle.setIdleRotation(false);
+    }
+
+    // Restore the small header globe AFTER the big Earth has fully
+    // landed back in the header — keeps the visual handoff continuous.
+    trigger.classList.remove('is-launched-out');
+
+    // Hide from AT after the close transition finishes, so screen
+    // readers stop seeing the dialog.
+    window.setTimeout(() => {
+      if (overlay.dataset.open === 'false') {
+        overlay.setAttribute('hidden', '');
+      }
+    }, 320);
+
+    if (lastFocusedBeforeOpen && document.contains(lastFocusedBeforeOpen)) {
+      lastFocusedBeforeOpen.focus();
+    } else {
+      trigger.focus();
+    }
+    lastFocusedBeforeOpen = null;
+
+    state = 'closed';
+
+    // 4. If a language was selected, fire the existing change path
+    //    AFTER the globe has fully returned. The reload (or in-page
+    //    swap on chapter pages) happens after the user has visually
+    //    seen the close complete, which feels much more deliberate
+    //    than starting the language change at click time.
+    if (pendingLanguageChange) {
+      const lang = pendingLanguageChange;
+      pendingLanguageChange = null;
+      triggerLanguageChange(lang);
+    }
+  }
+
+  function initGlobeSelectors(): void {
     const roots = document.querySelectorAll<HTMLElement>('.lgs-root');
 
     roots.forEach((root) => {
@@ -362,115 +1018,130 @@ const triggerAriaLabel = onlyOne
       root.dataset.initialized = 'true';
 
       const trigger = root.querySelector<HTMLButtonElement>('.lgs-trigger');
-      const panel = root.querySelector<HTMLElement>('.lgs-panel');
-      const options = root.querySelectorAll<HTMLButtonElement>('.lgs-option');
-
       if (!trigger) return;
 
       const onlyOne = trigger.dataset.onlyOne === 'true';
-      if (onlyOne || !panel) {
-        // Single-language: the button stays visible (so layout doesn't
-        // shift between contexts) but it never opens a menu. The title
-        // attribute already carries the explanation for hover/SR users.
+      if (onlyOne) {
+        // Single-language: the button stays visible (so header layout
+        // doesn't shift between contexts) but it never opens anything.
+        // The title attribute already carries the explanation.
         trigger.addEventListener('click', (e) => e.preventDefault());
         return;
       }
 
-      const togglePanel = () => {
-        const open = trigger.getAttribute('aria-expanded') === 'true';
-        trigger.setAttribute('aria-expanded', String(!open));
+      // The overlay was rendered as a SIBLING of .lgs-root (not a
+      // child) so its position:fixed isn't pinned to the header's
+      // stacking context. Find it via the next-sibling lookup that
+      // Astro guarantees: each LanguageGlobeSelector instance emits
+      // exactly one .lgs-root followed by its .lgs-overlay (when the
+      // language count > 1).
+      const overlay = root.nextElementSibling as HTMLElement | null;
+      if (!overlay || !overlay.classList.contains('lgs-overlay')) return;
+
+      const open = () => {
+        // Defer the async open so the click handler returns quickly.
+        void openOverlay(root, overlay, trigger);
+      };
+      const close = () => {
+        void closeOverlay(overlay, trigger);
       };
 
-      const closePanel = () => {
-        trigger.setAttribute('aria-expanded', 'false');
-      };
-
-      const selectOption = (option: HTMLButtonElement) => {
-        const lang = option.dataset.language;
-        if (!lang) return;
-
-        // Step-1 invariant: localStorage is written ONLY on user
-        // selection, never on render-time fallbacks.
-        localStorage.setItem('yuval_language', lang);
-        closePanel();
-
-        // Mirror the legacy LanguageSelector dual-mode behavior:
-        // chapter pages pre-render every translation and switch
-        // client-side via the existing `language-selector-change`
-        // → `language-changed` bridge in Header.astro. Other pages
-        // are server-rendered per-language, so a full reload with
-        // ?lang=xx is the only safe way to swap content.
-        const supportsClientSwitch = !!document.getElementById('chapter-container');
-
-        if (supportsClientSwitch) {
-          window.dispatchEvent(
-            new CustomEvent('language-selector-change', {
-              detail: { language: lang },
-              bubbles: true,
-            })
-          );
-        } else {
-          const url = new URL(window.location.href);
-          url.searchParams.set('lang', lang);
-          window.location.href = url.toString();
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Only react when fully open or fully closed. Mid-animation
+        // clicks are deliberately ignored — the cinematic flight is
+        // short enough that this feels intentional, not unresponsive.
+        if (state === 'open') {
+          close();
+        } else if (state === 'closed') {
+          open();
         }
-      };
-
-      trigger.addEventListener('click', togglePanel);
+      });
 
       trigger.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          togglePanel();
-        } else if (e.key === 'ArrowDown' && options.length > 0) {
-          e.preventDefault();
-          trigger.setAttribute('aria-expanded', 'true');
-          options[0].focus();
+          if (state === 'open') {
+            close();
+          } else if (state === 'closed') {
+            open();
+          }
         }
       });
 
-      options.forEach((option) => {
-        option.addEventListener('click', () => selectOption(option));
-      });
-
-      panel.addEventListener('keydown', (e: KeyboardEvent) => {
-        const focused = document.activeElement as HTMLButtonElement;
-        const idx = Array.from(options).indexOf(focused);
-        if (e.key === 'ArrowDown' && idx < options.length - 1) {
-          e.preventDefault();
-          options[idx + 1].focus();
-        } else if (e.key === 'ArrowUp' && idx > 0) {
-          e.preventDefault();
-          options[idx - 1].focus();
-        } else if (e.key === 'Enter' && idx >= 0) {
-          e.preventDefault();
-          selectOption(focused);
-        } else if (e.key === 'Escape') {
-          closePanel();
-          trigger.focus();
+      // Click anywhere marked data-lgs-close (the backdrop) closes
+      // without changing language. The stage's option buttons handle
+      // their own clicks; the empty stage area is non-interactive.
+      overlay.addEventListener('click', (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-lgs-close="true"]')) {
+          close();
         }
       });
 
-      document.addEventListener('click', (e: Event) => {
-        if (!root.contains(e.target as Node)) closePanel();
+      const optionButtons = overlay.querySelectorAll<HTMLButtonElement>('.lgs-overlay-option');
+      optionButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          // Block language picks during launch/return — the row is
+          // either invisible or fading out, so a click during those
+          // states would be a misclick we don't want to honor.
+          if (state !== 'open') return;
+
+          const lang = btn.dataset.language;
+          if (!lang) return;
+
+          // Defer the actual language change until the return flight
+          // finishes. closeOverlay reads this and fires it at the
+          // very end of its cleanup.
+          pendingLanguageChange = lang;
+          close();
+        });
+      });
+
+      // Keyboard: Escape always closes. Arrow keys move focus among
+      // language options.
+      overlay.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          close();
+          return;
+        }
+        if (state !== 'open') return; // arrow keys are no-ops mid-flight
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          const focused = document.activeElement as HTMLButtonElement;
+          const list = Array.from(optionButtons);
+          const idx = list.indexOf(focused);
+          if (idx >= 0 && idx < list.length - 1) {
+            e.preventDefault();
+            list[idx + 1].focus();
+          }
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          const focused = document.activeElement as HTMLButtonElement;
+          const list = Array.from(optionButtons);
+          const idx = list.indexOf(focused);
+          if (idx > 0) {
+            e.preventDefault();
+            list[idx - 1].focus();
+          }
+        }
       });
     });
   }
 
   // Visual sync: when ANY selector (legacy or globe) changes the
-  // language, every globe instance updates its active marker without
-  // a remount. Reads the same canonical events the legacy selector
-  // already emits (language-changed, language-ui-sync), so co-existing
-  // with the legacy selector during the rollout window is safe.
-  function syncToLang(lang: string) {
+  // language, every globe instance updates its active option marker
+  // without a remount. Reads the same canonical events the legacy
+  // selector emits — language-changed, language-ui-sync — so
+  // co-existence with the legacy selector during rollout is safe.
+  function syncToLang(lang: string): void {
     document.querySelectorAll<HTMLElement>('.lgs-root').forEach((root) => {
       if (root.dataset.current === lang) return;
       root.dataset.current = lang;
-      root.querySelectorAll<HTMLButtonElement>('.lgs-option').forEach((opt) => {
-        const isActive = opt.dataset.language === lang;
-        opt.classList.toggle('is-active', isActive);
-        opt.setAttribute('aria-selected', String(isActive));
-      });
+    });
+    document.querySelectorAll<HTMLButtonElement>('.lgs-overlay-option').forEach((opt) => {
+      const isActive = opt.dataset.language === lang;
+      opt.classList.toggle('is-active', isActive);
+      opt.setAttribute('aria-selected', String(isActive));
     });
   }
 
@@ -481,6 +1152,12 @@ const triggerAriaLabel = onlyOne
   }
   document.addEventListener('astro:page-load', initGlobeSelectors);
   document.addEventListener('astro:after-swap', initGlobeSelectors);
+
+  // Full Three.js teardown on view transitions and full unloads. This
+  // is the ONLY place the canvas + GPU resources get disposed; every
+  // other close just pauses the rAF loop so re-open is instant.
+  document.addEventListener('astro:before-swap', destroyEarth);
+  window.addEventListener('beforeunload', destroyEarth);
 
   window.addEventListener('language-changed', (e: Event) => {
     const lang = (e as CustomEvent<{ language: string }>).detail?.language;
