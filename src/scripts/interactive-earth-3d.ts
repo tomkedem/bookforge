@@ -226,10 +226,17 @@ export function createInteractiveEarth(
   // actual surface key light). Keeping them in lockstep means the
   // atmospheric scatter ring lines up exactly with the surface
   // terminator — visually critical for the planet to read as a real
-  // body rather than a sphere with a UI border drawn around it. If
-  // you ever retune the sun angle in a future lighting pass, change
-  // this vector and both the atmosphere and the surface follow.
-  const SUN_WORLD_POSITION = new THREE.Vector3(-1.5, 1.5, 2.7);
+  // body rather than a sphere with a UI border drawn around it.
+  //
+  // Stronger-brightness pass: pulled the sun further forward
+  // (-1.5, 1.5, 2.7) → (-1.2, 1.3, 3.2). The normalized light
+  // direction shifts from (-0.44, 0.44, 0.79) to (-0.33, 0.36, 0.87).
+  // Center-of-visible-face N·L jumps from 0.79 to 0.87 — a real
+  // 10% lift on the entire camera-facing hemisphere, where the user
+  // is actually looking. Still a 3/4 angle (upper-left, forward), so
+  // the cinematic terminator and the silhouette atmosphere rim stay
+  // properly defined; this isn't flat axial lighting.
+  const SUN_WORLD_POSITION = new THREE.Vector3(-1.2, 1.3, 3.2);
 
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -264,16 +271,16 @@ export function createInteractiveEarth(
   // do NOT enable HDR / ACES / bloom — the look stays flat-to-camera
   // but punchy, exactly like the rest of Yuval's premium chrome.
   renderer.toneMapping = THREE.LinearToneMapping;
-  // Exposure lifted from 1.00 → 1.06 in the stronger-lighting pass.
-  // A 6% boost on the composited frame preserves the per-light
-  // intensity ratios (so terminator contrast is unchanged in ratio
-  // space) while giving the whole sphere a touch more on-screen
-  // presence. Still well below filmic / HDR territory: bright land
-  // that already saturated to white now saturates 6% sooner, which
-  // is imperceptible. Forests and mid-latitude oceans — which were
-  // sitting in the murky 0.30–0.45 range — get pushed visibly into
-  // the lit register without clipping.
-  renderer.toneMappingExposure = 1.06;
+  // Exposure lifted to 1.12 in the brightness/orientation pass
+  // (was 1.06, originally 1.00). A 12% scalar on the composited
+  // frame preserves the per-light intensity ratios so the dark/
+  // light contrast and terminator character don't change in ratio
+  // space — they just sit slightly higher in absolute brightness.
+  // Within the safe "noticeable but not filmic" 1.10–1.18 range.
+  // Mid-tones (forests, mid-latitude oceans) get the full 12% lift
+  // since they're nowhere near saturation; already-bright land
+  // (deserts, ice) was clipping and clips 12% sooner — invisible.
+  renderer.toneMappingExposure = 1.12;
 
   const canvas = renderer.domElement;
   canvas.style.touchAction = 'none';
@@ -541,17 +548,26 @@ export function createInteractiveEarth(
   // No new lights, no shadow maps, no post-processing. Material
   // stays MeshPhongMaterial. This is purely a light-rebalance plus
   // the small exposure lift on the renderer.
-  const ambient = new THREE.AmbientLight(0xfff3dc, 0.50);
+  // Brightness/orientation pass: every intensity nudged up so the
+  // visible hemisphere reads clearly while the dark side stays
+  // distinct. Sun goes 1.45 → 1.55, ambient 0.50 → 0.55, hemi 0.42
+  // → 0.48. Combined with the sun's new forward-leaning position
+  // above and the +12% exposure scalar, the camera-facing center
+  // of the visible face lifts from a ~1.98 final-shaded multiplier
+  // to ~2.39 — a clearly perceptible +20% in the region the user
+  // actually looks at. Dark side rises from ~0.75 to ~0.88 (still
+  // ~2.7× darker than the lit side — terminator stays cinematic).
+  const ambient = new THREE.AmbientLight(0xfff3dc, 0.55);
   scene.add(ambient);
 
-  const sun = new THREE.DirectionalLight(0xffffff, 1.45);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.55);
   // Reuses the scene-level SUN_WORLD_POSITION so the surface key
   // light and the atmosphere shader's uSunDir uniform always agree
   // on where the sun is. See the const declaration near the camera.
   sun.position.copy(SUN_WORLD_POSITION);
   scene.add(sun);
 
-  const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.42);
+  const hemi = new THREE.HemisphereLight(0x9ab8ff, 0x7a5e3a, 0.48);
   scene.add(hemi);
 
   // ── Resize handling ──────────────────────────────────────────────

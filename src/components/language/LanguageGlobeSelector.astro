@@ -98,90 +98,18 @@ const focusByCode = JSON.stringify(
     data-only-one={onlyOne ? 'true' : 'false'}
   >
     <span class="lgs-disc" aria-hidden="true">
-      <svg class="lgs-globe" viewBox="0 0 32 32" aria-hidden="true">
-        <defs>
-          {/* Ocean — radial blue with the lit pole pulled toward the
-              upper-left so the globe reads as a sphere, not a disc.
-              Deeper trough at the terminator gives the sense of
-              curvature without any 3D math. */}
-          <radialGradient id="lgs-globe-fill" cx="38%" cy="32%" r="70%">
-            <stop offset="0%" stop-color="#2e578a" />
-            <stop offset="42%" stop-color="#163461" />
-            <stop offset="80%" stop-color="#0a1834" />
-            <stop offset="100%" stop-color="#03081a" />
-          </radialGradient>
-
-          {/* Land — muted forest-green to teal so continents read as
-              "land" without going cartoon-green. Vertical gradient
-              gives each continent a slight top-lit feel. */}
-          <linearGradient id="lgs-land-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#6aab84" />
-            <stop offset="55%" stop-color="#3d8161" />
-            <stop offset="100%" stop-color="#214a3a" />
-          </linearGradient>
-
-          {/* Atmospheric rim halo — fades in only near the edge so the
-              sphere has a soft cyan terminator without a hard line. */}
-          <radialGradient id="lgs-globe-atmo" cx="50%" cy="50%" r="50%">
-            <stop offset="78%" stop-color="rgba(140, 200, 240, 0)" />
-            <stop offset="94%" stop-color="rgba(140, 200, 240, 0.20)" />
-            <stop offset="100%" stop-color="rgba(140, 200, 240, 0.06)" />
-          </radialGradient>
-
-          {/* Single clip path applied to every detail layer so nothing
-              has to be drawn pixel-perfect — a path can spill past the
-              globe edge and still render as a clean circle. */}
-          <clipPath id="lgs-globe-clip">
-            <circle cx="16" cy="16" r="12" />
-          </clipPath>
-        </defs>
-
-        {/* Ocean disc */}
-        <circle cx="16" cy="16" r="12" fill="url(#lgs-globe-fill)" />
-
-        {/* Latitude/longitude — kept for the "globe" cue but pulled WAY
-            down in opacity so the continents become the focal point. */}
-        <g clip-path="url(#lgs-globe-clip)" fill="none">
-          <ellipse cx="16" cy="16" rx="12" ry="12" stroke="rgba(180,200,240,0.18)" stroke-width="0.4"/>
-          <ellipse cx="16" cy="16" rx="4.5" ry="12" stroke="rgba(180,200,240,0.10)" stroke-width="0.35"/>
-          <ellipse cx="16" cy="16" rx="8.5" ry="12" stroke="rgba(180,200,240,0.08)" stroke-width="0.35"/>
-          <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke="rgba(180,200,240,0.08)" stroke-width="0.35"/>
-          <ellipse cx="16" cy="16" rx="12" ry="8.5" stroke="rgba(180,200,240,0.07)" stroke-width="0.35"/>
-        </g>
-
-        {/* Continents — abstract organic blobs, NOT cartographically
-            accurate. Three masses (right-center "Eurasia/Africa", left
-            "Americas", small lower-right island) plus a tiny upper
-            speck. The goal is "this reads as Earth at 46px," not a map.
-            All paths are clipped so the silhouette stays a clean
-            circle no matter how the curves run. */}
-        <g clip-path="url(#lgs-globe-clip)" fill="url(#lgs-land-fill)">
-          <path d="M 19,7 Q 23,8 23,12 Q 22,15 23,17 Q 22,20 19,19 Q 17,17 18,14 Q 17,11 19,7 Z" />
-          <path d="M 11,8 Q 13,10 12,13 Q 13,16 12,19 Q 9,21 8,18 Q 9,14 10,10 Q 10,8 11,8 Z" />
-          <path d="M 19,21.5 Q 21,21 21,23 Q 20,24 19,21.5 Z" />
-          <path d="M 13.5,7 Q 15,6.5 15,8 Q 13.5,8.5 13.5,7 Z" />
-        </g>
-
-        {/* Atmospheric rim halo on top of land so the curvature reads
-            even where a continent meets the terminator. */}
-        <circle cx="16" cy="16" r="12" fill="url(#lgs-globe-atmo)" />
-
-        {/* Focus glow — placeholder for future per-language flyto.
-            Neutral / hidden today (data-focus="off"). A later step will
-            position this group via transform and toggle visibility
-            based on LanguageOption.globeFocus. Kept inside the globe
-            clip so any future glow stays inside the sphere. */}
-        <g class="lgs-focus" data-focus="off" clip-path="url(#lgs-globe-clip)">
-          <circle cx="16" cy="16" r="1.6" fill="rgba(232,197,71,0.55)" />
-          <circle cx="16" cy="16" r="0.8" fill="rgba(255,240,180,0.85)" />
-        </g>
-
-        {/* Specular sunlight — soft cool-white pool at the upper-left
-            quadrant. Two stacked circles read as a small halo + glint,
-            cheaper and crisper than a Gaussian blur filter. */}
-        <circle cx="11.5" cy="11" r="2.2" fill="rgba(255,255,255,0.18)" />
-        <circle cx="11.8" cy="11.3" r="1" fill="rgba(255,253,240,0.32)" />
-      </svg>
+      {/* Earth visual driven by the same /assets/globe/earth-day-2k.webp
+          texture the cinematic overlay uses. Implemented as a styled
+          div with background-image so the header pays no Three.js or
+          WebGL cost — at 42 px we don't need a 3D sphere, just a
+          well-cropped slice of the equirectangular Blue Marble map.
+          Atmospheric rim and specular highlight are added by
+          ::before / ::after in CSS. The crop is shifted per active
+          language via .lgs-root[data-current="<lang>"] selectors, so
+          when Hebrew is active the disc shows the Israel / Eastern
+          Mediterranean region — visually consistent with where the
+          big cinematic globe will land when it launches. */}
+      <span class="lgs-globe" aria-hidden="true"></span>
     </span>
   </button>
 
@@ -362,35 +290,156 @@ const focusByCode = JSON.stringify(
     pointer-events: none;
   }
 
+  /* ── Small header Earth (mini-globe treatment) ───────────────────
+     A 32×32 globe centered inside the 42×42 disc — ~76% of the
+     inner circle, leaving a ~5 px dark-space ring on each side
+     where the disc's own radial gradient shows through. That ring
+     is the "premium frame": instead of a raw circular photo crop
+     filling the disc, the globe reads as a celestial body floating
+     in space, with the gold/silver outer ring framing the whole
+     composition.
+
+     Sizing math (image is 2048×1024, equal scale at equator —
+     5.69 source px per degree on both axes):
+       scale s = 32 / (5.69 × 50) ≈ 0.1125
+       background-size = 2048 × s, 1024 × s ≈ 230 × 115
+     The 50° crop (wider than the previous 40° on a 42 px globe)
+     is deliberate at mini scale: a recognizable hemisphere reads
+     as a planet, whereas a zoomed-in patch reads as a postcard.
+     Per-language background-position centers each language's
+     focus region in the visible disc.
+
+     The image is treated for mini-scale readability with three
+     CSS techniques layered together:
+       • A filter chain (saturate / brightness / contrast) lifts
+         mid-tones and clarifies ocean/land separation that
+         otherwise turn muddy at 32 px.
+       • Three layered inset shadows give the photo a curved-
+         sphere feel: a soft all-edge vignette, a directional
+         terminator at the lower-right, and a warm highlight at
+         the upper-left — matching the cinematic Earth's sun
+         direction so the small globe reads as the same object
+         lit the same way.
+       • Pseudo-elements add an atmospheric cyan rim just inside
+         the silhouette and a specular highlight in the upper-
+         left quadrant. */
   .lgs-globe {
-    /* SVG canvas matches the inner disc (42px). The globe circle inside
-       the 32×32 viewBox has r=12 → diameter 24/32 = 75% of the canvas,
-       which renders as ~31.5px on screen → 75% of the 42px inner disc.
-       The 4-unit margin around the globe in the viewBox preserves the
-       deep-space ring inside the disc. */
-    width: 42px;
-    height: 42px;
+    position: relative;
+    width: 32px;
+    height: 32px;
     display: block;
-    transition: opacity 200ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+    border-radius: 50%;
+    background-image: url('/assets/globe/earth-day-2k.webp');
+    background-repeat: no-repeat;
+    background-size: 230px 115px;
+    /* Default focus — Greenwich / Africa. Per-language selectors
+       below shift this to the focus region for each known lang. */
+    background-position: -99px -42px;
+    /* Mini-scale color correction. At 32 px the human eye needs
+       stronger separation than at 600 px or the Blue Marble
+       muddies into a generic blue-green smear. saturate boosts
+       ocean blues and continent greens / desert tans; brightness
+       lifts the visible hemisphere out of "dim" territory;
+       contrast crispens land/ocean edges. Filter also lightly
+       amplifies the atmospheric ::before and specular ::after
+       below — values tuned so they stay subtle, not neon. */
+    filter: saturate(1.25) brightness(1.10) contrast(1.06);
+    /* Three layered inset shadows model the lit-sphere depth:
+         1. Soft all-edge vignette darkens the perimeter so the
+            silhouette curves away from the viewer.
+         2. Directional terminator: stronger darkening on the
+            lower-right matches the cinematic Earth's sun
+            direction (upper-left, forward).
+         3. Warm highlight: subtle warm-white tint on the
+            upper-left — same lit quadrant the big globe's
+            DirectionalLight illuminates. */
+    box-shadow:
+      inset 0 0 4px rgba(0, 0, 0, 0.25),
+      inset -2.5px -2.5px 5px rgba(0, 0, 0, 0.32),
+      inset 2px 2px 4px rgba(255, 245, 220, 0.16);
+    /* Smooth pan when active language changes (data-current
+       attribute) so the globe rotates rather than snapping.
+       The launched-out opacity transition is layered on top. */
+    transition:
+      background-position 360ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1)),
+      opacity 200ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+  }
+
+  /* Atmospheric cyan rim — thin band just inside the silhouette.
+     The Fresnel-style ramp keeps the core fully transparent so
+     the Earth photo reads cleanly through the middle, and only
+     the outer ~10% gets the soft cyan halo that says "this is a
+     planet with an atmosphere." Slightly brighter than the
+     previous tuning since the smaller globe needs more
+     definition at the edge to feel like a sphere. */
+  .lgs-globe::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      transparent 68%,
+      rgba(140, 210, 250, 0.26) 90%,
+      rgba(140, 210, 250, 0.10) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Specular highlight — soft warm-white pool at the upper-left
+     quadrant. Mirrors the cinematic Earth's lit hemisphere so
+     the two globes feel like the same object at different
+     scales. Sized at 26% × 26% so it's clearly a point of light
+     rather than half the disc. */
+  .lgs-globe::after {
+    content: '';
+    position: absolute;
+    top: 12%;
+    left: 18%;
+    width: 26%;
+    height: 26%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 40% 40%,
+      rgba(255, 253, 240, 0.44) 0%,
+      rgba(255, 255, 255, 0.20) 38%,
+      rgba(255, 255, 255, 0.06) 72%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* ── Per-language background-position ────────────────────────────
+     Each entry centers a 50° × 50° patch of Blue Marble on the
+     focus region the cinematic overlay will land on for that
+     language. Values precomputed from:
+       source_x  = ((lng + 180) / 360) × 2048
+       source_y  = ((90 - lat) / 180) × 1024
+       display_x = source_x × 0.1125
+       display_y = source_y × 0.1125
+       bg-pos    = (16 - display_x, 16 - display_y)
+     Stay in lockstep with LANGUAGE_FOCUS in the component frontmatter. */
+  .lgs-root[data-current="he"] .lgs-globe {
+    /* Israel / Eastern Mediterranean — lat 32, lng 35 */
+    background-position: -122px -21px;
+  }
+  .lgs-root[data-current="en"] .lgs-globe {
+    /* United Kingdom — lat 54, lng -2 */
+    background-position: -98px -7px;
+  }
+  .lgs-root[data-current="es"] .lgs-globe {
+    /* Spain — lat 40, lng -3 */
+    background-position: -97px -16px;
   }
 
   /* Header globe is hidden whenever the cinematic overlay is "out" —
      during launch, while open, and during return. The class is added
      by JS at the start of openOverlay and removed at the end of
      closeOverlay (after the return animation completes), so the
-     small SVG fades out as the big Earth launches and fades back in
-     only after the big Earth has fully returned to the trigger. */
+     small Earth fades out as the big Earth launches and fades back
+     in only after the big Earth has fully returned to the trigger. */
   .lgs-trigger.is-launched-out .lgs-globe {
     opacity: 0;
-  }
-
-  /* Future per-language focus glow. Hidden until a later step opts in
-     by setting data-focus="<lang-code>" (or any non-"off" value) on the
-     .lgs-focus group AND positioning it via a transform. Defined here
-     so the SVG markup can stay declarative — no inline styles to fight
-     when the dynamic step lands. */
-  .lgs-focus[data-focus="off"] {
-    display: none;
   }
 
   /* Lock background scroll while the overlay is open. Applied to
@@ -433,6 +482,19 @@ const focusByCode = JSON.stringify(
 
   .lgs-overlay[data-open="true"] {
     pointer-events: auto;
+  }
+
+  /* Force the [hidden] HTML attribute to actually hide the overlay.
+     Without this rule, the .lgs-overlay rule above (display: flex)
+     beats the UA stylesheet's [hidden] { display: none } at the same
+     specificity (both 0,1,0) because component CSS loads later. The
+     symptom was that overlay.setAttribute('hidden', '') was inert and
+     the centered Earth stayed on screen after the return flight
+     completed in the resume-after-language-change path. Bumping
+     specificity to 0,2,0 via [hidden] guarantees the close actually
+     hides. */
+  .lgs-overlay[hidden] {
+    display: none;
   }
 
   .lgs-overlay-backdrop {
@@ -510,73 +572,164 @@ const focusByCode = JSON.stringify(
     display: contents;
   }
 
+  /* ── Language option pill ────────────────────────────────────────
+     Goal of this revision: read as floating glass chrome over the
+     cinematic Earth stage, not as a raised button. Idle pills wear
+     a silvery warm-white hairline so the active state's gold can
+     stand out without saturating the whole row. Charcoal-glass
+     background sits over a stronger backdrop blur (14 px) so the
+     planet behind the row peeks through softened, lifting the row
+     visually closer to the Earth's atmosphere band.
+
+     Active state stacks SIX non-color cues, exceeding the "more
+     than color alone" accessibility requirement:
+       1. Gold hairline border (warm, not saturated)
+       2. Inner top-highlight in pale gold
+       3. Concentrated gold halo (smaller radius than before)
+       4. Stronger font weight on the native label
+       5. Gold check chip in the corner
+       6. Thin vertical light beam below the pill, pointing at
+          the globe (see ::after rule) — a subtle cinematic
+          connection cue, not a UI border. */
   .lgs-overlay-option {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border: 1px solid rgba(201, 162, 39, 0.28);
+    gap: 9px;
+    padding: 9px 16px;
+    /* Silvery warm-white hairline. Idle pills no longer claim any
+       gold — gold is the active state's signature. */
+    border: 1px solid rgba(255, 240, 220, 0.07);
     border-radius: 999px;
-    background: rgba(18, 18, 24, 0.72);
+    /* Top-light sheen on warm charcoal glass. The linear-gradient
+       layer gives the pill a faint bevel from above; the solid
+       layer below is the actual tinted glass. */
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 60%),
+      rgba(18, 16, 22, 0.40);
     color: var(--yuval-text-secondary, #c4b8a8);
     font-family: var(--font-heading, inherit);
     font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-weight: 500;
+    letter-spacing: 0.04em;
     line-height: 1.15;
     cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    /* Stronger backdrop blur + a touch of saturation read as real
+       atmospheric glass rather than a flat tinted rectangle. */
+    backdrop-filter: blur(14px) saturate(118%);
+    -webkit-backdrop-filter: blur(14px) saturate(118%);
+    /* Inner top highlight + soft drop. No outer halo on idle —
+       a glow on every pill would compete with the active one. */
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 6px 18px rgba(0, 0, 0, 0.32);
     transition:
-      background 180ms var(--ease-standard, ease),
-      border-color 180ms var(--ease-standard, ease),
-      color 180ms var(--ease-standard, ease),
-      box-shadow 180ms var(--ease-standard, ease),
-      transform 180ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
+      background 220ms var(--ease-standard, ease),
+      border-color 220ms var(--ease-standard, ease),
+      color 220ms var(--ease-standard, ease),
+      box-shadow 220ms var(--ease-standard, ease),
+      transform 220ms var(--ease-emphasized, cubic-bezier(0.2, 0.7, 0.2, 1));
   }
 
   .lgs-overlay-option:hover {
-    background: rgba(28, 28, 38, 0.85);
-    border-color: rgba(232, 197, 71, 0.50);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 60%),
+      rgba(28, 24, 30, 0.55);
+    /* Hover hint shifts the hairline a touch warmer toward gold,
+       but stays clearly below the active state's saturation so the
+       row never has two "selected-looking" pills at once. */
+    border-color: rgba(232, 197, 71, 0.22);
     color: var(--yuval-text, #f0e6d0);
     transform: translateY(-1px);
   }
 
   .lgs-overlay-option:focus-visible {
+    /* Keyboard focus: refined gold ring sitting outside the pill so
+       it stays visible against both glass and the dark backdrop.
+       Same warm gold as the brand; offset so it never overlaps
+       the pill's own border-radius rounding. */
     outline: 2px solid rgba(232, 197, 71, 0.7);
     outline-offset: 3px;
   }
 
   .lgs-overlay-option.is-active {
-    background: linear-gradient(
-      135deg,
-      rgba(201, 162, 39, 0.22),
-      rgba(232, 197, 71, 0.10)
-    );
-    border-color: rgba(232, 197, 71, 0.65);
+    /* Active state: subtle gold tint over the charcoal glass, NOT
+       a saturated yellow button. The gradient peaks at ~10%
+       opacity at the top and fades to neutral by the lower half,
+       so the pill reads as "lit from above by a small gold key
+       light" rather than "filled with paint." */
+    background:
+      linear-gradient(180deg, rgba(232, 197, 71, 0.11), rgba(232, 197, 71, 0) 65%),
+      rgba(18, 16, 22, 0.55);
+    border-color: rgba(232, 197, 71, 0.42);
     color: var(--yuval-text, #f0e6d0);
-    font-weight: 700;
+    font-weight: 600;
+    /* Refined gold halo: tighter radius (10 px vs the previous
+       16 px) and lower opacity. Reads as a quiet emphasis instead
+       of a bright button. The inset highlight is now pale gold so
+       the top of the pill catches the same color it emits. */
     box-shadow:
-      0 0 16px rgba(232, 197, 71, 0.25),
-      0 4px 12px rgba(0, 0, 0, 0.35);
+      inset 0 1px 0 rgba(255, 230, 160, 0.10),
+      0 0 10px rgba(232, 197, 71, 0.18),
+      0 6px 18px rgba(0, 0, 0, 0.40);
+  }
+
+  /* Connecting cue — a thin gold light beam dropping from the
+     active pill toward the globe. Short by design (≤14 px) so on
+     wrapped rows it never reaches the row below it. Pointer-events
+     are off so it can't intercept hover/click. Position: absolute
+     anchors it to the .lgs-overlay-option (which has
+     position: relative). */
+  .lgs-overlay-option.is-active::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 2px);
+    transform: translateX(-50%);
+    width: 1px;
+    height: clamp(8px, 1.4vh, 14px);
+    background: linear-gradient(
+      to bottom,
+      rgba(232, 197, 71, 0.55) 0%,
+      rgba(232, 197, 71, 0.18) 55%,
+      rgba(232, 197, 71, 0) 100%
+    );
+    pointer-events: none;
   }
 
   .lgs-overlay-flag {
-    font-size: 16px;
+    /* Reduced from 16 → 14 so the flag accents the language label
+       rather than competing with it. Kept at line-height: 1 so the
+       emoji's natural baseline doesn't shift the pill's vertical
+       rhythm. */
+    font-size: 14px;
     line-height: 1;
+    /* Tiny opacity reduction so flags don't punch through the
+       muted glass row — they should sit in the pill, not on top. */
+    opacity: 0.88;
   }
 
   .lgs-overlay-native {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: 0.03em;
   }
 
   .lgs-overlay-en {
     font-size: 11px;
     color: var(--yuval-text-tertiary, #9a8e7c);
     font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     margin-inline-start: 2px;
+  }
+
+  .lgs-overlay-option.is-active .lgs-overlay-native {
+    /* Active label gets a small additional weight bump on top of
+       the pill's overall 600. Belt-and-braces with the gold tint
+       and check chip — different reader populations rely on
+       different cues. */
+    font-weight: 600;
   }
 
   .lgs-overlay-option.is-active .lgs-overlay-en {
@@ -584,21 +737,28 @@ const focusByCode = JSON.stringify(
   }
 
   .lgs-overlay-check {
-    width: 16px;
-    height: 16px;
+    /* Slightly smaller (14 vs 16) and a more refined gold gradient
+       with a faint inner highlight so the chip reads as enameled
+       rather than printed. Border-radius stays 50% (a coin). */
+    width: 14px;
+    height: 14px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #e8c547, #c9a227);
-    color: #1a1a1a;
+    background:
+      linear-gradient(135deg, #f1d063 0%, #c9a227 65%, #a88718 100%);
+    color: #1a1410;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 245, 200, 0.45),
+      0 0 6px rgba(232, 197, 71, 0.30);
     flex-shrink: 0;
     margin-inline-start: 2px;
   }
 
   .lgs-overlay-check svg {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
 
   /* ── 3D Earth stage ─────────────────────────────────────────────
@@ -713,10 +873,28 @@ const focusByCode = JSON.stringify(
   // teardown even if state still says 'launching' or 'returning'.
   let activeAnimation: Animation | null = null;
 
+  // True while the post-navigation resume orchestrator is running.
+  // Guards against duplicate resume runs that could happen if Astro
+  // re-fires page-load / after-swap on the same document (rare on a
+  // hard reload, but cheap insurance). The state machine also blocks
+  // duplicates via `state !== 'closed'`, but a dedicated boolean
+  // keeps the intent obvious at every call site.
+  let resumeInProgress = false;
+
   type LanguageFocusMap = Record<string, FocusPoint | null>;
 
   const LAUNCH_DURATION_MS = 540;
-  const RETURN_DURATION_MS = 460;
+  // Return flight slowed from 460 → 760 ms. The previous value
+  // felt rushed — the globe finished its descent before the eye
+  // had time to track it. 760 ms is still well inside the
+  // "feels responsive" budget (under 1 s) but gives the motion a
+  // pleasant, settling cadence — closer to the launch's 540 ms
+  // expand pacing. The cross-fade-with-the-small-header-globe
+  // math in runReturnFlight uses (RETURN_DURATION_MS - 220), so
+  // increasing the duration here automatically gives the cross-
+  // fade a longer overlap (220 ms of "both globes co-present at
+  // the trigger"), which makes the handoff feel even smoother.
+  const RETURN_DURATION_MS = 760;
   const FLIGHT_EASING = 'cubic-bezier(0.32, 0.72, 0.18, 1)';
   // Time the language row needs to fade out before we start the
   // return flight — must be ≥ the row's CSS transition duration so
@@ -783,6 +961,73 @@ const focusByCode = JSON.stringify(
     earthLoading = null;
     state = 'closed';
     pendingLanguageChange = null;
+  }
+
+  // ── /library navigation handoff (pre-navigation half) ───────────
+  // Library uses the hard-reload branch of triggerLanguageChange
+  // (window.location.href = ?lang=xx). The default flow runs the
+  // return flight BEFORE that navigation, so users see the
+  // cinematic close finish and then watch the fresh page paint with
+  // RTL/LTR + content-width jumps. The handoff inverts the order:
+  //
+  //   1. On /library, the option-click handler skips close() and
+  //      navigates immediately with the overlay still painted —
+  //      this step.
+  //   2. On the new page, a follow-up step will detect the
+  //      sessionStorage record below, re-open the overlay at the
+  //      already-centered state (no launch flight), and run the
+  //      return flight there once the language layout has settled.
+  //
+  // The split lives entirely inside this component. No language
+  // event surface changes, no Header.astro changes, no /library
+  // page changes.
+  const TRANSITION_KEY = 'yuval_lgs_transition';
+
+  interface TransitionRecord {
+    targetLang: string;
+    fromUrl: '/library';
+    startedAt: number;
+    expectedReturn: boolean;
+  }
+
+  function isLibraryHardReloadTransition(): boolean {
+    // Strictly /library only in this rollout phase. Chapter pages
+    // already swap client-side via #chapter-container — no jump
+    // problem to solve. Other reload-based pages aren't in scope
+    // yet; we'll widen the gate path-by-path once the resume half
+    // is in place and proven.
+    if (window.location.pathname !== '/library') return false;
+    // Defensive: if /library ever gains a #chapter-container (it
+    // doesn't today), don't engage the navigation handoff — the
+    // client-side branch would handle it without a reload.
+    if (document.getElementById('chapter-container')) return false;
+    return true;
+  }
+
+  function persistTransition(targetLang: string): void {
+    try {
+      const record: TransitionRecord = {
+        targetLang,
+        fromUrl: '/library',
+        startedAt: Date.now(),
+        expectedReturn: true,
+      };
+      sessionStorage.setItem(TRANSITION_KEY, JSON.stringify(record));
+    } catch {
+      // Storage quota / privacy mode / disabled storage — silently
+      // swallow. If the record can't be written, the resume step on
+      // the new page simply sees no transition and we degrade to
+      // today's behavior. localStorage and the URL change still
+      // happen below, so the language switch itself is not blocked.
+    }
+  }
+
+  function clearTransitionRecord(): void {
+    try {
+      sessionStorage.removeItem(TRANSITION_KEY);
+    } catch {
+      // Same defensive swallow as persistTransition.
+    }
   }
 
   function triggerLanguageChange(lang: string): void {
@@ -875,6 +1120,26 @@ const focusByCode = JSON.stringify(
 
   /**
    * Run the return flight from the stage's natural rect → `trigger` rect.
+   *
+   * Two pieces of jitter-prevention are baked into this function so
+   * the end of the flight feels like a single smooth landing instead
+   * of "globe arrives, blinks, small globe appears":
+   *
+   *   • Opacity animates 1 → 0 (not 1 → 0.85), so the big stage is
+   *     fully transparent by the time it reaches the trigger.
+   *     Without this, the small globe would be hidden behind a 0.85-
+   *     opaque big stage right at the moment the cross-fade should
+   *     hand off, producing the visible "blink" the user reported.
+   *   • is-launched-out is removed mid-flight (220 ms before flight
+   *     end) so the small header globe's existing 200 ms opacity
+   *     transition reaches full visibility right as the big stage
+   *     finishes fading out. True cross-fade — no empty frame at
+   *     the trigger between the two globes.
+   *   • visibility: hidden is set on the stage BEFORE anim.cancel()
+   *     so the inevitable snap-back-to-center (which happens when
+   *     the WAAPI forward-fill is removed) can never be painted.
+   *     The previous order canceled first, then hid — which was
+   *     racing the compositor.
    */
   async function runReturnFlight(stage: HTMLElement, trigger: HTMLElement): Promise<void> {
     const endTransform = flipTransformFromTrigger(stage, trigger);
@@ -883,21 +1148,48 @@ const focusByCode = JSON.stringify(
     const anim = stage.animate(
       [
         { transform: 'none', opacity: 1 },
-        { transform: endTransform, opacity: 0.85 },
+        { transform: endTransform, opacity: 0 },
       ],
       { duration: RETURN_DURATION_MS, easing: FLIGHT_EASING, fill: 'forwards' }
     );
     activeAnimation = anim;
+
+    // Cross-fade the small header globe back in during the last
+    // ~220 ms of the return flight. The .lgs-globe CSS has a 200 ms
+    // opacity transition; removing is-launched-out at this point
+    // means the small globe is at full opacity right as the big
+    // stage finishes fading to 0 — the two motions complete on the
+    // same frame, eliminating the empty-trigger flicker.
+    const crossfadeDelay = Math.max(0, RETURN_DURATION_MS - 220);
+    const crossfadeTimer = window.setTimeout(() => {
+      trigger.classList.remove('is-launched-out');
+    }, crossfadeDelay);
+
     try {
       await anim.finished;
     } catch {
+      // Animation cancelled (teardown). Clear the cross-fade timer
+      // so a later teardown doesn't trigger a stray class change.
+      window.clearTimeout(crossfadeTimer);
+      activeAnimation = null;
       return;
     }
+    // Belt-and-braces: if the animation finished faster than the
+    // crossfade timer (shouldn't, but cheap to clear), kill it.
+    window.clearTimeout(crossfadeTimer);
+
+    // Hide the stage SYNCHRONOUSLY before canceling the animation.
+    // anim.cancel() removes the forward-fill and snaps the stage
+    // back to its natural centered position; without this hide-
+    // before-cancel order, that snap-back can be painted for a
+    // single frame at the end of the return flight — the jitter
+    // the user reported as "ריצוד על המסך".
+    stage.style.visibility = 'hidden';
     activeAnimation = null;
-    // We DON'T commit the end transform inline — the overlay will be
-    // hidden right after this and the next open recomputes fresh.
     anim.cancel();
-    // Clear any leftover inline styles from a previous launch.
+    // Clear any leftover inline styles. Reset is-launched-out
+    // already happened above; finalizeOverlayClose calling it
+    // again is an idempotent no-op.
     stage.style.transform = '';
     stage.style.opacity = '';
   }
@@ -933,7 +1225,22 @@ const focusByCode = JSON.stringify(
       const initialLang = overlay.dataset.initialLanguage || '';
       const initialFocus = focusMap[initialLang] ?? null;
       handle = await ensureEarth(stage, initialFocus);
-      if (handle) handle.setIdleRotation(true);
+      if (handle) {
+        // Re-apply per-language focus on EVERY open, not just the
+        // first construction. The cached handle keeps its previous
+        // rotation across close/reopen, and idle rotation drifts
+        // the planet ~3.4°/sec eastward between opens — so even
+        // when the SSR-set initial focus is correct, Israel rotates
+        // out of view within seconds of the page loading. Snapping
+        // the focus back here guarantees the user always sees the
+        // region the active language calls home (Israel for Hebrew,
+        // the UK for English, Spain for Spanish) at the moment the
+        // launch flight lands.
+        if (initialFocus) {
+          handle.focusLatLng(initialFocus.lat, initialFocus.lng);
+        }
+        handle.setIdleRotation(true);
+      }
     }
 
     // If we were torn down mid-init, abort cleanly.
@@ -992,6 +1299,88 @@ const focusByCode = JSON.stringify(
     if (active) active.focus();
   }
 
+  /**
+   * Shared overlay-close cleanup used by both the normal closeOverlay
+   * path and the resume-after-language-change path. Keeping the two
+   * paths funneled through one function prevents drift like the
+   * resume-cleanup bug where the centered Earth stayed on screen.
+   *
+   * Sequence:
+   *   1. Hide the stage SYNCHRONOUSLY via visibility:hidden. This is
+   *      the key fix for the "Earth remains visible" bug:
+   *        - runReturnFlight ends with anim.cancel() + inline-style
+   *          clear, which snaps the stage back from "small at trigger"
+   *          to its natural CSS centered position. Without an
+   *          immediate hide, the user sees the Earth pop back to
+   *          center for the entire 320 ms backdrop-fade window.
+   *        - visibility:hidden takes effect before the next paint, so
+   *          the snap-back is never visible.
+   *      Layout space is preserved (the backdrop's overlap doesn't
+   *      shift) and the canvas continues to exist for cleanup.
+   *   2. Flip overlay state (data-open, aria-busy, html scroll lock,
+   *      header globe, language row) so the small SVG re-appears and
+   *      the backdrop's CSS opacity transition begins.
+   *   3. Pause the Earth rAF loop — no need to keep rendering an
+   *      invisible canvas.
+   *   4. After 320 ms (enough for the 260 ms backdrop fade to finish),
+   *      set the `hidden` attribute so the overlay is completely out
+   *      of the layout tree. The .lgs-overlay[hidden] CSS rule added
+   *      in this fix ensures the attribute actually applies. Also
+   *      reset the stage's inline styles so the next open starts
+   *      clean.
+   *   5. Set state machine back to 'closed'.
+   *
+   * Does NOT handle focus restoration or pending language changes —
+   * those are concerns of the calling path and stay there.
+   */
+  function finalizeOverlayClose(
+    overlay: HTMLElement,
+    trigger: HTMLButtonElement,
+    stage: HTMLElement | null,
+  ): void {
+    // 1. Stage invisible immediately — kills the snap-back-to-center
+    //    artifact and the "large Earth lingers" bug in one stroke.
+    if (stage) {
+      stage.style.visibility = 'hidden';
+    }
+
+    // 2. Overlay state flip — starts the backdrop fade transition.
+    overlay.dataset.open = 'false';
+    overlay.removeAttribute('aria-busy');
+    trigger.setAttribute('aria-expanded', 'false');
+    document.documentElement.classList.remove('lgs-overlay-open');
+    trigger.classList.remove('is-launched-out');
+
+    // Defensive: the language row should already be faded at this
+    // point (closeOverlay fades it first; runResume never reveals
+    // it on the resume side). Removing the class again is
+    // idempotent and guarantees no stale revealed state.
+    const row = overlay.querySelector<HTMLElement>('.lgs-overlay-row');
+    if (row) row.classList.remove('is-revealed');
+
+    // 3. Pause Earth rAF — no point rendering an invisible canvas.
+    if (earthHandle) earthHandle.setIdleRotation(false);
+
+    // 4. Hide the overlay completely once the backdrop has finished
+    //    its CSS fade. Re-check data-open inside the timer so a
+    //    user-initiated re-open in the meantime is not stomped.
+    //    Reset inline visibility and any leftover transform/opacity
+    //    on the stage so the next open begins from a clean canvas.
+    window.setTimeout(() => {
+      if (overlay.dataset.open === 'false') {
+        overlay.setAttribute('hidden', '');
+        if (stage) {
+          stage.style.visibility = '';
+          stage.style.transform = '';
+          stage.style.opacity = '';
+        }
+      }
+    }, 320);
+
+    // 5. State machine reset.
+    state = 'closed';
+  }
+
   async function closeOverlay(overlay: HTMLElement, trigger: HTMLButtonElement): Promise<void> {
     // Guard: only close from the open state. Calls during launching
     // or returning are ignored — we never strand the user mid-flight.
@@ -1018,29 +1407,18 @@ const focusByCode = JSON.stringify(
       }
     }
 
-    // 3. Tear down overlay state.
-    overlay.dataset.open = 'false';
-    trigger.setAttribute('aria-expanded', 'false');
-    document.documentElement.classList.remove('lgs-overlay-open');
+    // 3. Tear down overlay state via the shared finalize helper —
+    //    same cleanup the resume path uses, so the two paths can't
+    //    drift apart. finalize hides the stage synchronously and
+    //    schedules the overlay's `hidden` attribute for after the
+    //    backdrop fade.
+    finalizeOverlayClose(overlay, trigger, stage);
 
-    if (earthHandle) {
-      // Pause the rAF loop. Don't destroy — the next open will reuse
-      // this canvas. Full disposal happens on view-transition / unload.
-      earthHandle.setIdleRotation(false);
-    }
-
-    // Restore the small header globe AFTER the big Earth has fully
-    // landed back in the header — keeps the visual handoff continuous.
-    trigger.classList.remove('is-launched-out');
-
-    // Hide from AT after the close transition finishes, so screen
-    // readers stop seeing the dialog.
-    window.setTimeout(() => {
-      if (overlay.dataset.open === 'false') {
-        overlay.setAttribute('hidden', '');
-      }
-    }, 320);
-
+    // 4. Restore focus to whoever held it before the overlay opened
+    //    (the trigger if that element is gone). This is specific to
+    //    the normal close — the resume path comes from a fresh page
+    //    where lastFocusedBeforeOpen is null and just focuses the
+    //    new trigger.
     if (lastFocusedBeforeOpen && document.contains(lastFocusedBeforeOpen)) {
       lastFocusedBeforeOpen.focus();
     } else {
@@ -1048,9 +1426,7 @@ const focusByCode = JSON.stringify(
     }
     lastFocusedBeforeOpen = null;
 
-    state = 'closed';
-
-    // 4. If a language was selected, fire the existing change path
+    // 5. If a language was selected, fire the existing change path
     //    AFTER the globe has fully returned. The reload (or in-page
     //    swap on chapter pages) happens after the user has visually
     //    seen the close complete, which feels much more deliberate
@@ -1060,6 +1436,231 @@ const focusByCode = JSON.stringify(
       pendingLanguageChange = null;
       triggerLanguageChange(lang);
     }
+  }
+
+  // ── /library navigation handoff (resume half) ────────────────────
+  // Runs once per page init after initGlobeSelectors wires its
+  // event handlers. Reads the sessionStorage record persisted by
+  // the pre-navigation half on the previous page; if valid, resumes
+  // the overlay at its fully-open visual state (skipping the launch
+  // flight, since the user has already mentally "left" the previous
+  // page) and runs the return flight to the new header trigger
+  // once the new layout has settled. Always clears the record on
+  // exit so a stale flag can't replay on an unrelated reload.
+  async function resumeTransitionIfNeeded(): Promise<void> {
+    if (resumeInProgress) return;
+
+    // ── 1. Read ──────────────────────────────────────────────
+    let raw: string | null = null;
+    try {
+      raw = sessionStorage.getItem(TRANSITION_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+
+    // ── 2. Parse ─────────────────────────────────────────────
+    let record: unknown = null;
+    try {
+      record = JSON.parse(raw);
+    } catch {
+      clearTransitionRecord();
+      return;
+    }
+
+    // ── 3. Validate every field. Any failure clears + exits ──
+    // Strict on /library + freshness so a stale flag from an
+    // unrelated reload (e.g. user pressed F5 ten minutes later)
+    // can never trigger a phantom overlay.
+    const r = record as Partial<TransitionRecord> | null;
+    if (
+      !r ||
+      typeof r !== 'object' ||
+      r.fromUrl !== '/library' ||
+      r.expectedReturn !== true ||
+      typeof r.startedAt !== 'number' ||
+      typeof r.targetLang !== 'string'
+    ) {
+      clearTransitionRecord();
+      return;
+    }
+    const elapsed = Date.now() - r.startedAt;
+    // ≥0 guards against future-dated records (clock skew, replay).
+    // ≤5000 is the freshness window: a real navigation commits in
+    // ~50–500 ms; 5 s gives a generous slow-network ceiling but
+    // is too short for a stale F5.
+    if (elapsed < 0 || elapsed > 5000) {
+      clearTransitionRecord();
+      return;
+    }
+    if (window.location.pathname !== '/library') {
+      clearTransitionRecord();
+      return;
+    }
+
+    // ── 4. Find the DOM ──────────────────────────────────────
+    const root = document.querySelector<HTMLElement>('.lgs-root');
+    const trigger = root?.querySelector<HTMLButtonElement>('.lgs-trigger') ?? null;
+    const overlay = (root?.nextElementSibling as HTMLElement | null) ?? null;
+    if (
+      !root ||
+      !trigger ||
+      !overlay ||
+      !overlay.classList.contains('lgs-overlay')
+    ) {
+      // Single-language case (no overlay rendered) or DOM not yet
+      // ready. Drop the record either way — leaving it around
+      // would cause a future page-load to spurious-resume.
+      clearTransitionRecord();
+      return;
+    }
+
+    // ── 5. Don't fight an in-progress open ───────────────────
+    if (state !== 'closed') {
+      clearTransitionRecord();
+      return;
+    }
+
+    // ── 6. Run, with hard failure safety ─────────────────────
+    resumeInProgress = true;
+    try {
+      await runResume(overlay, trigger);
+    } catch (err) {
+      console.warn('[LanguageGlobeSelector] Resume failed:', err);
+      // Emergency restore: under no circumstances leave the user
+      // staring at a stuck overlay, a locked scroll, or a missing
+      // header globe. Idempotent — these calls are safe even if
+      // the failure happened before they were originally applied.
+      try {
+        overlay.removeAttribute('aria-busy');
+        overlay.dataset.open = 'false';
+        overlay.setAttribute('hidden', '');
+        trigger.classList.remove('is-launched-out');
+        trigger.setAttribute('aria-expanded', 'false');
+        document.documentElement.classList.remove('lgs-overlay-open');
+        if (earthHandle) earthHandle.setIdleRotation(false);
+        state = 'closed';
+      } catch {
+        // If even the recovery throws, there's nothing useful we
+        // can do programmatically. The user can still reload.
+      }
+    }
+    clearTransitionRecord();
+    resumeInProgress = false;
+  }
+
+  /**
+   * Worker for the resume orchestrator. Reproduces the visual state
+   * the previous page held at the moment of navigation — overlay
+   * open, backdrop dimmed, big Earth centered, language row faded —
+   * waits for the new page's layout to settle, then runs the
+   * existing return flight to whatever rect the new header trigger
+   * occupies. Throws on Earth-init failure; the wrapper handles
+   * emergency cleanup.
+   */
+  async function runResume(overlay: HTMLElement, trigger: HTMLButtonElement): Promise<void> {
+    state = 'returning';
+
+    // 1. Hide the small header SVG via the existing "launched-out"
+    //    class so only the big centered Earth is visible while the
+    //    overlay is up. The new page renders the small globe
+    //    visible by default — this class flip masks the swap.
+    trigger.classList.add('is-launched-out');
+    trigger.setAttribute('aria-expanded', 'true');
+
+    // 2. Reveal overlay in the fully-open visual state. No launch
+    //    flight: the user already mentally "left" the previous
+    //    page; reanimating from the trigger would feel wrong and
+    //    waste their attention right when the new page is settling.
+    overlay.removeAttribute('hidden');
+    await nextFrame();
+    overlay.dataset.open = 'true';
+    overlay.setAttribute('aria-busy', 'true');
+    document.documentElement.classList.add('lgs-overlay-open');
+
+    // 3. Build the Earth using the same ensureEarth path as the
+    //    normal open flow. The language row stays HIDDEN — the
+    //    previous page already faded it on click; popping it back
+    //    on the new page would feel like a hiccup.
+    const stage = overlay.querySelector<HTMLElement>('.lgs-overlay-earth');
+    let handle: InteractiveEarthHandle | null = null;
+    if (stage) {
+      const focusMap = readFocusMap(overlay);
+      const initialLang = overlay.dataset.initialLanguage || '';
+      const initialFocus = focusMap[initialLang] ?? null;
+      handle = await ensureEarth(stage, initialFocus);
+      if (handle) {
+        // Always re-apply focus on resume — mirrors the same call
+        // we make on a normal open so the user sees the correct
+        // region (Israel for he, UK for en, etc.) at the moment
+        // the overlay paints.
+        if (initialFocus) {
+          handle.focusLatLng(initialFocus.lat, initialFocus.lng);
+        }
+        handle.setIdleRotation(true);
+      }
+    }
+
+    // 4. If Earth init failed, fall back to a quick clean close
+    //    without the return flight. Better to drop the user into
+    //    the new page cleanly than leave the overlay stuck. Same
+    //    shared finalize call as the success path uses, so this
+    //    branch can't drift either.
+    if (!stage || !handle) {
+      finalizeOverlayClose(overlay, trigger, stage ?? null);
+      return;
+    }
+
+    // 5. Wait for layout stability before reading the new header
+    //    trigger's rect. Two animation frames let the new layout
+    //    settle (RTL/LTR flip, content widths, header padding).
+    //    document.fonts.ready handles late typography settling;
+    //    the 250 ms race keeps us from stalling on slow font CDNs.
+    await nextFrame();
+    await nextFrame();
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise<void>((resolve) => window.setTimeout(resolve, 250)),
+        ]);
+      }
+    } catch {
+      // fonts.ready can reject on edge browsers; treat as no-op.
+    }
+
+    // 6. Refit the renderer to whatever the new page's stage has
+    //    resolved to. RTL might shift the stage container by a
+    //    few px; ResizeObserver may not have caught a sub-pixel
+    //    rounding diff during the navigation. Belt + braces.
+    handle.refit();
+
+    // 7. Return flight to the new page's header trigger. The
+    //    FLIP reads live getBoundingClientRect() values, so a
+    //    header trigger that moved across the screen due to
+    //    RTL/LTR is handled automatically — the globe flies to
+    //    whichever side the new layout placed the trigger on.
+    if (!isReducedMotion()) {
+      try {
+        await runReturnFlight(stage, trigger);
+      } catch {
+        // Animation cancelled (teardown, repeat interrupt). The
+        // cleanup below still runs.
+      }
+    }
+
+    // 8. Standard close cleanup via the shared finalize helper.
+    //    Same call closeOverlay uses, so the resume path and the
+    //    normal path can't drift apart. finalize hides the stage
+    //    synchronously to kill the snap-back-to-center symptom,
+    //    schedules the overlay's `hidden` attribute for after the
+    //    backdrop fade, and resets state to 'closed'.
+    finalizeOverlayClose(overlay, trigger, stage);
+
+    // Focus the new page's trigger — the previous page's
+    // lastFocusedBeforeOpen reference was destroyed at navigation,
+    // so falling through to the trigger is the safest restoration.
+    trigger.focus();
   }
 
   function initGlobeSelectors(): void {
@@ -1142,9 +1743,43 @@ const focusByCode = JSON.stringify(
           const lang = btn.dataset.language;
           if (!lang) return;
 
-          // Defer the actual language change until the return flight
-          // finishes. closeOverlay reads this and fires it at the
-          // very end of its cleanup.
+          if (isLibraryHardReloadTransition()) {
+            // /library navigation handoff (pre-navigation half).
+            // Keep the overlay painted across the page reload by:
+            //   - NOT calling close() — that would start the return
+            //     flight before navigation commits and recreate the
+            //     old "row fades → globe returns → page jumps"
+            //     sequence the handoff is designed to avoid.
+            //   - Fading the language row out so the user gets a
+            //     "selection acknowledged" cue. The row's existing
+            //     CSS transition (240 ms) handles the visual.
+            //   - Writing localStorage exactly as today (single
+            //     source of truth across reloads).
+            //   - Writing the sessionStorage transition record so
+            //     the new page's resume step (next implementation
+            //     pass) can pick up where we left off.
+            //   - Marking the overlay aria-busy so assistive tech
+            //     knows the dialog is mid-transition.
+            // After location.href is assigned, the browser keeps
+            // this document painted (with the overlay visible) until
+            // the new document commits — that's the visual
+            // continuity the handoff relies on.
+            const row = overlay.querySelector<HTMLElement>('.lgs-overlay-row');
+            if (row) row.classList.remove('is-revealed');
+            overlay.setAttribute('aria-busy', 'true');
+
+            localStorage.setItem('yuval_language', lang);
+            persistTransition(lang);
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            window.location.href = url.toString();
+            return;
+          }
+
+          // Default flow (chapter pages, every other reload-based
+          // page): unchanged from today. Defer the language change
+          // to closeOverlay so the return flight runs first.
           pendingLanguageChange = lang;
           close();
         });
@@ -1178,6 +1813,15 @@ const focusByCode = JSON.stringify(
         }
       });
     });
+
+    // After the per-root wiring is in place, check whether this
+    // page-load is the receiving side of a /library navigation
+    // handoff (see TRANSITION_KEY / persistTransition above). If
+    // so, resumeTransitionIfNeeded re-opens the overlay at its
+    // centered open state, waits for layout, and runs the return
+    // flight to the new page's header trigger. Fire-and-forget —
+    // the function self-guards against duplicate runs.
+    void resumeTransitionIfNeeded();
   }
 
   // Visual sync: when ANY selector (legacy or globe) changes the

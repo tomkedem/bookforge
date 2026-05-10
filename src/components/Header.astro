@@ -404,6 +404,22 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     }
   }
 
+  /* ── Card-aware controls anchor ────────────────────────────────
+     From the breakpoint where the ContinueLearningCard becomes
+     visible (≥768px) downward, the cosmic dashboard treats the
+     header controls and the floating card as one visual grid: the
+     card sits at `inset-inline-start: 20px` (physical right in RTL),
+     so we override Tailwind's `sm:px-6` / `lg:px-8` on the controls
+     side (always physical right — see comment on .header-inner
+     parent flex) and pin the rail's outer right edge to that same
+     20 px viewport inset. The logo / brand side keeps its original
+     Tailwind padding for visual breathing room around the wordmark. */
+  @media (min-width: 768px) {
+    .header-inner {
+      padding-right: 20px !important;
+    }
+  }
+
   .yuval-logo {
     display: inline-flex;
     align-items: center;
@@ -741,25 +757,53 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      and faint inner glow only register on close inspection; at
      viewport scale the rail looks like clean alignment. */
   .header-controls-rail {
-    gap: 8px;
-    /* Vertical padding 0 so the rail's pill height equals the globe's
-       46 px diameter — same as the search field — and the controls'
-       top/bottom edges sit on the search field's top/bottom edges. */
-    padding: 0 6px;
+    /* Gap sized for ALIGNMENT, not for ornamentation. The controls
+       row is treated as one visual grid with the ContinueLearningCard
+       below it. Given:
+         card width   = 190px
+         theme width  =  84px (must anchor to card's right edge)
+         globe width  =  50px (should land slightly past card's left edge)
+       the only gap that lands the globe just past the card's inline-start
+       boundary while keeping the theme pinned to the inline-end boundary
+       is ≈62px. The internal gap is filled by the rail's own glass
+       surface, so the eye reads it as "one wider pill" rather than
+       empty space between two stranded controls. */
+    gap: 62px;
+    /* PHYSICAL padding (not logical). The rail uses `flex-row-reverse`
+       in RTL and the parent header-inner does the same — the two
+       reversals cancel, so the theme pill is ALWAYS on the rail's
+       physical right edge and the globe ALWAYS on the physical left
+       edge, regardless of `dir`. Padding is zero on BOTH sides so the
+       rail's outer edges land exactly on the card's outer edges (right
+       edge of theme = card's right edge; left edge of globe sits ≈6 px
+       past the card's left edge for the "slightly outside" cue). */
+    padding-block: 0;
+    padding-left: 0;
+    padding-right: 0;
     border-radius: 9999px;
-    border: 1px solid rgba(120, 145, 200, 0.08);
+    /* The hairline ring is rendered as a 1 px outer box-shadow instead
+       of a CSS `border`. A real border would consume 1 px of inline
+       layout space, pushing the theme pill 1 px inside the card's right
+       boundary — invisible to most eyes, but it breaks the "exact
+       alignment" requirement. The visual identity (faint cool hairline
+       + inner highlight) is unchanged. */
+    border: none;
     background: linear-gradient(
       180deg,
       rgba(7, 16, 38, 0.18) 0%,
       rgba(0, 2, 12, 0.10) 100%
     );
-    box-shadow: inset 0 1px 0 rgba(200, 215, 255, 0.03);
-    transition: border-color 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+    box-shadow:
+      0 0 0 1px rgba(120, 145, 200, 0.08),
+      inset 0 1px 0 rgba(200, 215, 255, 0.03);
+    transition: box-shadow 240ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
   }
 
   .header-controls-rail:hover,
   .header-controls-rail:focus-within {
-    border-color: rgba(120, 145, 200, 0.18);
+    box-shadow:
+      0 0 0 1px rgba(120, 145, 200, 0.18),
+      inset 0 1px 0 rgba(200, 215, 255, 0.03);
   }
 
   /* ── Language globe ring — refined inside the header only ─────
@@ -815,6 +859,38 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     inset: 3px !important;
   }
 
+  /* Small physical nudge of the globe toward the theme pill — pushes
+     it ~8 px to the physical right without changing flex layout, so
+     the gap appears tighter on the eye while the rail's outer left
+     edge (and the theme pill's outer right edge) stay anchored to
+     the card's grid. Uses transform so it stacks with the existing
+     hover translateY(-1px). */
+  :global(.header-controls-rail .lgs-trigger) {
+    transform: translateX(8px);
+  }
+
+  :global(.header-controls-rail .lgs-trigger:hover) {
+    transform: translateX(8px) translateY(-1px);
+  }
+
+  /* Slight upscale of the globe trigger inside the header only. The
+     component default is 46 px; in the rail we bump it to 50 px so the
+     Earth disc reads as a confident, premium action next to the wider
+     theme pill — still proportional, still circular, still elegant.
+     Inner SVG canvas grows in lockstep so the planet keeps its relative
+     scale inside the inner disc. */
+  :global(.header-controls-rail .lgs-trigger) {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+  }
+
+  :global(.header-controls-rail .lgs-globe) {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
   /* Native search-input clear button — hidden so we own the visual. */
   .header-search-input::-webkit-search-cancel-button,
   .header-search-input::-webkit-search-decoration {
@@ -854,6 +930,30 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
       max-width: 100%;
       height: 44px;
       padding: 0 18px;
+    }
+
+    /* On phones the brand + rail share one row and the
+       ContinueLearningCard is hidden — drop the desktop card-width
+       padding, tighten the gap, and revert the globe to its native
+       size so the rail stays inside the viewport on narrow widths.
+       Physical padding (left/right) so theme stays anchored to the
+       rail's physical right edge in both LTR and RTL. */
+    .header-controls-rail {
+      gap: 10px;
+      padding-left: 6px;
+      padding-right: 4px;
+    }
+
+    :global(.header-controls-rail .lgs-trigger) {
+      width: 46px !important;
+      height: 46px !important;
+      min-width: 46px !important;
+      min-height: 46px !important;
+    }
+
+    :global(.header-controls-rail .lgs-globe) {
+      width: 42px !important;
+      height: 42px !important;
     }
 
     .logo-word {
