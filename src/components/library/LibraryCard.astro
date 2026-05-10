@@ -138,9 +138,14 @@ if (variant === 'orbit') {
 const orbitProgressKey = item.slug;
 
 const isSafe = isSafeLibraryHref(item.href);
+// Type-based hook for variant-specific affordances (e.g. the lesson-number
+// corner badge on course-lesson orbit cards). Underscore is replaced with
+// a hyphen so the class follows the rest of the BEM-ish naming in this file.
+const typeClass = `lc-type-${item.type.replace(/_/g, '-')}`;
 const wrapperClass = [
   'lc',
   `lc-${variant}`,
+  typeClass,
   isSafe ? 'lc-link' : 'lc-static',
   showOrbitArtifact ? 'lc-has-artifact' : '',
 ].filter(Boolean).join(' ');
@@ -1186,6 +1191,47 @@ const extraTopics = topics.length - topicChips.length;
   }
   @media (prefers-reduced-motion: reduce) {
     .lc-orbit-corner-badge { transition: none; }
+  }
+
+  /* ── Lesson-number corner badge (course_lesson cards only) ──────
+        Series cards carry an extra need that book cards do not: a
+        glance-readable lesson number, because the artwork alone can't
+        always tell "Lesson 3" from "Lesson 7". For these cards we
+        re-enable the badge that artifact mode normally hides, center
+        it horizontally over the artwork and drop the rotation-aware
+        slide + fade — the badge stays visible at all orbit positions
+        since the lesson identity is exactly what we want readable at
+        every angle.
+        Scope: orbit + artifact + course_lesson. Books and other types
+        keep the original hidden behaviour. */
+  .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge {
+    display: block;
+    /* Cancel the cosine-slide transform from the base rule and re-center
+       symmetrically. `left: 50%` + `translateX(-50%)` is direction-safe
+       (the 50%/-50% pair is mirror-symmetric, so it lands in the middle
+       of the card in both LTR and RTL without language branching). */
+    left: 50%;
+    transform: translateX(-50%);
+    /* Sit just at the artwork's top edge — high enough to clear the
+       round lesson icon baked into the cover PNG, but inside the card
+       silhouette rather than floating above it. */
+    inset-block-start: 0.125rem;
+    opacity: 1;
+  }
+  /* Pure-white label on lesson cards — the colored chip already carries
+     the type accent through its background/border, and a white number on
+     top reads sharper across every artwork hue than an accent-colored
+     number would. */
+  .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge > span {
+    color: #fff;
+  }
+  /* Focused state still suppresses the badge — the centered card has
+     its own header layout, and the lesson identity reads from the
+     enlarged artwork. Specificity: `[data-pos]` attr + 3 classes
+     beats the reveal rule above (3 classes), so the hide wins
+     without `!important`. */
+  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge {
+    display: none;
   }
 
   /* ── Focused artifact card — click-to-center layout pivot ────────
