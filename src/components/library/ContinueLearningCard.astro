@@ -3,11 +3,30 @@ import type { Language } from '../../types/index';
 import { t } from '../../i18n';
 import { getLanguageDirection } from '../../utils/language';
 
+/**
+ * Lightweight per-book descriptor used by the client-side hydrator to
+ * resolve the user's last-opened book against `yuval_reading_progress_*`
+ * localStorage entries. Kept minimal on purpose — only what's needed to
+ * render the card and deep-link the CTA.
+ */
+export interface ContinueLearningBook {
+  slug: string;
+  title: string;
+  subtitle?: string;
+  href: string;
+  chapterCount: number;
+}
+
 interface Props {
   language: Language;
   courseTitle?: string;
   metaLine1?: string;
   metaLine2?: string;
+  /**
+   * SSR-known progress percentage. Defaults to 0 because the server has
+   * no per-user reading state — the hydrator below replaces it with the
+   * real value computed from localStorage.
+   */
   progress?: number;
   href?: string;
   class?: string;
@@ -15,6 +34,12 @@ interface Props {
   lessonsAvailable?: number;
   /** Total planned lesson summaries for this course. */
   lessonsTotal?: number;
+  /**
+   * Catalog of books the hydrator may swap into the card when a real
+   * "last opened" entry is found in localStorage. Empty / undefined ⇒
+   * SSR placeholder stays as-is.
+   */
+  readableBooks?: ContinueLearningBook[];
 }
 
 const {
@@ -22,11 +47,12 @@ const {
   courseTitle = 'AI Engineering',
   metaLine1 = 'Series · Chapter 8',
   metaLine2 = 'Agentic Workflows',
-  progress = 68,
+  progress = 0,
   href = '#',
   class: className = '',
   lessonsAvailable,
   lessonsTotal,
+  readableBooks = [],
 } = Astro.props;
 
 const hasLessonAvailability =
@@ -40,12 +66,20 @@ const safeProgress = Math.max(0, Math.min(100, progress));
 const RADIUS = 34;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
+
+// Escape `</` so a stray `</script>` in any user-supplied book title or
+// subtitle can't break out of the inline JSON payload below.
+const hydratorPayload = JSON.stringify({
+  circumference: CIRCUMFERENCE,
+  books: readableBooks,
+}).replace(/<\//g, '<\\/');
 ---
 
 <article
   class={`continue-learning-card ${className}`}
   dir={direction}
   aria-label={t('library.a11y.continueReadingCard', language)}
+  data-continue-learning-card
 >
   <header class="continue-learning-card__header">
     <span class="continue-learning-card__header-icon" aria-hidden="true">
@@ -92,15 +126,16 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
           stroke-linecap="round"
           stroke-dasharray={`${dashLength} ${CIRCUMFERENCE}`}
           transform="rotate(-90 40 40)"
+          data-clc-progress-arc
         />
       </svg>
-      <span class="continue-learning-card__percent">{safeProgress}%</span>
+      <span class="continue-learning-card__percent" data-clc-percent>{safeProgress}%</span>
     </div>
 
     <div class="continue-learning-card__info">
-      <p class="continue-learning-card__course-title">{courseTitle}</p>
-      <p class="continue-learning-card__meta">{metaLine1}</p>
-      {metaLine2 && <p class="continue-learning-card__meta">{metaLine2}</p>}
+      <p class="continue-learning-card__course-title" data-clc-title>{courseTitle}</p>
+      <p class="continue-learning-card__meta" data-clc-meta1>{metaLine1}</p>
+      {metaLine2 && <p class="continue-learning-card__meta" data-clc-meta2>{metaLine2}</p>}
       {hasLessonAvailability && (
         <p class="continue-learning-card__meta continue-learning-card__lessons">
           {t('library.continueReading.lessonsAvailable', language, {
@@ -112,7 +147,7 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     </div>
   </div>
 
-  <a class="continue-learning-card__cta" href={href}>
+  <a class="continue-learning-card__cta" href={href} data-clc-cta>
     <span class="continue-learning-card__cta-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H4z"></path>
@@ -121,7 +156,135 @@ const dashLength = (safeProgress / 100) * CIRCUMFERENCE;
     </span>
     <span>{t('library.continueReading.cta', language)}</span>
   </a>
+
+  <script
+    type="application/json"
+    data-clc-payload
+    is:inline
+    set:html={hydratorPayload}
+  ></script>
 </article>
+
+<script>
+  /**
+   * Hydrate the Continue Learning card from real reading state.
+   *
+   * Reading progress is stored per-chapter as
+   *   yuval_reading_progress_{slug}_ch{n}
+   * with `{ percentage?, scrollPosition?, lastUpdated? }` (see
+   * scripts/progress-tracker.ts). This script:
+   *
+   *   1. Picks the most-recently-updated entry → "last opened book".
+   *   2. Computes a book-level percentage as the average across all
+   *      [1..chapterCount] chapters (missing chapters count as 0%) —
+   *      same algo as `hydrateOrbitProgress` in universe-layout.ts so
+   *      the card and the orbit cards stay in agreement.
+   *   3. Updates donut stroke-dasharray, percent label, title, meta,
+   *      and deep-links the CTA to /read/{slug}/{lastChapter}.
+   *
+   * If no reading entries exist the SSR placeholder stays visible (the
+   * "recommended starting point" book) but the percentage stays at 0%
+   * — never the old hardcoded 68%.
+   */
+  (function () {
+    const card = document.querySelector<HTMLElement>('[data-continue-learning-card]');
+    if (!card) return;
+    const payloadEl = card.querySelector<HTMLElement>('[data-clc-payload]');
+    if (!payloadEl) return;
+
+    type Book = {
+      slug: string;
+      title: string;
+      subtitle?: string;
+      href: string;
+      chapterCount: number;
+    };
+    type Payload = { circumference: number; books: Book[] };
+
+    let payload: Payload;
+    try {
+      payload = JSON.parse(payloadEl.textContent || '{}');
+    } catch {
+      return;
+    }
+    const { circumference, books } = payload;
+    if (!Array.isArray(books) || books.length === 0) return;
+
+    const bySlug = new Map<string, Book>();
+    for (const b of books) bySlug.set(b.slug, b);
+
+    let bestSlug = '';
+    let bestUpdated = 0;
+    let bestChapter = 1;
+    const slugStats = new Map<string, { sum: number; latest: number; latestCh: number }>();
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const m = key.match(/^yuval_reading_progress_(.+?)_ch(\d+)$/);
+      if (!m) continue;
+      const slug = m[1];
+      const ch = Number(m[2]);
+      if (!bySlug.has(slug)) continue;
+
+      let parsed: { percentage?: number; scrollPosition?: number; lastUpdated?: number };
+      try {
+        parsed = JSON.parse(localStorage.getItem(key) || '{}');
+      } catch {
+        continue;
+      }
+
+      let pct = Number(parsed.percentage);
+      if (!Number.isFinite(pct) || pct <= 0) {
+        const sp = Number(parsed.scrollPosition);
+        pct = Number.isFinite(sp) && sp > 200
+          ? Math.min(95, Math.round((sp / 3000) * 100))
+          : 0;
+      }
+      pct = Math.max(0, Math.min(100, pct));
+      const updated = Number(parsed.lastUpdated) || 0;
+
+      const stat = slugStats.get(slug) || { sum: 0, latest: 0, latestCh: 1 };
+      stat.sum += pct;
+      if (updated > stat.latest) {
+        stat.latest = updated;
+        stat.latestCh = ch;
+      }
+      slugStats.set(slug, stat);
+
+      if (updated > bestUpdated) {
+        bestUpdated = updated;
+        bestSlug = slug;
+        bestChapter = ch;
+      }
+    }
+
+    if (!bestSlug) return;
+
+    const book = bySlug.get(bestSlug)!;
+    const stat = slugStats.get(bestSlug)!;
+    const total = book.chapterCount > 0 ? book.chapterCount : 1;
+    const avg = Math.round(stat.sum / total);
+    const safeAvg = Math.max(0, Math.min(100, avg));
+
+    const titleEl = card.querySelector<HTMLElement>('[data-clc-title]');
+    const meta1El = card.querySelector<HTMLElement>('[data-clc-meta1]');
+    const meta2El = card.querySelector<HTMLElement>('[data-clc-meta2]');
+    const pctEl = card.querySelector<HTMLElement>('[data-clc-percent]');
+    const arc = card.querySelector<SVGCircleElement>('[data-clc-progress-arc]');
+    const cta = card.querySelector<HTMLAnchorElement>('[data-clc-cta]');
+
+    if (titleEl) titleEl.textContent = book.title;
+    if (meta1El) meta1El.textContent = book.subtitle || '';
+    if (meta2El) meta2El.remove();
+    if (pctEl) pctEl.textContent = `${safeAvg}%`;
+    if (arc) {
+      const dash = (safeAvg / 100) * circumference;
+      arc.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
+    }
+    if (cta) cta.href = `/read/${book.slug}/${stat.latestCh || bestChapter}`;
+  })();
+</script>
 
 <style>
   .continue-learning-card {

@@ -513,6 +513,23 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       lessonsAvailable={isLesson ? courseProgress[0]?.available : undefined}
       lessonsTotal={isLesson ? courseProgress[0]?.total : undefined}
       href={continueItem?.href}
+      readableBooks={readableItems
+        .filter((it) => (it.chapterCount ?? 0) > 0)
+        .map((it) => ({
+          slug: it.slug,
+          title:
+            it.titles?.[language]
+            ?? it.titles?.en
+            ?? it.titles?.he
+            ?? it.slug,
+          subtitle:
+            it.subtitles?.[language]
+            ?? it.subtitles?.en
+            ?? it.subtitles?.he
+            ?? '',
+          href: it.href,
+          chapterCount: it.chapterCount ?? 0,
+        }))}
     />
     <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
 
@@ -672,6 +689,30 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       transparent 35%,
       rgba(0, 0, 0, 0.45) 80%,
       rgba(0, 0, 0, 0.65) 100%);
+  }
+
+  /* Lightning overlay — SVG injected by `universe-core-effects.ts`.
+     Each strike draws a multi-layer jagged bolt with branching forks
+     from stage centre to the hovered card's centre.
+
+     z-index: 25 — sits ABOVE orbit cards (z-index 3) so the bolt
+     reaches the card's centre visibly, but BELOW the focused card
+     (z-index 30) so a click-to-centered card never gets struck.
+
+     mix-blend-mode: screen — the bolt is additive over whatever
+     paints below it. White cores stay punchy on the dark cosmic
+     scene, and accent-coloured glow tints (rather than overwrites)
+     the card content it crosses. Stays non-interactive (clicks fall
+     through to the cards underneath). */
+  .library-galaxy svg[data-core-lightning] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 25;
+    mix-blend-mode: screen;
   }
 
   /* Ambient backdrop — sits ABOVE the scene background, BELOW the UI.
@@ -2307,6 +2348,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     hydrateOrbitProgress,
   } from '../utils/library/universe-layout';
   import { initSeriesActions } from '../utils/library/universe-series-actions';
+  import { initCoreEffects } from '../utils/library/universe-core-effects';
   // Side-effecting module: registers a DOMContentLoaded handler that
   // reads `yuval_series_metadata` from localStorage and reconciles
   // admin-edited series records against the SSR-rendered orbit.
@@ -2352,6 +2394,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         // intercept the series-action buttons before the layout's
         // card-click handler closes the focused card.
         initSeriesActions(stage, seriesMode);
+        // Lightning bolt from the central core to the hovered orbit
+        // card. Injects a single SVG overlay into the stage; bolts
+        // are short-lived path elements created on hover and removed
+        // after their fade-out. No persistent loop.
+        initCoreEffects(stage);
         stage.dataset.galaxyInit = 'true';
       });
 
