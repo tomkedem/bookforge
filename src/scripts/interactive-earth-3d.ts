@@ -81,6 +81,36 @@ export interface InteractiveEarthHandle {
   destroy(): void;
   /** Snap-rotate the globe so (lat, lng) faces the camera. */
   focusLatLng(lat: number, lng: number): void;
+  /**
+   * Smoothly rotate the globe so (lat, lng) faces the camera, taking
+   * the shortest longitude path. `durationMs` defaults to 650.
+   * Cancels any in-flight focus animation. Cancelled automatically
+   * on user drag (pointerdown) so the host's hover/focus rotation
+   * never fights the user's manual control. Driven inside the same
+   * rAF loop as idle rotation; no extra animation frames are
+   * scheduled, no GPU resources are added or changed.
+   */
+  animateFocusLatLng(lat: number, lng: number, durationMs?: number): void;
+  /** Cancel any in-flight focus animation, leaving rotation as-is. */
+  cancelFocusAnimation(): void;
+  /**
+   * Project a geographic coordinate to a CSS-pixel position inside
+   * the host container, accounting for the Earth's current rotation
+   * and the camera's perspective. Returns:
+   *   - x, y: CSS pixels relative to the container's top-left.
+   *   - frontFacing: true when the point is on the camera-facing
+   *     hemisphere (worldPoint.z > 0). Hosts use this to hide a
+   *     surface marker when the region has rotated to the back.
+   * Returns null when the canvas has been disposed.
+   *
+   * Math note: the local-point construction uses the same UV→3D
+   * formula as THREE.SphereGeometry (phi from lng+180, theta from
+   * 90-lat, x = -cos(phi)·sin(theta), y = cos(theta),
+   * z = sin(phi)·sin(theta)). That guarantees the projected point
+   * is exactly the surface location the Blue Marble texture renders,
+   * with no calibration drift between the texture and the marker.
+   */
+  projectLatLng(lat: number, lng: number): { x: number; y: number; frontFacing: boolean } | null;
   /** Pause/resume idle rotation + rAF loop. Does NOT dispose. */
   setIdleRotation(enabled: boolean): void;
   /**
@@ -340,10 +370,36 @@ export function createInteractiveEarth(
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
   scene.add(earth);
 
+  /**
+   * THREE.SphereGeometry's default UV mapping puts lng = -90° on the
+   * +Z axis (facing the camera at the identity rotation). The texture
+   * is equirectangular with u = (lng + 180) / 360, and the sphere
+   * geometry's vertex formula x = -cos(phi)·sin(theta), z = sin(phi)·
+   * sin(theta) at phi = (lng+180)·DEG places lng = 0 at +X (camera's
+   * right) when rotation is zero.
+   *
+   * To bring an arbitrary (lat, lng) to face the camera (+Z), we need
+   * to rotate around Y by (-90° - lng) and around X by +lat. The
+   * earlier code used -lng for Y, which left every focus 90° east of
+   * where it should land — Israel rendered in the mid-Atlantic, North
+   * America in the central Pacific, etc. The constant below captures
+   * the offset once so all three call sites (initialFocus snap,
+   * focusLatLng snap, animateFocusLatLng target) agree.
+   *
+   * No texture flip, no UV shift, no material rotation applied. The
+   * Blue Marble texture is left exactly as loaded; only the mesh
+   * rotation math is corrected to match its UV convention.
+   */
+  const LNG_TO_ROTATION_Y_OFFSET_DEG = -90;
+
+  function rotationYForLng(lng: number): number {
+    return (LNG_TO_ROTATION_Y_OFFSET_DEG - lng) * DEG;
+  }
+
   // Apply initial focus before the first paint so the user sees the
   // active language's region immediately, not a flash of lat=0/lng=0.
   if (options.initialFocus) {
-    earth.rotation.y = -options.initialFocus.lng * DEG;
+    earth.rotation.y = rotationYForLng(options.initialFocus.lng);
     earth.rotation.x = clamp(options.initialFocus.lat * DEG, -POLE_CLAMP, POLE_CLAMP);
   }
 
@@ -593,6 +649,22 @@ export function createInteractiveEarth(
   let lastY = 0;
   let activePointerId: number | null = null;
 
+  // ── Focus animation state (Step 2 — hover/focus geographic linkage) ──
+  // Driven inside the same tick() rAF as idle rotation so we never
+  // schedule a second loop, and so the two motions can't race-write
+  // earth.rotation in the same frame. Null when no animation is
+  // in flight. Cancelled on user drag (pointerdown) below — the host
+  // never fights the user's manual control of the globe.
+  interface FocusAnimState {
+    startY: number;
+    startX: number;
+    deltaY: number;
+    deltaX: number;
+    t0: number;
+    duration: number;
+  }
+  let focusAnim: FocusAnimState | null = null;
+
   const onPointerDown = (e: PointerEvent) => {
     if (activePointerId !== null) return;
     dragging = true;
@@ -600,6 +672,10 @@ export function createInteractiveEarth(
     lastX = e.clientX;
     lastY = e.clientY;
     canvas.setPointerCapture(e.pointerId);
+    // User took manual control — abandon any in-flight hover/focus
+    // rotation immediately so the drag starts from wherever the
+    // animation currently is, with no further automatic motion.
+    focusAnim = null;
     e.preventDefault();
   };
 
@@ -638,9 +714,27 @@ export function createInteractiveEarth(
     if (!idleEnabled) return;
     const dt = lastTime ? Math.min(0.05, (time - lastTime) / 1000) : 0;
     lastTime = time;
-    if (!dragging && idleSpeed > 0) {
+
+    // Focus animation takes priority over idle drift. While a focus
+    // anim is in flight, idle is paused so the eased rotation isn't
+    // contaminated by 3.4°/sec of additive spin. The anim advances by
+    // wall-clock time so a dropped frame can't desync it. Drag also
+    // suppresses both (manual drag has its own rotation writes).
+    if (focusAnim && !dragging) {
+      const t = Math.min(1, (time - focusAnim.t0) / focusAnim.duration);
+      // Ease-out cubic — quick start, gentle settle. Same easing
+      // family the launch/return flights use, so the on-Earth motion
+      // feels like part of the same cinematic language.
+      const eased = 1 - Math.pow(1 - t, 3);
+      earth.rotation.y = focusAnim.startY + focusAnim.deltaY * eased;
+      earth.rotation.x = focusAnim.startX + focusAnim.deltaX * eased;
+      if (t >= 1) {
+        focusAnim = null;
+      }
+    } else if (!dragging && idleSpeed > 0) {
       earth.rotation.y += idleSpeed * dt;
     }
+
     // Cloud drift removed alongside the cloud layer in the
     // clarity-cleanup pass. Step D restores it with a real cloud WebP.
     renderer.render(scene, camera);
@@ -702,8 +796,102 @@ export function createInteractiveEarth(
       }
     },
     focusLatLng(lat: number, lng: number): void {
-      earth.rotation.y = -lng * DEG;
+      // Snap variant — cancels any in-flight animation so a later
+      // animate call doesn't get a phantom start state.
+      // Uses rotationYForLng so the corrected -90° UV offset is
+      // applied uniformly with the constructor's initial-focus path
+      // and the animated focus below.
+      focusAnim = null;
+      earth.rotation.y = rotationYForLng(lng);
       earth.rotation.x = clamp(lat * DEG, -POLE_CLAMP, POLE_CLAMP);
+    },
+    animateFocusLatLng(lat: number, lng: number, durationMs = 650): void {
+      // Compute shortest-path delta on longitude. Without the modulo
+      // wrap, rotating from -170° to +170° would sweep ~340° the
+      // long way around the globe instead of the 20° the user
+      // mentally expects. The wrap keeps deltaY in (-π, π].
+      const startY = earth.rotation.y;
+      const startX = earth.rotation.x;
+      const targetY = rotationYForLng(lng);
+      let deltaY = targetY - startY;
+      const TWO_PI = Math.PI * 2;
+      deltaY = ((deltaY % TWO_PI) + TWO_PI) % TWO_PI;
+      if (deltaY > Math.PI) deltaY -= TWO_PI;
+      const endX = clamp(lat * DEG, -POLE_CLAMP, POLE_CLAMP);
+      const deltaX = endX - startX;
+
+      // Zero-distance shortcut — both axes within ~0.05° of the
+      // target. Skipping the anim keeps tick() on the idle-rotation
+      // branch instead of paused-idle for the duration, which avoids
+      // a perceptible "stutter" when the user re-hovers the option
+      // the globe is already focused on.
+      const EPS = 0.0009; // ~0.05° in radians
+      if (Math.abs(deltaY) < EPS && Math.abs(deltaX) < EPS) {
+        focusAnim = null;
+        return;
+      }
+
+      focusAnim = {
+        startY,
+        startX,
+        deltaY,
+        deltaX,
+        // performance.now() and the rAF callback's `time` arg share
+        // the same time origin (DOMHighResTimeStamp), so subtracting
+        // them inside tick() is well-defined.
+        t0: performance.now(),
+        duration: Math.max(1, durationMs),
+      };
+      // Make sure the loop is actually running — if idle has been
+      // paused (e.g. between close and the next open), the eased
+      // rotation would otherwise sit forever. startLoop() is a
+      // no-op when the loop is already alive.
+      if (idleEnabled) startLoop();
+    },
+    cancelFocusAnimation(): void {
+      focusAnim = null;
+    },
+    projectLatLng(
+      lat: number,
+      lng: number,
+    ): { x: number; y: number; frontFacing: boolean } | null {
+      if (disposed) return null;
+      // Same UV→3D formula THREE.SphereGeometry uses internally, so
+      // the point we project is exactly the surface location where
+      // the Blue Marble texture renders this lat/lng. No calibration
+      // gap between texture pixels and projected marker.
+      const phi = (lng + 180) * DEG;
+      const theta = (90 - lat) * DEG;
+      const sinTheta = Math.sin(theta);
+      const localPoint = new THREE.Vector3(
+        -Math.cos(phi) * sinTheta,
+        Math.cos(theta),
+        Math.sin(phi) * sinTheta,
+      );
+
+      // earth.matrixWorld may be one frame stale if the host calls
+      // this between tick() updates. updateMatrixWorld(true) refreshes
+      // it from current rotation.{x,y,z} — cheap (a few muls/adds)
+      // and avoids "marker lags rotation by one frame" jitter.
+      earth.updateMatrixWorld(true);
+      const worldPoint = localPoint.applyMatrix4(earth.matrixWorld);
+
+      // Front-facing: the unit sphere is centered at origin, the
+      // camera sits at (0, 0, +Z_cam). A point on the sphere is on
+      // the camera-facing hemisphere when its world z > 0. We add a
+      // small epsilon so points right at the silhouette (z ≈ 0)
+      // don't flicker visible/hidden as floating-point noise
+      // crosses zero across frames.
+      const frontFacing = worldPoint.z > 0.02;
+
+      // Project to NDC, then to CSS pixels inside the host container.
+      // .project() applies the camera's projection + viewMatrix. NDC
+      // is [-1, 1] with +Y up; CSS pixels go +X right, +Y down.
+      const ndc = worldPoint.clone().project(camera);
+      const rect = container.getBoundingClientRect();
+      const cssX = (ndc.x * 0.5 + 0.5) * rect.width;
+      const cssY = (-ndc.y * 0.5 + 0.5) * rect.height;
+      return { x: cssX, y: cssY, frontFacing };
     },
     setIdleRotation(enabled: boolean): void {
       idleEnabled = enabled;
