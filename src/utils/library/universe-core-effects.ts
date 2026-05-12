@@ -69,9 +69,14 @@ const BOOK_REL_Y = 0.40;
 
 /** Final viewport-pixel offsets applied AFTER the image-relative
  *  position is computed. Use these for fine-tuning without re-deriving
- *  fractional anchors. Positive Y = lower on screen.                  */
+ *  fractional anchors. Positive Y = lower on screen.
+ *  Y offset reduced by 70 (160 → 90) per the user's preference — the
+ *  lightning impact point now lands 70 px higher on screen. Pairs
+ *  with the recent 50 px upward shift of the cosmic background and
+ *  the orbit; the 70 px here is on top of that, applied at the bolt's
+ *  target coordinate only.                                            */
 const BOOK_OFFSET_X_PX = 10;
-const BOOK_OFFSET_Y_PX = 160;
+const BOOK_OFFSET_Y_PX = 90;
 
 /** Card kind → CSS variable reference for the bolt's accent colour.
  *  Mirrors the `.galaxy-card[data-kind="…"]` rules in library.astro;

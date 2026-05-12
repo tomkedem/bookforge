@@ -80,13 +80,17 @@ const { class: className } = Astro.props;
 </button>
 
 <style>
-  /* +15% lift in both dimensions over the previous 73×32 baseline,
-     so the sky window earns a touch more presence in the header
-     without dominating it. Both axes scale together to preserve
-     proportions. */
+  /* Width unified across breakpoints at the desktop value (110 px) so
+     the sky scene reads identically on mobile and desktop — the
+     clouds, birds, sun/moon and stars get the same canvas everywhere.
+     Height stays at 37 px so the header controls rail keeps its
+     current 50 px height (the globe still drives the rail's vertical
+     extent). Previously phones/tablets used a compact 84 px width to
+     save horizontal space, but the user prefers parity with the
+     desktop window. */
   .sky-window {
     position: relative;
-    width: 84px;
+    width: 110px;
     height: 37px;
     border-radius: 18px;
     overflow: visible;
@@ -96,18 +100,6 @@ const { class: className } = Astro.props;
     background: transparent;
     transition: transform 300ms var(--ease-standard),
                 filter 600ms var(--ease-standard);
-  }
-
-  /* Desktop only — widen the sky window by ~30% (84→110) so the
-     clouds, birds, sun/moon and stars inside have more room to read
-     as a tiny living scene. Height stays at 37 px so the header
-     controls rail keeps its current 50 px height (the globe still
-     drives the rail's vertical extent). Phones/tablets keep the
-     compact 84 px width — vertical real estate is too precious there. */
-  @media (min-width: 1024px) {
-    .sky-window {
-      width: 110px;
-    }
   }
 
   .sky-window:hover {

@@ -71,6 +71,11 @@ const MANUAL_SERIES_ITEMS: LibraryItem[] = [
     summaries: { en: 'A structured AI Engineering learning series' },
     author:    { en: 'Tomer Kedem' },
     categoryKey: 'ai-engineering',
+    // Mirrors the real AI Engineering course's seriesId so the manual
+    // capsule and the auto-generated lesson items share one orbital
+    // identity. The linked-glow handler in /library matches by this
+    // value to pulse every lesson when the capsule is hovered.
+    seriesId: 'course-ai-engineering',
     languages: ['en'],
     createdAt: '2026-05-09T00:00:00.000Z',
     updatedAt: '2026-05-09T00:00:00.000Z',

@@ -61,7 +61,15 @@ const isDev = import.meta.env.DEV;
 <html lang={language} dir={isRtl ? 'rtl' : 'ltr'} class="scroll-smooth" translate="no">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- `viewport-fit=cover` lets the document extend through the iOS
+         safe area (status-bar / notch / home-indicator strips). The
+         sticky `.yuval-header` uses `padding-top: env(safe-area-inset-top)`
+         to absorb the top inset, so its dark surface covers the strip
+         that previously showed the body background. Pages that pin
+         elements to the inline edges should pair this with
+         `env(safe-area-inset-left/right)` if they ever appear on a
+         landscape notched device. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content={description} />
     <meta name="color-scheme" content="light dark" />
     <meta name="google" content="notranslate" />

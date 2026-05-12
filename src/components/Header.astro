@@ -235,6 +235,97 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
   })();
 </script>
 
+<script is:inline>
+  /* ── Mobile search reveal-on-interaction ─────────────────────────
+     Pairs with the `body.header-search-revealed` CSS override inside
+     the @media (max-width: 767px) block of this component. On mobile
+     widths only, the search row is collapsed by default and reveals
+     while the user is moving a finger / mouse on the page or has the
+     search input focused. After ~1.8s of no pointer activity (and no
+     focus) the class is removed and the row smoothly collapses.
+
+     Listeners are attached to `document`, not `window`, so a single
+     handler covers the whole screen — "any position" per the spec.
+     They survive Astro view transitions because the document object
+     persists across them; the window-level init flag prevents double
+     binding when this script is re-evaluated after a transition. */
+  (function () {
+    if (window.__yuvalSearchRevealInitialized) return;
+    window.__yuvalSearchRevealInitialized = true;
+
+    var HIDE_AFTER_MS = 1800;
+    var mediaQuery = window.matchMedia('(max-width: 767px)');
+    var hideTimer = null;
+    var inputFocused = false;
+
+    function isMobile() { return mediaQuery.matches; }
+
+    function clearHideTimer() {
+      if (hideTimer !== null) {
+        window.clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+    }
+
+    function scheduleHide() {
+      clearHideTimer();
+      if (inputFocused) return;
+      hideTimer = window.setTimeout(function () {
+        document.body.classList.remove('header-search-revealed');
+        hideTimer = null;
+      }, HIDE_AFTER_MS);
+    }
+
+    function reveal() {
+      if (!isMobile()) {
+        // If the viewport grew past mobile (e.g. rotation), drop the
+        // reveal class so nothing lingers in the tablet/desktop layout.
+        document.body.classList.remove('header-search-revealed');
+        clearHideTimer();
+        return;
+      }
+      document.body.classList.add('header-search-revealed');
+      scheduleHide();
+    }
+
+    document.addEventListener('pointermove', reveal, { passive: true, capture: true });
+    document.addEventListener('touchstart', reveal, { passive: true, capture: true });
+
+    // Keep the row open while the input is being typed into; resume
+    // the hide timer once focus leaves.
+    document.addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (t && t.id === 'yuval-header-search') {
+        inputFocused = true;
+        clearHideTimer();
+        if (isMobile()) document.body.classList.add('header-search-revealed');
+      }
+    });
+    document.addEventListener('focusout', function (e) {
+      var t = e.target;
+      if (t && t.id === 'yuval-header-search') {
+        inputFocused = false;
+        scheduleHide();
+      }
+    });
+
+    // If the viewport crosses the mobile boundary while the reveal
+    // class is set, clean up so desktop never inherits the state.
+    function onMediaChange() {
+      if (!mediaQuery.matches) {
+        document.body.classList.remove('header-search-revealed');
+        clearHideTimer();
+      }
+    }
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onMediaChange);
+    } else if (typeof mediaQuery.addListener === 'function') {
+      // Safari < 14 fallback.
+      mediaQuery.addListener(onMediaChange);
+    }
+  })();
+</script>
+
 <style>
   /* ── Cosmic glass surface ─────────────────────────────────────
      The Yuval header is a deep-space control layer: layered
@@ -245,7 +336,28 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
      Reading mode flattens this back to the cream shell via the
      `:global(body.reading-mode) .yuval-header` overrides further down. */
   .yuval-header {
-    position: relative;
+    /* Default sticky pin to the viewport top — content flows under
+       it on scroll. The Astro-scoped class outranks the Tailwind
+       `sticky top-0` utility, so this declaration restores the
+       pin explicitly; without it a stray `position: relative` here
+       silently disables scroll-pinning. Desktop keeps this sticky
+       behaviour. Mobile (<1024px) escalates to `position: fixed`
+       further down to eliminate a 1-2px scrolling gap that appeared
+       above the header on Chrome / Edge mobile emulation profiles
+       and on iOS Safari with the URL-bar morph. `background-clip:
+       border-box` (explicit) guarantees the header surface paints
+       through its full padding area — including the safe-area
+       inset above — so no scroll content can appear through the
+       top edge. `padding-top: env(safe-area-inset-top, 0px)`
+       extends the header into the iOS notch (paired with
+       `viewport-fit=cover` in the viewport meta); on devices
+       without a notch the inset resolves to 0. `isolation: isolate`
+       establishes a local stacking context for the cosmic
+       gradients and star specks. */
+    position: sticky;
+    top: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    background-clip: border-box;
     isolation: isolate;
     /* Layered cosmic surface — five stacked layers, painted bottom-up:
          (5) edge vignette  – deep navy at the corners pulls the eye
@@ -401,6 +513,40 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     .header-inner {
       height: auto;
       min-height: 64px;
+    }
+  }
+
+  /* ── Mobile (<1024px): escalate from sticky → fixed ───────────────
+        Sticky was leaving a 1-2px gap above the header on Chrome /
+        Edge mobile emulation and on iOS Safari URL-bar morph. Fixed
+        eliminates that class of bug — the element is anchored to the
+        viewport edge directly, never participates in scroll layout,
+        so nothing can paint between the viewport top and the
+        header's top edge. Page content is pushed below the header
+        via a mobile-only `padding-top` on `<main id="main-content">`
+        (see the :global rule below) equal to header height +
+        safe-area inset, so existing layouts continue to start below
+        the fixed header instead of sliding behind it. Desktop
+        (≥1024px) is unaffected and keeps the original sticky.
+        Inline pin to physical edges is intentional — the header is
+        full-width and direction-agnostic. */
+  @media (max-width: 1023px) {
+    .yuval-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
+
+    /* Compensate the global `<main>` content area for the fixed
+       header that's no longer in flow. The offset = the on-mobile
+       header height (`min-height: 64px` on .header-inner) plus the
+       iOS safe-area inset (~44px on notched iPhones, 0 elsewhere).
+       Scoped to mobile via this query, so desktop's flow is
+       untouched. Targeted via :global() because `main#main-content`
+       lives in BaseLayout, outside this component's scope. */
+    :global(main#main-content) {
+      padding-top: calc(64px + env(safe-area-inset-top, 0px));
     }
   }
 
@@ -1083,6 +1229,30 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
       flex: 1 0 100%;
       order: 3;
       padding: 0;
+      /* Reveal-on-interaction: by default the search row is fully
+         collapsed on mobile so the header reads as one compact line
+         (brand + globe + theme). A pointermove / touchstart anywhere
+         on the document adds `header-search-revealed` to <body> via
+         the companion script below, which triggers the override
+         further down — the field smoothly expands and becomes
+         focusable. After ~1.8s without any pointer activity the
+         class is removed and the row collapses back. Focus on the
+         input keeps the row open as long as it has focus. Desktop
+         (≥768px) does not use this rule (the tablet+ media query
+         above already shows the search permanently). */
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+      transition:
+        max-height 280ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)),
+        opacity 220ms var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+    }
+
+    :global(body.header-search-revealed) .header-search {
+      max-height: 60px;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .header-search-field {

@@ -2,10 +2,14 @@
 /**
  * /library — Living Library, dual layout.
  *
- *   MOBILE (<1024px) — vertical knowledge discovery flow:
- *     1. Compact hero            4. Stats (fixed)
- *     2. Featured carousel       5. Quick actions
- *     3. Continue reading (fixed)
+ *   MOBILE (<1024px) — vertical discovery flow between the sticky
+ *   global header and the page bottom (no fixed mobile footer yet):
+ *     1. Compact hero (LibraryHero)
+ *     2. Mobile discovery carousel (MobileGalaxyCarousel)
+ *     3. Quick actions (LibraryQuickActions)
+ *   ContinueLearningCard, LibraryStatsPanel and FloatingSidebar are
+ *   all hidden on mobile from inside their own component CSS, so they
+ *   do not participate in the mobile flow.
  *
  *   DESKTOP (≥1024px) — single immersive dashboard viewport.
  *     ┌──────────┬──────────────────────────────┬──────────┐
@@ -350,6 +354,7 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                 data-galaxy-card
                 data-kind={kind}
                 data-slug={item.slug}
+                data-series-id={item.seriesId}
                 style={`--orbit-angle: ${angle}deg;`}
               >
                 <LibraryCard
@@ -626,9 +631,36 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        - RTL via inset-inline-* (logical properties)
      ────────────────────────────────────────────────────────────────── */
 
+  /* ── Page-level lock: dark cosmic shell + no scroll ────────────────
+     Two intentions in one rule:
+       1. The body / html background-color is forced to match the
+          cosmic floor `#00010d`, so iOS Safari rubber-band and
+          URL-bar morph never expose a cream sliver above the dark
+          header.
+       2. `overflow: hidden` + `height: 100dvh` lock the page to the
+          viewport in BOTH axes on every device. Per the user's
+          request this screen never scrolls — the orbit dashboard
+          (desktop) and the cleared hero+orbit-placeholder (mobile)
+          are designed to fit inside a single viewport. Anything
+          beyond is intentionally clipped rather than scrollable.
+     Scoped via `:global()` + the page-root class so every other
+     route keeps its native scroll. `:has()` is widely supported
+     (Safari 15.4+, Chrome 105+, Firefox 121+); older engines fall
+     back to normal page scroll. */
+  :global(html:has(.library-dark-showcase)),
+  :global(body:has(.library-dark-showcase)) {
+    background-color: #00010d;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
   .library-root {
     position: relative;
+    /* 100dvh tracks the dynamic viewport so iOS Safari's collapsing
+       URL bar does not leave a strip of empty cosmic backdrop below
+       the content on mobile. Falls back to 100vh in older browsers. */
     min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     /* Whole-screen unified backdrop. Mobile uses the two main layers;
        desktop adds side accents + vignette so the entire dashboard
@@ -646,7 +678,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       var(--yuval-galaxy-bg-radial-primary),
       var(--yuval-galaxy-bg-radial-secondary);
     color: var(--yuval-galaxy-text);
-    padding: 1rem 1rem 4rem;
+    /* Top padding kept tight (0.25rem) so the hero text sits close to
+       the header line, per the user's preference. Side + bottom keep
+       their original breathing room. Tablet + desktop overrides below
+       follow the same rule — small top, generous sides/bottom. */
+    padding: 0.25rem 1rem 4rem;
     box-sizing: border-box;
     isolation: isolate;
     overflow-x: hidden;
@@ -667,6 +703,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     pointer-events: none;
     overflow: hidden;
     z-index: 0;
+    /* Lift the cosmic image 50px upward per the user's preference.
+       The bottom 50px of the viewport then falls through to the
+       cosmic body bg (`#00010d`), which is the same floor color the
+       image fades to at its edges — the seam is invisible. */
+    transform: translateY(-50px);
   }
   .knowledge-scene-background img {
     position: absolute;
@@ -777,22 +818,103 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     display: contents;
   }
 
-  /* Mobile order — discovery-first.
-       1 hero
-       2 mobile-discovery (MobileGalaxyCarousel — readable AI content)
-       6 quick actions
-     ContinueLearningCard + LibraryStatsPanel are now position: fixed
-     and hidden on mobile (≤768px) from inside each component, so they
-     no longer participate in this flex chain.
-     The desktop-only `.lb-area-featured` is hidden on mobile via
-     `display: none` below. */
-  .lb-area-hero              { order: 1; }
-  .lb-area-mobile-discovery  { order: 2; display: block; width: 100%; }
-  .lb-area-quick-mobile      { order: 6; }
+  /* ── Mobile content area — STILL CLEARED, but the hero text returns
+     The mobile shell is being reset before the new Vertical Knowledge
+     Orbit lands. These slots remain hidden so the future orbit has
+     a clean stage to fill:
+        .lb-area-mobile-discovery  — old MobileGalaxyCarousel
+        .lb-area-quick-mobile      — old AI assistant / quick-actions panel
+     The desktop-only `.lb-area-featured` (galaxy orbit stage) is also
+     hidden on mobile so the desktop orbit never leaks down here.
+     `.lb-area-hero` is INTENTIONALLY visible on mobile now — the user
+     asked for the welcome text (eyebrow + title + subtitle) to appear,
+     just without the panel chrome of the legacy mobile card. The
+     `:global(.lb-area-hero .lh*)` overrides further down strip that
+     chrome and apply the desktop-style clean cosmic look on mobile.
+     ContinueLearningCard, LibraryStatsPanel and FloatingSidebar are
+     already `display: none` on mobile from inside their own components.
+     The cosmic scene background (`.knowledge-scene-background`, fixed,
+     z-index 0) stays visible behind the page so it reads as part of
+     the Knowledge Space universe. Order tokens for legacy mobile
+     sequence are kept commented below for ease of reconstruction. */
+  .lb-area-mobile-discovery,  /* legacy mobile order: 2 */
+  .lb-area-quick-mobile,      /* legacy mobile order: 6 */
+  .lb-area-featured {
+    display: none;
+  }
 
-  /* Desktop-only slots — completely hidden on mobile so they cannot
-     contribute to layout, height, or accidental visibility. */
-  .lb-area-featured     { display: none; }
+  /* ── Mobile LibraryHero — strip the legacy card chrome ───────────
+     The legacy mobile LibraryHero rendered as a discrete card with
+     border, panel background, blur, inline mini-core and a readonly
+     search input. The user wants only the welcome text (eyebrow +
+     title + subtitle) on mobile, framed by the cosmic page rather
+     than by a panel — the same identity as the desktop hero strip.
+     Overrides reach into the LibraryHero component via `:global()`
+     because `.lh*` classes are scoped to that component. Tablet
+     (≥768px and <1024px) keeps its own intermediate styling from
+     inside LibraryHero. Desktop (≥1024px) already strips chrome
+     via its own @media rule. */
+  @media (max-width: 767px) {
+    :global(.lb-area-hero .lh) {
+      /* No top padding — the hero text should land right under the
+         header line. Side + bottom paddings keep modest breathing
+         around the text block. */
+      padding: 0 0.5rem 0.75rem;
+      background-color: transparent;
+      border: 0;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: none;
+      overflow: visible;
+      text-align: center;
+    }
+    :global(.lb-area-hero .lh-halo),
+    :global(.lb-area-hero .lh-core),
+    :global(.lb-area-hero .lh-search) {
+      display: none;
+    }
+    :global(.lb-area-hero .lh-header) {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0;
+      margin-block-end: 0.25rem;
+    }
+    :global(.lb-area-hero .lh-text) {
+      text-align: center;
+    }
+    /* Eyebrow: cyan→violet gradient text in mixed case, matching the
+       desktop hero. Overrides the mobile baseline (uppercase + grey)
+       which clashed with the cosmic look once the panel chrome was
+       removed. */
+    :global(.lb-area-hero .lh-eyebrow) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: none;
+      font-weight: 500;
+      font-size: 0.8125rem;
+      letter-spacing: 0.06em;
+      margin-block-end: 0.3125rem;
+      background: linear-gradient(
+        90deg,
+        var(--yuval-galaxy-accent-cyan) 0%,
+        var(--yuval-galaxy-accent-purple) 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    :global(.lb-area-hero .lh-title) {
+      line-height: 1.05;
+      margin-block-end: 0.375rem;
+    }
+    :global(.lb-area-hero .lh-subtitle) {
+      margin-inline: auto;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  }
 
   /* Small-screen baseline for the orbit scene's vertical offset. The
      orbit itself is hidden below 1024px (see `.lb-area-featured` above),
@@ -802,9 +924,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      transform never affects mobile layout. */
   .library-galaxy { --orbit-vertical-offset: 32px; }
 
-  /* ── Tablet (≥640px): same mobile flow, more padding ── */
+  /* ── Tablet (≥640px): same mobile flow, more inline padding ──
+        Top padding kept tight so the hero text remains close to the
+        header line. Inline + bottom paddings grow for breathing
+        room around the wider viewport. */
   @media (min-width: 640px) {
-    .library-root { padding: 1.75rem 1.5rem 4rem; }
+    .library-root { padding: 0.5rem 1.5rem 4rem; }
   }
 
   /* ── Desktop (≥1024px): ONE viewport dashboard, no long scroll ───── */
@@ -821,7 +946,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          are `position: fixed` from inside their own components and
          anchor directly to the viewport edge via `inset-inline-start: 20px`,
          so their 20px gap stays constant regardless of this padding. */
-      padding-block-start: 1.25rem;
+      /* Top padding tightened (1.25rem → 0.25rem) so the desktop
+         hero strip sits right under the sticky header line — same
+         preference applied on mobile. The galaxy stage below the
+         hero now picks up the freed vertical space and the central
+         core's vertical position is governed by --orbit-vertical-
+         offset rather than by this padding. */
+      padding-block-start: 0.25rem;
       padding-block-end: 1.5rem;
       padding-inline: clamp(60px, 8vw, 120px);
       /* Viewport math is owned by LibraryLayout — the layout sets
@@ -876,7 +1007,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        stage in .lb-area-featured takes over there. */
     .lb-area-mobile-discovery { display: none; }
 
-    /* Re-enable the desktop-only slot that was hidden on mobile. */
+    /* Restore the orbit stage that the mobile baseline hid above.
+       `.lb-area-hero` no longer needs an explicit restore here
+       because the mobile baseline keeps it visible (the hero text
+       is shown on mobile too — see the override block below). */
     .lb-area-featured     { display: block; }
 
     /* 2-column dashboard with LANGUAGE-AWARE column placement:
@@ -994,8 +1128,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          items never overlap the page title above. Lives on the orbit
          container only — page title, breadcrumb, side panels and grid
          shell are unaffected. Responsive steps below override the value
-         per breakpoint; the transform itself stays the same. */
-      --orbit-vertical-offset: 56px;
+         per breakpoint; the transform itself stays the same.
+         Lifted 50px upward per the user's preference (56 → 6 on the
+         base desktop step; the ≥1280px step is reduced by the same
+         50 px). */
+      --orbit-vertical-offset: 6px;
       transform: translateY(var(--orbit-vertical-offset));
     }
     /* The earlier `.library-galaxy::before` underlay halo and
@@ -1082,6 +1219,63 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
     .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
     .galaxy-card[data-kind="series"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
+
+    /* Linked-glow halo ─────────────────────────────────────────────
+       The artifact PNG (the visible book-card art) has transparent
+       margins around the painted card pixels, so `box-shadow` on
+       any container draws a rectangle far from the visible card
+       edge. Solution: `filter: drop-shadow` on the artifact image
+       itself — drop-shadow follows the alpha channel and lands on
+       the actual painted silhouette of the card, regardless of the
+       transparent padding around it.
+
+       Three stacked drop-shadows per keyframe — a tight inner ring
+       plus two soft outer blooms — produce a luminous halo that
+       reads as a deliberate accent rather than a hard outline.
+       The 3-stop cycle (gold → orange → turquoise → gold) repeats
+       twice over the 3-second window. z-index on the wrapper rises
+       during the pulse so highlighted cards float above neighbours.
+       */
+    .galaxy-card.is-linked-glow {
+      z-index: 5;
+    }
+    :global(.galaxy-card.is-linked-glow .lc-orbit-artifact-face-front) {
+      animation: yuval-linked-glow 1.5s ease-in-out infinite;
+    }
+    @keyframes yuval-linked-glow {
+      0% {
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 8px  rgba(255, 215, 0, 0.85))
+          drop-shadow(0 0 18px rgba(255, 215, 0, 0.55));
+      }
+      33% {
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 140, 0, 1))
+          drop-shadow(0 0 8px  rgba(255, 140, 0, 0.85))
+          drop-shadow(0 0 18px rgba(255, 140, 0, 0.55));
+      }
+      66% {
+        filter:
+          drop-shadow(0 0 2px  rgba(64, 224, 208, 1))
+          drop-shadow(0 0 8px  rgba(64, 224, 208, 0.85))
+          drop-shadow(0 0 18px rgba(64, 224, 208, 0.55));
+      }
+      100% {
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 8px  rgba(255, 215, 0, 0.85))
+          drop-shadow(0 0 18px rgba(255, 215, 0, 0.55));
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      :global(.galaxy-card.is-linked-glow .lc-orbit-artifact-face-front) {
+        animation: none;
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 12px rgba(64, 224, 208, 0.55));
+      }
+    }
 
     /* Drag-to-rotate — while the user is actively dragging the orbit
        we drop the transform transition so the carousel tracks the
@@ -1925,9 +2119,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
   @media (min-width: 1280px) {
     /* Larger orbit scene gets a deeper vertical offset so rotating
-       cards along the wider ellipse still clear the page title. */
+       cards along the wider ellipse still clear the page title.
+       Reduced 50 px (72 → 22) to match the global lift applied at
+       the base desktop step. */
     .library-galaxy {
-      --orbit-vertical-offset: 72px;
+      --orbit-vertical-offset: 22px;
     }
     .galaxy-card {
       width: 210px;
@@ -2391,6 +2587,153 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
    * cases. Each fresh stage element gets exactly one init pass —
    * no double-binding, because old stages were removed from the DOM.
    */
+  /**
+   * Pulse linked book/lesson cards when the pointer enters a
+   * series/course capsule.
+   *
+   * Mapping: every LibraryItem the catalog produces for a course
+   * (type 'course') gets `seriesId = "course-<courseSlug>"`, and every
+   * book/lesson with `courseSlug` gets the same `seriesId`. That value
+   * is rendered as `data-series-id` on each `.galaxy-card`. To find
+   * the linked siblings of a series-kind card, we simply match all
+   * cards sharing its `data-series-id` and exclude the card itself.
+   *
+   * State management: each linked card stores its active hide-timer
+   * id in `dataset.glowTimer`. Re-hovering the same capsule before
+   * the previous pulse expires resets the timer so the user always
+   * gets the full 3-second halo from the latest interaction.
+   *
+   * Performance: one delegated listener per stage. Removing the
+   * class on timer expiry is idempotent — if the card was removed
+   * by a transition we silently no-op via `?.remove()` semantics.
+   */
+  function initLinkedGlow(stage: HTMLElement) {
+    const GLOW_MS = 3000;
+    const escape = (v: string) => v.replace(/"/g, '\\"');
+
+    // ── Read admin metadata from localStorage ────────────────────
+    // The admin page persists two stores:
+    //   - `yuval_content_metadata` — per-book `seriesName` (the text
+    //     the user typed in the "סדרה" column).
+    //   - `yuval_series_metadata`  — per-series record keyed by the
+    //     same text. Links from book → series are by name match.
+    type ItemMeta = { seriesName?: string };
+    type SeriesMeta = { name?: string; assetFolder?: string };
+    let contentItems: Record<string, ItemMeta> = {};
+    let seriesItems: Record<string, SeriesMeta> = {};
+    try {
+      const raw = localStorage.getItem('yuval_content_metadata');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.items && typeof parsed.items === 'object') {
+          contentItems = parsed.items;
+        }
+      }
+    } catch { /* private mode / invalid JSON — silent */ }
+    try {
+      const raw = localStorage.getItem('yuval_series_metadata');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.items && typeof parsed.items === 'object') {
+          seriesItems = parsed.items;
+        }
+      }
+    } catch { /* same */ }
+
+    // Mirrors slugFromSeries in admin-series.ts so the same record
+    // resolves to the same orbit slug on both sides.
+    const slugFromSeries = (meta: SeriesMeta): string => {
+      const folder = (meta.assetFolder ?? '').trim();
+      if (folder) return folder;
+      return (meta.name ?? '').toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    };
+
+    // Build the slug → seriesName map for capsule cards.
+    const seriesNameBySlug = new Map<string, string>();
+    for (const [key, meta] of Object.entries(seriesItems)) {
+      if (!meta || typeof meta !== 'object') continue;
+      const slug = slugFromSeries(meta);
+      const name = (meta.name ?? key ?? '').trim();
+      if (slug && name) seriesNameBySlug.set(slug, name);
+    }
+
+    // ── Hydrate `data-series-name` on every orbit card ──────────
+    // Capsules: name comes from the series store keyed by their slug.
+    // Books/lessons: name comes from each item's stored `seriesName`.
+    // Cards without a stored series name simply don't get the
+    // attribute — they remain unmatchable, which is correct.
+    stage.querySelectorAll<HTMLElement>('.galaxy-card[data-slug]').forEach((card) => {
+      const slug = card.dataset.slug;
+      if (!slug) return;
+      if (card.dataset.kind === 'series') {
+        const name = seriesNameBySlug.get(slug);
+        if (name) card.dataset.seriesName = name;
+      } else {
+        const meta = contentItems[slug];
+        const name = meta && typeof meta.seriesName === 'string'
+          ? meta.seriesName.trim()
+          : '';
+        if (name) card.dataset.seriesName = name;
+      }
+    });
+
+    // Debug — surfaces how many cards are eligible for linking.
+    const capsulesNamed = stage.querySelectorAll('.galaxy-card[data-kind="series"][data-series-name]').length;
+    const booksNamed = stage.querySelectorAll('.galaxy-card[data-series-name]:not([data-kind="series"])').length;
+    console.log(
+      '[linked-glow] hydrated — capsules with name: %d, books/lessons with seriesName: %d',
+      capsulesNamed,
+      booksNamed,
+    );
+
+    // ── Hover handler ───────────────────────────────────────────
+    // For each series capsule we match siblings by EITHER:
+    //   - data-series-name (the admin-driven link the user described)
+    //   - data-series-id   (auto-discovered course-lesson link from
+    //                       the catalog, so lessons of a real course
+    //                       glow even without the admin form filled)
+    // Cards without either attribute on the capsule are skipped.
+    const seriesCards = stage.querySelectorAll<HTMLElement>(
+      '.galaxy-card[data-kind="series"]',
+    );
+    seriesCards.forEach((card) => {
+      const seriesName = card.dataset.seriesName;
+      const seriesId = card.dataset.seriesId;
+      if (!seriesName && !seriesId) return;
+      card.addEventListener('pointerenter', () => {
+        const matchers: string[] = [];
+        if (seriesName) {
+          matchers.push(`.galaxy-card[data-series-name="${escape(seriesName)}"]`);
+        }
+        if (seriesId) {
+          matchers.push(`.galaxy-card[data-series-id="${escape(seriesId)}"]`);
+        }
+        const linked = stage.querySelectorAll<HTMLElement>(matchers.join(','));
+        console.log(
+          '[linked-glow] hover slug=%s seriesName=%s → %d linked',
+          card.dataset.slug,
+          seriesName,
+          linked.length - 1,
+        );
+        linked.forEach((sibling) => {
+          if (sibling === card) return;
+          const prev = sibling.dataset.glowTimer;
+          if (prev) {
+            window.clearTimeout(Number(prev));
+          }
+          sibling.classList.add('is-linked-glow');
+          const t = window.setTimeout(() => {
+            sibling.classList.remove('is-linked-glow');
+            delete sibling.dataset.glowTimer;
+          }, GLOW_MS);
+          sibling.dataset.glowTimer = String(t);
+        });
+      });
+    });
+  }
+
   function initOrbit() {
     document
       .querySelectorAll<HTMLElement>('[data-galaxy-stage]')
@@ -2421,6 +2764,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
         // are short-lived path elements created on hover and removed
         // after their fade-out. No persistent loop.
         initCoreEffects(stage);
+        // Linked-glow halo: hover a series/course capsule and every
+        // linked book/lesson (same data-series-id) pulses through a
+        // gold → orange → turquoise cycle for 3 seconds. CSS owns
+        // the animation; this only toggles the class on/off.
+        initLinkedGlow(stage);
         stage.dataset.galaxyInit = 'true';
       });
 
