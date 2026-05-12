@@ -60,7 +60,7 @@
 
 ## Yuval Library Visual Direction
 
-- The `/library` page is Yuval's main screen for AI content.
+- The home page (`/`) is Yuval's main screen for AI content. The legacy `/library` URL still resolves and redirects to `/`, so existing internal links keep working, but the canonical screen lives at the site root.
 - The official visual target is a futuristic galaxy-style dashboard, not a regular content page.
 - On desktop, the page should feel like one cinematic viewport-height screen, not a long page with stacked sections.
 - Desired desktop structure:
@@ -74,16 +74,14 @@
 - On desktop, the right rail must be narrow, in a pill toolbar style, and contain only: AI assistant, bookmarks, history.
 - Do not place stats, explanation or continue-reading panels in the right rail on desktop.
 - The desktop left sidebar is where continue-learning cards, explanation, stats and recommended content belong.
-- Mobile should not copy the desktop orbit layout.
-- Desired mobile structure:
-  - compact hero
-  - continue reading
-  - horizontal featured carousel
-  - knowledge explanation
-  - stats
-  - recommendations
-  - quick actions
-- Every future change to `/library` should move the screen closer to this visual target and not turn it into a generic dashboard.
+- Mobile keeps the same galaxy-carousel composition as desktop, scaled down. Tomer asked for the rotating orbit on mobile too — it is the identity of the screen and must not be replaced by a stacked list on phones.
+- Mobile carousel rules:
+  - same orbit composition as desktop, sized down for phone width
+  - cards must not visibly overlap at the default rotation
+  - only the focused (`data-pos="center"`) card shows the open-CTA orb and label
+  - rotate controls (`<` / `>`) appear once, anchored to the orbit, never duplicated
+  - the side and quick-action stacks (FloatingSidebar, LibraryStatsPanel, ContinueLearningCard) stay hidden on mobile
+- Every future change to the home screen should move it closer to this visual target and not turn it into a generic dashboard.
 
 ## Tomer's Main Course - "AI Developer Path"
 

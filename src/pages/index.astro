@@ -1,616 +1,2877 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import BookCard from '../components/BookCard.astro';
-import CourseCard from '../components/CourseCard.astro';
+/**
+ * /library — Living Library, dual layout.
+ *
+ *   MOBILE (<1024px) — vertical discovery flow between the sticky
+ *   global header and the page bottom (no fixed mobile footer yet):
+ *     1. Compact hero (LibraryHero)
+ *     2. Mobile discovery carousel (MobileGalaxyCarousel)
+ *     3. Quick actions (LibraryQuickActions)
+ *   ContinueLearningCard, LibraryStatsPanel and FloatingSidebar are
+ *   all hidden on mobile from inside their own component CSS, so they
+ *   do not participate in the mobile flow.
+ *
+ *   DESKTOP (≥1024px) — single immersive dashboard viewport.
+ *     ┌──────────┬──────────────────────────────┬──────────┐
+ *     │ Continue │  Hero (floats over galaxy)   │          │
+ *     │ Knowledge│  Galaxy stage (core + cards) │   Rail   │
+ *     │ Stats    │  — large negative space      │  (pill)  │
+ *     │          │    below the core            │          │
+ *     └──────────┴──────────────────────────────┴──────────┘
+ *
+ *   Composition fits inside ~100dvh after the global header — no long
+ *   stacked page on desktop.
+ *
+ * Same components, same data, same i18n. Only CSS varies by breakpoint.
+ *
+ * Featured items are filtered OUT of recent items so cards never appear
+ * twice on a single screen.
+ */
+
+import LibraryLayout from '../layouts/LibraryLayout.astro';
+import LibraryHero from '../components/library/LibraryHero.astro';
+import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
+import ContinueLearningCard from '../components/library/ContinueLearningCard.astro';
+import LibraryCard from '../components/library/LibraryCard.astro';
+import MobileGalaxyCarousel from '../components/library/MobileGalaxyCarousel.astro';
+import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
+import FloatingSidebar from '../components/library/FloatingSidebar.astro';
+
 import type { Language } from '../types/index';
+import type { LibraryItem } from '../types/library';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES, getLanguageDirection, isValidLanguage } from '../utils/language';
-import { discoverAllBooks, discoverCourses } from '../utils/book-discovery';
 import { t } from '../i18n';
+import {
+  getLibraryItems,
+  getLibraryStats,
+  getContinueReadingItem,
+} from '../utils/library-catalog';
+import { getCourseProgressList } from '../utils/library-adapter';
+import { isReadableLibraryItem, isSafeLibraryHref } from '../utils/library-display';
+import { getEvenOrbitAngle } from '../utils/library/universe-angle-utils';
+import {
+  getKnowledgeCardAssets,
+  getKnowledgeCardAssetsOrPlaceholder,
+} from '../utils/library/knowledge-cards';
 
-interface Props {
-  language?: Language;
-}
-
-const { language: propLanguage } = Astro.props;
+// ── Language ──────────────────────────────────────────────────────────────
+const { language: propLanguage } = Astro.props as { language?: Language };
 
 const urlLang = Astro.url.searchParams.get('lang')?.trim().toLowerCase();
-
 const requestedLanguage =
   (urlLang && isValidLanguage(urlLang))
     ? urlLang
     : (propLanguage && isValidLanguage(propLanguage) ? propLanguage : DEFAULT_LANGUAGE);
-
 const language = requestedLanguage as Language;
 const isRtl = getLanguageDirection(language) === 'rtl';
 
-const allBooks = discoverAllBooks();
-const courses = discoverCourses();
+// ── Data ──────────────────────────────────────────────────────────────────
+// Primary source = real BookForge content (via library-adapter); falls
+// back to mock when output/ is empty (CI / fresh checkout).
+const items = getLibraryItems();
+const stats = getLibraryStats(items);
+// Per-course progress (X of Y lesson summaries available) — empty when
+// no real catalog is in play (mock fallback returns []).
+const courseProgress = getCourseProgressList();
 
-// Library = original books only. Course-lesson entries are surfaced
-// through their parent course card and shouldn't double-appear here.
-const libraryBooks = allBooks.filter((b) => b.contentType === 'book');
+// Continue ONLY considers readable items so that we never surface the
+// synthetic ai-engineering course (no /courses route yet) as a
+// clickable-looking suggestion.
+const readableItems = items.filter(isReadableLibraryItem);
+const continueItem = getContinueReadingItem(readableItems);
 
-// Stable, intentional order — display reflects learning progression.
-const categoryOrder = ['foundations', 'ai-systems', 'ai-engineering'] as const;
+// ── Galaxy orbit — every item visible at once ────────────────────────────
+// Every readable item sits on its own point along an elliptical orbit
+// around the central glowing core. The arrangement is dynamic over
+// `readableItems`: 7 items → 7 evenly-spaced angles, 12 items → 12.
+// No carousel, no queue, no pager — adding a book to output/ simply
+// adds a new station on the orbit.
+//
+// Books occupy the inline-start arc (visual-left in LTR, visual-right
+// in RTL — matches the existing convention via --galaxy-dir).
+// Lessons occupy the inline-end arc.
+// Series sit at the top (12 o'clock), where the two arcs meet — they
+// are organizing entities that bridge books and lessons and don't
+// belong on either arc.
+// Cards retain their type tint (gold for books, cyan for lessons,
+// violet for series) so the groups stay visually distinguishable
+// even without columns.
+//
+// Click-to-center still works: a clicked card flies to the middle and
+// the rest dim under the backdrop.
+//
+// Orbit eligibility — two distinct gates:
+//   1. Series capsules MUST have a real per-slug artifact. The series
+//      capsule is the parent visual; replacing it with a placeholder
+//      would hide the editorial identity of the series itself, so it's
+//      gated on `hasOrbitArtifact`. (See `_placeholders/` rationale in
+//      `knowledge-cards.ts`.)
+//   2. Every other orbit card (books, lessons, generic content) is
+//      allowed onto the orbit without a per-slug `front.png`. When the
+//      asset is missing the shared placeholder
+//      (`_placeholders/book-front.png`) is used — the title, type, and
+//      metadata still come from the real LibraryItem, only the image
+//      is generic. Visibility / readability rules are unchanged: an
+//      item that fails `isReadableLibraryItem` is still excluded, so
+//      hidden / archived / unrelated items never become visible just
+//      because a placeholder exists.
+// Mobile views (e.g. MobileGalaxyCarousel) keep their unfiltered
+// `readableItems` source and are not affected by these filters.
+const hasOrbitArtifact = (slug: string) => getKnowledgeCardAssets(slug) !== undefined;
 
-const booksByCategory: Record<string, typeof libraryBooks> = {};
-for (const key of categoryOrder) booksByCategory[key] = [];
-const uncategorized: typeof libraryBooks = [];
-
-for (const book of libraryBooks) {
-  const key = book.categoryKey;
-  if (key && key in booksByCategory) {
-    booksByCategory[key].push(book);
-  } else {
-    uncategorized.push(book);
+// Visual-only orbit visibility predicate. Distinct from
+// `isReadableLibraryItem` (which gates clickability for the rest of
+// the page). Series bypass the readable-href requirement here;
+// books/lessons still need it so links never 404.
+const isOrbitVisible = (it: LibraryItem): boolean => {
+  if (it.type === 'series') {
+    // Series capsules require the real folder asset, never the
+    // placeholder. A series with no asset is suppressed from the orbit.
+    return hasOrbitArtifact(it.slug);
   }
+  // Non-series items rely on the readability gate; their image will
+  // come from `getKnowledgeCardAssetsOrPlaceholder` below, so a missing
+  // per-slug front.png no longer disqualifies them from the orbit.
+  return isReadableLibraryItem(it);
+};
+const orbitItemsSource = items.filter(isOrbitVisible);
+
+/**
+ * Resolve the artifact bundle to render on the orbit for `it`. Series
+ * capsules MUST keep using their real folder asset — the placeholder
+ * is never substituted for a series. Every other content type uses
+ * the placeholder helper so a missing per-slug front.png falls back to
+ * `_placeholders/book-front.png` instead of producing a no-art card.
+ */
+const resolveOrbitArtifact = (it: LibraryItem) =>
+  it.type === 'series'
+    ? getKnowledgeCardAssets(it.slug)
+    : getKnowledgeCardAssetsOrPlaceholder(it.slug);
+
+// Build-time match report — printed alongside the discovery report
+// in `knowledge-cards.ts` so it's clear which catalog slugs landed
+// on the orbit, which got the shared placeholder, and which were
+// filtered out (currently: series capsules without a real folder).
+console.log(
+  `[knowledge-cards] orbit match report: ${orbitItemsSource.length} of ${readableItems.length} items on the orbit.`,
+);
+for (const it of readableItems) {
+  const real = hasOrbitArtifact(it.slug);
+  const onOrbit = isOrbitVisible(it);
+  let status: string;
+  if (real) status = 'MATCH       ';
+  else if (it.type === 'series') status = 'no-match    ';
+  else if (onOrbit) status = 'PLACEHOLDER ';
+  else status = 'no-match    ';
+  console.log(`[knowledge-cards]   [${status}] slug="${it.slug}" type=${it.type}`);
+}
+// One unified array fed to a single distribution pass. Item TYPE drives
+// CSS only (badge colour, fallback artwork, click affordance) — never
+// orbit position. Books, lessons, series and any future kinds share one
+// global index space, so adding a single new item shifts everyone by a
+// small even fraction instead of piling onto a per-type cluster.
+//
+// DOM order is preserved exactly as the catalog produced (books, then
+// lessons, then series) so the natural source order remains stable
+// across runs. Layout is driven by `--orbit-angle`, not by DOM order;
+// the hydrator reapplies the same `getEvenOrbitAngle` over the live
+// post-filter set so SSR and client always agree.
+type OrbitItem = {
+  item: typeof readableItems[number];
+  angle: number;
+  kind: 'book' | 'lesson' | 'series';
+};
+const orbitKindOf = (it: typeof readableItems[number]): OrbitItem['kind'] =>
+  it.type === 'book' ? 'book'
+  : it.type === 'course_lesson' ? 'lesson'
+  : 'series';
+const orbitItems: OrbitItem[] = orbitItemsSource.map((item, i) => ({
+  item,
+  angle: getEvenOrbitAngle(i, orbitItemsSource.length),
+  kind: orbitKindOf(item),
+}));
+// Rotate-orbit controls only make sense with at least 2 stations to
+// rotate between. The shared step `360°/N` is computed in JS at click
+// time from the live card count; CSS just animates --orbit-rotation.
+const showOrbitControls = orbitItems.length > 1;
+
+// ── ContinueLearningCard data ─────────────────────────────────────────────
+// Real values are derived from `continueItem` + `courseProgress`. Two modes:
+//   - lesson mode: course title at top, "Lesson N" line, then the lesson
+//     subtitle. Reached when continueItem is a course_lesson whose
+//     courseSlug matches a known course in courseProgress.
+//   - book mode: book title at top, blank metaLine1, subtitle as metaLine2.
+// When continueItem is undefined (mock fallback), no props are passed and
+// the component's own placeholder defaults render.
+const isLesson =
+  continueItem?.type === 'course_lesson' && Boolean(continueItem?.courseSlug);
+const matchingCourse = isLesson
+  ? courseProgress.find((c) => c.slug === continueItem!.courseSlug)
+  : undefined;
+
+let courseTitleForCard: string | undefined;
+let metaLine1ForCard: string | undefined;
+let metaLine2ForCard: string | undefined;
+
+if (isLesson && matchingCourse && continueItem?.orderInSeries) {
+  courseTitleForCard =
+    matchingCourse.titles[language]
+    ?? matchingCourse.titles.en
+    ?? matchingCourse.titles.he
+    ?? matchingCourse.slug;
+  metaLine1ForCard = t('courses.lessonNumber', language, { n: continueItem.orderInSeries });
+  metaLine2ForCard =
+    continueItem.subtitles?.[language]
+    ?? continueItem.subtitles?.en
+    ?? continueItem.subtitles?.he
+    ?? '';
+} else if (continueItem) {
+  courseTitleForCard =
+    continueItem.titles?.[language]
+    ?? continueItem.titles?.en
+    ?? continueItem.titles?.he;
+  metaLine1ForCard = '';
+  metaLine2ForCard =
+    continueItem.subtitles?.[language]
+    ?? continueItem.subtitles?.en
+    ?? continueItem.subtitles?.he
+    ?? '';
 }
 
-// Unified "all content" grouping — both books and course lessons, bucketed
-// by the same category keys. Course lessons inherit their category from
-// the parent course (see book-discovery.ts).
-const allByCategory: Record<string, typeof allBooks> = {};
-for (const key of categoryOrder) allByCategory[key] = [];
-const allUncategorized: typeof allBooks = [];
-
-for (const item of allBooks) {
-  const key = item.categoryKey;
-  if (key && key in allByCategory) {
-    allByCategory[key].push(item);
-  } else {
-    allUncategorized.push(item);
-  }
-}
-
-// Sort each bucket: books first, then lessons in lesson-number order.
-for (const key of Object.keys(allByCategory)) {
-  allByCategory[key].sort((a, b) => {
-    if (a.contentType !== b.contentType) {
-      return a.contentType === 'book' ? -1 : 1;
-    }
-    if (a.contentType === 'course_lesson') {
-      return (a.lessonNumber ?? 0) - (b.lessonNumber ?? 0);
-    }
-    return 0;
-  });
-}
-
-// Platform-level screen: the selector shows the full set of platform UI
-// languages, regardless of which books currently exist. The home screen
-// must not lose a language just because no current book uses it — that
-// behavior belongs to per-book screens, not the platform shell.
-const availableLanguages = LANGUAGE_CODES as Language[];
-
-// Count every individual piece of content — books + course lessons —
-// not courses-as-single-items. Matches what the user actually sees on
-// the unified "all content" section.
-const totalContentCount = allBooks.length;
 ---
 
-<BaseLayout
-  title={t('home.title', language)}
-  description={t('home.subtitle', language)}
+<LibraryLayout
+  title={t('library.galaxy.title', language)}
+  description={t('library.galaxy.subtitle', language)}
   language={language}
-  availableLanguages={availableLanguages}
+  availableLanguages={LANGUAGE_CODES}
+  allowClientLanguageOverride={true}
+  useGlobeLanguageSelector={true}
 >
-  <div class="min-h-screen bg-yuval-bg px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+  <div
+    class="library-dark-showcase library-root"
+    lang={language}
+    dir={isRtl ? 'rtl' : 'ltr'}
+    style={`--page-direction: ${isRtl ? 'rtl' : 'ltr'};`}
+  >
 
-    <!-- Page heading + continue-reading -->
-    <header class:list={['max-w-7xl mx-auto mb-8', isRtl && 'text-right']}>
-      <h1 class="font-heading font-bold text-2xl sm:text-3xl text-yuval-text" data-i18n="home.title">
-        {t('home.title', language)}
-      </h1>
-      <p class="text-sm text-yuval-text-secondary mt-1" id="content-count-label" data-content-count={totalContentCount}>
-        {totalContentCount} {totalContentCount === 1 ? t('home.bookAvailable', language) : t('home.booksAvailable', language)}
-      </p>
-    </header>
-
-    <div id="continue-reading-banner" class="max-w-7xl mx-auto mb-8 hidden"></div>
-
-    <!-- ═══════════════════════════════════════════════════════════════════
-         TOP ROW — Library (left) + Courses (right), side-by-side on wide.
-         ═══════════════════════════════════════════════════════════════════ -->
-    <div class="max-w-7xl mx-auto mb-16 top-row">
-
-      {libraryBooks.length > 0 && (
-        <section class="top-col" aria-labelledby="library-heading">
-          <div class="section-header">
-            <div class="section-marker section-marker-library"></div>
-            <div>
-              <h2 id="library-heading" class="section-title" data-i18n="library.title">
-                {t('library.title', language)}
-              </h2>
-              <p class="section-subtitle" data-i18n="library.subtitle">
-                {t('library.subtitle', language)}
-              </p>
-            </div>
-          </div>
-
-          {categoryOrder.map((key) => {
-            const books = booksByCategory[key];
-            if (books.length === 0) return null;
-            return (
-              <div class="category-group">
-                <h3 class="category-heading" data-i18n={`library.category.${key}`}>
-                  {t(`library.category.${key}` as any, language)}
-                </h3>
-                <div class="books-grid books-grid-narrow">
-                  {books.map((book) => (
-                    <BookCard
-                      slug={book.slug}
-                      titles={book.titles}
-                      subtitles={book.subtitles}
-                      descriptions={book.descriptions}
-                      authors={book.credits?.author}
-                      coverImage={book.coverImage}
-                      dominantColor={book.dominantColor}
-                      category={book.category}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
-          {uncategorized.length > 0 && (
-            <div class="category-group">
-              <h3 class="category-heading text-yuval-text-tertiary">
-                {t('home.all', language)}
-              </h3>
-              <div class="books-grid books-grid-narrow">
-                {uncategorized.map((book) => (
-                  <BookCard
-                    slug={book.slug}
-                    titles={book.titles}
-                    subtitles={book.subtitles}
-                    descriptions={book.descriptions}
-                    authors={book.credits?.author}
-                    coverImage={book.coverImage}
-                    dominantColor={book.dominantColor}
-                    category={book.category}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      {courses.length > 0 && (
-        <section class="top-col" aria-labelledby="courses-heading">
-          <div class="section-header">
-            <div class="section-marker section-marker-courses"></div>
-            <div>
-              <h2 id="courses-heading" class="section-title" data-i18n="courses.title">
-                {t('courses.title', language)}
-              </h2>
-              <p class="section-subtitle" data-i18n="courses.subtitle">
-                {t('courses.subtitle', language)}
-              </p>
-            </div>
-          </div>
-
-          <div class="courses-stack">
-            {courses.map((course) => (
-              <CourseCard course={course} language={language} />
-            ))}
-          </div>
-        </section>
-      )}
+    {/* Cosmic scene background — full-viewport, fixed, behind every
+        UI layer. The same galaxy PNG that used to sit centered inside
+        the orbit stage now spans the entire screen so the dashboard
+        feels embedded in an infinite knowledge universe. The radial
+        overlay on top is a soft viewport-vignette that darkens the
+        edges (improving contrast for the floating cards + side
+        panels) while keeping the central glow undisturbed. */}
+    <div class="knowledge-scene-background" aria-hidden="true">
+      <img
+        src="/assets/library/galaxy-stage-core-medium.png"
+        alt=""
+        decoding="async"
+      />
+      <div class="knowledge-scene-overlay"></div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         UNIFIED — every piece of content (books + lessons) by category.
-         ═══════════════════════════════════════════════════════════════════ -->
-    {allBooks.length > 0 && (
-      <section class="max-w-7xl mx-auto mb-16" aria-labelledby="all-heading">
-        <div class="section-header">
-          <div class="section-marker section-marker-all"></div>
-          <div>
-            <h2 id="all-heading" class="section-title" data-i18n="all.title">
-              {t('all.title', language)}
-            </h2>
-            <p class="section-subtitle" data-i18n="all.subtitle">
-              {t('all.subtitle', language)}
-            </p>
-          </div>
+    {/* Decorative ambient backdrop — starfield on top of the cosmic
+        scene background. Stars stay crisp because they're a CSS
+        gradient pattern that doesn't scale with the bg image. */}
+    <div class="library-ambient" aria-hidden="true">
+      <div class="library-starfield"></div>
+    </div>
+
+    <div class="library-body">
+
+      {/* ── Center stage: hero floats over galaxy ── */}
+      <main class="lb-area-stage">
+
+        <div class="lb-area-hero">
+          <LibraryHero language={language} />
         </div>
 
-        {categoryOrder.map((key) => {
-          const items = allByCategory[key];
-          if (items.length === 0) return null;
-          return (
-            <div class="category-group">
-              <h3 class="category-heading" data-i18n={`library.category.${key}`}>
-                {t(`library.category.${key}` as any, language)}
-              </h3>
-              <div class="books-grid">
-                {items.map((item) => (
-                  <BookCard
-                    slug={item.slug}
-                    titles={item.titles}
-                    subtitles={item.subtitles}
-                    descriptions={item.descriptions}
-                    authors={item.credits?.author}
-                    coverImage={item.coverImage}
-                    dominantColor={item.dominantColor}
-                    category={item.category}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        {/*
+          Mobile-only discovery slot. Lives directly inside .lb-area-stage
+          so on mobile (where .lb-area-stage is display:contents) it
+          becomes its own flex item of .library-body with explicit
+          `order: 3` — placed right after the recommended starting card.
+          Hidden on desktop, where the orbit stage below takes over.
+        */}
+        <div class="lb-area-mobile-discovery">
+          <MobileGalaxyCarousel items={readableItems} language={language} />
+        </div>
 
-        {allUncategorized.length > 0 && (
-          <div class="category-group">
-            <h3 class="category-heading text-yuval-text-tertiary">
-              {t('home.all', language)}
-            </h3>
-            <div class="books-grid">
-              {allUncategorized.map((item) => (
-                <BookCard
-                  slug={item.slug}
-                  titles={item.titles}
-                  subtitles={item.subtitles}
-                  descriptions={item.descriptions}
-                  authors={item.credits?.author}
-                  coverImage={item.coverImage}
-                  dominantColor={item.dominantColor}
-                  category={item.category}
+        <section class="lb-area-featured" aria-label={t('library.galaxy.welcome', language)}>
+          <div
+            class="library-galaxy"
+            data-galaxy-stage
+            data-series-badge={t('library.itemType.series', language)}
+            data-series-items-label={t('library.series.itemsLabel', language)}
+            data-series-available-label={t('library.series.availableLabel', language)}
+            data-other-knowledge-label={t('library.series.otherKnowledge', language)}
+            data-items-short-label={t('library.series.itemsShort', language)}
+            data-close-label={t('library.galaxy.closeItem', language)}
+            data-series-actions-show-items={t('library.series.actions.showItems', language)}
+            data-series-actions-hide-items={t('library.series.actions.hideItems', language)}
+            data-series-actions-details={t('library.series.actions.details', language)}
+            data-series-details-title={t('library.series.details.title', language)}
+            data-series-details-close={t('library.series.details.close', language)}
+            data-series-details-short-description={t('library.series.details.shortDescription', language)}
+            data-series-details-full-description={t('library.series.details.fullDescription', language)}
+            data-series-details-assigned-items={t('library.series.details.assignedItems', language)}
+            data-series-details-planned-items={t('library.series.details.plannedItems', language)}
+            data-series-details-status={t('library.series.details.status', language)}
+            data-series-details-asset-folder={t('library.series.details.assetFolder', language)}
+            data-series-details-visible-in-universe={t('library.series.details.visibleInUniverse', language)}
+            data-series-details-visible-yes={t('library.series.details.visibleYes', language)}
+            data-series-details-visible-no={t('library.series.details.visibleNo', language)}
+            data-series-details-no-description={t('library.series.details.noDescription', language)}
+            data-series-details-no-assigned-items={t('library.series.details.noAssignedItems', language)}
+            data-series-children-empty={t('library.series.children.empty', language)}
+            data-series-children-region={t('library.series.children.region', language)}
+            data-series-children-placeholder-type={t('library.series.children.placeholderType', language)}
+            data-status-active={t('library.status.ready', language)}
+            data-status-draft={t('library.status.new', language)}
+            data-status-hidden={t('library.status.archived', language)}
+            style={`--galaxy-dir: ${isRtl ? -1 : 1};`}
+          >
+
+            {/* The galaxy PNG used to sit centered here as the stage's
+                visual core. It now lives at the page root as a
+                full-viewport scene background (`.knowledge-scene-background`
+                above), so the orbit stage holds only the floating
+                cards + backdrop. */}
+
+            {/* Backdrop — appears only when a card is focused into the
+                center. Click anywhere on it closes the focus state. */}
+            <div class="galaxy-backdrop" data-galaxy-backdrop aria-hidden="true"></div>
+
+            {/* Orbit cards — every readable item gets one station on
+                the elliptical orbit around the central core. Position
+                is set per-card via inline `--orbit-angle`; CSS handles
+                the rest with cos()/sin(). No queue, no carousel —
+                everything is on screen at once. */}
+            {orbitItems.map(({ item, angle, kind }) => (
+              <div
+                class="galaxy-card"
+                data-galaxy-card
+                data-kind={kind}
+                data-slug={item.slug}
+                data-series-id={item.seriesId}
+                style={`--orbit-angle: ${angle}deg;`}
+              >
+                <LibraryCard
+                  item={item}
+                  language={language}
+                  variant="orbit"
+                  artifact={resolveOrbitArtifact(item)}
                 />
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-    )}
+                <div class="galaxy-cta">
+                  {/* The open-chevron is only rendered for items with
+                      a real route. Items whose href is not in the
+                      `isSafeLibraryHref` allow-list (today: series
+                      capsules pointing at `/series/...` placeholders)
+                      get the close button only — they appear on the
+                      orbit, can be focused into the center for a
+                      closer look, but don't expose a navigate link
+                      that would 404. The LibraryCard inside this
+                      slot also renders as a non-clickable <article>
+                      for the same reason, so the disabled state is
+                      consistent across the whole card. */}
+                  {isSafeLibraryHref(item.href) && (
+                    <a
+                      class="galaxy-cta-open"
+                      href={item.href}
+                      data-galaxy-cta-open
+                      aria-label={t('library.galaxy.openItem', language)}
+                    >
+                      <span class="galaxy-cta-open-ring" aria-hidden="true"></span>
+                      <span class="galaxy-cta-open-core" aria-hidden="true"></span>
+                      <svg
+                        class="galaxy-cta-open-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="9 6 15 12 9 18"></polyline>
+                      </svg>
+                      <span class="galaxy-cta-open-label" aria-hidden="true">
+                        {t('library.galaxy.openItem', language)}
+                      </span>
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    class="galaxy-cta-close"
+                    data-galaxy-cta-close
+                    aria-label={t('library.galaxy.closeItem', language)}
+                  >×</button>
+                  {kind === 'series' && (
+                    <div class="galaxy-cta-series-actions" data-series-action-panel>
+                      <button
+                        type="button"
+                        class="galaxy-cta-series-btn"
+                        data-series-action="toggle-items"
+                        aria-pressed="false"
+                        aria-label={t('library.series.actions.showItems', language)}
+                      >
+                        <span class="galaxy-cta-series-btn-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="6" width="6" height="12" rx="1"></rect>
+                            <rect x="11" y="4" width="5" height="14" rx="1"></rect>
+                            <rect x="18" y="8" width="3" height="10" rx="1"></rect>
+                          </svg>
+                        </span>
+                        <span class="galaxy-cta-series-btn-label" data-series-action-label="toggle-items">
+                          {t('library.series.actions.showItems', language)}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        class="galaxy-cta-series-btn"
+                        data-series-action="details"
+                        aria-label={t('library.series.actions.details', language)}
+                      >
+                        <span class="galaxy-cta-series-btn-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 8h.01"></path>
+                            <path d="M11 12h1v4h1"></path>
+                          </svg>
+                        </span>
+                        <span class="galaxy-cta-series-btn-label">
+                          {t('library.series.actions.details', language)}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
 
-    {totalContentCount === 0 && (
-      <div class:list={['max-w-md mx-auto py-16 text-center', isRtl && 'text-right']}>
-        <svg class="mx-auto w-16 h-16 text-yuval-text-muted mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-        <p class="text-lg text-yuval-text-secondary font-medium">{t('home.noBooks', language)}</p>
-        <p class="mt-2 text-sm text-yuval-text-tertiary">{t('home.noBooksHint', language)}</p>
+            {/* Local children fan — created and populated by JS when a
+                focused series capsule's "Show items" button is clicked.
+                Lives inside the stage so it positions naturally relative
+                to the centered capsule. Hidden until populated; nothing
+                permanently mixes into the main universe. */}
+            <div
+              class="series-children-fan"
+              data-series-children-fan
+              role="region"
+              aria-label={t('library.series.children.region', language)}
+              hidden
+            ></div>
+
+            {/* Orbit rotation controls — small chevron pair centered at
+                the bottom of the stage. One click rotates ALL cards
+                around the ellipse by 360°/N (computed in JS from the
+                live card count), so every station shifts to the next
+                seat. CSS transitions on transform animate the flight. */}
+            {showOrbitControls && (
+              <div class="galaxy-orbit-controls" aria-hidden="false">
+                <button
+                  type="button"
+                  class="galaxy-orbit-btn"
+                  data-galaxy-rotate
+                  data-direction="prev"
+                  aria-label={t('library.galaxy.rotatePrev', language)}
+                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <button
+                  type="button"
+                  class="galaxy-orbit-btn"
+                  data-galaxy-rotate
+                  data-direction="next"
+                  aria-label={t('library.galaxy.rotateNext', language)}
+                ><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+              </div>
+            )}
+          </div>
+        </section>
+
+      </main>
+
+      {/* ── Mobile-only quick-actions panel ──
+            Desktop is owned by <FloatingSidebar> below, which lives
+            outside the grid as `position: fixed`. On mobile this aside
+            stays as `display: contents` and contributes its child as a
+            flex item of `.library-body` at order 6. */}
+      <aside class="lb-area-right">
+        <div class="lb-area-quick lb-area-quick-mobile">
+          <LibraryQuickActions language={language} />
+        </div>
+      </aside>
+
+    </div>
+
+    {/* ── Desktop fixed support panels (≥769px) ──
+          Both panels are `position: fixed` from inside their own
+          component CSS, anchored to the inline-start edge of the
+          viewport (right in RTL, left in LTR). Stacked: ContinueLearningCard
+          above, LibraryStatsPanel below it. Hidden at ≤768px from inside
+          each component. Live outside `.library-body` so they never
+          claim a column or contribute to the grid. */}
+    <ContinueLearningCard
+      language={language}
+      courseTitle={courseTitleForCard}
+      metaLine1={metaLine1ForCard}
+      metaLine2={metaLine2ForCard}
+      lessonsAvailable={isLesson ? courseProgress[0]?.available : undefined}
+      lessonsTotal={isLesson ? courseProgress[0]?.total : undefined}
+      href={continueItem?.href}
+      readableBooks={readableItems
+        .filter((it) => (it.chapterCount ?? 0) > 0)
+        .map((it) => ({
+          slug: it.slug,
+          title:
+            it.titles?.[language]
+            ?? it.titles?.en
+            ?? it.titles?.he
+            ?? it.slug,
+          subtitle:
+            it.subtitles?.[language]
+            ?? it.subtitles?.en
+            ?? it.subtitles?.he
+            ?? '',
+          href: it.href,
+          chapterCount: it.chapterCount ?? 0,
+        }))}
+    />
+    <LibraryStatsPanel stats={stats} language={language} courseProgress={courseProgress} />
+
+    {/* ── Desktop floating rail (≥769px) ──
+          Pinned to the inline-end edge via `position: fixed` from the
+          component itself; sits outside the grid so it never claims a
+          column. Hidden at ≤768px — mobile is served by the aside above. */}
+    <FloatingSidebar
+      language={language}
+      aiAssistantHref="#ai-assistant"
+      bookmarksHref="#bookmarks"
+      historyHref="#history"
+    />
+
+    {/* ── Series details drawer ──
+          Same-page modal/drawer that opens when the focused series
+          capsule's "Series details" action is clicked. The body fields
+          are filled in by the JS controller from SeriesMetadata; static
+          labels come straight from i18n via `t()` so SSR ships the right
+          chrome in every language. The drawer stays hidden via [hidden]
+          until the controller opens it. */}
+    <div
+      class="series-details-overlay"
+      data-series-details-overlay
+      hidden
+      aria-hidden="true"
+    ></div>
+    <aside
+      class="series-details-drawer"
+      data-series-details-drawer
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="series-details-title"
+      dir={isRtl ? 'rtl' : 'ltr'}
+      hidden
+    >
+      <header class="series-details-header">
+        <h2 id="series-details-title" class="series-details-title" data-series-details-name>
+          {t('library.series.details.title', language)}
+        </h2>
+        <button
+          type="button"
+          class="series-details-close"
+          data-series-details-close
+          aria-label={t('library.series.details.close', language)}
+        >×</button>
+      </header>
+      <div class="series-details-body">
+        <section class="series-details-section">
+          <p class="series-details-summary" data-series-details-summary></p>
+          <p class="series-details-full" data-series-details-full></p>
+        </section>
+        <dl class="series-details-meta">
+          <div class="series-details-meta-row">
+            <dt>{t('library.series.details.assignedItems', language)}</dt>
+            <dd data-series-details-assigned-count>0</dd>
+          </div>
+          <div class="series-details-meta-row" data-series-details-planned-row hidden>
+            <dt>{t('library.series.details.plannedItems', language)}</dt>
+            <dd data-series-details-planned-count></dd>
+          </div>
+          <div class="series-details-meta-row">
+            <dt>{t('library.series.details.status', language)}</dt>
+            <dd data-series-details-status-value></dd>
+          </div>
+          <div class="series-details-meta-row">
+            <dt>{t('library.series.details.assetFolder', language)}</dt>
+            <dd>
+              <code data-series-details-asset-folder></code>
+            </dd>
+          </div>
+          <div class="series-details-meta-row">
+            <dt>{t('library.series.details.visibleInUniverse', language)}</dt>
+            <dd data-series-details-visible></dd>
+          </div>
+        </dl>
+        <section class="series-details-section">
+          <h3 class="series-details-list-title">{t('library.series.details.assignedItems', language)}</h3>
+          <ul class="series-details-list" data-series-details-list></ul>
+        </section>
       </div>
-    )}
+    </aside>
+
   </div>
-</BaseLayout>
+</LibraryLayout>
 
 <style>
-  /* ── Section headers ─────────────────────────────────────────────── */
-  .section-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    margin-bottom: 28px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid var(--yuval-border);
+  /* ──────────────────────────────────────────────────────────────────
+     /library — page shell + galaxy stage geometry
+     Hard rules:
+       - All colour/effect via --yuval-galaxy-*  (no hex anywhere)
+       - All visible text via t()
+       - RTL via inset-inline-* (logical properties)
+     ────────────────────────────────────────────────────────────────── */
+
+  /* ── Page-level lock: dark cosmic shell + no scroll ────────────────
+     Two intentions in one rule:
+       1. The body / html background-color is forced to match the
+          cosmic floor `#00010d`, so iOS Safari rubber-band and
+          URL-bar morph never expose a cream sliver above the dark
+          header.
+       2. `overflow: hidden` + `height: 100dvh` lock the page to the
+          viewport in BOTH axes on every device. Per the user's
+          request this screen never scrolls — the orbit dashboard
+          (desktop) and the cleared hero+orbit-placeholder (mobile)
+          are designed to fit inside a single viewport. Anything
+          beyond is intentionally clipped rather than scrollable.
+     Scoped via `:global()` + the page-root class so every other
+     route keeps its native scroll. `:has()` is widely supported
+     (Safari 15.4+, Chrome 105+, Firefox 121+); older engines fall
+     back to normal page scroll. */
+  :global(html:has(.library-dark-showcase)),
+  :global(body:has(.library-dark-showcase)) {
+    background-color: #00010d;
+    height: 100dvh;
+    overflow: hidden;
   }
 
-  .section-marker {
-    width: 5px;
-    border-radius: 99px;
-    align-self: stretch;
-    min-height: 44px;
-    flex-shrink: 0;
+  .library-root {
+    position: relative;
+    /* 100dvh tracks the dynamic viewport so iOS Safari's collapsing
+       URL bar does not leave a strip of empty cosmic backdrop below
+       the content on mobile. Falls back to 100vh in older browsers. */
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    /* Whole-screen unified backdrop. Mobile uses the two main layers;
+       desktop adds side accents + vignette so the entire dashboard
+       (sidebar + center + rail + recs) reads as one cosmic field.
+
+       Background-color sampled directly from the dark outer pixels of
+       galaxy-stage-core-medium.png (corners read RGB(0,1,13)). The
+       earlier #0a0a1f estimate was ~3× brighter than reality and left
+       a visible seam between the image edges and the page. With the
+       sampled value, the image's outer dark pixels are continuous
+       with the page bg. Scoped to .library-root via Astro style
+       scoping — does not affect any other route. */
+    background-color: #00010d;
+    background-image:
+      var(--yuval-galaxy-bg-radial-primary),
+      var(--yuval-galaxy-bg-radial-secondary);
+    color: var(--yuval-galaxy-text);
+    /* Top padding kept tight (0.25rem) so the hero text sits close to
+       the header line, per the user's preference. Side + bottom keep
+       their original breathing room. Tablet + desktop overrides below
+       follow the same rule — small top, generous sides/bottom. */
+    padding: 0.25rem 1rem 4rem;
+    box-sizing: border-box;
+    isolation: isolate;
+    overflow-x: hidden;
   }
 
-  .section-marker-library {
-    background: linear-gradient(to bottom, #c9a227, #e8c547);
-    box-shadow: 0 0 12px rgba(201, 162, 39, 0.35);
+  /* ── Cosmic scene background — full-viewport fixed layer ─────────
+     This is the global "knowledge universe" canvas. It is anchored
+     to the viewport (not the page) so it never scrolls out, never
+     leaves visible margins, and is never clipped by sidebars or the
+     stats panel. Every UI layer (hero, orbit, side panels, rail)
+     stacks on top via `position: relative; z-index: 1` (see the
+     `.library-root > :not(...)` rule below). */
+  .knowledge-scene-background {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+    /* Lift the cosmic image 50px upward per the user's preference.
+       The bottom 50px of the viewport then falls through to the
+       cosmic body bg (`#00010d`), which is the same floor color the
+       image fades to at its edges — the seam is invisible. */
+    transform: translateY(-50px);
+  }
+  .knowledge-scene-background img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  /* Soft radial vignette — keeps the central glow untouched and
+     darkens only the edges so floating cards + side panels read
+     cleanly against the bg without losing the cosmic atmosphere. */
+  .knowledge-scene-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      transparent 35%,
+      rgba(0, 0, 0, 0.45) 80%,
+      rgba(0, 0, 0, 0.65) 100%);
   }
 
-  :global(.dark) .section-marker-library {
-    background: linear-gradient(to bottom, #8b7355, #a8956d);
-    box-shadow: 0 0 12px rgba(139, 115, 85, 0.4);
+  /* Lightning overlay — SVG injected by `universe-core-effects.ts`.
+     Each strike draws a multi-layer jagged bolt with branching forks
+     from stage centre to the hovered card's centre.
+
+     z-index: 25 — sits ABOVE orbit cards (z-index 3) so the bolt
+     reaches the card's centre visibly, but BELOW the focused card
+     (z-index 30) so a click-to-centered card never gets struck.
+
+     mix-blend-mode: screen — the bolt is additive over whatever
+     paints below it. White cores stay punchy on the dark cosmic
+     scene, and accent-coloured glow tints (rather than overwrites)
+     the card content it crosses. Stays non-interactive (clicks fall
+     through to the cards underneath). */
+  .library-galaxy svg[data-core-lightning] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 25;
+    mix-blend-mode: screen;
   }
 
-  .section-marker-courses {
-    background: linear-gradient(to bottom, #6366f1, #a78bfa);
-    box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+  /* Ambient backdrop — sits ABOVE the scene background, BELOW the UI.
+     Self-contained starfield. */
+  .library-ambient {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  /* `.library-aurora` and `.library-nebula-*` rules removed: their
+     markup nodes were retired when the unified page-level backdrop
+     system in `.library-root` took over atmospheric coloring. */
+  /* Starfield — a CSS-only matrix of tiny bright pixels rendered as
+     a single repeating radial-gradient pattern. No DOM nodes, no JS.
+     Two layers (small + medium) at slightly different offsets for
+     parallax-like depth. */
+  .library-starfield {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 12%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 65% 24%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 35% 38%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 82% 47%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 12% 58%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 73% 67%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 28% 78%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      radial-gradient(1px 1px at 88% 88%, var(--yuval-galaxy-text) 50%, transparent 100%),
+      /* Accent stars — all violet now. Cyan accents were swapped to
+         purple to align with the page's violet-led palette and avoid
+         out-of-key cyan dots on the cosmic field. */
+      radial-gradient(1.5px 1.5px at 50% 18%, var(--yuval-galaxy-accent-purple) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 92% 32%, var(--yuval-galaxy-accent-purple) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 8% 72%, var(--yuval-galaxy-accent-purple) 50%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 58% 92%, var(--yuval-galaxy-accent-purple) 50%, transparent 100%);
+    opacity: 0.40;
+  }
+  .library-root > :not(.library-ambient):not(.knowledge-scene-background) {
+    position: relative;
+    z-index: 1;
   }
 
-  .section-marker-all {
-    background: linear-gradient(to bottom, #10b981, #34d399);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
-  }
-
-  :global(.dark) .section-marker-all {
-    background: linear-gradient(to bottom, #059669, #10b981);
-    box-shadow: 0 0 12px rgba(5, 150, 105, 0.45);
-  }
-
-  /* ── Top row: Library + Courses side-by-side on wide screens ───── */
-  .top-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    .top-row {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 2rem;
-    }
-  }
-
-  .top-col { min-width: 0; }
-
-  /* Narrow variant — single column of horizontal cards so title + author
-     are visible at a glance without scrolling. Used inside the 2-col top
-     row where library has limited horizontal space. */
-  .books-grid-narrow {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  /* Horizontal card: cover left, content right. Applied via :global()
-     because .book-card is scoped to BookCard.astro. */
-  .books-grid-narrow :global(.book-card) {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
-  .books-grid-narrow :global(.card-cover) {
-    flex: 0 0 110px;
-    width: 110px;
-    aspect-ratio: 3 / 4;
-  }
-
-  .books-grid-narrow :global(.card-content) {
-    flex: 1 1 auto;
-    padding: 12px 14px;
-    justify-content: center;
-  }
-
-  /* Author icon/text should align to start (not center) in horizontal mode */
-  .books-grid-narrow :global(.card-content > p:last-child) {
-    justify-content: flex-start !important;
-    text-align: start;
-  }
-
-  /* On phones keep single column (same layout, full width) */
-  @media (min-width: 640px) {
-    .books-grid-narrow { grid-template-columns: 1fr; }
-  }
-
-  /* Courses stack: single column inside its own top-row col */
-  .courses-stack {
+  /* ── Mobile baseline: linear stack, ordered to the spec.
+        The desktop wrapper aside/main elements are passthrough on mobile —
+        their children unfurl in the natural document order, then `order:`
+        re-shuffles them into the discovery sequence. ─────────────────── */
+  .library-body {
+    max-width: 1280px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .section-title {
-    font-family: var(--yuval-font-heading, inherit);
-    font-size: 1.625rem;
-    font-weight: 700;
-    color: var(--yuval-text);
-    line-height: 1.2;
-    margin: 0;
-  }
-
-  @media (min-width: 640px) {
-    .section-title { font-size: 1.875rem; }
-  }
-
-  .section-subtitle {
-    font-size: 0.8125rem;
-    color: var(--yuval-text-tertiary);
-    margin-top: 4px;
-  }
-
-  /* ── Category grouping inside Library ────────────────────────────── */
-  .category-group {
-    margin-bottom: 36px;
-  }
-
-  .category-group:last-child {
-    margin-bottom: 0;
-  }
-
-  .category-heading {
-    font-family: var(--yuval-font-heading, inherit);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--yuval-text-secondary);
-    margin: 0 0 14px;
-    padding-inline-start: 12px;
-    border-inline-start: 3px solid rgba(201, 162, 39, 0.4);
-    line-height: 1.3;
-  }
-
-  :global(.dark) .category-heading {
-    border-inline-start-color: rgba(168, 137, 42, 0.5);
-  }
-
-  .books-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
   }
 
-  @media (min-width: 640px) { .books-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; } }
-  @media (min-width: 768px) { .books-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  @media (min-width: 1024px) { .books-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-  @media (min-width: 1280px) { .books-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-
-</style>
-
-<script>
-  import { t, resolveLanguage, getI18nDirection } from '../i18n';
-  import { SOURCE_LANGUAGE } from '../utils/language';
-
-  function getLang(): string {
-    return resolveLanguage(localStorage.getItem('yuval_language') || SOURCE_LANGUAGE);
+  /* On mobile the wrapper aside/main elements are not layout containers;
+     reset their flex behaviour and let their children act as siblings. */
+  .lb-area-stage,
+  .lb-area-right {
+    display: contents;
   }
 
-  function buildContinueReading() {
-    const banner = document.getElementById('continue-reading-banner');
-    if (!banner) return;
-
-    const lang = getLang();
-    const dir = getI18nDirection(lang);
-
-    let bestKey = '';
-    let bestTime = 0;
-    let bestScroll = 0;
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key?.startsWith('yuval_reading_progress_')) continue;
-
-      try {
-        const d = JSON.parse(localStorage.getItem(key) || '{}');
-        const time = d.lastUpdated || d.timestamp || 0;
-        if (time > bestTime && (d.scrollPosition || 0) > 50) {
-          bestTime = time;
-          bestKey = key;
-          bestScroll = d.scrollPosition || 0;
-        }
-      } catch {}
-    }
-
-    if (!bestKey) {
-      banner.classList.add('hidden');
-      banner.innerHTML = '';
-      return;
-    }
-
-    const match = bestKey.match(/yuval_reading_progress_(.+?)_ch(\d+)$/);
-    if (!match) return;
-
-    const bookSlug = match[1];
-    const chapterId = match[2];
-    const estPct = Math.min(95, Math.round((bestScroll / 3000) * 100));
-
-    const bookCard = document.querySelector<HTMLElement>(`[data-book-slug="${bookSlug}"]`);
-    const titleEl = bookCard?.querySelector<HTMLElement>('[data-book-title]');
-    let bookTitle = bookSlug;
-
-    if (titleEl) {
-      bookTitle =
-        titleEl.dataset[lang as keyof typeof titleEl.dataset] ||
-        titleEl.textContent?.trim() ||
-        bookSlug;
-    }
-
-    const url = `/read/${bookSlug}/${chapterId}`;
-
-    banner.innerHTML = `
-      <a href="${url}" class="continue-card group">
-        <div class="continue-icon">
-          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-        </div>
-        <div class="continue-content" style="direction:${dir}">
-          <span class="continue-label">${t('home.continueReading', lang)}</span>
-          <span class="continue-title">${bookTitle} · ${t('home.chapter', lang)} ${chapterId}</span>
-          <div class="continue-progress">
-            <div class="continue-progress-fill" style="width:${estPct}%"></div>
-          </div>
-        </div>
-        <div class="continue-arrow">
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transform:${dir === 'rtl' ? 'rotate(180deg)' : 'none'}">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </a>
-    `;
-
-    banner.classList.remove('hidden');
+  /* ── Mobile content area ──────────────────────────────────────────
+     Mobile slots that stay hidden:
+        .lb-area-mobile-discovery  — legacy MobileGalaxyCarousel
+        .lb-area-quick-mobile      — legacy AI assistant / quick-actions
+     `.lb-area-featured` (galaxy orbit stage) is now visible on mobile
+     too — the user wants the SAME orbit composition that desktop shows,
+     just scaled down proportionally. The mobile-specific orbit sizing
+     lives in the `@media (max-width: 1023px)` block further below. */
+  .lb-area-mobile-discovery,  /* legacy mobile order: 2 */
+  .lb-area-quick-mobile {
+    display: none;
   }
 
-  function updateContentCountLabel() {
-    const el = document.getElementById('content-count-label');
-    if (!el) return;
-    const count = Number(el.dataset.contentCount || '0');
-    const lang = getLang();
-    const word = t(count === 1 ? 'home.bookAvailable' : 'home.booksAvailable', lang);
-    el.textContent = `${count} ${word}`;
+  /* ── LibraryHero — strip the legacy card chrome ─────────────────
+     The legacy mobile + tablet LibraryHero rendered as a discrete
+     card with border, panel background, blur and overflow:hidden
+     (which clipped the nowrap title when the central area got
+     narrow and a fixed side panel encroached on the right edge).
+     The user wants only the welcome text (eyebrow + title +
+     subtitle) framed by the cosmic page, not by a panel — the same
+     identity as the desktop hero strip. Override applies at every
+     viewport below the desktop dashboard (≤1023px). Desktop
+     (≥1024px) strips chrome via LibraryHero's own @media rule. */
+  @media (max-width: 1023px) {
+    :global(.lb-area-hero .lh) {
+      /* No top padding — the hero text should land right under the
+         header line. Side + bottom paddings keep modest breathing
+         around the text block. */
+      padding: 0 0.5rem 0.75rem;
+      background-color: transparent;
+      border: 0;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: none;
+      overflow: visible;
+      text-align: center;
+    }
+    :global(.lb-area-hero .lh-halo) {
+      display: none;
+    }
+    :global(.lb-area-hero .lh-header) {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0;
+      margin-block-end: 0.25rem;
+    }
+    :global(.lb-area-hero .lh-text) {
+      text-align: center;
+    }
+    /* Eyebrow: cyan→violet gradient text in mixed case, matching the
+       desktop hero. Overrides the mobile baseline (uppercase + grey)
+       which clashed with the cosmic look once the panel chrome was
+       removed. */
+    :global(.lb-area-hero .lh-eyebrow) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: none;
+      font-weight: 500;
+      font-size: 0.8125rem;
+      letter-spacing: 0.06em;
+      margin-block-end: 0.3125rem;
+      background: linear-gradient(
+        90deg,
+        var(--yuval-galaxy-accent-cyan) 0%,
+        var(--yuval-galaxy-accent-purple) 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    :global(.lb-area-hero .lh-title) {
+      line-height: 1.05;
+      margin-block-end: 0.375rem;
+    }
+    :global(.lb-area-hero .lh-subtitle) {
+      margin-inline: auto;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    /* ── Mobile orbit — same composition as desktop, scaled down ─────
+       The user asked for the SAME orbit (every readable item on its
+       own station around the central core) on phone + tablet, just
+       smaller. We re-show the featured section (hidden globally by the
+       base reset), then re-declare the orbit positioning rules with
+       smaller card width + smaller ellipse radii. The math is identical
+       to the desktop rule inside `@media (min-width: 1024px)`. */
+    .lb-area-featured {
+      display: block;
+    }
+
+    .library-galaxy {
+      position: relative;
+      display: block;
+      height: 100%;
+      /* Mobile-friendly stage height. clamp() lets the orbit grow on
+         large phones / portrait tablets without ever exceeding the
+         desktop 540px floor (which kicks in at ≥1024px). */
+      min-height: clamp(320px, 60vw, 480px);
+      margin: 0;
+      overflow: visible;
+      padding: 0;
+      /* No vertical offset on mobile — the hero text sits naturally
+         above the orbit in the column flow, so the orbit can stay
+         centered in its own slot. */
+      transform: none;
+      /* The orbit math (cos/sin) is direction-agnostic via --galaxy-dir
+         (set inline on the element in markup). Setting `direction: ltr`
+         here keeps absolute positioning consistent; per-card content
+         still picks up page direction via `.galaxy-card { direction: var(--page-direction, ltr); }` below. */
+      direction: ltr;
+    }
+
+    .galaxy-card {
+      position: absolute;
+      flex: initial;
+      max-width: none;
+      /* Card width shrinks proportionally to viewport. 96px is the
+         floor (still legible on 360px-wide phones), 140px is the cap
+         (so on a 1023px tablet the cards never grow past their desktop
+         190px peer at 1024px). */
+      width: clamp(96px, 22vw, 140px);
+      cursor: pointer;
+      top: 50%;
+      left: 50%;
+      /* Smaller ellipse radii so the orbit fits inside the mobile
+         stage. Tuned so 4-6 stations distribute comfortably without
+         neighbours touching. */
+      --orbit-rx: clamp(110px, 38vw, 220px);
+      --orbit-ry: clamp(110px, 28vh, 200px);
+      --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
+      --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
+      --slot-scale: calc(0.88 + 0.12 * var(--orbit-depth));
+      --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
+      --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
+      opacity: var(--slot-opacity);
+      transition:
+        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease;
+      z-index: 2;
+      direction: var(--page-direction, ltr);
+    }
+
+    /* Series capsule a touch wider than a book card, same ratio as desktop. */
+    .galaxy-card[data-role="series"] {
+      width: clamp(108px, 25vw, 156px);
+      --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
+    }
+
+    /* Per-kind accent tint — books gold, lessons cyan, series violet.
+       Sets a CSS variable that the inner LibraryCard reads for its
+       accent strip; same contract as desktop. */
+    .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
+    .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
+    .galaxy-card[data-kind="series"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
+
+    /* Drag-to-rotate: kill the transform transition while a drag is
+       in flight so the carousel tracks the cursor in real time. */
+    .library-galaxy[data-galaxy-dragging] .galaxy-card {
+      transition: none;
+      cursor: grabbing;
+    }
+
+    /* Block the browser's native image-drag ghost on every card and
+       on its descendant artwork so pointermove tracking stays smooth. */
+    .galaxy-card,
+    .galaxy-card *,
+    .galaxy-card img,
+    .galaxy-card svg {
+      -webkit-user-drag: none;
+    }
+
+    /* Galaxy orbit controls (rotate ←/→ buttons) on mobile — shrink
+       them slightly and pull closer to the orbit. */
+    .galaxy-orbit-controls {
+      transform: scale(0.85);
+      transform-origin: center;
+    }
   }
 
-  updateContentCountLabel();
-  buildContinueReading();
+  /* Small-screen baseline for the orbit scene's vertical offset. The
+     orbit itself is hidden below 1024px (see `.lb-area-featured` above),
+     but the variable is defined here so the responsive ladder
+     (32 → 56 → 72) is complete at every breakpoint. The transform is
+     applied on `.library-galaxy` inside the 1024+ query, so a parent
+     transform never affects mobile layout. */
+  .library-galaxy { --orbit-vertical-offset: 32px; }
 
-  document.addEventListener('astro:after-swap', () => {
-    updateContentCountLabel();
-    buildContinueReading();
-  });
+  /* ── Tablet (≥640px): same mobile flow, more inline padding ──
+        Top padding kept tight so the hero text remains close to the
+        header line. Inline + bottom paddings grow for breathing
+        room around the wider viewport. */
+  @media (min-width: 640px) {
+    .library-root { padding: 0.5rem 1.5rem 4rem; }
+  }
 
-  window.addEventListener('language-changed', () => {
-    updateContentCountLabel();
-    buildContinueReading();
-  });
-</script>
+  /* ── Desktop (≥1024px): ONE viewport dashboard, no long scroll ───── */
+  @media (min-width: 1024px) {
+    .library-root {
+      /* Block padding owns top/bottom rhythm. Inline padding is
+         SYMMETRIC so `.library-body` (max-width + margin: 0 auto)
+         centers ITSELF on the viewport — that gives the galaxy core
+         (which sits at the visual center of the body) a perfectly
+         viewport-centered anchor. The clamp value also clears the
+         FloatingSidebar at the inline-end side (rail width ~92px
+         + ~16px gap from edge). Independent from this: the two
+         support panels (ContinueLearningCard + LibraryStatsPanel)
+         are `position: fixed` from inside their own components and
+         anchor directly to the viewport edge via `inset-inline-start: 20px`,
+         so their 20px gap stays constant regardless of this padding. */
+      /* Top padding tightened (1.25rem → 0.25rem) so the desktop
+         hero strip sits right under the sticky header line — same
+         preference applied on mobile. The galaxy stage below the
+         hero now picks up the freed vertical space and the central
+         core's vertical position is governed by --orbit-vertical-
+         offset rather than by this padding. */
+      padding-block-start: 0.25rem;
+      padding-block-end: 1.5rem;
+      padding-inline: clamp(60px, 8vw, 120px);
+      /* Viewport math is owned by LibraryLayout — the layout sets
+         --library-dashboard-min-height = calc(100dvh - --library-header-offset)
+         on the slot wrapper, so the page does not have to know the
+         header's pixel height. */
+      min-height: var(--library-dashboard-min-height, 100dvh);
+      /* Desktop layered backdrop, FIRST listed = TOP of the stack.
+         Calibrated to the sampled asset palette: every layer either
+         uses one of the sampled navy tones or stays a small violet
+         accent centered on the stage. Hero + side accents were
+         removed (asset isn't violet there).
+         1. vignette        — corner darkening with sampled #000010
+         2. primary accent  — small violet halo at the stage center
+         3. secondary fade  — bottom navy continuation (#000010)
+         The base color var(--yuval-galaxy-bg) (#01051b) sits beneath. */
+      background-image:
+        var(--yuval-galaxy-bg-vignette),
+        var(--yuval-galaxy-bg-radial-primary),
+        var(--yuval-galaxy-bg-radial-secondary);
+    }
 
-<style is:global>
-  .continue-card {
+    /* Full-page atmospheric underlay removed: it placed a blurred copy
+       of the asset under the whole page, which created a non-uniform
+       halo right under where the central image sits — the eye then
+       read the contrast between halo-area and rest as a rectangle
+       outline, even after the asset's edges were faded. The flat
+       page-bg color (#0a0a1f on .library-root above) plus the
+       existing radial gradients + vignette are now the only
+       atmospheric layers. */
+
+    /* Re-enable real flex container on the center stage main.
+       `.lb-area-right` stays as `display: contents` (inherited from the
+       mobile baseline) — its only child `.lb-area-quick-mobile` is
+       `display: none` on desktop, so the aside contributes nothing
+       to the grid. The desktop floating rail lives outside the grid
+       entirely (`<FloatingSidebar>` with `position: fixed`). The two
+       support panels (ContinueLearningCard + LibraryStatsPanel) also
+       live outside the grid via `position: fixed` from inside their
+       own components. */
+    .lb-area-stage {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Reset mobile order — explicit grid placement takes over. */
+    .lb-area-hero,
+    .lb-area-featured,
+    .lb-area-quick-mobile { order: initial; }
+
+    /* Mobile-only discovery slot is hidden on desktop — the orbit
+       stage in .lb-area-featured takes over there. */
+    .lb-area-mobile-discovery { display: none; }
+
+    /* Restore the orbit stage that the mobile baseline hid above.
+       `.lb-area-hero` no longer needs an explicit restore here
+       because the mobile baseline keeps it visible (the hero text
+       is shown on mobile too — see the override block below). */
+    .lb-area-featured     { display: block; }
+
+    /* 2-column dashboard with LANGUAGE-AWARE column placement:
+         column 1 = inline-start  → outer support sidebar (continue +
+                                    stats), on the side WHERE reading
+                                    starts (visual-right in RTL Hebrew,
+                                    visual-left in LTR English)
+         column 2 = inline-end    → galaxy stage (center of the page),
+                                    on the side opposite to where the
+                                    document flow starts
+       The narrow rail no longer claims a grid column — the desktop
+       FloatingSidebar lives outside the grid as `position: fixed`,
+       pinned to the inline-end edge of the viewport. The body adds
+       a `padding-inline-end` gutter so the support sidebar doesn't
+       collide with the floating rail.
+       In LTR: support is visual-left, floating rail is visual-right
+               (stage sits between sidebar and rail).
+       In RTL: support is visual-right, floating rail is visual-left
+               (same relationship, mirrored).
+       No physical-direction lock. Grid resolves natively to the
+       page's `dir` attribute. */
+    .library-body {
+      /* Single-column body — the two support panels are taken OUT of
+         the body's flow (each is `position: fixed` from inside its
+         own component CSS). No inline padding here: the SYMMETRIC
+         inline padding lives on `.library-root` instead, so the body's
+         max-width + margin: 0 auto centers it perfectly on the
+         viewport. The galaxy core (image centered at left:50% of
+         `.library-galaxy` inside the body) thus lands exactly at the
+         viewport's center — independent of where the fixed support
+         panels sit. */
+      display: block;
+      min-height: calc(var(--library-dashboard-min-height, 100dvh) - 2.75rem);
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0;
+    }
+    /* Galaxy stage still uses physical left/right for the absolute
+       orbit slots so the TL/TR/ML/MR/BL/BR placement of the floating
+       cards is language-independent (the slots target visual corners,
+       not reading-flow corners). Cards inside re-apply page direction
+       so Hebrew titles still read RTL. */
+    .library-galaxy { direction: ltr; }
+    .galaxy-card    { direction: var(--page-direction, ltr); }
+
+    /* The two support panels (ContinueLearningCard + LibraryStatsPanel)
+       are anchored individually via `position: fixed` from inside
+       their own component CSS (inset-inline-start: 20px,
+       top: header-offset + 20px, stacked via --continue-learning-card-height).
+       No wrapper needed here. */
+
+    /* ── Center stage: hero + galaxy ──────────────────────────────── */
+    .lb-area-stage {
+      /* Zero stage-gap: the hero now lives as the title strip of the
+         galaxy, not a separate block. .galaxy-stage provides its own
+         interior padding for the orbits. */
+      gap: 0;
+      min-width: 0;
+      position: relative;
+      /* No background layer here. The page-level unified system
+         (--yuval-galaxy-bg-radial-primary on .library-root) is centered
+         right under this column and provides the violet field for both
+         hero and stage. Adding a column-level layer here used to
+         compound the violet and produce a "block within a block" feel. */
+    }
+    .lb-area-hero {
+      flex: 0 0 auto;
+      max-width: 680px;
+      margin-inline: auto;
+      width: 100%;
+    }
+    /* Galaxy stage takes the remaining vertical space — with the
+       recommendations strip removed, the orbit owns the entire lower
+       half of the viewport so the central knowledge core can breathe. */
+    .lb-area-featured {
+      flex: 1 1 auto;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* ── Mobile quick-actions aside: hidden on desktop ──
+       The aside stays as `display: contents` (mobile baseline). Its
+       only child `.lb-area-quick-mobile` is `display: none` on desktop,
+       so the aside contributes nothing visible to the grid. The
+       desktop floating rail is `<FloatingSidebar>` rendered outside
+       `.library-body` with `position: fixed`. */
+    .lb-area-quick-mobile { display: none; }
+
+    /* Galaxy stage on desktop: absolute canvas anchored to the stage.
+       Min-height bumped to 540 so the ML/MR orbit cards have enough
+       vertical room not to overlap the central core at the narrowest
+       desktop widths (1024-1199px).
+
+       Background tuned to match the asset palette: a soft violet
+       radial glow at the center fading to the page's deep navy at
+       the edges. This is the primary fix for the "rectangle pasted
+       in" look — the stage no longer has hard color contrast where
+       the asset ends; the violet center seamlessly continues the
+       asset's own glow, and the dark edges seamlessly continue the
+       page background. */
+    .library-galaxy {
+      position: relative;
+      display: block;
+      height: 100%;
+      min-height: 540px;
+      margin: 0;
+      overflow: visible;
+      flex-direction: initial;
+      scroll-snap-type: none;
+      padding: 0;
+      scrollbar-width: auto;
+      scrollbar-color: auto;
+      /* Vertical offset of the entire orbit scene (rings, central core,
+         floating cards, glow, rotation controls) so rotated carousel
+         items never overlap the page title above. Lives on the orbit
+         container only — page title, breadcrumb, side panels and grid
+         shell are unaffected. Responsive steps below override the value
+         per breakpoint; the transform itself stays the same.
+         Compromise value: the user asked to lift the scene 50px so the
+         core sits higher, but at 6px the top cards overlapped the hero
+         subtitle. Pulled the orbit back down to 36px (still ~20px
+         higher than the original 56px, but with enough headroom that
+         the subtitle reads cleanly above the top-of-orbit cards). */
+      --orbit-vertical-offset: 36px;
+      transform: translateY(var(--orbit-vertical-offset));
+    }
+    /* The earlier `.library-galaxy::before` underlay halo and
+       `.galaxy-stage-veil` overlay were experimental edge-blending
+       layers. Both removed: the new full-page actual-asset underlay
+       on `.library-root::before` propagates the asset's visual
+       language across the entire screen, so per-asset edge blending
+       layers are no longer necessary. */
+    .library-galaxy::-webkit-scrollbar { height: auto; }
+
+    /* `.galaxy-core` and its child rules (.galaxy-core-pool,
+       .galaxy-core-aura) were removed alongside their markup nodes:
+       they were sized for a 240×240 CSS-rendered core, but the asset
+       is 760-820px wide and covered them entirely. They contributed
+       nothing visible. The asset + page-level unified backdrop is
+       the entire central composition. */
+
+    /* The galaxy PNG no longer lives inside the orbit stage; it is
+       now rendered once at the page root as `.knowledge-scene-background`
+       (full-viewport fixed). Edge mask, max-width, focus-dim and
+       reduced-motion rules that targeted `.galaxy-stage-image` were
+       removed alongside the markup. */
+
+    /* ── Floating cards: elliptical orbit.
+          Every readable item has its own station along an ellipse around
+          the central area. Position is computed in CSS via cos()/sin()
+          from each card's `--orbit-angle` (set inline per card in the
+          markup). --galaxy-dir mirrors the X axis so the inline-start
+          arc stays visual-left in LTR and visual-right in RTL.
+          Depth is angle-derived: cards at the bottom of the orbit
+          (sin > 0) read as nearer (slightly larger, fully opaque); cards
+          at the top read as farther (smaller, slightly dimmed). All
+          cards are visible at once — no carousel, no queue. */
+    .galaxy-card {
+      position: absolute;
+      flex: initial;
+      max-width: none;
+      width: 190px;
+      cursor: pointer;
+      top: 50%;
+      left: 50%;
+      /* Ellipse radii — clamped so the orbit shrinks gracefully on
+         narrow desktop widths and grows on wide ones. */
+      --orbit-rx: clamp(280px, 32vw, 380px);
+      --orbit-ry: clamp(180px, 28vh, 230px);
+      /* Effective angle = base angle (set inline per card) + the
+         stage-level rotation that the rotate-orbit controls drive.
+         All trigonometry below reads from this so a single CSS-var
+         change on the stage moves every card around the ellipse in
+         lockstep, animated via the existing transform transition. */
+      --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
+      /* Depth from angle: --orbit-depth ranges 0 (top of orbit, farthest)
+         to 1 (bottom, nearest). sin(angle) is -1 at the top and +1 at
+         the bottom; remap to [0, 1]. */
+      --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
+      --slot-scale: calc(0.9 + 0.12 * var(--orbit-depth));
+      --slot-opacity: calc(0.86 + 0.14 * var(--orbit-depth));
+      /* Subtle perpendicular tilt: cards on the inline-start arc
+         (cos < 0 in default LTR, after dir flip) lean inward. */
+      --tilt: calc(cos(var(--orbit-active-angle, 0deg)) * 4deg * var(--galaxy-dir, 1) * -1);
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
+      opacity: var(--slot-opacity);
+      transition:
+        transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease;
+      z-index: 2;
+      will-change: transform, opacity;
+    }
+
+    /* Type tint — books pick the gold accent rotation, lessons the
+       cyan one, series the violet one. Keeps the groups visually
+       distinct on the orbit without needing column-based layout.
+       Series capsules sit at the top of the orbit and pick up the
+       purple accent already defined in the cosmic palette so they
+       read as part of the family without competing with the
+       gold/cyan pairing of books and lessons. */
+    .galaxy-card[data-kind="book"]   { --card-accent-slot: var(--yuval-galaxy-accent-gold); }
+    .galaxy-card[data-kind="lesson"] { --card-accent-slot: var(--yuval-galaxy-accent-cyan); }
+    .galaxy-card[data-kind="series"] { --card-accent-slot: var(--yuval-galaxy-accent-purple); }
+
+    /* Linked-glow halo ─────────────────────────────────────────────
+       The artifact PNG (the visible book-card art) has transparent
+       margins around the painted card pixels, so `box-shadow` on
+       any container draws a rectangle far from the visible card
+       edge. Solution: `filter: drop-shadow` on the artifact image
+       itself — drop-shadow follows the alpha channel and lands on
+       the actual painted silhouette of the card, regardless of the
+       transparent padding around it.
+
+       Three stacked drop-shadows per keyframe — a tight inner ring
+       plus two soft outer blooms — produce a luminous halo that
+       reads as a deliberate accent rather than a hard outline.
+       The 3-stop cycle (gold → orange → turquoise → gold) repeats
+       twice over the 3-second window. z-index on the wrapper rises
+       during the pulse so highlighted cards float above neighbours.
+       */
+    .galaxy-card.is-linked-glow {
+      z-index: 5;
+    }
+    :global(.galaxy-card.is-linked-glow .lc-orbit-artifact-face-front) {
+      animation: yuval-linked-glow 1.5s ease-in-out infinite;
+    }
+    @keyframes yuval-linked-glow {
+      0% {
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 8px  rgba(255, 215, 0, 0.85))
+          drop-shadow(0 0 18px rgba(255, 215, 0, 0.55));
+      }
+      33% {
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 140, 0, 1))
+          drop-shadow(0 0 8px  rgba(255, 140, 0, 0.85))
+          drop-shadow(0 0 18px rgba(255, 140, 0, 0.55));
+      }
+      66% {
+        filter:
+          drop-shadow(0 0 2px  rgba(64, 224, 208, 1))
+          drop-shadow(0 0 8px  rgba(64, 224, 208, 0.85))
+          drop-shadow(0 0 18px rgba(64, 224, 208, 0.55));
+      }
+      100% {
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 8px  rgba(255, 215, 0, 0.85))
+          drop-shadow(0 0 18px rgba(255, 215, 0, 0.55));
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      :global(.galaxy-card.is-linked-glow .lc-orbit-artifact-face-front) {
+        animation: none;
+        filter:
+          drop-shadow(0 0 2px  rgba(255, 215, 0, 1))
+          drop-shadow(0 0 12px rgba(64, 224, 208, 0.55));
+      }
+    }
+
+    /* Drag-to-rotate — while the user is actively dragging the orbit
+       we drop the transform transition so the carousel tracks the
+       cursor in real time (no easing lag). The transition is restored
+       the moment the drag ends, which lets the snap-to-station read
+       as a smooth animated move. The grabbing cursor + user-select
+       reset prevent accidental text selection mid-drag. */
+    .library-galaxy[data-galaxy-dragging],
+    .library-galaxy[data-galaxy-dragging] .galaxy-card {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .library-galaxy[data-galaxy-dragging] .galaxy-card {
+      transition: none;
+    }
+    /* Block the browser's native image/link drag on every card and on
+       its descendant images. Without this, mousedown on the inner <a>
+       starts a drag-and-drop "ghost" that prevents our pointermove
+       handler from tracking the cursor. The pointerdown handler also
+       calls preventDefault, but the CSS hint catches stragglers (e.g.
+       SVG/IMG nodes that opt themselves into drag separately). */
+    .galaxy-card,
+    .galaxy-card *,
+    .galaxy-card img,
+    .galaxy-card svg {
+      -webkit-user-drag: none;
+    }
+
+    /* ── Series capsule —
+          Built client-side as a separate node when ≥2 visible items
+          share a seriesName. The wrapper .galaxy-card carries the
+          orbit positioning machinery so the capsule lives at a real
+          station on the ellipse, exactly like a single-book card.
+          Capsules are clickable: they enter series mode, expanding
+          the series's books into a carousel and collapsing the rest
+          of the universe into "Other Knowledge". */
+    .galaxy-card[data-role="series"] {
+      cursor: pointer;
+      /* A capsule is wider than a regular book card on the orbit so the
+         shape proportions alone signal "container, not item" — even
+         before reading the badge or label. */
+      width: 210px;
+      /* Resolve series colour at the wrapper level so the deck pseudos
+         (below) and the inner capsule both read the same value without
+         each redefining it. */
+      --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
+    }
+    /* Stacked deck — two ghost rectangles peeking out behind the capsule,
+       narrower and offset downward so the capsule reads as a stack of
+       grouped knowledge, not as a single tile. Pure decoration via
+       wrapper pseudo-elements; muted/active state animations on the
+       wrapper carry the deck along automatically. */
+    .galaxy-card[data-role="series"]::before,
+    .galaxy-card[data-role="series"]::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      border-radius: 18px;
+      border-end-start-radius: 12px;
+      background: color-mix(in srgb, var(--series-color-resolved) 8%, var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78)));
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+      z-index: 0;
+    }
+    /* Middle layer — peeks 4 px below, narrower by 8 px each side. */
+    .galaxy-card[data-role="series"]::after {
+      inset-block-start: 4px;
+      inset-block-end: -4px;
+      inset-inline-start: 8px;
+      inset-inline-end: 8px;
+      opacity: 0.85;
+    }
+    /* Back layer — peeks 8 px below, narrower by 18 px each side. */
+    .galaxy-card[data-role="series"]::before {
+      inset-block-start: 7px;
+      inset-block-end: -8px;
+      inset-inline-start: 18px;
+      inset-inline-end: 18px;
+      opacity: 0.6;
+    }
+    .galaxy-card[data-role="series"]:focus-visible {
+      outline: none;
+    }
+    .galaxy-card[data-role="series"]:focus-visible .galaxy-series-capsule {
+      box-shadow:
+        0 14px 38px -14px color-mix(in srgb, var(--series-color-resolved) 70%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--series-color-resolved) 70%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+    }
+
+    /* ── Series members —
+          Every individual book inside a multi-item series is kept in
+          the DOM as an orbit card, but tagged with data-series-member
+          so it stays hidden in universe mode. Series mode reveals the
+          members of the active series via .is-active-series-member
+          (added by the hydrator JS). */
+    .galaxy-card[data-series-member] {
+      display: none;
+    }
+
+    /* ── Series mode — stage-level state.
+          Activated by clicking a SeriesCapsule. The hydrator sets
+          data-stage-mode="series" + data-active-series="<name>" on
+          the stage element, then class-tags individual cards. */
+
+    /* Mute every station that isn't the active series's books or
+       the synthesized Other Knowledge pill. Premium fade — opacity
+       and scale only, no jarring movement. */
+    [data-stage-mode="series"] .galaxy-card.is-muted {
+      opacity: 0;
+      pointer-events: none;
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1) * 0.85),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry) * 0.85)
+        )
+        rotate(var(--tilt))
+        scale(0.7);
+    }
+
+    /* The active series's own capsule is replaced by its books, so
+       hide the capsule in series mode. */
+    [data-stage-mode="series"] .galaxy-card.is-active-series-capsule {
+      opacity: 0;
+      pointer-events: none;
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(0.85);
+    }
+
+    /* Members of the active series — revealed and laid out in a
+       horizontal carousel centered on the stage. The horizontal
+       offset per card is computed from the index/total custom
+       properties set by the hydrator. */
+    [data-stage-mode="series"] .galaxy-card.is-active-series-member {
+      display: block;
+      --series-step: clamp(195px, 22vw, 230px);
+      --series-row-x: calc(
+        (var(--series-active-index, 0)
+          - (var(--series-active-total, 1) - 1) / 2)
+        * var(--series-step)
+        * var(--galaxy-dir, 1)
+      );
+      transform:
+        translate(-50%, -50%)
+        translate(var(--series-row-x), 0)
+        scale(1.12);
+      opacity: 1;
+      z-index: 5;
+      cursor: pointer;
+    }
+
+    /* Hover lift on a carousel book — gentle vertical bump only,
+       overrides the default radial-bump hover so cards don't fly
+       off the row. */
+    [data-stage-mode="series"]
+      .galaxy-card.is-active-series-member:hover:not([data-pos="center"]),
+    [data-stage-mode="series"]
+      .galaxy-card.is-active-series-member:focus-visible:not([data-pos="center"]) {
+      transform:
+        translate(-50%, -50%)
+        translate(var(--series-row-x), -6px)
+        scale(1.16);
+      opacity: 1;
+    }
+
+    /* ── Other Knowledge capsule —
+          Synthesized by JS on series-mode entry, removed on exit.
+          Sits at the inline-end top of the stage as a compact pill
+          summarising "everything else". Clicking it exits series
+          mode and restores the universe. */
+    .galaxy-card[data-role="other-knowledge"] {
+      /* Reset the orbit-card absolute geometry. */
+      top: 0;
+      left: auto;
+      inset-block-start: 12px;
+      inset-inline-end: 12px;
+      width: auto;
+      transform: none;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 6;
+      transition:
+        opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .galaxy-card[data-role="other-knowledge"].is-visible {
+      opacity: 1;
+    }
+    .galaxy-card[data-role="other-knowledge"]:hover .galaxy-other-knowledge,
+    .galaxy-card[data-role="other-knowledge"]:focus-visible .galaxy-other-knowledge {
+      border-color: color-mix(in srgb, var(--yuval-galaxy-text, #ececea) 30%, transparent);
+      background: var(--yuval-galaxy-card-surface-hover, rgba(28, 30, 44, 0.82));
+    }
+    .galaxy-card[data-role="other-knowledge"]:focus-visible {
+      outline: none;
+    }
+
+    .galaxy-other-knowledge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.85rem 0.55rem 0.65rem;
+      border-radius: 999px;
+      background: var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78));
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-text-muted, #6e6e6c) 40%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.5);
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .galaxy-other-knowledge-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--yuval-galaxy-text-muted, #6e6e6c) 20%, transparent),
+        color-mix(in srgb, var(--yuval-galaxy-text-muted, #6e6e6c) 8%, transparent)
+      );
+      color: var(--yuval-galaxy-text, #ececea);
+      font-size: 1.15rem;
+      line-height: 1;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+
+    .galaxy-other-knowledge-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      line-height: 1.25;
+      padding-inline-end: 0.15rem;
+    }
+
+    .galaxy-other-knowledge-label {
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--yuval-galaxy-text, #ececea);
+      letter-spacing: 0.005em;
+    }
+
+    .galaxy-other-knowledge-count {
+      font-size: 0.66rem;
+      color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-muted, #a8a8a4));
+      letter-spacing: 0.02em;
+    }
+
+    .galaxy-other-knowledge-count strong {
+      color: var(--yuval-galaxy-text, #ececea);
+      font-weight: 600;
+      margin-inline-end: 0.2rem;
+    }
+
+    .galaxy-series-capsule {
+      position: relative;
+      /* Stacked above the wrapper's deck pseudo-elements. */
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 1.05rem 1.1rem 0.85rem;
+      padding-inline-start: 1.2rem;
+      /* Restrained asymmetry — the inline-start/block-end corner is
+         tighter so the capsule reads as a grounded container, not as
+         a floating chip. Logical so RTL flips automatically. */
+      border-radius: 22px;
+      border-end-start-radius: 14px;
+      background:
+        /* Atmospheric inner glow from the top, painted with the series
+           color. Lives in the background stack (not a pseudo-element)
+           so children render above it without z-index gymnastics. */
+        radial-gradient(
+          ellipse 70% 55% at 50% 0%,
+          color-mix(in srgb, var(--series-color-resolved) 18%, transparent) 0%,
+          transparent 65%
+        ),
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--series-color-resolved) 11%, transparent) 0%,
+          color-mix(in srgb, var(--series-color-resolved) 4%, transparent) 55%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 84%, transparent) 100%
+        ),
+        var(--yuval-galaxy-card-surface, rgba(20, 22, 36, 0.78));
+      /* Two-layer luminous border — hairline outer ring + a slightly
+         stronger inner edge — for a refined, lit-from-within feel. */
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 36%, transparent);
+      box-shadow:
+        0 10px 26px -16px color-mix(in srgb, var(--series-color-resolved) 38%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 14%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+      backdrop-filter: blur(14px) saturate(125%);
+      -webkit-backdrop-filter: blur(14px) saturate(125%);
+      transition:
+        border-color 240ms ease,
+        box-shadow 240ms ease;
+    }
+
+    /* Capsule edge indicator — a thin luminous bar along the inline-start
+       side, painted in the series color. Echoes the series swatch on
+       /admin so the same color identifies the same series everywhere. */
+    .galaxy-series-capsule::before {
+      content: "";
+      position: absolute;
+      inset-block: 16px;
+      inset-inline-start: 0;
+      width: 2px;
+      border-radius: 0 2px 2px 0;
+      background: var(--series-color-resolved);
+      opacity: 0.75;
+      box-shadow: 0 0 8px color-mix(in srgb, var(--series-color-resolved) 60%, transparent);
+    }
+    [dir="rtl"] .galaxy-series-capsule::before {
+      border-radius: 2px 0 0 2px;
+    }
+
+    /* Binder ridge — a hairline horizontal line tucked into the empty
+       strip above the badge, like the metal clip at the top of a binder.
+       Reads as "container surface" rather than "card top edge". */
+    .galaxy-series-capsule::after {
+      content: "";
+      position: absolute;
+      inset-block-start: 7px;
+      inset-inline: 16px;
+      height: 1px;
+      pointer-events: none;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--series-color-resolved) 50%, transparent) 30%,
+        color-mix(in srgb, var(--series-color-resolved) 65%, transparent) 50%,
+        color-mix(in srgb, var(--series-color-resolved) 50%, transparent) 70%,
+        transparent 100%
+      );
+      opacity: 0.55;
+    }
+
+    /* Restrained hover — slightly lift the border luminosity and the
+       inner edge, no large bloom. The universe should feel calm. */
+    .galaxy-card[data-role="series"]:hover .galaxy-series-capsule {
+      border-color: color-mix(in srgb, var(--series-color-resolved) 52%, transparent);
+      box-shadow:
+        0 12px 30px -16px color-mix(in srgb, var(--series-color-resolved) 48%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--series-color-resolved) 20%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--series-color-resolved) 28%, transparent);
+    }
+
+    .galaxy-series-badge {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px 2px 8px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--series-color-resolved) 18%, transparent);
+      border: 1px solid color-mix(in srgb, var(--series-color-resolved) 55%, transparent);
+      color: var(--series-color-resolved);
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+    /* Stacked-bars glyph rendered purely in CSS — three short horizontal
+       lines tucked before the badge text. Reinforces the "stacked
+       knowledge" semantic without adding markup. */
+    .galaxy-series-badge::before {
+      content: "";
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-inline-end: 6px;
+      background:
+        linear-gradient(currentColor, currentColor) top center / 9px 1.4px no-repeat,
+        linear-gradient(currentColor, currentColor) center      / 7px 1.4px no-repeat,
+        linear-gradient(currentColor, currentColor) bottom center / 5px 1.4px no-repeat;
+      vertical-align: -1px;
+      opacity: 0.95;
+    }
+
+    .galaxy-series-name {
+      margin: 0;
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 1.12rem;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--yuval-galaxy-text, #ececea);
+      letter-spacing: -0.01em;
+      /* Allow up to 2 lines — series names tend to be longer than book titles. */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .galaxy-series-counts {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      margin-top: 2px;
+    }
+
+    .galaxy-series-count-line {
+      font-size: 0.72rem;
+      color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-muted, #a8a8a4));
+      line-height: 1.45;
+      letter-spacing: 0.005em;
+    }
+
+    .galaxy-series-count-line strong {
+      color: var(--yuval-galaxy-text, #ececea);
+      font-family: 'Spectral', 'Cardo', Georgia, serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-feature-settings: 'tnum' 1, 'lnum' 1;
+      margin-inline-end: 0.3rem;
+    }
+
+    .galaxy-series-count-available strong {
+      color: var(--series-color-resolved);
+    }
+
+    /* Shelf — the spine row sits in a recessed compartment with a
+       luminous bottom edge, so the spines read as "books on a shelf"
+       rather than as a chart. Margin pulls the shelf to the inline
+       edges of the capsule's inner padding so it spans the full width. */
+    .galaxy-series-stack {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 18px;
+      margin-block-start: 6px;
+      margin-inline: -0.35rem;
+      padding: 4px 0.5rem 5px;
+      border-radius: 5px 5px 8px 8px;
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 22%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 42%, transparent) 100%
+        );
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #000 22%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, var(--series-color-resolved) 14%, transparent);
+    }
+    /* Luminous shelf line — the surface the books are resting on. */
+    .galaxy-series-stack::after {
+      content: "";
+      position: absolute;
+      inset-block-end: 1px;
+      inset-inline: 8px;
+      height: 1px;
+      pointer-events: none;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--series-color-resolved) 60%, transparent) 50%,
+        transparent 100%
+      );
+      opacity: 0.7;
+    }
+    /* Each spine = one book. Capped at 5 in the hydrator. Heights vary
+       in a fixed, gentle rhythm — not random — so the row reads as
+       "books on a shelf" without visual noise. */
+    .galaxy-series-spine {
+      display: block;
+      width: 3px;
+      border-radius: 1px 1px 0 0;
+      background: color-mix(in srgb, var(--series-color-resolved) 22%, transparent);
+      height: 11px;
+    }
+    .galaxy-series-spine:nth-child(2) { height: 13px; }
+    .galaxy-series-spine:nth-child(3) { height: 12px; }
+    .galaxy-series-spine:nth-child(4) { height: 14px; }
+    .galaxy-series-spine:nth-child(5) { height: 12px; }
+    .galaxy-series-spine.is-filled {
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--series-color-resolved) 92%, white) 0%,
+        var(--series-color-resolved) 100%
+      );
+      opacity: 0.85;
+      box-shadow:
+        inset 0 -1px 0 color-mix(in srgb, #000 25%, transparent);
+    }
+
+    /* Centered focus state — overrides the orbit transform so the card
+       flies to the middle, scales up, drops its tilt. Sits above the
+       backdrop and other cards. */
+    .galaxy-card[data-pos="center"] {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 1;
+      z-index: 30;
+      cursor: default;
+    }
+
+    /* Hover lift — small bump along the radial direction (cards move
+       slightly further from center) plus a brightness/scale bump.
+       Skipped when the card is focused to avoid double transforms. */
+    .galaxy-card:hover:not([data-pos="center"]),
+    .galaxy-card:focus-visible:not([data-pos="center"]) {
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * (var(--orbit-rx) + 8px) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * (var(--orbit-ry) + 8px))
+        )
+        rotate(calc(var(--tilt) * 0.5))
+        scale(calc(var(--slot-scale) * 1.04));
+      opacity: 1;
+      z-index: 3;
+    }
+    .galaxy-card:focus-visible {
+      outline: none;
+    }
+
+    /* CTA overlay — hidden when card is in slot/queue; revealed only
+       when data-pos="center". Children stop click propagation so the
+       card-level handler never fires for Open/Close. */
+    .galaxy-cta {
+      position: absolute;
+      /* Anchor outside the focused card on its inline-start edge,
+         near the top. In RTL Hebrew that's visually top-right (what
+         was requested); in LTR English the same logical position
+         lands at top-left, mirroring with the page direction.
+         `inset-inline-end: 100%` puts the element's inline-end side
+         at the card's inline-start edge, so the whole CTA sits
+         just outside; the negative margin then pulls it slightly
+         further out so it doesn't touch the card. */
+      inset-block-start: 0;
+      inset-inline-end: 100%;
+      inset-inline-start: auto;
+      inset-block-end: auto;
+      margin-inline-end: 0.625rem;
+      /* Stack orb + X vertically — orb on top (primary), close below
+         (secondary). */
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+      justify-content: flex-start;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease 0.15s;
+    }
+    .galaxy-card[data-pos="center"] .galaxy-cta {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    /* ── Knowledge activation orb ─────────────────────────────────────
+          Compact circular CTA that replaces the previous pill — feels
+          native to the holographic knowledge-card universe rather than
+          a generic web button. Layered structure:
+            .galaxy-cta-open        — the orb body (translucent glass)
+            .galaxy-cta-open-core   — inner radial light
+            .galaxy-cta-open-ring   — outer dashed ring (rotates on hover)
+            .galaxy-cta-open-icon   — the open/access glyph
+            .galaxy-cta-open-label  — hover/focus tooltip
+          Real <a> element with `aria-label`, so keyboard + screen-reader
+          paths work exactly like the previous button (Enter/Space follow
+          the link, focus-visible draws the same activated state). */
+    .galaxy-cta-open {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      color: var(--yuval-galaxy-accent, #5eead4);
+      cursor: pointer;
+      text-decoration: none;
+      /* Translucent glass body — inner glow rooted on the accent,
+         fading into the page background colour at the edges. The
+         core layer (::core span below) handles the brighter centre. */
+      background:
+        radial-gradient(
+          circle at 50% 38%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 24%, transparent) 0%,
+          color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 8%, transparent) 55%,
+          transparent 100%
+        ),
+        color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) inset,
+        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent) inset,
+        0 0 18px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition:
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 220ms cubic-bezier(0.4, 0, 0.2, 1);
+      /* Subtle continuous breathing — the orb feels alive even at rest. */
+      animation: galaxy-cta-open-pulse 3.6s ease-in-out infinite;
+    }
+    @keyframes galaxy-cta-open-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 18%, transparent) inset,
+          0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 50%, transparent) inset,
+          0 0 18px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
+      }
+      50% {
+        box-shadow:
+          0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 26%, transparent) inset,
+          0 0 8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 60%, transparent) inset,
+          0 0 24px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
+      }
+    }
+    /* Inner core highlight — small luminous spot toward the upper-left
+       of the orb, like a glass marble's reflected light source. */
+    .galaxy-cta-open-core {
+      position: absolute;
+      inset: 18%;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 38% 30%,
+        color-mix(in srgb, white 35%, transparent) 0%,
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 22%, transparent) 28%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+    /* Outer dashed ring — sits just outside the orb. Rotates slowly
+       on hover/focus; static + slightly dimmer at rest. */
+    .galaxy-cta-open-ring {
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 1px dashed
+        color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 45%, transparent);
+      opacity: 0.7;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    @keyframes galaxy-cta-open-ring-rotate {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    /* Open/access glyph — chevron into the inline-end direction. RTL
+       mirroring is handled below so "→" stays reading-flow forward. */
+    .galaxy-cta-open-icon {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      z-index: 1;
+      filter: drop-shadow(
+        0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 65%, transparent));
+      transition: opacity 180ms ease;
+    }
+    [dir="rtl"] .galaxy-cta-open-icon { transform: scaleX(-1); }
+
+    /* Hover label — floats to the PHYSICAL RIGHT of the orb,
+       vertically centered on the orb. Physical `left` + `top` (not
+       `inset-inline-*`) so the side stays the same in both RTL and
+       LTR — the user explicitly asked for visual-right. The 4px
+       inward initial translation gives a small slide-in entry. */
+    .galaxy-cta-open-label {
+      position: absolute;
+      top: 50%;
+      left: calc(100% + 0.5rem);
+      bottom: auto;
+      right: auto;
+      inset-block-start: auto;
+      inset-block-end: auto;
+      inset-inline-start: auto;
+      inset-inline-end: auto;
+      transform: translateY(-50%) translateX(-4px);
+      padding: 0.25rem 0.625rem;
+      border-radius: 999px;
+      font-family: 'Assistant', system-ui, sans-serif;
+      font-size: 0.78125rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--yuval-galaxy-text, #ececea);
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 82%, transparent);
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 28%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition:
+        opacity 180ms ease,
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .galaxy-cta-open:hover,
+    .galaxy-cta-open:focus-visible {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 80%, transparent);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 30%, transparent) inset,
+        0 0 8px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 70%, transparent) inset,
+        0 0 28px -2px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 55%, transparent),
+        0 0 14px color-mix(in srgb, var(--yuval-galaxy-accent, #5eead4) 35%, transparent);
+      outline: none;
+      /* Pause the rest pulse — hover/focus drives its own glow now. */
+      animation-play-state: paused;
+    }
+    .galaxy-cta-open:hover .galaxy-cta-open-ring,
+    .galaxy-cta-open:focus-visible .galaxy-cta-open-ring {
+      opacity: 1;
+      animation: galaxy-cta-open-ring-rotate 12s linear infinite;
+    }
+    /* Icon stays visible on hover — the label is its own bubble
+       above the orb now, no swap needed. */
+    .galaxy-cta-open:hover .galaxy-cta-open-label,
+    .galaxy-cta-open:focus-visible .galaxy-cta-open-label {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+    .galaxy-cta-open:active {
+      transform: translateY(0);
+      transition-duration: 80ms;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .galaxy-cta-open,
+      .galaxy-cta-open-icon,
+      .galaxy-cta-open-label,
+      .galaxy-cta-open-ring { transition: none; animation: none; }
+      .galaxy-cta-open:hover .galaxy-cta-open-ring,
+      .galaxy-cta-open:focus-visible .galaxy-cta-open-ring { animation: none; }
+    }
+    .galaxy-cta-close {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.125rem;
+      line-height: 1;
+      color: var(--yuval-galaxy-text-muted);
+      background: var(--yuval-galaxy-surface-muted);
+      border: 1px solid var(--yuval-galaxy-border);
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .galaxy-cta-close:hover,
+    .galaxy-cta-close:focus-visible {
+      color: var(--yuval-galaxy-text);
+      background: var(--yuval-galaxy-card-surface-hover);
+      border-color: var(--yuval-galaxy-border-strong);
+      outline: none;
+    }
+
+    /* Click-catcher only — covers the stage when a card is focused so
+       a click anywhere outside the centered card closes the focus
+       state. No visible fill / no blur layer: the focused card is its
+       own focal point now (1.5× scale, larger artifact, layered text),
+       and the wide blur was reading as a heavy panel behind the
+       artifact rather than helping the focal lift. */
+    .galaxy-backdrop {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .library-galaxy[data-galaxy-focused] .galaxy-backdrop {
+      /* Stays invisible — only its hitbox matters. opacity:1 just lets
+         pointer-events register; it has nothing to render. */
+      opacity: 1;
+      pointer-events: auto;
+    }
+    /* Focus state used to dim the centered PNG so the focused card
+       read as the new focal point. With the galaxy now rendered as
+       a full-viewport scene background, the `.galaxy-backdrop` blur+
+       darken layer above the orbit already provides that focal lift,
+       so no extra dimming is wired here. */
+
+    /* Orbit rotation controls — small chevron pair centered at the
+       bottom of the stage. Each click bumps --orbit-rotation on the
+       stage by ±360°/N, and CSS interpolates the resulting transform
+       on every card simultaneously. The wrapper is a flex pill so
+       the two buttons read as one control. */
+    .galaxy-orbit-controls {
+      position: absolute;
+      inset-block-end: -1.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.375rem;
+      padding: 0.25rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, #1a1a3a) 75%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 4;
+    }
+    .galaxy-orbit-btn {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: var(--yuval-galaxy-text-soft);
+      background: var(--yuval-galaxy-surface-muted);
+      border: 1px solid var(--yuval-galaxy-border);
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .galaxy-orbit-btn:hover,
+    .galaxy-orbit-btn:focus-visible {
+      color: var(--yuval-galaxy-text);
+      background: var(--yuval-galaxy-card-surface-hover);
+      border-color: var(--yuval-galaxy-border-strong);
+      transform: translateY(-1px);
+      outline: none;
+    }
+    /* Mirror chevrons on RTL pages so "next" still points toward the
+       direction reading flows. The stage itself is direction:ltr;
+       only the icons need the manual flip. */
+    [dir="rtl"] .galaxy-orbit-btn svg { transform: scaleX(-1); }
+
+  }
+
+  /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
+  @media (min-width: 1280px) {
+    /* Larger orbit scene gets a deeper vertical offset so rotating
+       cards along the wider ellipse still clear the page title. Set
+       to 52px — same +30 px lift over the base desktop step (36px)
+       that the original ladder used (72-56=16px → 52-36=16px) so
+       the wide-desktop hierarchy stays consistent while keeping the
+       subtitle clear of the top cards. */
+    .library-galaxy {
+      --orbit-vertical-offset: 52px;
+    }
+    .galaxy-card {
+      width: 210px;
+      --orbit-rx: clamp(320px, 30vw, 440px);
+      --orbit-ry: clamp(200px, 26vh, 250px);
+    }
+    /* Capsule stays one notch wider than a book card so the proportion
+       contrast holds across breakpoints. */
+    .galaxy-card[data-role="series"] {
+      width: 232px;
+    }
+  }
+
+  /* ── Series action panel — shown next to a focused series capsule ──
+        Two pill buttons that ride along inside the existing
+        `.galaxy-cta` slot. The slot's fade-in / pointer-events rule
+        already gates visibility on `[data-pos="center"]`, so these
+        buttons inherit the same focus-only reveal as the close button
+        without any extra logic.
+        Only series cards (`data-kind="series"`) ever render the
+        wrapper, so non-series cards remain unchanged. */
+  .galaxy-cta-series-actions {
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+    margin-block-start: 0.25rem;
+  }
+  .galaxy-cta-series-btn {
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--yuval-surface);
-    border: 1px solid var(--yuval-border);
-    border-radius: 0.75rem;
-    text-decoration: none;
-    transition: box-shadow 0.2s, border-color 0.2s;
+    gap: 0.5rem;
+    padding: 0.4375rem 0.75rem;
+    border-radius: 999px;
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 0.78125rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--yuval-galaxy-text, #ececea);
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 78%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 38%, transparent);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 180ms ease;
+    text-align: start;
+    white-space: nowrap;
+  }
+  .galaxy-cta-series-btn:hover,
+  .galaxy-cta-series-btn:focus-visible {
+    outline: none;
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 60%, transparent);
+    border-color: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 70%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 22%, transparent) inset,
+      0 0 14px -2px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 45%, transparent);
+  }
+  .galaxy-cta-series-btn[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 16%, var(--yuval-galaxy-bg, #00010d));
+    border-color: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 70%, transparent);
+  }
+  .galaxy-cta-series-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    color: var(--yuval-galaxy-accent-purple, #a78bfa);
+    flex: 0 0 auto;
+  }
+  .galaxy-cta-series-btn-label {
+    line-height: 1.1;
   }
 
-  .continue-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: var(--yuval-text);
+  /* ── Local children fan — opens around the focused series capsule ──
+        The fan is a horizontal row of small child cards positioned
+        under the focused capsule. It lives inside the orbit stage as
+        a positioned overlay so it never permanently mixes into the
+        main universe. Hidden until the controller populates it; the
+        controller also clears its contents on close so leftover state
+        never lingers. */
+  .series-children-fan[hidden] { display: none; }
+  .series-children-fan {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 1.25rem;
+    z-index: 25; /* above orbit cards (3), below focused card (30) */
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    padding-inline: 1rem;
   }
-
-  .continue-icon {
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
+  .series-children-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.625rem 0.875rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.625rem;
+    pointer-events: auto;
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 28%, transparent);
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 12%, transparent) inset,
+      0 18px 40px -16px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 40%, transparent);
+    max-width: min(640px, 92%);
+    animation: series-children-fade-in 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes series-children-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .series-children-empty {
+    margin: 0;
+    padding: 0.875rem 1.125rem;
+    pointer-events: auto;
+    color: var(--yuval-galaxy-text-soft);
+    font-size: 0.8125rem;
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 28%, transparent);
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-align: center;
+  }
+  .series-child-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 96px;
+    padding: 0.4375rem;
+    border-radius: 0.625rem;
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 65%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, rgba(120, 130, 165, 0.22)) 70%, transparent);
+    transition: border-color 160ms ease, transform 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .series-child-card:hover {
+    border-color: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 55%, transparent);
+    transform: translateY(-2px);
+  }
+  .series-child-visual {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.5rem;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--yuval-text);
-    border-radius: 8px;
-    color: var(--yuval-bg);
+    background:
+      radial-gradient(
+        circle at 50% 35%,
+        color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 18%, transparent) 0%,
+        transparent 70%
+      ),
+      var(--yuval-galaxy-surface-muted, #161a2c);
   }
-
-  .continue-content { flex: 1; min-width: 0; }
-
-  .continue-label {
-    display: block;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--yuval-text-muted);
-  }
-
-  .continue-title {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--yuval-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .continue-progress {
-    height: 3px;
-    background: var(--yuval-border);
-    border-radius: 99px;
-    overflow: hidden;
-    margin-top: 4px;
-  }
-
-  .continue-progress-fill {
+  .series-child-visual img {
+    width: 100%;
     height: 100%;
-    background: var(--yuval-text);
-    border-radius: 99px;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .series-child-visual-placeholder {
+    flex-direction: column;
+    gap: 0.25rem;
+    color: color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 75%, var(--yuval-galaxy-text-soft, #c8c8c4));
+  }
+  .series-child-placeholder-glyph {
+    display: inline-flex;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 50%, transparent));
+  }
+  .series-child-placeholder-type {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--yuval-galaxy-text-soft, #c8c8c4);
+    opacity: 0.85;
+  }
+  .series-child-title {
+    margin: 0.4375rem 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.25;
+    color: var(--yuval-galaxy-text, #ececea);
+    text-align: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  .continue-arrow { flex-shrink: 0; color: var(--yuval-text-muted); }
+  /* ── Series details drawer — same-page modal ───────────────────────
+        Right-anchored (logical inline-end) sliding drawer that opens
+        when the user clicks "Series details" on a focused capsule.
+        Uses a real <aside role="dialog" aria-modal="true"> so screen
+        readers and keyboard users get a proper modal surface. The
+        overlay is a sibling click-catcher; it does not blur to keep
+        the cosmic backdrop visible. */
+  .series-details-overlay[hidden],
+  .series-details-drawer[hidden] { display: none !important; }
+  .series-details-overlay {
+    position: fixed;
+    inset: 0;
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 70%, transparent);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 90;
+    animation: series-details-overlay-in 220ms ease-out;
+  }
+  @keyframes series-details-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .series-details-drawer {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-end: 0;
+    inset-inline-start: auto;
+    width: min(420px, 100vw);
+    max-width: 100vw;
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 92%, var(--yuval-galaxy-accent-purple, #a78bfa));
+    border-inline-start: 1px solid color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 40%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 20%, transparent) inset,
+      -24px 0 60px -10px color-mix(in srgb, #000 75%, transparent);
+    color: var(--yuval-galaxy-text, #ececea);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: series-details-drawer-in 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes series-details-drawer-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  [dir="rtl"] .series-details-drawer {
+    animation-name: series-details-drawer-in-rtl;
+  }
+  @keyframes series-details-drawer-in-rtl {
+    from { transform: translateX(-100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  .series-details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.125rem 1.25rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, rgba(120, 130, 165, 0.22)) 80%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--yuval-galaxy-accent-purple, #a78bfa) 12%, transparent) 0%,
+        transparent 100%
+      );
+  }
+  .series-details-title {
+    margin: 0;
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    color: var(--yuval-galaxy-text, #ececea);
+  }
+  .series-details-close {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: var(--yuval-galaxy-text-muted);
+    background: var(--yuval-galaxy-surface-muted);
+    border: 1px solid var(--yuval-galaxy-border);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .series-details-close:hover,
+  .series-details-close:focus-visible {
+    color: var(--yuval-galaxy-text);
+    background: var(--yuval-galaxy-card-surface-hover);
+    border-color: var(--yuval-galaxy-border-strong);
+    outline: none;
+  }
+  .series-details-body {
+    overflow-y: auto;
+    padding: 1.125rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.125rem;
+  }
+  .series-details-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .series-details-summary {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--yuval-galaxy-text, #ececea);
+    font-family: 'Spectral', 'Cardo', Georgia, serif;
+  }
+  .series-details-full {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--yuval-galaxy-text-muted);
+    white-space: pre-line;
+  }
+  .series-details-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(120px, max-content) 1fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, rgba(120, 130, 165, 0.22)) 80%, transparent);
+  }
+  .series-details-meta-row {
+    display: contents;
+  }
+  .series-details-meta-row dt {
+    margin: 0;
+    color: var(--yuval-galaxy-text-soft);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .series-details-meta-row dd {
+    margin: 0;
+    color: var(--yuval-galaxy-text, #ececea);
+    overflow-wrap: anywhere;
+  }
+  .series-details-meta-row code {
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    font-size: 0.78125rem;
+    padding: 0.125rem 0.4375rem;
+    border-radius: 0.25rem;
+    background: var(--yuval-galaxy-surface-muted, #161a2c);
+    border: 1px solid var(--yuval-galaxy-border, rgba(120, 130, 165, 0.22));
+    color: var(--yuval-galaxy-text, #ececea);
+  }
+  .series-details-list-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--yuval-galaxy-accent-purple, #a78bfa);
+  }
+  .series-details-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  .series-details-list-item {
+    padding: 0.4375rem 0.625rem;
+    border-radius: 0.375rem;
+    background: color-mix(in srgb, var(--yuval-galaxy-bg, #00010d) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yuval-galaxy-border, rgba(120, 130, 165, 0.22)) 60%, transparent);
+    font-size: 0.875rem;
+  }
+  .series-details-list-empty {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--yuval-galaxy-text-soft);
+    border: 1px dashed color-mix(in srgb, var(--yuval-galaxy-border, rgba(120, 130, 165, 0.22)) 80%, transparent);
+    border-radius: 0.375rem;
+    text-align: center;
+  }
+
+  /* ── Reduced motion — drop transitions, keep state changes instant ── */
+  @media (prefers-reduced-motion: reduce) {
+    .galaxy-card,
+    .galaxy-cta,
+    .galaxy-backdrop { transition: none; }
+    .series-details-drawer,
+    .series-details-overlay,
+    .series-children-list { animation: none; }
+    .galaxy-card:hover:not([data-pos="center"]),
+    .galaxy-card:focus-visible:not([data-pos="center"]) {
+      /* Restore base orbit transform — drop the radial bump. */
+      transform:
+        translate(-50%, -50%)
+        translate(
+          calc(cos(var(--orbit-active-angle, 0deg)) * var(--orbit-rx) * var(--galaxy-dir, 1)),
+          calc(sin(var(--orbit-active-angle, 0deg)) * var(--orbit-ry))
+        )
+        rotate(var(--tilt))
+        scale(var(--slot-scale));
+    }
+  }
 </style>
+
+<script>
+  /**
+   * Knowledge Universe — runtime orchestrator.
+   *
+   * Thin entry-point. The heavy work lives in dedicated modules:
+   *
+   *   universe-series-hydrator → reads editorial metadata, filters
+   *     hidden items, groups multi-item series into capsules, and
+   *     recomputes orbit angles. Returns the universe state.
+   *
+   *   universe-series-mode → registers click / keyboard / Esc
+   *     handlers for series capsules and Other Knowledge. MUST be
+   *     initialised BEFORE the layout module so its capture-phase
+   *     click listener fires first and intercepts capsule clicks.
+   *
+   *   universe-layout → registers click-to-center, drag-to-rotate,
+   *     chevron rotation, and progress-bar hydration. Skips cards
+   *     with a [data-role] (capsule / other-knowledge) so it never
+   *     accidentally click-to-centers a series capsule.
+   */
+  import { hydrateUniverse } from '../utils/library/universe-series-hydrator';
+  import { initSeriesMode } from '../utils/library/universe-series-mode';
+  import {
+    initStageLayout,
+    hydrateOrbitProgress,
+  } from '../utils/library/universe-layout';
+  import { initSeriesActions } from '../utils/library/universe-series-actions';
+  import { initCoreEffects } from '../utils/library/universe-core-effects';
+  // Side-effecting module: registers a DOMContentLoaded handler that
+  // reads `yuval_series_metadata` from localStorage and reconciles
+  // admin-edited series records against the SSR-rendered orbit.
+  // No exports — the import is purely for its side effect.
+  import '../scripts/library/admin-series-hydrator';
+
+  /**
+   * Re-bind the orbit on every page-load — including the one that
+   * happens after the user comes BACK from a book page via the
+   * browser's back button. Astro's View Transitions swap in a fresh
+   * DOM, so the listeners attached during the previous mount are
+   * gone with the previous stage element; without re-running the
+   * init the orbit cards just navigate directly via their inner <a>
+   * (the click-to-center handler isn't there to swallow the click).
+   *
+   * `astro:page-load` fires once on first visit AND once after every
+   * view-transition completes, so a single listener covers both
+   * cases. Each fresh stage element gets exactly one init pass —
+   * no double-binding, because old stages were removed from the DOM.
+   */
+  /**
+   * Pulse linked book/lesson cards when the pointer enters a
+   * series/course capsule.
+   *
+   * Mapping: every LibraryItem the catalog produces for a course
+   * (type 'course') gets `seriesId = "course-<courseSlug>"`, and every
+   * book/lesson with `courseSlug` gets the same `seriesId`. That value
+   * is rendered as `data-series-id` on each `.galaxy-card`. To find
+   * the linked siblings of a series-kind card, we simply match all
+   * cards sharing its `data-series-id` and exclude the card itself.
+   *
+   * State management: each linked card stores its active hide-timer
+   * id in `dataset.glowTimer`. Re-hovering the same capsule before
+   * the previous pulse expires resets the timer so the user always
+   * gets the full 3-second halo from the latest interaction.
+   *
+   * Performance: one delegated listener per stage. Removing the
+   * class on timer expiry is idempotent — if the card was removed
+   * by a transition we silently no-op via `?.remove()` semantics.
+   */
+  function initLinkedGlow(stage: HTMLElement) {
+    const GLOW_MS = 3000;
+    const escape = (v: string) => v.replace(/"/g, '\\"');
+
+    // ── Read admin metadata from localStorage ────────────────────
+    // The admin page persists two stores:
+    //   - `yuval_content_metadata` — per-book `seriesName` (the text
+    //     the user typed in the "סדרה" column).
+    //   - `yuval_series_metadata`  — per-series record keyed by the
+    //     same text. Links from book → series are by name match.
+    type ItemMeta = { seriesName?: string };
+    type SeriesMeta = { name?: string; assetFolder?: string };
+    let contentItems: Record<string, ItemMeta> = {};
+    let seriesItems: Record<string, SeriesMeta> = {};
+    try {
+      const raw = localStorage.getItem('yuval_content_metadata');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.items && typeof parsed.items === 'object') {
+          contentItems = parsed.items;
+        }
+      }
+    } catch { /* private mode / invalid JSON — silent */ }
+    try {
+      const raw = localStorage.getItem('yuval_series_metadata');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.items && typeof parsed.items === 'object') {
+          seriesItems = parsed.items;
+        }
+      }
+    } catch { /* same */ }
+
+    // Mirrors slugFromSeries in admin-series.ts so the same record
+    // resolves to the same orbit slug on both sides.
+    const slugFromSeries = (meta: SeriesMeta): string => {
+      const folder = (meta.assetFolder ?? '').trim();
+      if (folder) return folder;
+      return (meta.name ?? '').toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    };
+
+    // Build the slug → seriesName map for capsule cards.
+    const seriesNameBySlug = new Map<string, string>();
+    for (const [key, meta] of Object.entries(seriesItems)) {
+      if (!meta || typeof meta !== 'object') continue;
+      const slug = slugFromSeries(meta);
+      const name = (meta.name ?? key ?? '').trim();
+      if (slug && name) seriesNameBySlug.set(slug, name);
+    }
+
+    // ── Hydrate `data-series-name` on every orbit card ──────────
+    // Capsules: name comes from the series store keyed by their slug.
+    // Books/lessons: name comes from each item's stored `seriesName`.
+    // Cards without a stored series name simply don't get the
+    // attribute — they remain unmatchable, which is correct.
+    stage.querySelectorAll<HTMLElement>('.galaxy-card[data-slug]').forEach((card) => {
+      const slug = card.dataset.slug;
+      if (!slug) return;
+      if (card.dataset.kind === 'series') {
+        const name = seriesNameBySlug.get(slug);
+        if (name) card.dataset.seriesName = name;
+      } else {
+        const meta = contentItems[slug];
+        const name = meta && typeof meta.seriesName === 'string'
+          ? meta.seriesName.trim()
+          : '';
+        if (name) card.dataset.seriesName = name;
+      }
+    });
+
+    // Debug — surfaces how many cards are eligible for linking.
+    const capsulesNamed = stage.querySelectorAll('.galaxy-card[data-kind="series"][data-series-name]').length;
+    const booksNamed = stage.querySelectorAll('.galaxy-card[data-series-name]:not([data-kind="series"])').length;
+    console.log(
+      '[linked-glow] hydrated — capsules with name: %d, books/lessons with seriesName: %d',
+      capsulesNamed,
+      booksNamed,
+    );
+
+    // ── Hover handler ───────────────────────────────────────────
+    // For each series capsule we match siblings by EITHER:
+    //   - data-series-name (the admin-driven link the user described)
+    //   - data-series-id   (auto-discovered course-lesson link from
+    //                       the catalog, so lessons of a real course
+    //                       glow even without the admin form filled)
+    // Cards without either attribute on the capsule are skipped.
+    const seriesCards = stage.querySelectorAll<HTMLElement>(
+      '.galaxy-card[data-kind="series"]',
+    );
+    seriesCards.forEach((card) => {
+      const seriesName = card.dataset.seriesName;
+      const seriesId = card.dataset.seriesId;
+      if (!seriesName && !seriesId) return;
+      card.addEventListener('pointerenter', () => {
+        const matchers: string[] = [];
+        if (seriesName) {
+          matchers.push(`.galaxy-card[data-series-name="${escape(seriesName)}"]`);
+        }
+        if (seriesId) {
+          matchers.push(`.galaxy-card[data-series-id="${escape(seriesId)}"]`);
+        }
+        const linked = stage.querySelectorAll<HTMLElement>(matchers.join(','));
+        console.log(
+          '[linked-glow] hover slug=%s seriesName=%s → %d linked',
+          card.dataset.slug,
+          seriesName,
+          linked.length - 1,
+        );
+        linked.forEach((sibling) => {
+          if (sibling === card) return;
+          const prev = sibling.dataset.glowTimer;
+          if (prev) {
+            window.clearTimeout(Number(prev));
+          }
+          sibling.classList.add('is-linked-glow');
+          const t = window.setTimeout(() => {
+            sibling.classList.remove('is-linked-glow');
+            delete sibling.dataset.glowTimer;
+          }, GLOW_MS);
+          sibling.dataset.glowTimer = String(t);
+        });
+      });
+    });
+  }
+
+  function initOrbit() {
+    document
+      .querySelectorAll<HTMLElement>('[data-galaxy-stage]')
+      .forEach((stage) => {
+        // Defensive: skip stages that have already been wired in this
+        // mount. The flag is on the element, so it dies with the DOM
+        // when a new transition swaps in a fresh stage.
+        if (stage.dataset.galaxyInit === 'true') return;
+        const state = hydrateUniverse(stage);
+        // Order matters: series-mode click handler must register BEFORE
+        // the layout's card-click handler so it runs first in capture
+        // phase. See architecture comments in universe-series-mode.ts.
+        // We capture the handle so the action-panel button below can
+        // drive the orbit's series-mode (filter to series-only
+        // carousel) without duplicating the click wiring.
+        const seriesMode = initSeriesMode(stage, state);
+        initStageLayout(stage);
+        // Series action panel + details drawer. Reads
+        // `data-pos="center"` produced by the layout module above and
+        // wires the SSR-rendered series buttons + drawer chrome. Safe
+        // to register after the layout module because its own click
+        // handler uses capture-phase + stopImmediatePropagation to
+        // intercept the series-action buttons before the layout's
+        // card-click handler closes the focused card.
+        initSeriesActions(stage, seriesMode);
+        // Lightning bolt from the central core to the hovered orbit
+        // card. Injects a single SVG overlay into the stage; bolts
+        // are short-lived path elements created on hover and removed
+        // after their fade-out. No persistent loop.
+        initCoreEffects(stage);
+        // Linked-glow halo: hover a series/course capsule and every
+        // linked book/lesson (same data-series-id) pulses through a
+        // gold → orange → turquoise cycle for 3 seconds. CSS owns
+        // the animation; this only toggles the class on/off.
+        initLinkedGlow(stage);
+        stage.dataset.galaxyInit = 'true';
+      });
+
+    // Defer one frame so the layout pass settles before we paint the
+    // progress fills — avoids a brief 0% → real% flash on slow boots.
+    requestAnimationFrame(hydrateOrbitProgress);
+  }
+
+  document.addEventListener('astro:page-load', initOrbit);
+</script>
