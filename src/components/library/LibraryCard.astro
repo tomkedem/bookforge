@@ -53,8 +53,31 @@ interface Props {
    * stays aligned with `getKnowledgeCardAssets`'s return shape.
    */
   artifact?: KnowledgeCardAssets;
+  /**
+   * When true, the orbit-variant caption stack (`.lc-title`,
+   * `.lc-orbit-subtitle`, `.lc-orbit-author`) is NOT emitted into
+   * the DOM. Used by /index.astro for galaxy-stage orbit cards that
+   * own a reading-entry panel below them — the panel renders its
+   * own metadata band, so the LibraryCard's external caption stack
+   * becomes a duplicate label and is removed from the rendered
+   * output entirely (not hidden with CSS). Only takes effect when
+   * `variant === 'orbit'`; other variants keep their full caption.
+   * Defaults to false so non-galaxy callers (mobile carousel,
+   * recommendation strip, hero, etc.) are unaffected.
+   */
+  suppressOrbitCaption?: boolean;
 }
-const { item, language, variant = 'default', artifact } = Astro.props;
+const {
+  item,
+  language,
+  variant = 'default',
+  artifact,
+  suppressOrbitCaption = false,
+} = Astro.props;
+// Caption suppression is only meaningful for the orbit variant — the
+// other variants don't render the same set of elements in a way that
+// could duplicate against a reading-entry panel.
+const omitOrbitCaption = variant === 'orbit' && suppressOrbitCaption;
 
 const title = getItemTitle(item, language);
 const summary = getItemSummary(item, language);
@@ -228,10 +251,10 @@ const extraTopics = topics.length - topicChips.length;
     {showOrbitArtifact && (
       <p class="lc-orbit-corner-badge"><span>{orbitTypeLabel}</span></p>
     )}
-    {showOrbitArtifact && orbitSubtitle && (
+    {showOrbitArtifact && !omitOrbitCaption && orbitSubtitle && (
       <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
     )}
-    {showOrbitArtifact && orbitAuthor && (
+    {showOrbitArtifact && !omitOrbitCaption && orbitAuthor && (
       <p class="lc-orbit-author">{orbitAuthor}</p>
     )}
     {showOrbitArtifact && artifact && (
@@ -282,7 +305,7 @@ const extraTopics = topics.length - topicChips.length;
       <p class="lc-type">{typeLabel}</p>
       {showStatus && <span class="lc-status">{statusLabel}</span>}
     </header>
-    <h3 class="lc-title">{title}</h3>
+    {!omitOrbitCaption && <h3 class="lc-title">{title}</h3>}
     {showSummary && summary && <p class="lc-summary">{summary}</p>}
     {showTopics && (
       <ul class="lc-topics" aria-label="topics">
@@ -393,10 +416,10 @@ const extraTopics = topics.length - topicChips.length;
     {showOrbitArtifact && (
       <p class="lc-orbit-corner-badge"><span>{orbitTypeLabel}</span></p>
     )}
-    {showOrbitArtifact && orbitSubtitle && (
+    {showOrbitArtifact && !omitOrbitCaption && orbitSubtitle && (
       <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
     )}
-    {showOrbitArtifact && orbitAuthor && (
+    {showOrbitArtifact && !omitOrbitCaption && orbitAuthor && (
       <p class="lc-orbit-author">{orbitAuthor}</p>
     )}
     {showOrbitArtifact && artifact && (
@@ -447,7 +470,7 @@ const extraTopics = topics.length - topicChips.length;
       <p class="lc-type">{typeLabel}</p>
       {showStatus && <span class="lc-status">{statusLabel}</span>}
     </header>
-    <h3 class="lc-title">{title}</h3>
+    {!omitOrbitCaption && <h3 class="lc-title">{title}</h3>}
     {showSummary && summary && <p class="lc-summary">{summary}</p>}
     {showTopics && (
       <ul class="lc-topics" aria-label="topics">
@@ -758,6 +781,54 @@ const extraTopics = topics.length - topicChips.length;
       black 0%, black 78%, transparent 100%);
     mask-image: linear-gradient(to bottom,
       black 0%, black 78%, transparent 100%);
+  }
+  /* ── Safe-href orbit cards (the ones that own a reading-entry pill) ─
+     When the caption stack is suppressed (no `.lc-title` rendered),
+     the LibraryCard has roughly 28px of empty space below the cover
+     image inside its own `<a>` border-box, coming from three places:
+       1. `.lc-orbit` itself has `padding-bottom: 1.125rem` (≈18px),
+          originally reserved for the title/author/footer.
+       2. `.lc-orbit-artifact` has `margin-block-end: 0.625rem` (10px)
+          to space itself from the (now-absent) title.
+       3. The 22% mask-image fade at the artifact bottom, calibrated
+          for blending into the title text.
+     All three together push the `.galaxy-card`'s rendered bottom
+     edge ~28px below the last visible cover pixel — which the
+     reading-entry pill anchors to via `top: calc(100% + 16px)`. On
+     most book covers the PNG is roughly 2:3 with content right up
+     to the edge so the empty band is just somewhat-cosmic-tinted
+     padding and the misalignment is tolerable. On covers with any
+     internal transparent padding at the bottom (e.g. "Practical
+     Python for AI Engineers"), the gap stacks: PNG padding + the
+     28px of CSS padding/margin → visible cosmic chasm between the
+     cover and the dome.
+
+     Fix is layered:
+       A. Zero out `.lc-orbit`'s bottom padding — the title it was
+          reserving space for no longer exists.
+       B. Zero out the artifact's bottom margin — same reason.
+       C. Tighten the mask fade from 22% → 4% — the soft blend into
+          the title isn't needed anymore.
+       D. Enforce a 2:3 aspect ratio on the front face with
+          `object-fit: cover; object-position: top center`. Any
+          extra transparent padding inside the PNG gets cropped from
+          the bottom, so the artifact's intrinsic height now equals
+          the visible cover height for every book regardless of how
+          the PNG was authored. */
+  .lc-orbit.lc-has-artifact:not(:has(.lc-title)) {
+    padding-bottom: 0;                          /* A */
+  }
+  .lc-orbit.lc-has-artifact:not(:has(.lc-title)) .lc-orbit-artifact {
+    margin-block-end: 0;                        /* B */
+    -webkit-mask-image: linear-gradient(to bottom,
+      black 0%, black 96%, transparent 100%);   /* C */
+    mask-image: linear-gradient(to bottom,
+      black 0%, black 96%, transparent 100%);
+  }
+  .lc-orbit.lc-has-artifact:not(:has(.lc-title)) .lc-orbit-artifact-face-front {
+    aspect-ratio: 2 / 3;                        /* D */
+    object-fit: cover;
+    object-position: top center;
   }
   .lc-orbit-artifact-face {
     width: 100%;

@@ -207,6 +207,19 @@ export function initStageLayout(stage: HTMLElement): void {
     // Open CTA — let it navigate.
     if (target.closest('[data-galaxy-cta-open]')) return;
 
+    // Reading-entry overlay. The overlay lives INSIDE a centered
+    // card, so the card-click branch below would otherwise interpret
+    // a click on it as "card is centered → close center" and run
+    // closeCenter() before the navigation resolves. Bailing out here
+    // (BEFORE any preventDefault) preserves the overlay's native
+    // <a href> behavior: plain click navigates, Ctrl/Cmd-click and
+    // middle-click open in a new tab, right-click opens the context
+    // menu with "Copy link address" / "Open in new tab", and Enter on
+    // a keyboard-focused link follows the href. A future cinematic-
+    // flight phase will install its own handler that DOES intercept
+    // plain left-clicks (and only those) to animate before navigating.
+    if (target.closest('[data-reading-entry]')) return;
+
     // Close button.
     if (target.closest('[data-galaxy-cta-close]')) {
       e.preventDefault();
@@ -247,6 +260,27 @@ export function initStageLayout(stage: HTMLElement): void {
       openCenter(card);
     }
   }, true);
+
+  // Rotate-orbit chevrons that live OUTSIDE the stage (pinned to the
+  // viewport bottom). The stage-scoped click handler above still
+  // handles in-stage rotate buttons defensively, but the canonical
+  // location is now a sibling of `.library-body` so the buttons can't
+  // be visually covered by a focused card. Document-level delegation
+  // keeps the lookup cheap and unaware of where the buttons render.
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element | null;
+    if (!target) return;
+    const rotateBtn = target.closest<HTMLButtonElement>('[data-galaxy-rotate]');
+    if (!rotateBtn) return;
+    // Skip if this stage isn't currently on screen — the listener is
+    // global and would otherwise act on a stage from a stale init.
+    if (stage.offsetParent === null) return;
+    // Skip if the click was already handled by the stage-scoped click
+    // handler (button still inside the stage subtree, legacy path).
+    if (stage.contains(rotateBtn)) return;
+    e.preventDefault();
+    rotateOrbit(rotateBtn.dataset.direction === 'prev' ? -1 : 1);
+  });
 
   // Keyboard: Enter on the inner <a> bubbles up as a click and is
   // handled by the click listener above (preventDefault + open). Esc
