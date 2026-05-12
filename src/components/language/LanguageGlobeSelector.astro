@@ -337,6 +337,46 @@ const focusByCode = JSON.stringify(
           <span class="lgs-hotspot-dot"></span>
         </span>
       </div>
+
+      {/* Geographic linkage beam — a luminous gold/warm-white path
+          drawn from the hovered language button to the active focus
+          point on the globe. Pure SVG, no canvas write, no shader
+          change. Hidden by default; the host shows it on
+          pointerenter / focus of an option and hides it on
+          pointerleave / blur. The path is updated per-frame inside
+          the same rAF as the hotspot projection so the impact end
+          tracks the rotating planet without a second loop.
+
+          Layered above the canvas + row so the beam visually
+          connects them. pointer-events: none lets clicks pass
+          through to the language buttons underneath. */}
+      <svg
+        class="lgs-beam-svg"
+        aria-hidden="true"
+        data-lgs-beam=""
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient
+            id="lgs-beam-gradient"
+            gradientUnits="userSpaceOnUse"
+          >
+            {/* Source end (near the language button) — bright warm
+                cream that fades to zero at the very origin so the
+                beam doesn't visually pierce the pill itself. */}
+            <stop offset="0%" stop-color="rgba(255, 245, 215, 0)"></stop>
+            <stop offset="9%" stop-color="rgba(255, 245, 215, 0.92)"></stop>
+            {/* Body — warm gold travels along the line. */}
+            <stop offset="45%" stop-color="rgba(255, 224, 150, 0.72)"></stop>
+            <stop offset="82%" stop-color="rgba(232, 197, 71, 0.42)"></stop>
+            {/* Impact end (at the geographic point) — fades to zero so
+                the beam dissolves softly into the luminous dot rather
+                than terminating with a hard edge. */}
+            <stop offset="100%" stop-color="rgba(232, 197, 71, 0)"></stop>
+          </linearGradient>
+        </defs>
+        <path class="lgs-beam-path" fill="url(#lgs-beam-gradient)"></path>
+      </svg>
     </div>
   </div>
 )}
@@ -980,17 +1020,88 @@ const focusByCode = JSON.stringify(
       0 0 14px rgba(232, 197, 71, 0.22);
     pointer-events: none;
     z-index: 2;
+    /* Transitions tween the hover-strengthened state below so the
+       node feels like it "lights up" as the beam emerges, not a
+       hard flip between two looks. */
+    transition:
+      background 240ms cubic-bezier(0.4, 0, 0.6, 1),
+      box-shadow 240ms cubic-bezier(0.4, 0, 0.6, 1);
+  }
+
+  /* ── Beam origin node — hover-active state ───────────────────────
+     When the user hovers (or keyboard-focuses) the ACTIVE pill, the
+     orbital node strengthens slightly. It now feels like the source
+     of the SVG hover beam rather than a separate decoration: the
+     core warms toward white, the halo expands, the alpha lifts. The
+     pulse keyframe is unchanged — only the resting style transitions.
+     Restricted to (hover: hover) so a sticky :hover after a touch-tap
+     on mobile doesn't strand the strengthened look. */
+  @media (hover: hover) and (pointer: fine) {
+    .lgs-overlay-option.is-active:hover::before,
+    .lgs-overlay-option.is-active:focus-visible::before {
+      background: radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 254, 235, 1.00) 0%,
+        rgba(255, 232, 165, 0.95) 32%,
+        rgba(232, 197, 71, 0.45) 60%,
+        rgba(232, 197, 71, 0) 100%
+      );
+      box-shadow:
+        0 0 9px rgba(232, 197, 71, 0.62),
+        0 0 22px rgba(232, 197, 71, 0.32);
+    }
+
+    /* ── Beam origin node — non-active pill, hover-only ───────────
+       Mirrors the active node's position so the SVG beam (which
+       anchors to the pill's bottom-center via getBoundingClientRect)
+       lines up with this point exactly. Slightly smaller (7 px vs
+       9 px) and lower base alpha so it doesn't compete with the
+       active pill's persistent node when both are visible. Always
+       rendered (content: '' present), opacity 0 by default, fades
+       in on hover/focus so the appearance feels coordinated with
+       the SVG beam's 320 ms opacity transition. */
+    .lgs-overlay-option:not(.is-active)::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translate(-50%, -50%);
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 248, 215, 0.95) 0%,
+        rgba(255, 222, 140, 0.78) 32%,
+        rgba(232, 197, 71, 0.32) 60%,
+        rgba(232, 197, 71, 0) 100%
+      );
+      box-shadow:
+        0 0 6px rgba(232, 197, 71, 0.45),
+        0 0 14px rgba(232, 197, 71, 0.20);
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 280ms cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    .lgs-overlay-option:not(.is-active):hover::before,
+    .lgs-overlay-option:not(.is-active):focus-visible::before {
+      opacity: 1;
+    }
   }
 
   /* Connecting cue — a thin gold light beam dropping from the
      active pill toward the globe.
 
      Step 3.5 update: the active beam now reads as the selected
-     orbital node's energy line — taller (24-40 px clamped) and
-     starting just BELOW the node so it appears to emit from the
-     node toward the globe. Hover/focus on non-active pills keeps
-     the previous short (8-14 px) variant so the active state's
-     beam stays visually dominant.
+     orbital node's energy line. Now that the cinematic hover beam
+     (.lgs-beam-svg) is the primary geographic-linkage cue, this
+     persistent under-pill thread is softened to an almost-subliminal
+     state — a short, very faint gold trace that says "this is the
+     active language" without competing with the hover beam. When
+     a user hovers any pill (active or not), the SVG beam takes over
+     and visually owns the connection; the static thread underneath
+     fades into the background.
 
      The beam leans toward the globe center via --lgs-beam-rot
      (degrees, set inline per-pill from the same position-index
@@ -1006,21 +1117,26 @@ const focusByCode = JSON.stringify(
        and is 9 px tall, so its bottom is at top: 100% + 4.5 px). */
     top: calc(100% + 7px);
     width: 1px;
-    height: clamp(24px, 5vh, 40px);
+    /* Trimmed from 24-40 px → 8-14 px. The new SVG hover beam
+       carries the geographic connection cue now; this static
+       residue just needs to mark the active pill, not compete. */
+    height: clamp(8px, 1.4vh, 14px);
     transform-origin: top center;
     transform: translateX(-50%) rotate(
       calc(var(--lgs-beam-rot, 0deg) * var(--lgs-arc-scale, 1))
     );
+    /* Alpha dropped ~3× across every stop. The thread is now a
+       barely-perceptible gold trace — visible enough to hint
+       "this language has a destination," faint enough to never
+       read as a UI border or compete with the hover beam. */
     background: linear-gradient(
       to bottom,
-      rgba(255, 245, 200, 0.65) 0%,
-      rgba(232, 197, 71, 0.42) 18%,
-      rgba(232, 197, 71, 0.18) 55%,
+      rgba(255, 245, 200, 0.22) 0%,
+      rgba(232, 197, 71, 0.14) 50%,
       rgba(232, 197, 71, 0) 100%
     );
-    /* Soft glow on the beam so it reads as energy in motion,
-       not a UI border. Same restraint as the orbit path. */
-    box-shadow: 0 0 5px rgba(232, 197, 71, 0.22);
+    /* No box-shadow glow — the hover beam owns the luminous
+       presence; this static thread should not glow. */
     pointer-events: none;
   }
 
@@ -1102,23 +1218,23 @@ const focusByCode = JSON.stringify(
     0% {
       transform: scale(1);
       box-shadow:
-        0 0 6px rgba(255, 220, 130, 0.55),
-        0 0 14px rgba(232, 197, 71, 0.28),
-        0 0 28px rgba(232, 197, 71, 0.12);
+        0 0 9px rgba(255, 232, 160, 0.62),
+        0 0 22px rgba(232, 197, 71, 0.32),
+        0 0 44px rgba(232, 197, 71, 0.14);
     }
     45% {
       transform: scale(1.45);
       box-shadow:
-        0 0 12px rgba(255, 230, 160, 0.70),
-        0 0 26px rgba(232, 197, 71, 0.32),
-        0 0 50px rgba(232, 197, 71, 0.16);
+        0 0 18px rgba(255, 232, 160, 0.75),
+        0 0 38px rgba(232, 197, 71, 0.36),
+        0 0 70px rgba(232, 197, 71, 0.18);
     }
     100% {
       transform: scale(1);
       box-shadow:
-        0 0 6px rgba(255, 220, 130, 0.55),
-        0 0 14px rgba(232, 197, 71, 0.28),
-        0 0 28px rgba(232, 197, 71, 0.12);
+        0 0 9px rgba(255, 232, 160, 0.62),
+        0 0 22px rgba(232, 197, 71, 0.32),
+        0 0 44px rgba(232, 197, 71, 0.14);
     }
   }
 
@@ -1319,81 +1435,139 @@ const focusByCode = JSON.stringify(
     opacity: 1;
   }
 
-  /* Inner dot — the actual visual. Centered on the parent's
+  /* Inner dot — the actual luminous point. Centered on the parent's
      translate origin via the negative left/top so (0, 0) on the
      parent equals the dot's center. Pulse animates here so the
-     parent's transform stays clean. */
+     parent's transform stays clean.
+     Sized 14 px (was 10) with a brighter near-white core, a richer
+     gold midbody, and a more gradual outer fade so the point reads
+     as a real luminous focus point on the planet rather than a
+     small UI sticker. The expanded box-shadow stack (9 / 22 / 44 px)
+     produces a soft bloom-like halo without crossing into neon. */
   .lgs-hotspot-dot {
     position: absolute;
-    left: -5px;
-    top: -5px;
-    width: 10px;
-    height: 10px;
+    left: -7px;
+    top: -7px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: radial-gradient(
       circle at 50% 50%,
-      rgba(255, 248, 220, 0.95) 0%,
-      rgba(255, 220, 130, 0.85) 28%,
-      rgba(232, 197, 71, 0.55) 55%,
+      rgba(255, 252, 240, 1.00) 0%,
+      rgba(255, 242, 195, 0.96) 14%,
+      rgba(255, 222, 140, 0.78) 36%,
+      rgba(232, 197, 71, 0.42) 62%,
       rgba(232, 197, 71, 0) 100%
     );
     box-shadow:
-      0 0 6px rgba(255, 220, 130, 0.55),
-      0 0 14px rgba(232, 197, 71, 0.28),
-      0 0 28px rgba(232, 197, 71, 0.12);
+      0 0 9px rgba(255, 232, 160, 0.62),
+      0 0 22px rgba(232, 197, 71, 0.32),
+      0 0 44px rgba(232, 197, 71, 0.14);
+  }
+
+  /* Subtle outer ring — a single 1 px gold trace just beyond the
+     dot's silhouette, low-alpha so it reads as a refined ring of
+     focus rather than a UI badge border. Adds one more perceptual
+     cue ("this is a marked point") while staying restrained. */
+  .lgs-hotspot-dot::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 222, 140, 0.22);
+    pointer-events: none;
   }
 
   .lgs-hotspot.is-visible .lgs-hotspot-dot {
     animation: lgs-hotspot-pulse 2400ms cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
+  /* Hover-strengthened hotspot — only applied while the beam is
+     active (the host adds `.is-beam-active` to the hotspot when the
+     user hovers a language button). The amplification is restrained:
+     a slightly brighter core, a softer-but-clearer halo, and a small
+     overall scale. The point stays a luminous geographic mark, not
+     a UI pin or a glowing badge. */
+  .lgs-hotspot.is-beam-active .lgs-hotspot-dot {
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 254, 246, 1.00) 0%,
+      rgba(255, 248, 220, 0.98) 14%,
+      rgba(255, 232, 165, 0.85) 36%,
+      rgba(232, 197, 71, 0.50) 62%,
+      rgba(232, 197, 71, 0) 100%
+    );
+    box-shadow:
+      0 0 12px rgba(255, 245, 195, 0.72),
+      0 0 28px rgba(232, 197, 71, 0.40),
+      0 0 56px rgba(232, 197, 71, 0.18);
+  }
+  .lgs-hotspot.is-beam-active .lgs-hotspot-dot::before {
+    /* Slightly more present outer ring on hover — same hue, lifted
+       alpha. Stays a 1 px trace, never a UI badge border. */
+    border-color: rgba(255, 230, 160, 0.36);
+  }
+
+  /* ── Geographic linkage beam ──────────────────────────────────────
+     SVG layer that paints a soft luminous path from the hovered
+     language button to the active geographic point. Pointer-events
+     are disabled so clicks pass through to the language pills.
+     Default state is opacity 0 — only fades in while .is-active is
+     applied by the host on pointerenter/focus, and fades back out
+     on pointerleave/blur.
+     z-index sits above the language row + earth canvas + hotspot's
+     parent stacking layer, but the hotspot dot at z-index 2 within
+     .lgs-overlay-earth's own stacking context still paints on top
+     visually because the beam's impact-end gradient stop has alpha
+     0 — so the dot remains the visual peak at the impact point. */
+  .lgs-beam-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 320ms cubic-bezier(0.4, 0, 0.6, 1);
+    z-index: 3;
+    overflow: visible;
+  }
+  .lgs-beam-svg.is-active {
+    opacity: 1;
+  }
+  .lgs-beam-path {
+    /* The path's d attribute is rewritten per-frame in JS; the
+       gradient endpoints are co-updated so the warm-cream → gold
+       falloff travels along the line direction. No CSS-side
+       geometry to maintain. */
+    transform-origin: center;
+  }
+
   @keyframes lgs-hotspot-pulse {
     0%, 100% {
       transform: scale(1);
       box-shadow:
-        0 0 6px rgba(255, 220, 130, 0.55),
-        0 0 14px rgba(232, 197, 71, 0.28),
-        0 0 28px rgba(232, 197, 71, 0.12);
+        0 0 9px rgba(255, 232, 160, 0.62),
+        0 0 22px rgba(232, 197, 71, 0.32),
+        0 0 44px rgba(232, 197, 71, 0.14);
     }
     50% {
-      transform: scale(1.18);
+      transform: scale(1.20);
       box-shadow:
-        0 0 9px rgba(255, 220, 130, 0.62),
-        0 0 22px rgba(232, 197, 71, 0.22),
-        0 0 38px rgba(232, 197, 71, 0.10);
+        0 0 14px rgba(255, 232, 160, 0.68),
+        0 0 30px rgba(232, 197, 71, 0.26),
+        0 0 56px rgba(232, 197, 71, 0.12);
     }
   }
 
-  /* ── Hover connection cue ────────────────────────────────────────
-     A subtler twin of the .is-active::after beam, painted while a
-     non-active pill is hovered or keyboard-focused. The active
-     pill's cue is gold and slightly taller; this hover variant is
-     paler and the same short length so the row never has two
-     equally-loud connectors at once. Hidden by default; the row
-     reveals on .is-revealed so this cue only appears once the
-     language row itself is interactive. */
-  .lgs-overlay-option:not(.is-active):hover::after,
-  .lgs-overlay-option:not(.is-active):focus-visible::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: calc(100% + 2px);
-    width: 1px;
-    height: clamp(8px, 1.4vh, 14px);
-    transform-origin: top center;
-    /* Hover/focus beam carries the same orbital tilt as the active
-       beam — keeps the cue visually consistent across states. */
-    transform: translateX(-50%) rotate(
-      calc(var(--lgs-beam-rot, 0deg) * var(--lgs-arc-scale, 1))
-    );
-    background: linear-gradient(
-      to bottom,
-      rgba(244, 226, 170, 0.32) 0%,
-      rgba(244, 226, 170, 0.10) 55%,
-      rgba(244, 226, 170, 0) 100%
-    );
-    pointer-events: none;
-  }
+  /* ── Hover connection cue (removed) ──────────────────────────────
+     The previous hover/focus-visible ::after vertical thread was
+     replaced by the cinematic SVG beam (.lgs-beam-svg) which paints
+     a proper tapered light path from the hovered button to the
+     geographic point on the globe. The two would have read as a
+     double-line under non-active pills on hover — same shape, same
+     palette, stacked — so the static thread is gone. The SVG beam
+     covers active pills on hover too, so the active pill no longer
+     gets a "stronger version of the hover cue" stacked under it. */
 
   /* Tablet — language row often wraps onto two lines, which eats
      vertical room. Slightly tighter cap than desktop and a stricter
@@ -1429,17 +1603,15 @@ const focusByCode = JSON.stringify(
       --lgs-arc-scale: 0;
     }
     /* Mobile — without a visible orbit there's nothing for the
-       node to anchor to, and a tall energy beam reads as a stray
-       stick. Hide the node; shrink the active beam back to the
-       short hover-style cue so the "selected pill points at the
-       globe" relationship still exists but isn't theatrical. */
+       node to anchor to. Hide the node; the desktop default for
+       the active beam is already a subtle thread, but on mobile
+       we anchor it tighter to the pill (top: calc(100% + 2px))
+       to match the no-arc compact layout. */
     .lgs-overlay-option.is-active::before {
       display: none;
     }
     .lgs-overlay-option.is-active::after {
       top: calc(100% + 2px);
-      height: clamp(8px, 1.4vh, 14px);
-      box-shadow: none;
     }
     .lgs-overlay-native {
       font-size: 13px;
@@ -1485,6 +1657,12 @@ const focusByCode = JSON.stringify(
     .lgs-hotspot .lgs-hotspot-dot,
     .lgs-hotspot.is-visible .lgs-hotspot-dot {
       animation: none !important;
+    }
+    /* Beam — faster opacity transition under reduced motion. The
+       beam still appears (it's informative, not decorative), just
+       without the slower cinematic fade. */
+    .lgs-beam-svg {
+      transition: opacity 140ms cubic-bezier(0.4, 0, 0.6, 1) !important;
     }
     /* Step 4 — selection ceremony pulses disabled under reduced
        motion. The JS path also shortens ceremonyMs to ~80 ms so the
@@ -1647,6 +1825,24 @@ const focusByCode = JSON.stringify(
   // recreates the page can re-log.
   let hotspotDiagnosticLoggedFor: string | null = null;
 
+  // ── Geographic linkage beam (Step: hover beam to globe) ──────────
+  // Per-page SVG that paints a soft luminous path from the hovered
+  // language button to the active geographic point on the Earth.
+  // State is set on pointerenter/focus of an option and cleared on
+  // pointerleave/blur. Per-frame the hotspot rAF (above) updates
+  // the beam's impact-end so it tracks the rotating planet —
+  // no second loop is created.
+  //
+  // beamActiveButton is the single source of truth for "the beam
+  // is on right now and these are its endpoints". The cached SVG
+  // child element refs avoid querying the DOM every frame.
+  let beamActiveButton: HTMLButtonElement | null = null;
+  let beamSvg: SVGSVGElement | null = null;
+  let beamPath: SVGPathElement | null = null;
+  let beamGradient: SVGLinearGradientElement | null = null;
+  let beamHotspotEl: HTMLElement | null = null;
+  let beamEarthContainer: HTMLElement | null = null;
+
   function stopHotspotTracking(removeClass = true): void {
     if (hotspotRafId !== null) {
       cancelAnimationFrame(hotspotRafId);
@@ -1705,6 +1901,11 @@ const focusByCode = JSON.stringify(
       el.style.setProperty('--lgs-hy', `${proj.y.toFixed(2)}px`);
       el.classList.toggle('is-visible', proj.frontFacing);
 
+      // Beam end follows the hotspot projection. No-op if no
+      // beam is currently active. Same rAF, no second loop, so
+      // the beam never lags the hotspot by a frame.
+      updateBeamGeometry(proj.x, proj.y, proj.frontFacing);
+
       // One-shot diagnostic: per-language. Gated behind isLgsDebug()
       // so production builds stay quiet — set window.__lgsDebug = true
       // in DevTools to re-enable for hotspot-projection verification.
@@ -1728,6 +1929,122 @@ const focusByCode = JSON.stringify(
       hotspotRafId = requestAnimationFrame(frame);
     };
     hotspotRafId = requestAnimationFrame(frame);
+  }
+
+  /**
+   * Show the linkage beam from `btn` to the active hotspot. Caches
+   * the SVG / path / gradient refs and the earth container ref so
+   * per-frame updates inside the hotspot rAF don't query the DOM.
+   * Idempotent — calling with the same button just rebinds.
+   */
+  function showBeam(btn: HTMLButtonElement, stage: HTMLElement): void {
+    const overlayEarth = stage.querySelector<HTMLElement>('.lgs-overlay-earth');
+    if (!overlayEarth) return;
+    const svgEl = stage.querySelector<SVGSVGElement>('.lgs-beam-svg');
+    if (!svgEl) return;
+    beamSvg = svgEl;
+    beamPath = svgEl.querySelector<SVGPathElement>('.lgs-beam-path');
+    beamGradient = svgEl.querySelector<SVGLinearGradientElement>('#lgs-beam-gradient');
+    beamHotspotEl = stage.querySelector<HTMLElement>('.lgs-hotspot');
+    beamEarthContainer = overlayEarth;
+    beamActiveButton = btn;
+    svgEl.classList.add('is-active');
+    if (beamHotspotEl) beamHotspotEl.classList.add('is-beam-active');
+  }
+
+  /**
+   * Hide the beam and clear its state. Safe to call when no beam
+   * is active — does nothing. The next pointerenter/focus on an
+   * option will re-arm.
+   */
+  function hideBeam(): void {
+    if (beamSvg) beamSvg.classList.remove('is-active');
+    if (beamHotspotEl) beamHotspotEl.classList.remove('is-beam-active');
+    beamActiveButton = null;
+  }
+
+  /**
+   * Per-frame update of the beam geometry. Called from the hotspot
+   * rAF frame() above with the latest projection of the active
+   * focus point. No-ops when no beam is active. Hides the beam
+   * when the focus point rotates past the silhouette (frontFacing
+   * = false) so the beam never ends in empty space.
+   *
+   * Geometry: a thin wedge polygon — 5 px wide at the language
+   * button source, 1.4 px wide at the impact point — filled with
+   * a linearGradient whose endpoints match the beam direction. The
+   * gradient stops define the warm-cream → gold falloff and fade
+   * to alpha 0 at both ends so the beam dissolves cleanly into
+   * the pill at the source and into the luminous dot at the impact.
+   */
+  function updateBeamGeometry(projX: number, projY: number, frontFacing: boolean): void {
+    if (!beamSvg || !beamPath || !beamGradient || !beamActiveButton || !beamEarthContainer) return;
+
+    // If the focus has rotated past the silhouette, fade the beam
+    // out via the same `is-active` toggle the hover handlers use.
+    // The button-hover state isn't cleared — when the region
+    // rotates back into view, the beam returns automatically.
+    if (!frontFacing) {
+      beamSvg.classList.remove('is-active');
+      return;
+    }
+    beamSvg.classList.add('is-active');
+
+    const svgRect = beamSvg.getBoundingClientRect();
+    const btnRect = beamActiveButton.getBoundingClientRect();
+    const earthRect = beamEarthContainer.getBoundingClientRect();
+
+    // Source: the glowing ORIGIN NODE under the hovered pill —
+    // pill's bottom-center X, pill's bottom-edge Y. The node's
+    // CSS centers it at (left: 50%, top: 100%, translate(-50%, -50%)),
+    // which puts its center exactly on this point. Using the pill's
+    // vertical center instead would float the beam start in mid-pill
+    // and leave the node looking like an unrelated decoration.
+    // getBoundingClientRect accounts for the pill's translateY
+    // (arc lift), so this stays correct as the apex pill sits higher.
+    const sx = btnRect.left + btnRect.width / 2 - svgRect.left;
+    const sy = btnRect.bottom - svgRect.top;
+
+    // Impact: projection coords are relative to the earth container;
+    // translate to SVG-local coords by adding the earth's offset
+    // within the SVG.
+    const ex = earthRect.left + projX - svgRect.left;
+    const ey = earthRect.top + projY - svgRect.top;
+
+    const dx = ex - sx;
+    const dy = ey - sy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return;
+
+    const ux = dx / len;
+    const uy = dy / len;
+    // Perpendicular to the beam direction (counter-clockwise 90°).
+    const px = -uy;
+    const py = ux;
+
+    // Wedge half-widths: 2.5 px at the source (5 px total — easy
+    // to see, never thick enough to read as a laser bar), 0.7 px
+    // at the impact (1.4 px total — narrows to elegant point).
+    const halfStart = 2.5;
+    const halfEnd = 0.7;
+
+    const p1x = (sx + px * halfStart).toFixed(2);
+    const p1y = (sy + py * halfStart).toFixed(2);
+    const p2x = (ex + px * halfEnd).toFixed(2);
+    const p2y = (ey + py * halfEnd).toFixed(2);
+    const p3x = (ex - px * halfEnd).toFixed(2);
+    const p3y = (ey - py * halfEnd).toFixed(2);
+    const p4x = (sx - px * halfStart).toFixed(2);
+    const p4y = (sy - py * halfStart).toFixed(2);
+
+    beamPath.setAttribute(
+      'd',
+      `M${p1x} ${p1y} L${p2x} ${p2y} L${p3x} ${p3y} L${p4x} ${p4y} Z`,
+    );
+    beamGradient.setAttribute('x1', sx.toFixed(2));
+    beamGradient.setAttribute('y1', sy.toFixed(2));
+    beamGradient.setAttribute('x2', ex.toFixed(2));
+    beamGradient.setAttribute('y2', ey.toFixed(2));
   }
 
   /**
@@ -2089,6 +2406,14 @@ const focusByCode = JSON.stringify(
     stopHotspotTracking();
     document.querySelectorAll<HTMLElement>('.lgs-hotspot')
       .forEach((el) => el.classList.remove('is-visible'));
+    // Geographic linkage beam — clear state and strip the is-active
+    // class from every beam SVG on the page. Same intent as the
+    // hotspot strip above: no dangling effects after teardown.
+    hideBeam();
+    document.querySelectorAll<SVGSVGElement>('.lgs-beam-svg')
+      .forEach((el) => el.classList.remove('is-active'));
+    document.querySelectorAll<HTMLElement>('.lgs-hotspot')
+      .forEach((el) => el.classList.remove('is-beam-active'));
     // Strip preflight from every stage on the page — covers a
     // teardown during the preflight window (between unhide and
     // runLaunchFlight) so the next open isn't stuck with the stage
@@ -2779,6 +3104,10 @@ const focusByCode = JSON.stringify(
       // Step 2 — stop the projection rAF + drop is-visible so the
       // CSS pulse keyframe stops running on an offscreen element.
       stopHotspotTracking();
+      // Linkage beam — fade out alongside the hotspot. The beam
+      // tracks the same projection, so leaving it visible past
+      // overlay close would strand a glow on an offscreen stage.
+      hideBeam();
     }
     // Step 2 — drop any pending hover-intent debounce and reset the
     // drag cooldown / focus tracker so the next open starts clean.
@@ -3347,6 +3676,8 @@ const focusByCode = JSON.stringify(
         scheduleFocus(earthHandle, stage, code, focus);
       };
 
+      const beamStage = overlay.querySelector<HTMLElement>('.lgs-overlay-stage');
+
       optionButtons.forEach((btn) => {
         // Mouse hover — pointerenter only. Pointermove fires on every
         // sub-pixel motion and would spam scheduleFocus; pointerenter
@@ -3357,6 +3688,12 @@ const focusByCode = JSON.stringify(
         btn.addEventListener('pointerenter', (e: PointerEvent) => {
           if (e.pointerType && e.pointerType !== 'mouse') return;
           previewLanguageOnGlobe(btn);
+          // Light up the beam from this button. The earth rotation
+          // started above will move the hotspot to the language's
+          // region; the beam tracks the hotspot per-frame inside the
+          // existing rAF, so the beam's impact end follows the planet
+          // naturally without any second loop.
+          if (beamStage && !ceremonyInFlight) showBeam(btn, beamStage);
         });
         // Keyboard focus — fires on Tab and on arrow-key navigation
         // (the existing ArrowRight/Down handler calls .focus()), so
@@ -3364,6 +3701,19 @@ const focusByCode = JSON.stringify(
         // users for free.
         btn.addEventListener('focus', () => {
           previewLanguageOnGlobe(btn);
+          if (beamStage && !ceremonyInFlight) showBeam(btn, beamStage);
+        });
+        // Hover end — fade the beam out. The hotspot itself stays
+        // visible (it follows the active focus); only the linkage
+        // beam dismisses. Skipped during the selection ceremony so
+        // a click-then-mouse-drift doesn't kill the beam mid-confirm.
+        btn.addEventListener('pointerleave', () => {
+          if (ceremonyInFlight) return;
+          if (beamActiveButton === btn) hideBeam();
+        });
+        btn.addEventListener('blur', () => {
+          if (ceremonyInFlight) return;
+          if (beamActiveButton === btn) hideBeam();
         });
       });
 

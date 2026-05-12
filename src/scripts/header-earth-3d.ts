@@ -57,6 +57,26 @@
  *     canvas ensures the host's existing click + hover handlers on
  *     `.lgs-trigger` fire on the button, not the canvas.
  *
+ * Active-language orientation contract — the visible region must
+ * match the active language's focus point on first reveal AND on
+ * every language change, regardless of pointer activity:
+ *
+ *   1. Constructor applies initialFocus to earth.rotation and
+ *      zeros camera.rotation.
+ *   2. While the WebP is loading, meshes are hidden. The host's
+ *      pointermove handler may call setParallax during this window,
+ *      which writes to camera.rotation while invisible.
+ *   3. On texture load (or failure), the reveal-on-load callback
+ *      RE-ASSERTS initialFocus on earth.rotation and zeros
+ *      camera.rotation again before flipping visible to true. The
+ *      first rendered frame is guaranteed to be the language focus
+ *      point exactly — no parallax accumulation can leak through.
+ *   4. setFocus (language-change path) does the same: write earth
+ *      rotation + zero camera rotation, then render.
+ *
+ * All three paths route through the local `applyFocus` helper so
+ * the math + camera-reset behavior is impossible to drift.
+ *
  * What's identical to the overlay — the shared core enforces this:
  *
  *   • Texture URL                 /assets/globe/earth-day-2k.webp
@@ -189,6 +209,24 @@ export function createHeaderEarth(
     // brings the camera-facing hemisphere back to roughly the same
     // perceived brightness the overlay has at large size.
     toneMappingExposure: 1.17,
+    // Tiny-size ambient floor: 0.55 → 0.65. The lighting math is
+    // identical for every active language — the center surface
+    // normal is always (0, 0, 1) and dots to N·L = 0.87 against
+    // the fixed sun direction — but the NASA Blue Marble texture
+    // has darker mid-tone pixels in some regions (central North
+    // America forests/grasslands) than in others (Mediterranean,
+    // Iberian Peninsula). At 50 px render targets those darker
+    // pixels compress to barely-readable. A modest ambient lift
+    // floors them into the readable register WITHOUT changing the
+    // sun direction, the terminator position, or the lit-side
+    // intensity in ratio space. Day/night contrast drops from
+    // ~3.0 to ~2.7 — still cinematic, not flat, and uniform
+    // across all active languages (Hebrew/English/Spanish all
+    // benefit; English benefits most because that's where the
+    // texture is darkest). No exposure further headroom (we're
+    // already at 1.17, just below the 1.18 ceiling), so ambient
+    // is the right lever.
+    ambientIntensity: 0.65,
     powerPreference: 'low-power',
     // Neutral dark color used while the WebP is loading and after a
     // failure. Lifted slightly above the overlay's 0x1a2540 so the
@@ -216,6 +254,31 @@ export function createHeaderEarth(
   canvas.style.borderRadius = '50%';
   canvas.style.pointerEvents = 'none';
 
+  // Helper that writes both the earth rotation AND a clean camera
+  // rotation in one place. Used by:
+  //   • the initial-focus block below,
+  //   • the texture reveal-on-load callbacks (so the first visible
+  //     frame is guaranteed to be at the language focus point,
+  //     regardless of any parallax accumulated during the load
+  //     window — see the regression notes in the doc-block),
+  //   • the public setFocus method (language-change path).
+  // Camera rotation is always reset to (0,0,0) here. Stale parallax
+  // from a prior pointer hover would otherwise compose with the
+  // earth rotation and shift the visible region by a few degrees.
+  // Parallax can re-engage on the next pointermove.
+  function applyFocus(
+    lat: number | null,
+    lng: number | null,
+    source: 'initial' | 'initial-null' | 'reveal-load' | 'reveal-error' | 'setFocus',
+  ): void {
+    if (lat !== null && lng !== null) {
+      earth.rotation.y = rotationYForLng(lng);
+      earth.rotation.x = clamp(lat * DEG, -POLE_CLAMP, POLE_CLAMP);
+    }
+    camera.rotation.set(0, 0, 0);
+    logFocus(source, lat, lng);
+  }
+
   // Apply the initial focus BEFORE the first render so the very
   // first frame paints with the active language's region already
   // facing the camera — no visible "flash at lat=0/lng=0" before
@@ -226,19 +289,18 @@ export function createHeaderEarth(
   // calibration is byte-identical: the same language code resolves
   // to the same visible region on both Earths.
   if (initialFocus) {
-    earth.rotation.y = rotationYForLng(initialFocus.lng);
-    earth.rotation.x = clamp(initialFocus.lat * DEG, -POLE_CLAMP, POLE_CLAMP);
-    logFocus('initial', initialFocus.lat, initialFocus.lng);
+    applyFocus(initialFocus.lat, initialFocus.lng, 'initial');
   } else {
-    logFocus('initial-null', null, null);
+    applyFocus(null, null, 'initial-null');
   }
 
   // Diagnostic gate — flip `window.__lgsDebug = true` in DevTools to
-  // print one line each time the small globe orientation is set or
-  // changed. Off by default; matches the host's existing __lgsDebug
-  // flag so logs from both sides can be turned on together.
+  // print one line each time the small globe orientation is set,
+  // re-asserted at reveal, or changed via setFocus. Off by default;
+  // matches the host's existing __lgsDebug flag so logs from both
+  // sides can be turned on together.
   function logFocus(
-    source: 'initial' | 'initial-null' | 'setFocus',
+    source: 'initial' | 'initial-null' | 'reveal-load' | 'reveal-error' | 'setFocus',
     lat: number | null,
     lng: number | null,
   ): void {
@@ -250,6 +312,10 @@ export function createHeaderEarth(
       lng,
       rotationX: earth.rotation.x,
       rotationY: earth.rotation.y,
+      cameraRotationX: camera.rotation.x,
+      cameraRotationY: camera.rotation.y,
+      textureSource: core.getTextureSource(),
+      renderAfterFocus: true,
     });
   }
 
@@ -284,8 +350,26 @@ export function createHeaderEarth(
   // visible without breaking the page). Never the old fake
   // continents — those are no longer generated anywhere in the
   // pipeline.
+  //
+  // Regression fix: re-assert the initialFocus rotation AND reset
+  // camera rotation immediately before flipping the meshes visible.
+  // The texture-load window (from constructor to onLoad) is a window
+  // during which the host's pointermove handler can call
+  // setParallax — that writes to camera.rotation while the meshes
+  // are still invisible. Without this re-assert, the first visible
+  // frame would compose the (correct) earth rotation with the
+  // (stale, non-zero) camera tilt, shifting the visible region away
+  // from the language focus by a few degrees. applyFocus zeroes the
+  // camera and re-writes earth.rotation from the captured
+  // initialFocus, so the first rendered frame lands exactly on the
+  // language target. Parallax can re-engage on the next pointermove.
   core.loadDayTexture({
     onLoad: () => {
+      if (initialFocus) {
+        applyFocus(initialFocus.lat, initialFocus.lng, 'reveal-load');
+      } else {
+        applyFocus(null, null, 'reveal-load');
+      }
       earth.visible = true;
       atmosphere.visible = true;
       requestRender();
@@ -296,6 +380,13 @@ export function createHeaderEarth(
       // WebP from loading. The disc stays "present" — a quiet
       // dark sphere with the atmospheric rim — instead of a blank
       // canvas. Logged loudly so the failure is observable.
+      // Same re-assert as the success path: parallax must not
+      // shift the visible region on first reveal.
+      if (initialFocus) {
+        applyFocus(initialFocus.lat, initialFocus.lng, 'reveal-error');
+      } else {
+        applyFocus(null, null, 'reveal-error');
+      }
       earth.visible = true;
       atmosphere.visible = true;
       console.warn(
@@ -335,22 +426,14 @@ export function createHeaderEarth(
       core.disposeAll();
     },
     setFocus(lat: number, lng: number): void {
-      // Rotate the earth to face the language's focus point. Same
-      // helper the overlay uses (rotationYForLng from the shared
-      // core) so a given language resolves to the same visible
-      // region on both Earths.
-      earth.rotation.y = rotationYForLng(lng);
-      earth.rotation.x = clamp(lat * DEG, -POLE_CLAMP, POLE_CLAMP);
-      // Reset any stale parallax that may still be on the camera
-      // from a prior pointer hover. Without this, a hover followed
-      // by a language switch would leave the visible region offset
-      // by a few degrees of camera tilt — close to the target but
-      // not exactly the language's focus point. setFocus is the
-      // canonical "show me language X" call; it should land on the
-      // language target exactly, regardless of prior input state.
-      // Parallax can re-engage on the next pointermove.
-      camera.rotation.set(0, 0, 0);
-      logFocus('setFocus', lat, lng);
+      // Routes through the shared applyFocus helper so the
+      // language-change path uses identical math + camera-reset
+      // behavior as the initial-focus and reveal-on-load paths.
+      // The helper writes earth.rotation via rotationYForLng (the
+      // same helper the overlay uses) and zeros camera.rotation so
+      // stale parallax can't shift the visible region away from
+      // the language target.
+      applyFocus(lat, lng, 'setFocus');
       requestRender();
     },
     setParallax(px: number, py: number): void {

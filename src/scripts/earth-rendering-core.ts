@@ -241,6 +241,21 @@ export interface EarthSceneOptions {
    *  sit slightly higher in absolute brightness. Hard ceiling at
    *  1.18 — values above leak into filmic / cartoonish territory. */
   toneMappingExposure?: number;
+  /** AmbientLight intensity — default 0.55, the canonical overlay
+   *  "warm earthshine fill" value. Miniature callers may pass
+   *  slightly higher (e.g. 0.65) as a tiny-size readability floor:
+   *  the NASA Blue Marble texture has darker mid-tone regions
+   *  (central North America forests/grasslands, Russian taiga, the
+   *  Pacific) that compress to barely-readable pixels at 50 px
+   *  render targets even though their lighting math is identical
+   *  to brighter regions like the Mediterranean. A modest ambient
+   *  lift floors those mid-tones into the readable register
+   *  without altering the sun direction, the terminator position,
+   *  or the day/night ratio character. The ratio change is small:
+   *  at ambient 0.55 the dark/light ratio is ~3.0; at ambient 0.65
+   *  it's ~2.7 — still clearly cinematic, not flat. Hard ceiling
+   *  at 0.75 — beyond that the terminator starts to wash out. */
+  ambientIntensity?: number;
 }
 
 export interface DayTextureCallbacks {
@@ -341,6 +356,7 @@ export function createEarthScene(
   const atmosphereRimExponent = options.atmosphereRimExponent ?? 5.0;
   const atmosphereMaxIntensityLit = options.atmosphereMaxIntensityLit ?? 0.78;
   const toneMappingExposure = options.toneMappingExposure ?? 1.12;
+  const ambientIntensity = options.ambientIntensity ?? 0.55;
 
   // ── Scene ────────────────────────────────────────────────────────
   const scene = new THREE.Scene();
@@ -441,12 +457,14 @@ export function createEarthScene(
   //   • DirectionalLight ("sun") — key light, 1.55 at the sun
   //     position. The visible hemisphere reads clearly; bright land
   //     (Sahara, polar ice) saturates slightly sooner.
-  //   • AmbientLight — warm earthshine fill, 0.55. Keeps the night
-  //     side as a soft visible glow rather than a black void.
+  //   • AmbientLight — warm earthshine fill, 0.55 by default.
+  //     Keeps the night side as a soft visible glow rather than a
+  //     black void. Configurable per caller; see ambientIntensity
+  //     in EarthSceneOptions for the tiny-size readability rationale.
   //   • HemisphereLight — atmospheric scatter, 0.48. Cool top
   //     (0x9ab8ff) + warm bottom (0x7a5e3a) gives dimensional
   //     richness — polar caps cooler, equator warmer.
-  const ambient = new THREE.AmbientLight(0xfff3dc, 0.55);
+  const ambient = new THREE.AmbientLight(0xfff3dc, ambientIntensity);
   scene.add(ambient);
 
   const sun = new THREE.DirectionalLight(0xffffff, 1.55);
