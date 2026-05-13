@@ -2384,8 +2384,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
             relative to card_bottom), the overlay's top must be 16px
             below card_bottom — hence `calc(100% + 16px)`. The small
             luminous diamond anchor below renders at exactly this
-            meeting point to mark the connection visually. */
-      top: calc(100% + 16px);
+            meeting point to mark the connection visually.
+            (Polish: 14px instead of 16px — pulls the whole pill 2px
+            closer to the book; the diamond + dome peak now overlap
+            the card by a hair, reading as "anchored into" rather
+            than "floating below".) */
+      top: calc(100% + 14px);
       left: 50%;
       transform: translateX(-50%);
       /* Integrated entry panel — narrower than the card so the pill
@@ -2570,8 +2574,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          covers more vertical space below the centered card. */
       background: linear-gradient(
         180deg,
-        rgba(20, 24, 64, 0.92) 0%,
-        rgba(10, 13, 38, 0.97) 100%
+        rgba(20, 24, 64, 0.95) 0%,
+        rgba(10, 13, 38, 0.99) 100%
       );
       border: 1px solid rgba(122, 105, 255, 0.76);
       box-shadow:

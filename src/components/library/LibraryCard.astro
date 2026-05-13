@@ -825,8 +825,30 @@ const extraTopics = topics.length - topicChips.length;
     mask-image: linear-gradient(to bottom,
       black 0%, black 96%, transparent 100%);
   }
-  .lc-orbit.lc-has-artifact:not(:has(.lc-title)) .lc-orbit-artifact-face-front {
-    aspect-ratio: 2 / 3;                        /* D */
+  /* D — float the SELECTED face out of flow.
+     The previous attempt forced `aspect-ratio: 2/3` on the wrapper,
+     which standardized the layout but ALSO inflated card heights for
+     every book whose front.png had a shorter natural aspect ratio.
+     Reverted. The real culprit on "Practical Python for AI Engineers"
+     was that `.lc-orbit-artifact-face-selected` is rendered with
+     `display: block` + `position: static` (so it's in flow, just
+     invisible at `opacity: 0`), AND its source artwork has a
+     different intrinsic height than the front.png on this one book.
+     That extra in-flow height extends `.galaxy-card`'s bottom past
+     the visible cover, which is why the reading-entry pill anchor
+     drifted only for this title.
+
+     Fix: take the selected face OUT of flow with `position: absolute`
+     (same pattern the left/right faces already use). The wrapper's
+     height now reverts to whatever the front face's natural aspect
+     ratio dictates — exactly as it was before any of these edits —
+     while the selected face still cross-fades in / out via the
+     existing opacity transition (the 540 ms ease set on
+     `.lc-orbit-artifact-face`). No book's card size changes; only
+     the Practical-Python-specific extra height collapses. */
+  .lc-orbit.lc-has-artifact:not(:has(.lc-title)) .lc-orbit-artifact-face-selected {
+    position: absolute;
+    inset: 0;
     object-fit: cover;
     object-position: top center;
   }
