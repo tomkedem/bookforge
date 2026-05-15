@@ -267,14 +267,25 @@ export function initStageLayout(stage: HTMLElement): void {
   // location is now a sibling of `.library-body` so the buttons can't
   // be visually covered by a focused card. Document-level delegation
   // keeps the lookup cheap and unaware of where the buttons render.
+  //
+  // Visibility check: `offsetParent` returns null for position:fixed
+  // elements in Chromium/WebKit. The mobile layout pins .library-galaxy
+  // with position:fixed (≤1023px), so a naïve `offsetParent === null`
+  // guard silently kills the rotate buttons on every phone. Use a
+  // bounding-rect check instead — works for both relative and fixed
+  // stages, and still rejects display:none / detached nodes.
+  const isStageOnScreen = (): boolean => {
+    if (!stage.isConnected) return false;
+    const rect = stage.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  };
+
   document.addEventListener('click', (e) => {
     const target = e.target as Element | null;
     if (!target) return;
     const rotateBtn = target.closest<HTMLButtonElement>('[data-galaxy-rotate]');
     if (!rotateBtn) return;
-    // Skip if this stage isn't currently on screen — the listener is
-    // global and would otherwise act on a stage from a stale init.
-    if (stage.offsetParent === null) return;
+    if (!isStageOnScreen()) return;
     // Skip if the click was already handled by the stage-scoped click
     // handler (button still inside the stage subtree, legacy path).
     if (stage.contains(rotateBtn)) return;
@@ -307,14 +318,42 @@ export function initStageLayout(stage: HTMLElement): void {
     }
     // Skip if the universe stage isn't even on screen — the listener
     // is global and would otherwise scroll-jack pages that share the
-    // body. `offsetParent === null` means display:none / detached.
-    if (stage.offsetParent === null) return;
+    // body. Bounding-rect check works for position:fixed stages
+    // (mobile pins .library-galaxy with fixed positioning).
+    if (!isStageOnScreen()) return;
     e.preventDefault();
     // ArrowLeft → prev chevron (-1), ArrowRight → next chevron (+1).
     // Matches the visual chevron icons in both LTR and RTL; the
     // existing rotateOrbit call carries snap + focus dismissal.
     rotateOrbit(e.key === 'ArrowLeft' ? -1 : 1);
   });
+
+  // ── Mobile auto-focus ─────────────────────────────────────────────
+  // On phones the orbit cards are clamped to 96-140px wide, which
+  // makes the title/cover text hard to read at rest. To solve the
+  // affordance problem ("user tries to read instead of tapping"), the
+  // first eligible orbit station is auto-focused on page load so the
+  // visitor immediately sees one large, fully readable card scaled
+  // up at the orbit center — with the other cards visibly orbiting
+  // around it as small satellites. Tap any other card (or the
+  // backdrop) to change focus / dismiss.
+  //
+  // Mobile-only: desktop has enough card real estate that text is
+  // readable at rest, and auto-focusing there would block the
+  // designed "hero cosmic dashboard" composition.
+  const MOBILE_MAX_WIDTH = 1023; // matches @media (max-width: 1023px)
+  if (window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`).matches) {
+    // Defer one frame so the orbit hydrator (which can remove series
+    // members from the visible card pool) has finished mutating the
+    // DOM before we pick a card to spotlight.
+    requestAnimationFrame(() => {
+      if (focused) return; // a user interaction already focused something
+      const first = stage.querySelector<HTMLElement>(
+        '[data-galaxy-card]:not([data-series-member]):not([data-role="series"]):not([data-role="other-knowledge"])',
+      );
+      if (first) openCenter(first);
+    });
+  }
 }
 
 /**

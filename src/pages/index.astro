@@ -409,51 +409,14 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                     </span>
                   </a>
                 )}
-                <div class="galaxy-cta">
-                  {/* The open-chevron is only rendered for items with
-                      a real route. Items whose href is not in the
-                      `isSafeLibraryHref` allow-list (today: series
-                      capsules pointing at `/series/...` placeholders)
-                      get the close button only — they appear on the
-                      orbit, can be focused into the center for a
-                      closer look, but don't expose a navigate link
-                      that would 404. The LibraryCard inside this
-                      slot also renders as a non-clickable <article>
-                      for the same reason, so the disabled state is
-                      consistent across the whole card. */}
-                  {isSafeLibraryHref(item.href) && (
-                    <a
-                      class="galaxy-cta-open"
-                      href={item.href}
-                      data-galaxy-cta-open
-                      aria-label={t('library.galaxy.openItem', language)}
-                    >
-                      <span class="galaxy-cta-open-ring" aria-hidden="true"></span>
-                      <span class="galaxy-cta-open-core" aria-hidden="true"></span>
-                      <svg
-                        class="galaxy-cta-open-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                      >
-                        <polyline points="9 6 15 12 9 18"></polyline>
-                      </svg>
-                      <span class="galaxy-cta-open-label" aria-hidden="true">
-                        {t('library.galaxy.openItem', language)}
-                      </span>
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    class="galaxy-cta-close"
-                    data-galaxy-cta-close
-                    aria-label={t('library.galaxy.closeItem', language)}
-                  >×</button>
-                  {kind === 'series' && (
+                {/* `.galaxy-cta` slot is now only rendered for series
+                    capsules — the open-orb (`.galaxy-cta-open`) was
+                    superseded by `.reading-entry-overlay`, and the X
+                    close button was retired in favour of backdrop-tap
+                    and Esc-key closing. Books / lessons / articles
+                    therefore emit no `.galaxy-cta` markup at all. */}
+                {kind === 'series' && (
+                  <div class="galaxy-cta">
                     <div class="galaxy-cta-series-actions" data-series-action-panel>
                       <button
                         type="button"
@@ -491,8 +454,8 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
                         </span>
                       </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
 
@@ -890,6 +853,50 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
      identity as the desktop hero strip. Override applies at every
      viewport below the desktop dashboard (≤1023px). Desktop
      (≥1024px) strips chrome via LibraryHero's own @media rule. */
+  /* ── Series glow pulse ────────────────────────────────────────────
+        One-shot 3-second multi-colour border + halo applied to every
+        card that belongs to a series. Triggered (1) when the user
+        clicks "Show series items" inside the focused series capsule,
+        and (2) when the user hovers a series capsule in the resting
+        orbit without focusing it. Works on every viewport because the
+        keyframes live outside any @media block. */
+  @keyframes yuval-series-glow {
+    0%, 100% {
+      box-shadow: var(--yuval-galaxy-card-shadow);
+      border-color: var(--yuval-galaxy-card-border);
+    }
+    12% {
+      box-shadow:
+        0 0 0 2px rgba(250, 204, 21, 0.95),
+        0 0 28px 6px rgba(250, 204, 21, 0.55);
+      border-color: rgba(250, 204, 21, 0.95);
+    }
+    37% {
+      box-shadow:
+        0 0 0 2px rgba(34, 197, 94, 0.95),
+        0 0 28px 6px rgba(34, 197, 94, 0.55);
+      border-color: rgba(34, 197, 94, 0.95);
+    }
+    62% {
+      box-shadow:
+        0 0 0 2px rgba(168, 85, 247, 0.95),
+        0 0 28px 6px rgba(168, 85, 247, 0.55);
+      border-color: rgba(168, 85, 247, 0.95);
+    }
+    87% {
+      box-shadow:
+        0 0 0 2px rgba(249, 115, 22, 0.95),
+        0 0 28px 6px rgba(249, 115, 22, 0.55);
+      border-color: rgba(249, 115, 22, 0.95);
+    }
+  }
+  .galaxy-card.is-series-glow :global(.lc) {
+    animation: yuval-series-glow 3s ease-out 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .galaxy-card.is-series-glow :global(.lc) { animation: none; }
+  }
+
   @media (max-width: 1023px) {
     :global(.lb-area-hero .lh) {
       /* No top padding — the hero text should land right under the
@@ -956,25 +963,51 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        base reset), then re-declare the orbit positioning rules with
        smaller card width + smaller ellipse radii. The math is identical
        to the desktop rule inside `@media (min-width: 1024px)`. */
+    /* Orbit always centered on the viewport's central book icon.
+       The icon lives in `.knowledge-scene-background` (position:fixed)
+       and sits a few pixels above the viewport's exact middle. To
+       guarantee the orbit center (`.galaxy-card { top: 50% }` of
+       `.library-galaxy`) lands ON that icon at EVERY screen size, we
+       pin the galaxy box to the viewport with position:fixed and
+       center it with top:50% + transform translate(-50%, -50%). The
+       orbit cards are inside this fixed box, so they automatically
+       sit in concentric ellipses around the icon — regardless of how
+       tall the hero text grew or what other content stacks above. */
     .lb-area-featured {
       display: block;
+      /* This wrapper no longer needs to host the orbit — it just
+         remains in flow as a placeholder so the hero text spacing
+         doesn't collapse. The actual galaxy lives in a fixed layer. */
     }
 
     .library-galaxy {
-      position: relative;
+      position: fixed;
+      /* Match the visual center of the background galaxy image. The
+         image is fixed top:calc(4rem - 130px) with bottom:0 and
+         object-position:center center → its vertical center sits at
+         (50dvh - 33px). Anchoring the orbit center to the same
+         coordinate guarantees the book icon is always at the carousel
+         center, regardless of header height, hero text length or
+         viewport size. */
+      top: calc(50dvh - 33px);
+      left: 50%;
+      transform: translate(-50%, -50%);
       display: block;
-      height: 100%;
-      /* Mobile-friendly stage height. clamp() lets the orbit grow on
-         large phones / portrait tablets without ever exceeding the
-         desktop 540px floor (which kicks in at ≥1024px). */
+      width: 100%;
+      max-width: 100vw;
       min-height: clamp(320px, 60vw, 480px);
       margin: 0;
       overflow: visible;
       padding: 0;
-      /* No vertical offset on mobile — the hero text sits naturally
-         above the orbit in the column flow, so the orbit can stay
-         centered in its own slot. */
-      transform: none;
+      z-index: 1;
+      /* Drag-to-rotate uses pointermove on the stage. Without
+         `touch-action: none` the browser keeps ownership of horizontal
+         swipes (treats them as pan / overscroll), and pointermove never
+         fires on touch devices — so rotating cards by dragging silently
+         fails on mobile. The page is overflow:hidden anyway, so we lose
+         nothing by claiming the gesture for JS. Taps/clicks still fire
+         normally on the cards and rotate buttons. */
+      touch-action: none;
       /* The orbit math (cos/sin) is direction-agnostic via --galaxy-dir
          (set inline on the element in markup). Setting `direction: ltr`
          here keeps absolute positioning consistent; per-card content
@@ -986,19 +1019,27 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       position: absolute;
       flex: initial;
       max-width: none;
-      /* Card width shrinks proportionally to viewport. 96px is the
-         floor (still legible on 360px-wide phones), 140px is the cap
-         (so on a 1023px tablet the cards never grow past their desktop
-         190px peer at 1024px). */
-      width: clamp(96px, 22vw, 140px);
+      /* Card width shrinks proportionally to viewport. Sized 25% larger
+         than the previous mobile values per Tomer's request: the cover
+         art now carries baked-in mobile typography (front-mobile.png),
+         and the larger cards let that artwork read clearly without an
+         overlay label. Floor: 120px (legible on 360px phones). Cap:
+         175px (still safely under the desktop 190px peer at 1024px).
+         Exposed as `--card-base-width` so the focused-state scale rule
+         below can target an exact viewport-relative size (70vw) without
+         re-deriving the clamp by hand. The series capsule overrides
+         this variable for its slightly wider footprint. */
+      --card-base-width: clamp(120px, 27.5vw, 175px);
+      width: var(--card-base-width);
       cursor: pointer;
       top: 50%;
       left: 50%;
-      /* Smaller ellipse radii so the orbit fits inside the mobile
-         stage. Tuned so 4-6 stations distribute comfortably without
-         neighbours touching. */
+      /* Tighter ellipse on mobile so the orbit's lower edge clears
+         the rotate-controls pill at the viewport bottom with a clear
+         safety gap (not just touching). orbit-ry shrunk again from
+         18vh→13vh, and the floor/ceiling tightened in tandem. */
       --orbit-rx: clamp(110px, 38vw, 220px);
-      --orbit-ry: clamp(110px, 28vh, 200px);
+      --orbit-ry: clamp(70px, 13vh, 105px);
       --orbit-active-angle: calc(var(--orbit-angle, 0deg) + var(--orbit-rotation, 0deg));
       --orbit-depth: calc((sin(var(--orbit-active-angle, 0deg)) + 1) / 2);
       --slot-scale: calc(0.88 + 0.12 * var(--orbit-depth));
@@ -1020,9 +1061,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       direction: var(--page-direction, ltr);
     }
 
-    /* Series capsule a touch wider than a book card, same ratio as desktop. */
+    /* Series capsule a touch wider than a book card, same ratio as desktop.
+       Scaled 25% alongside the book/lesson cards above. Overrides
+       `--card-base-width` so the focused-scale math below uses the
+       series footprint rather than the book/lesson one. */
     .galaxy-card[data-role="series"] {
-      width: clamp(108px, 25vw, 156px);
+      --card-base-width: clamp(135px, 31.25vw, 195px);
       --series-color-resolved: var(--series-color, var(--yuval-galaxy-accent-gold, #c9a96e));
     }
 
@@ -1058,14 +1102,13 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        the viewport. z-index sits above the focused card (z:30) so the
        buttons never get covered by an enlarged centered card. */
     .galaxy-orbit-controls {
-      /* Direction-agnostic horizontal centering: pin both physical
-         left and right to 0 and let `margin-inline: auto` distribute
-         the remaining space evenly. `transform: translateX(-50%)` with
-         `left: 50%` breaks under RTL inheritance from `.library-root`,
-         so we avoid it entirely. */
-      position: fixed;
+      /* Always pinned to the very bottom of the viewport on mobile.
+         Only the iOS home-indicator safe-area-inset-bottom is added
+         on top — no extra cosmetic offset — so the buttons hug the
+         screen edge as the user requested. */
+      position: fixed !important;
       inset-block-end: auto;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+      bottom: env(safe-area-inset-bottom, 0px) !important;
       left: 0;
       right: 0;
       margin-inline: auto;
@@ -1105,6 +1148,207 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       outline: none;
     }
     [dir="rtl"] .galaxy-orbit-btn svg { transform: scaleX(-1); }
+
+    /* ── Mobile focus state (mirror of desktop) ────────────────────
+       All the focus-state CSS — centered card scaling, galaxy CTA
+       slot, reading-entry overlay panel — lives inside the desktop
+       `@media (min-width: 1024px)` block below, so on mobile none of
+       those rules apply. Without this duplication a tap on a mobile
+       orbit card doesn't visibly scale it, and the reading-entry
+       `<a>` + close `<button>` render at default styling, polluting
+       the screen with their text under every card.
+
+       This block replays just enough of the desktop rules to give
+       mobile the same "tap card → scales up, X close button appears,
+       reading-entry panel sits flush below the cover" behavior. */
+
+    /* Focused card flies to viewport center, scaled to render at exactly
+       70% of the viewport width regardless of phone/tablet size. The
+       formula `70vw / var(--card-base-width)` evaluates the resting card
+       width (`clamp(120px, 27.5vw, 175px)` for books/lessons, larger for
+       series) and produces the unitless multiplier that hits the target.
+       The reading-entry pill below counter-scales against this same
+       variable so it keeps its previous visual size (~scale 2.34) on
+       every viewport instead of growing/shrinking with the new card
+       math. */
+    .galaxy-card[data-pos="center"] {
+      transform:
+        translate(-50%, -50%)
+        scale(calc(70vw / var(--card-base-width)));
+      opacity: 1;
+      z-index: 30;
+      cursor: default;
+    }
+
+    /* On mobile we drop the open-orb + X-close cluster — Tomer asked to
+       remove the X next to the focused card. Closing is handled by
+       tapping outside the card / tapping another orbit station. The
+       `.galaxy-cta` wrapper itself stays visible so its only remaining
+       contents — the series action pills (Show items / Details) — can
+       sit at the bottom of the focused series card on mobile too. */
+    .galaxy-cta-open,
+    .galaxy-cta-open-label,
+    .galaxy-cta-close {
+      display: none !important;
+    }
+    /* Mobile placement for the series action pills — mirrors the desktop
+       rules at the bottom of this stylesheet so the wrapper has the same
+       positioning context on every viewport. Lifted into the mobile block
+       because the desktop `.galaxy-cta` rule lives inside
+       `@media (min-width: 1024px)` and would otherwise leave the mobile
+       wrapper unstyled (in-flow, always visible). */
+    .galaxy-cta {
+      position: absolute;
+      top: 66%;
+      left: 50%;
+      bottom: auto;
+      right: auto;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease 0.15s;
+      z-index: 2;
+    }
+    .galaxy-card[data-pos="center"] .galaxy-cta {
+      opacity: 1;
+      pointer-events: auto;
+      /* Counter-scale against the focused card's mobile scale
+         (`scale(70vw / var(--card-base-width))`). Without this the
+         pills inherit the card magnification and render ~1.7× too
+         big with oversized font. Multiplying by the inverse keeps
+         the pills at their authored visual size on every phone. */
+      transform: translate(-50%, -50%) scale(calc(var(--card-base-width) / 70vw));
+    }
+    /* Mobile-only shrink for the series action pills. The counter-scale
+       above keeps them at authored size, but authored is still too tall
+       for a phone (Tomer reported huge / out-of-proportion buttons on
+       mobile). Tighten padding, font and icon dimensions specifically
+       inside the mobile block so the pills read as compact chips under
+       the focused series card. */
+    .galaxy-cta-series-actions { gap: 0.3rem; }
+    .galaxy-cta-series-btn {
+      padding: 0.25rem 0.55rem;
+      font-size: 0.625rem;
+      gap: 0.3rem;
+      letter-spacing: 0;
+    }
+    .galaxy-cta-series-btn-icon {
+      width: 12px;
+      height: 12px;
+    }
+    /* Reading-entry panel below the focused card. On mobile Tomer
+       asked for a wider + shorter pill (the desktop 66%×108px shape
+       was too tall for a phone), then +25% on both axes so the CTA
+       reads clearly under the scaled-up centered card. */
+    .reading-entry-overlay {
+      position: absolute;
+      left: 50%;
+      /* Pill anchors to the visible bottom edge of the cover, not the
+         .galaxy-card element's bottom — the card carries ~28px of
+         transparent padding below the cover (see LibraryCard
+         `.lc-orbit` padding-bottom + artifact margin), so top:100%
+         lands 28px under the visible art. Multiplied by the centered
+         card's 3.042× scale that's an ~85px visual gap. The negative
+         offset closes that gap so the pill sits flush against the
+         cover. */
+      top: calc(100% - 32px);
+      width: 120%;
+      height: 80px;
+      /* Counter-scale to preserve the pill's previous visual size
+         (≈ scale 2.34) while the centered card scale is now derived
+         from 70vw. The math: pill_scale = 2.34 / card_scale, where
+         card_scale = 70vw / var(--card-base-width). Substituting and
+         simplifying gives `2.34 * var(--card-base-width) / 70vw`.
+         transform-origin anchors the shrink to the pill's top-center
+         so it doesn't drift up. */
+      transform:
+        translate(-50%, 0)
+        scale(calc(2.34 * var(--card-base-width) / 70vw));
+      transform-origin: top center;
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      z-index: 30;
+      transition:
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 240ms;
+    }
+    .galaxy-card[data-pos="center"] .reading-entry-overlay {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        opacity 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 0s;
+    }
+    .reading-entry-overlay:focus-visible {
+      outline: none;
+    }
+    .reading-entry-asset {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      background-image: url('/assets/ui/reading-entry/reading-entry-card.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      pointer-events: none;
+      transition:
+        transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 220ms ease,
+        filter 220ms ease;
+    }
+    .reading-entry-text {
+      position: absolute;
+      left: 50%;
+      top: calc(60% + 2px);
+      width: 92%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      pointer-events: none;
+      font-family:
+        'Heebo', 'Inter', system-ui, -apple-system,
+        'Segoe UI', 'Noto Sans Hebrew', sans-serif;
+    }
+    .reading-entry-title {
+      /* Mobile-only smaller text. The centered card scales 2.34×, so
+         even 7px renders at ~16px effective — readable but no longer
+         overpowering the pill. */
+      font-size: 7px;
+      font-weight: 700;
+      line-height: 1.1;
+      white-space: nowrap;
+      color: rgba(248, 252, 255, 0.98);
+      text-shadow:
+        0 0 10px rgba(90, 160, 255, 0.35),
+        0 2px 4px rgba(0, 0, 0, 0.65);
+    }
+    .reading-entry-overlay:hover .reading-entry-asset,
+    .reading-entry-overlay:focus-visible .reading-entry-asset {
+      filter: brightness(1.06) saturate(1.05);
+    }
+    .reading-entry-overlay:active .reading-entry-asset {
+      transform: scale(0.985);
+    }
   }
 
   /* Small-screen baseline for the orbit scene's vertical offset. The
@@ -1320,12 +1564,10 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
          container only — page title, breadcrumb, side panels and grid
          shell are unaffected. Responsive steps below override the value
          per breakpoint; the transform itself stays the same.
-         Compromise value: the user asked to lift the scene 50px so the
-         core sits higher, but at 6px the top cards overlapped the hero
-         subtitle. Pulled the orbit back down to 36px (still ~20px
-         higher than the original 56px, but with enough headroom that
-         the subtitle reads cleanly above the top-of-orbit cards). */
-      --orbit-vertical-offset: 36px;
+         Bumped to 90px (was 36px) so the TOP of the top-of-orbit cards
+         always has at least ~20px of breathing room from the hero
+         subtitle on every common 1024px+ viewport. */
+      --orbit-vertical-offset: 90px;
       transform: translateY(var(--orbit-vertical-offset));
     }
     /* The earlier `.library-galaxy::before` underlay halo and
@@ -1363,14 +1605,18 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       position: absolute;
       flex: initial;
       max-width: none;
-      width: 190px;
+      /* 190px × 1.2 = 228px (Tomer asked for +20% on desktop). The orbit
+         radii below were nudged proportionally so the larger cards don't
+         crowd the orbit center or the rotate-controls. */
+      width: 228px;
       cursor: pointer;
       top: 50%;
       left: 50%;
       /* Ellipse radii — clamped so the orbit shrinks gracefully on
-         narrow desktop widths and grows on wide ones. */
-      --orbit-rx: clamp(280px, 32vw, 380px);
-      --orbit-ry: clamp(180px, 28vh, 230px);
+         narrow desktop widths and grows on wide ones. Bumped to keep
+         pace with the +20% card width. */
+      --orbit-rx: clamp(310px, 34vw, 410px);
+      --orbit-ry: clamp(200px, 28vh, 250px);
       /* Effective angle = base angle (set inline per card) + the
          stage-level rotation that the rotate-orbit controls drive.
          All trigonometry below reads from this so a single CSS-var
@@ -1510,8 +1756,9 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
       cursor: pointer;
       /* A capsule is wider than a regular book card on the orbit so the
          shape proportions alone signal "container, not item" — even
-         before reading the badge or label. */
-      width: 210px;
+         before reading the badge or label. Scaled to keep the +10%
+         ratio over the +20%-larger book card (228px → 252px). */
+      width: 252px;
       /* Resolve series colour at the wrapper level so the deck pseudos
          (below) and the inner capsule both read the same value without
          each redefining it. */
@@ -1969,9 +2216,17 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
 
     /* Centered focus state — overrides the orbit transform so the card
        flies to the middle, scales up, drops its tilt. Sits above the
-       backdrop and other cards. */
+       backdrop and other cards.
+       The extra `translateY(-90px)` after the scale anchors the focused
+       card's TOP edge just below the hero subtitle so the reading
+       "title → focused card" flow is continuous (Tomer asked for the
+       centered card to start "right below the subtitle line", not
+       mid-screen at the orbit center). Note: translateY appears AFTER
+       scale(1.5) in the chain, but CSS applies transforms right-to-
+       left, so the -90 px is multiplied through the 1.5× scale and
+       reads as ~135 px visual upward shift. */
     .galaxy-card[data-pos="center"] {
-      transform: translate(-50%, -50%) scale(1.5);
+      transform: translate(-50%, -50%) scale(1.5) translateY(-90px);
       opacity: 1;
       z-index: 30;
       cursor: default;
@@ -2002,29 +2257,29 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        card-level handler never fires for Open/Close. */
     .galaxy-cta {
       position: absolute;
-      /* Anchor outside the focused card on its inline-start edge,
-         near the top. In RTL Hebrew that's visually top-right (what
-         was requested); in LTR English the same logical position
-         lands at top-left, mirroring with the page direction.
-         `inset-inline-end: 100%` puts the element's inline-end side
-         at the card's inline-start edge, so the whole CTA sits
-         just outside; the negative margin then pulls it slightly
-         further out so it doesn't touch the card. */
-      inset-block-start: 0;
-      inset-inline-end: 100%;
-      inset-inline-start: auto;
-      inset-block-end: auto;
-      margin-inline-end: 0.625rem;
-      /* Stack orb + X vertically — orb on top (primary), close below
-         (secondary). */
+      /* Anchor inside the focused card at its visible bottom — the
+         spot where the `.lc-orbit-author` byline used to sit before
+         it was retired. Series action pills now read as part of the
+         focused-card composition rather than as a side rail.
+         Centering uses physical `left: 50%; transform: translateX(-50%)`
+         (not logical inset-inline-*) so it stays centered in both
+         RTL Hebrew and LTR English without writing-direction quirks. */
+      top: 66%;
+      left: 50%;
+      bottom: auto;
+      right: auto;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
-      gap: 0.625rem;
-      justify-content: flex-start;
+      gap: 0.5rem;
+      justify-content: center;
       align-items: center;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s ease 0.15s;
+      /* Above the scaled-up artwork (`transform: scale(1.5)` visually
+         bleeds past the card's flow box bottom by ~25%). */
+      z-index: 2;
     }
     .galaxy-card[data-pos="center"] .galaxy-cta {
       opacity: 1;
@@ -2849,11 +3104,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
        simultaneously. The wrapper is a flex pill so the two buttons
        read as one control. */
     .galaxy-orbit-controls {
-      /* Direction-agnostic horizontal centering — see mobile rule above
-         for the rationale. */
-      position: fixed;
+      /* Always pinned to the very bottom of the viewport on desktop
+         too. Only the safe-area-inset-bottom is honored on top —
+         same hard-edge anchoring as the mobile rule above. */
+      position: fixed !important;
       inset-block-end: auto;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+      bottom: env(safe-area-inset-bottom, 0px) !important;
       left: 0;
       right: 0;
       margin-inline: auto;
@@ -2901,23 +3157,25 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   /* ── Wide desktop (≥1280px): wider orbit cards + larger orbit. ─── */
   @media (min-width: 1280px) {
     /* Larger orbit scene gets a deeper vertical offset so rotating
-       cards along the wider ellipse still clear the page title. Set
-       to 52px — same +30 px lift over the base desktop step (36px)
-       that the original ladder used (72-56=16px → 52-36=16px) so
-       the wide-desktop hierarchy stays consistent while keeping the
-       subtitle clear of the top cards. */
+       cards along the wider ellipse still clear the page title.
+       Wide desktop carries a slightly bigger orbit-ry (up to 250px
+       vs the 1024-1279px tier's 230px), so the offset adds another
+       +20px on top of the base desktop's new 90px to preserve the
+       minimum ~20px top-card clearance Tomer requested. */
     .library-galaxy {
-      --orbit-vertical-offset: 52px;
+      --orbit-vertical-offset: 110px;
     }
     .galaxy-card {
-      width: 210px;
-      --orbit-rx: clamp(320px, 30vw, 440px);
-      --orbit-ry: clamp(200px, 26vh, 250px);
+      /* 210px × 1.2 = 252px (Tomer's +20% bump). Orbit radii grown
+         proportionally so the wider cards still distribute cleanly. */
+      width: 252px;
+      --orbit-rx: clamp(350px, 33vw, 480px);
+      --orbit-ry: clamp(220px, 28vh, 275px);
     }
     /* Capsule stays one notch wider than a book card so the proportion
-       contrast holds across breakpoints. */
+       contrast holds across breakpoints. 232 × 1.2 = 278px. */
     .galaxy-card[data-role="series"] {
-      width: 232px;
+      width: 278px;
     }
   }
 

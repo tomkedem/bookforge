@@ -46,6 +46,10 @@ const FRONT_GLOBS = import.meta.glob<string>(
   '/src/assets/knowledge-cards/*/front.png',
   { eager: true, query: '?url', import: 'default' },
 );
+const FRONT_MOBILE_GLOBS = import.meta.glob<string>(
+  '/src/assets/knowledge-cards/*/front-mobile.png',
+  { eager: true, query: '?url', import: 'default' },
+);
 const LEFT_GLOBS = import.meta.glob<string>(
   '/src/assets/knowledge-cards/*/left.png',
   { eager: true, query: '?url', import: 'default' },
@@ -84,6 +88,14 @@ const BOOK_PLACEHOLDER_URL: string | undefined =
 export interface KnowledgeCardAssets {
   /** REQUIRED. The single visible face for every orbit position. */
   front: string;
+  /**
+   * Optional mobile-optimized variant of `front`. Used as the carousel /
+   * resting-orbit thumbnail on phone-sized viewports only. The
+   * selected/focused/detail presentation always uses `front` — see
+   * `getCardImageSrc` for the central decision rule. Consumers should
+   * fall back to `front` when this face is absent.
+   */
+  frontMobile?: string;
   /** Optional legacy face. Consumers should fall back to `front`. */
   left?: string;
   /** Optional legacy face. Consumers should fall back to `front`. */
@@ -101,7 +113,7 @@ export interface KnowledgeCardAssets {
 }
 
 /** Names of every face the discovery code looks for. Single source of truth. */
-const FACE_KEYS = ['front', 'left', 'right', 'selected'] as const;
+const FACE_KEYS = ['front', 'frontMobile', 'left', 'right', 'selected'] as const;
 type FaceKey = (typeof FACE_KEYS)[number];
 
 /**
@@ -170,6 +182,39 @@ export function isPlaceholderArtifact(
   return artifact.front === BOOK_PLACEHOLDER_URL;
 }
 
+/**
+ * Card image viewing context. Drives whether the mobile-optimized
+ * `front-mobile.png` is eligible or the canonical `front.png` is used.
+ */
+export type CardImageViewMode = 'carousel' | 'selected' | 'detail';
+
+/**
+ * Central decision rule for which knowledge-card image URL to render.
+ *
+ *   - `carousel` + `isMobile=true` → `frontMobile` if present, else `front`.
+ *   - `carousel` + `isMobile=false` → `front`.
+ *   - `selected` / `detail` → always `front`, regardless of viewport.
+ *
+ * Returns `undefined` only when the artifact itself is undefined; callers
+ * keep their existing "no artifact" fallback (medallion / placeholder).
+ *
+ * The runtime fallback for a present-but-failed-to-load `front-mobile.png`
+ * lives at the rendering layer (an `onerror` handler that swaps the
+ * `<picture>` source for the desktop `<img>`). This helper handles the
+ * build-time fallback (file simply not present on disk).
+ */
+export function getCardImageSrc(
+  artifact: KnowledgeCardAssets | undefined,
+  viewMode: CardImageViewMode,
+  isMobile: boolean,
+): string | undefined {
+  if (!artifact) return undefined;
+  if (viewMode === 'carousel' && isMobile) {
+    return artifact.frontMobile ?? artifact.front;
+  }
+  return artifact.front;
+}
+
 // ── Internals ──────────────────────────────────────────────────────────
 let assetsCache: Map<string, KnowledgeCardAssets> | null = null;
 
@@ -182,8 +227,11 @@ function normalizeSlug(slug: string): string {
 
 function slugFromGlobPath(path: string): string | null {
   // Path shape: `/src/assets/knowledge-cards/<slug>/<face>.png`
+  // The optional mobile face (`front-mobile.png`) is treated as a face
+  // variant of the same slug — it never produces a new orbit station,
+  // only swaps the carousel artwork on phone viewports.
   const m = path.match(
-    /\/knowledge-cards\/([^/]+)\/(?:front|left|right|selected)\.png$/,
+    /\/knowledge-cards\/([^/]+)\/(?:front|front-mobile|left|right|selected)\.png$/,
   );
   if (!m) return null;
   // Folders with a leading underscore are reserved for shared assets
@@ -219,6 +267,7 @@ function buildCache(): Map<string, KnowledgeCardAssets> {
   }
 
   collect(FRONT_GLOBS, 'front');
+  collect(FRONT_MOBILE_GLOBS, 'frontMobile');
   collect(LEFT_GLOBS, 'left');
   collect(RIGHT_GLOBS, 'right');
   collect(SELECTED_GLOBS, 'selected');

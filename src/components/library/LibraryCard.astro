@@ -136,10 +136,21 @@ const showOrbitFooter = variant === 'orbit';
 // Course-lesson cards labelled with "Lesson N" carry more identity than
 // the generic type label "Course lesson", which would otherwise be
 // identical across every lesson card on the orbit and read as repetition.
-const orbitTypeLabel =
-  variant === 'orbit' && item.type === 'course_lesson' && item.orderInSeries
-    ? t('courses.lessonNumber', language, { n: item.orderInSeries })
-    : typeLabel;
+const isLessonBadge =
+  variant === 'orbit' && item.type === 'course_lesson' && !!item.orderInSeries;
+const orbitTypeLabel = isLessonBadge
+  ? t('courses.lessonNumber', language, { n: item.orderInSeries! })
+  : typeLabel;
+// Split "Lesson 3" / "שיעור 3" / "Clase 3" into the word prefix and the
+// number so the prefix can be hidden on mobile (per Tomer's request:
+// "on series cards on mobile, don't write the word 'שיעור' — number only").
+// The split is whitespace-based and works for all three supported
+// translations. If the split fails (locale that doesn't use a separating
+// space), we render the full label as a single span.
+const lessonNumberStr = isLessonBadge ? String(item.orderInSeries) : '';
+const lessonWordPrefix = isLessonBadge && lessonNumberStr
+  ? orbitTypeLabel.replace(new RegExp(`\\s*${lessonNumberStr}\\s*$`), '').trim()
+  : '';
 
 // Count line: structural chapter count when known, reading-minutes
 // fallback otherwise. The card always has SOMETHING under the title —
@@ -249,7 +260,15 @@ const extraTopics = topics.length - topicChips.length;
       </span>
     )}
     {showOrbitArtifact && (
-      <p class="lc-orbit-corner-badge"><span>{orbitTypeLabel}</span></p>
+      <p class="lc-orbit-corner-badge">
+        {isLessonBadge && lessonWordPrefix ? (
+          <span>
+            <span class="lc-badge-word">{lessonWordPrefix}&nbsp;</span><span class="lc-badge-number">{lessonNumberStr}</span>
+          </span>
+        ) : (
+          <span>{orbitTypeLabel}</span>
+        )}
+      </p>
     )}
     {showOrbitArtifact && !omitOrbitCaption && orbitSubtitle && (
       <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
@@ -266,15 +285,33 @@ const extraTopics = topics.length - topicChips.length;
             Legacy left/right/selected faces are optional — when a
             folder ships only `front.png`, all four <img> tags resolve
             to the same URL and the card renders as a single static
-            face without breaking the markup. */}
-        <img
-          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
-          src={artifact.front}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-        />
+            face without breaking the markup.
+            The front face is wrapped in a <picture> so phone-sized
+            viewports pick up the optional `front-mobile.png` variant
+            (carousel-only — the selected face below always renders
+            the canonical `front.png` for the focused / opened state).
+            `picture { display: contents }` keeps the wrapper layout-
+            transparent so the existing CSS that targets the inner
+            `<img>` keeps working unchanged. The inline `onerror`
+            handles the runtime fallback when `front-mobile.png` is
+            present at build time but fails to load at runtime: it
+            strips the `<source>` and re-points the `<img>` at the
+            desktop `front.png` carried in `data-front-desktop`. */}
+        <picture>
+          {artifact.frontMobile && (
+            <source media="(max-width: 1023px)" srcset={artifact.frontMobile} />
+          )}
+          <img
+            class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+            src={artifact.front}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            data-front-desktop={artifact.front}
+            onerror="this.onerror=null;var p=this.parentElement;if(p){var s=p.querySelector('source');if(s)s.remove();}this.src=this.dataset.frontDesktop;"
+          />
+        </picture>
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
           src={artifact.left ?? artifact.front}
@@ -414,7 +451,15 @@ const extraTopics = topics.length - topicChips.length;
       </span>
     )}
     {showOrbitArtifact && (
-      <p class="lc-orbit-corner-badge"><span>{orbitTypeLabel}</span></p>
+      <p class="lc-orbit-corner-badge">
+        {isLessonBadge && lessonWordPrefix ? (
+          <span>
+            <span class="lc-badge-word">{lessonWordPrefix}&nbsp;</span><span class="lc-badge-number">{lessonNumberStr}</span>
+          </span>
+        ) : (
+          <span>{orbitTypeLabel}</span>
+        )}
+      </p>
     )}
     {showOrbitArtifact && !omitOrbitCaption && orbitSubtitle && (
       <p class="lc-orbit-subtitle">{orbitSubtitle}</p>
@@ -431,15 +476,33 @@ const extraTopics = topics.length - topicChips.length;
             Legacy left/right/selected faces are optional — when a
             folder ships only `front.png`, all four <img> tags resolve
             to the same URL and the card renders as a single static
-            face without breaking the markup. */}
-        <img
-          class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
-          src={artifact.front}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-        />
+            face without breaking the markup.
+            The front face is wrapped in a <picture> so phone-sized
+            viewports pick up the optional `front-mobile.png` variant
+            (carousel-only — the selected face below always renders
+            the canonical `front.png` for the focused / opened state).
+            `picture { display: contents }` keeps the wrapper layout-
+            transparent so the existing CSS that targets the inner
+            `<img>` keeps working unchanged. The inline `onerror`
+            handles the runtime fallback when `front-mobile.png` is
+            present at build time but fails to load at runtime: it
+            strips the `<source>` and re-points the `<img>` at the
+            desktop `front.png` carried in `data-front-desktop`. */}
+        <picture>
+          {artifact.frontMobile && (
+            <source media="(max-width: 1023px)" srcset={artifact.frontMobile} />
+          )}
+          <img
+            class="lc-orbit-artifact-face lc-orbit-artifact-face-front"
+            src={artifact.front}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            data-front-desktop={artifact.front}
+            onerror="this.onerror=null;var p=this.parentElement;if(p){var s=p.querySelector('source');if(s)s.remove();}this.src=this.dataset.frontDesktop;"
+          />
+        </picture>
         <img
           class="lc-orbit-artifact-face lc-orbit-artifact-face-left"
           src={artifact.left ?? artifact.front}
@@ -862,6 +925,15 @@ const extraTopics = topics.length - topicChips.length;
        transition is killed (rule below) so opacity tracks the cursor
        in real time. */
     transition: opacity 540ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* The front face is wrapped in <picture> so phone viewports can pick
+     up `front-mobile.png` via a `<source media>` rule. `display: contents`
+     makes the wrapper layout-transparent: the inner <img> behaves
+     exactly as a direct child of `.lc-orbit-artifact`, so every existing
+     rule that targets `.lc-orbit-artifact-face-front` keeps working
+     without change. */
+  .lc-orbit-artifact > picture {
+    display: contents;
   }
   .lc-orbit-artifact-face-front {
     /* In flow — defines the artifact's natural box dimensions. */
@@ -1318,6 +1390,20 @@ const extraTopics = topics.length - topicChips.length;
   .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge > span {
     color: #fff;
   }
+
+  /* Mobile-only: hide the lesson corner badge entirely. The mobile
+     cover artwork (`front-mobile.png`) bakes in its own lesson identity
+     (number + title), so the floating numeral overlay is redundant and
+     reads as visual noise on top of the artwork. Desktop keeps the
+     "Lesson N" badge — its smaller artwork still benefits from it. On
+     focused-zoom the badge is hidden in both viewports by the rule
+     below. */
+  @media (max-width: 1023px) {
+    .lc-orbit.lc-has-artifact.lc-type-course-lesson .lc-orbit-corner-badge {
+      display: none;
+    }
+  }
+
   /* Focused state still suppresses the badge — the centered card has
      its own header layout, and the lesson identity reads from the
      enlarged artwork. Specificity: `[data-pos]` attr + 3 classes
@@ -1436,41 +1522,15 @@ const extraTopics = topics.length - topicChips.length;
       transition: none;
     }
   }
-  /* Subtitle + author nodes — rendered for artifact-mode cards but
-     hidden in the resting orbit state. Revealed below the artifact
-     in focused state. Subtitle sourced from `item.subtitles` (the
-     real short tagline), author from `item.author` (manifest credits). */
+  /* Subtitle + author nodes — emitted into the DOM for artifact-mode
+     cards (the admin-series-hydrator still reads `.lc-orbit-subtitle`)
+     but never visible. The focused orbit state intentionally shows
+     only the artwork; the caption stack below the card was redundant
+     with the artwork and the focus backdrop. Hidden on every viewport. */
   .lc-orbit-subtitle,
   .lc-orbit-author {
-    display: none;
+    display: none !important;
     margin: 0;
-  }
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-subtitle {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    overflow: hidden;
-    order: 3;
-    text-align: center;
-    font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-size: 0.78125rem;
-    font-weight: 400;
-    line-height: 1.4;
-    color: var(--yuval-galaxy-text-secondary, var(--yuval-galaxy-text-soft, #c8c8c4));
-  }
-  /* Author byline — quiet italic line under the subtitle. */
-  :global(.galaxy-card[data-pos="center"]) .lc-orbit.lc-has-artifact .lc-orbit-author {
-    display: block;
-    order: 4;
-    text-align: center;
-    font-family: 'Spectral', 'Cardo', Georgia, serif;
-    font-style: italic;
-    font-size: 0.72rem;
-    line-height: 1.35;
-    color: var(--yuval-galaxy-text-soft, #c8c8c4);
-    letter-spacing: 0.01em;
-    opacity: 0.85;
   }
   /* Hide the in-flow footer — type / count / progress are not part of
      the focused presentation. */

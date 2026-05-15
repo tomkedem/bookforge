@@ -102,6 +102,19 @@ const { class: className } = Astro.props;
                 filter 600ms var(--ease-standard);
   }
 
+  /* Mobile phones (<768px): shrink the window so the logo + globe +
+     theme all fit on one row even on ≤360 px screens. The interior
+     scene (clouds, birds, sun/moon, stars) is proportional to the
+     window via the CSS variables below, so the contents scale down
+     gracefully with the smaller canvas. */
+  @media (max-width: 767px) {
+    .sky-window {
+      width: 78px;
+      height: 32px;
+      border-radius: 16px;
+    }
+  }
+
   .sky-window:hover {
     transform: scale(1.05);
     /* Subtle daylight shift on hover — reads as a "warmer moment"

@@ -211,6 +211,64 @@ export function initSeriesActions(
   /** Active series slug while a children fan is open; `null` otherwise. */
   let activeChildrenSlug: string | null = null;
 
+  // ── Series glow pulse ────────────────────────────────────────────────
+  // One-shot 3-second multi-colour halo applied to every card that
+  // belongs to a series. Triggered when the user clicks "Show series
+  // items" on the focused capsule, or hovers any series capsule in the
+  // resting orbit. CSS keyframes live in index.astro under
+  // `@keyframes yuval-series-glow`; this module only toggles the class.
+  const SERIES_GLOW_MS = 3000;
+  const seriesGlowTimers = new Map<string, number>();
+
+  function triggerSeriesGlow(seriesName: string): void {
+    const targets = Array.from(stage.querySelectorAll<HTMLElement>(
+      `.galaxy-card[data-series-member="${cssEscape(seriesName)}"], `
+      + `.galaxy-card[data-series-capsule="${cssEscape(seriesName)}"]`,
+    ));
+    if (targets.length === 0) return;
+
+    // Cancel any in-flight timer for this series so the re-trigger
+    // restarts the animation cleanly.
+    const prev = seriesGlowTimers.get(seriesName);
+    if (prev !== undefined) window.clearTimeout(prev);
+
+    targets.forEach((el) => el.classList.remove('is-series-glow'));
+    // Force reflow so re-adding the class restarts the animation.
+    void targets[0].offsetWidth;
+    targets.forEach((el) => el.classList.add('is-series-glow'));
+
+    const timeout = window.setTimeout(() => {
+      targets.forEach((el) => el.classList.remove('is-series-glow'));
+      seriesGlowTimers.delete(seriesName);
+    }, SERIES_GLOW_MS);
+    seriesGlowTimers.set(seriesName, timeout);
+  }
+
+  // Hover / touch trigger. `mouseenter` doesn't bubble so wire per
+  // node. We register on three populations so the glow fires whenever
+  // the user passes over anything that belongs to a series:
+  //   1. The series capsule in the resting orbit (data-series-capsule)
+  //   2. Each individual series member (data-series-member) — these
+  //      are hidden in universe mode but revealed as the horizontal
+  //      carousel after a "Show series items" click.
+  //   3. `touchstart` mirrors `mouseenter` on phones / tablets where
+  //      there is no real hover state, so Tomer gets the same 3-second
+  //      multi-colour halo on mobile that desktop users get on hover.
+  const hoverTargets = Array.from(
+    stage.querySelectorAll<HTMLElement>(
+      '.galaxy-card[data-series-capsule], '
+      + '.galaxy-card[data-series-member]',
+    ),
+  );
+  hoverTargets.forEach((card) => {
+    const seriesName =
+      card.dataset.seriesCapsule || card.dataset.seriesMember;
+    if (!seriesName) return;
+    const fire = () => triggerSeriesGlow(seriesName);
+    card.addEventListener('mouseenter', fire);
+    card.addEventListener('touchstart', fire, { passive: true });
+  });
+
   function getFocusedSeriesCard(): HTMLElement | null {
     return stage.querySelector<HTMLElement>(
       '.galaxy-card[data-pos="center"][data-kind="series"]',
@@ -371,6 +429,7 @@ export function initSeriesActions(
     }
     seriesMode.enter(seriesName);
     setToggleButtonState(card, true);
+    triggerSeriesGlow(seriesName);
   }
 
   function openDetails(card: HTMLElement): void {

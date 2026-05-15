@@ -971,6 +971,18 @@ const searchAriaLabel = t('header.searchAriaLabel', language);
     }
   }
 
+  /* Mobile phones (<768px): the 62 px gap is calibrated to align with
+     the ContinueLearningCard's edges, but that card isn't rendered
+     below 768px — the gap then has no alignment purpose and just
+     consumes horizontal space, pushing the theme window off-screen on
+     ≤390 px phones. Tighten to 8 px so the logo + globe + theme all
+     fit comfortably on one row down to ~320 px screens. */
+  @media (max-width: 767px) {
+    .header-controls-rail {
+      gap: 8px;
+    }
+  }
+
   /* ── Cosmic tooltip ──────────────────────────────────────────────
      Custom tooltip that replaces the browser's native `title` popup
      for the two header controls (language globe + theme window).
