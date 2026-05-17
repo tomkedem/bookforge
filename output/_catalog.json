@@ -77,6 +77,12 @@
       "course": "ai-engineering",
       "lessonNumber": 4,
       "category": "ai-systems"
+    },
+    "Lesson-5-From-LLM-To-Agent": {
+      "contentType": "course_lesson",
+      "course": "ai-engineering",
+      "lessonNumber": 5,
+      "category": "ai-systems"
     }
   }
 }

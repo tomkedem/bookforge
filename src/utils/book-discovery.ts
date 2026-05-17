@@ -380,6 +380,13 @@ function loadBookMeta(bookDir: string, slug: string): {
 
 /**
  * Discover a single book by slug.
+ *
+ * Source of truth: `output/<slug>/` MUST exist AND contain at least one
+ * chapter. A book that has only artwork on disk (e.g. an orphan folder
+ * under `src/assets/knowledge-cards/<slug>/` left behind after delete)
+ * is invisible to discovery — knowledge-cards is an asset library, not
+ * a book registry. The delete endpoint relies on this gate, which is why
+ * it preserves knowledge-cards folders without producing ghost stations.
  */
 export function discoverBook(slug: string): DiscoveredBook | null {
   const bookDir = join(OUTPUT_DIR, slug);

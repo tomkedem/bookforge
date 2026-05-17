@@ -8,19 +8,24 @@
  * - public/<slug>/assets/ (images)
  * - public/covers/<slug>.png (cover image)
  *
- * Archives (renames, does NOT delete):
- * - src/assets/knowledge-cards/<slug>/ → _deleted__<slug>__<ts>/
- *   The orbit/carousel artwork is preserved on disk so a later
- *   re-import of the same book recovers without redrawing the cards.
- *   Renaming with the `_deleted__` prefix is enough to make the slug
- *   no longer match any LibraryItem (the discovery in
- *   `src/utils/library/knowledge-cards.ts` keys on the folder name
- *   case-insensitively), so nothing renders for the deleted book —
- *   no "image without a book" floating in the knowledge space.
+ * Preserves (never touched by this endpoint):
+ * - src/assets/knowledge-cards/<slug>/
+ *   knowledge-cards is an ASSET LIBRARY, not a book source of truth.
+ *   The orbit/carousel artwork is expensive to recreate, and the book
+ *   may be regenerated later from the original Word file via the
+ *   pipeline. Leaving the folder under its original slug means that
+ *   when the book is re-discovered (via `output/<slug>/`), the existing
+ *   artwork is picked up automatically — no manual restore step, no
+ *   re-upload.
+ *
+ *   Orphan assets are safe: library discovery (book-discovery.ts) only
+ *   surfaces a slug if `output/<slug>/` exists AND contains chapters,
+ *   so a knowledge-cards folder without matching output never becomes
+ *   a "ghost" station in the universe.
  */
 
 import type { APIRoute } from 'astro';
-import { existsSync, rmSync, readdirSync, rmdirSync, renameSync } from 'fs';
+import { existsSync, rmSync, readdirSync, rmdirSync } from 'fs';
 import { resolve } from 'path';
 
 export const prerender = false;
@@ -49,8 +54,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const deleted: string[] = [];
+    // Kept in the response for backward-compatibility with any caller
+    // that still reads the field. The new policy is "knowledge-cards is
+    // never touched on delete", so this list is always empty — see the
+    // preservation block below for the rationale.
     const archived: string[] = [];
     const missing: string[] = [];
+    const preserved: string[] = [];
 
     // 1. Delete output/<slug>/
     const bookDir = resolve(REPO_ROOT, 'output', slug);
@@ -96,40 +106,28 @@ export const POST: APIRoute = async ({ request }) => {
       deleted.push(`public/covers/${slug}.jpg`);
     }
 
-    // 5. Archive (rename, do NOT delete) the knowledge-card artwork.
-    //    Editorial choice: orbit images are expensive to redraw, so a
-    //    book deletion preserves them on disk under an inert name. The
-    //    `_deleted__` prefix is intentionally NOT a valid book slug —
-    //    no LibraryItem will ever match it, so the orbit discovery
-    //    correctly drops the folder from the rendered universe even
-    //    though the glob still picks it up.
-    //
-    //    Timestamp suffix isolates repeated deletions of the same slug
-    //    (e.g. delete → re-import → delete again) so each archived set
-    //    coexists without overwriting the previous archive.
+    // 5. PRESERVE the knowledge-card artwork — never delete, never rename.
+    //    knowledge-cards is treated as a reusable asset library, not as a
+    //    book source of truth. Two reasons:
+    //      (a) Re-import safety: when the book is regenerated later from
+    //          the original Word/source file via the pipeline, the same
+    //          slug will appear under output/<slug>/ again. Leaving the
+    //          artwork untouched here means the next discovery pass picks
+    //          it up automatically — no manual restore, no broken cards.
+    //      (b) Orphan safety: book-discovery.ts (see discoverBook) only
+    //          surfaces slugs that have a real output/<slug>/ folder with
+    //          chapters. A knowledge-cards folder without matching output
+    //          cannot produce a LibraryItem and therefore cannot render a
+    //          ghost station in the universe, so leaving the assets in
+    //          place is harmless.
+    //    This block intentionally performs no filesystem operation on the
+    //    knowledge-cards folder. It records the preservation in the
+    //    response so the caller can show the user what was kept.
     const knowledgeCardsDir = resolve(
       REPO_ROOT, 'src', 'assets', 'knowledge-cards', slug,
     );
     if (existsSync(knowledgeCardsDir)) {
-      const ts = Date.now();
-      const archivedName = `_deleted__${slug}__${ts}`;
-      const archivedDir = resolve(
-        REPO_ROOT, 'src', 'assets', 'knowledge-cards', archivedName,
-      );
-      try {
-        renameSync(knowledgeCardsDir, archivedDir);
-        archived.push(
-          `src/assets/knowledge-cards/${slug}/ → ${archivedName}/`,
-        );
-      } catch (err) {
-        // Non-critical: failing to archive the artwork should not
-        // sink the whole deletion (output/ + public/ are already
-        // gone). Surface the failure in the response so the caller
-        // can act on it without breaking the user-visible flow.
-        console.error('Knowledge-card archive failed:', err);
-      }
-    } else {
-      missing.push(`src/assets/knowledge-cards/${slug}/`);
+      preserved.push(`src/assets/knowledge-cards/${slug}/`);
     }
 
     if (deleted.length === 0 && archived.length === 0) {
@@ -147,6 +145,7 @@ export const POST: APIRoute = async ({ request }) => {
       success: true,
       deleted,
       archived,
+      preserved,
       missing,
       message: `Book "${slug}" deleted successfully`,
     }), {

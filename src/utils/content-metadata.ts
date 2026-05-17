@@ -139,6 +139,20 @@ export function setMetadata(
   return next;
 }
 
+/**
+ * Replace the entire content-metadata store with `items`. Pre-existing
+ * slugs that are not in `items` are dropped — this is the bulk
+ * destructive counterpart to `setMetadata` and is intended for the
+ * /admin "Import editorial JSON" flow. Records are written as-is; per
+ * the spec the importer trusts the file contents and does not patch
+ * fields in.
+ */
+export function replaceAllMetadata(
+  items: Record<string, ContentMetadata>,
+): void {
+  writeStore({ version: CONTENT_METADATA_VERSION, items });
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Series metadata
 //
@@ -230,6 +244,18 @@ export function setSeriesMetadata(
   store.version = SERIES_METADATA_VERSION;
   writeSeriesStore(store);
   return next;
+}
+
+/**
+ * Replace the entire series-metadata store with `items`. Bulk
+ * destructive counterpart to `setSeriesMetadata`; used by the /admin
+ * import flow. Records are written as-is — the importer is the trust
+ * boundary, not this function.
+ */
+export function replaceAllSeriesMetadata(
+  items: Record<string, SeriesMetadata>,
+): void {
+  writeSeriesStore({ version: SERIES_METADATA_VERSION, items });
 }
 
 /**

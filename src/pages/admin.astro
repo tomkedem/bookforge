@@ -62,6 +62,10 @@ const i18nBundle = {
   toastDeleteFailed: t('admin.toast.deleteFailed', language),
   toastNetworkError: t('admin.toast.networkError', language),
   toastMetadataSaved:t('admin.toast.metadataSaved', language),
+  toastEditorialExportedTpl: t('admin.toast.editorialExported', language),
+  toastEditorialImportedTpl: t('admin.toast.editorialImported', language),
+  toastEditorialImportInvalidTpl: t('admin.toast.editorialImportInvalid', language),
+  importConfirmTpl:  t('admin.global.importConfirm', language),
   modalDeleting:     t('admin.modal.deleting', language),
   modalConfirmText:  t('admin.modal.confirm', language),
   // Per-flow modal copy. The generic `admin.modal.title/warning` keys
@@ -406,6 +410,41 @@ const i18nBundle = {
           <button class="clean-btn clean-btn--global" id="clean-global-btn">
             {t('admin.global.cleanButton', language)}
           </button>
+        </div>
+
+        {/* Editorial export — second global card. Reuses the same
+            .global-card chrome so no new CSS is required. The button
+            reads localStorage on click and downloads an _editorial.json
+            file shaped for output/. Pure read; no mutation. */}
+        <div class="global-card">
+          <div class="global-card-info">
+            <p class="global-card-title">{t('admin.global.exportTitle', language)}</p>
+            <p class="global-card-desc">{t('admin.global.exportDescription', language)}</p>
+          </div>
+          <button class="clean-btn clean-btn--global" id="export-editorial-btn">
+            {t('admin.global.exportButton', language)}
+          </button>
+        </div>
+
+        {/* Editorial import — third global card. The hidden file input
+            is the one the click handler triggers; the visible button
+            opens the OS picker. Replace-mode semantics are explained in
+            the description and re-confirmed at runtime via the native
+            confirm() prompt before localStorage is touched. */}
+        <div class="global-card">
+          <div class="global-card-info">
+            <p class="global-card-title">{t('admin.global.importTitle', language)}</p>
+            <p class="global-card-desc">{t('admin.global.importDescription', language)}</p>
+          </div>
+          <button class="clean-btn clean-btn--global" id="import-editorial-btn">
+            {t('admin.global.importButton', language)}
+          </button>
+          <input
+            type="file"
+            id="import-editorial-input"
+            accept="application/json,.json"
+            hidden
+          />
         </div>
       </section>
     </div>
@@ -2326,8 +2365,11 @@ const i18nBundle = {
     setMetadata,
     getSeriesMetadata,
     setSeriesMetadata,
+    getAllMetadata,
     getAllSeriesMetadata,
     deleteSeriesMetadata,
+    replaceAllMetadata,
+    replaceAllSeriesMetadata,
   } from '../utils/content-metadata';
   import { slugifySeriesName } from '../types/content-metadata';
   import { getKnowledgeCardAssets } from '../utils/library/knowledge-cards';
@@ -2357,6 +2399,10 @@ const i18nBundle = {
     toastDeleteFailed: string;
     toastNetworkError: string;
     toastMetadataSaved: string;
+    toastEditorialExportedTpl: string;
+    toastEditorialImportedTpl: string;
+    toastEditorialImportInvalidTpl: string;
+    importConfirmTpl: string;
     modalDeleting: string;
     modalConfirmText: string;
     modalHeadingBook: string;
@@ -2536,6 +2582,158 @@ const i18nBundle = {
         : i18n.toastNoGlobalData,
     );
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // Editorial import — post-reload toast handoff
+  // The import handler reloads the page after replacing localStorage
+  // so every renderer reads fresh state. The success toast would die
+  // with the old page, so we hand it off via sessionStorage and
+  // surface it on the next paint.
+  // ─────────────────────────────────────────────────────────────
+  try {
+    const raw = sessionStorage.getItem('yuval_admin_import_toast');
+    if (raw) {
+      sessionStorage.removeItem('yuval_admin_import_toast');
+      const { items, series } = JSON.parse(raw) as { items: number; series: number };
+      // Defer to next microtask so showToast (defined just below) is in
+      // scope and the #toast element is reachable.
+      queueMicrotask(() => {
+        showToast(fmt(i18n.toastEditorialImportedTpl, { items, series }));
+      });
+    }
+  } catch {
+    // Malformed handoff blob — ignore silently. The import already
+    // succeeded; the only thing missing is the toast.
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Editorial export
+  // Reads `yuval_content_metadata` + `yuval_series_metadata` from
+  // localStorage (via the same utilities the rest of admin uses) and
+  // downloads them as a single `_editorial.json` shaped for output/.
+  // Pure read — never mutates storage. No backend; the download is a
+  // client-side Blob → object URL → <a download> trick.
+  // ─────────────────────────────────────────────────────────────
+  document.getElementById('export-editorial-btn')?.addEventListener('click', () => {
+    const items = getAllMetadata();
+    const series = getAllSeriesMetadata();
+    // JSON.stringify already omits keys whose value is `undefined`, so
+    // optional fields the user never set don't leak into the export.
+    // Pretty-print with 2-space indent so the file is hand-editable.
+    const payload = JSON.stringify(
+      { version: 1, items, series },
+      null,
+      2,
+    );
+
+    const blob = new Blob([payload + '\n'], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '_editorial.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Defer revoke so the click has a chance to flush the download in
+    // every browser (Safari historically races otherwise).
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+
+    showToast(
+      fmt(i18n.toastEditorialExportedTpl, {
+        items: Object.keys(items).length,
+        series: Object.keys(series).length,
+      }),
+    );
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // Editorial import
+  // Replace-mode only. Validates the file shape strictly (version=1,
+  // items and series are plain objects), shows native confirm() with
+  // the incoming counts, then replaces both localStorage stores and
+  // reloads so every admin renderer sees the new state. No backend
+  // call; no disk write. Records are written as-is — the validator
+  // gates the file SHAPE; field-level integrity is the user's
+  // responsibility (they exported it).
+  // ─────────────────────────────────────────────────────────────
+  const importBtn = document.getElementById('import-editorial-btn');
+  const importInput = document.getElementById('import-editorial-input') as HTMLInputElement | null;
+
+  function validateEditorialShape(v: unknown): string | null {
+    if (v === null || typeof v !== 'object' || Array.isArray(v)) {
+      return 'not a JSON object';
+    }
+    const obj = v as Record<string, unknown>;
+    if (obj.version !== 1) {
+      return `version must be 1 (got ${JSON.stringify(obj.version)})`;
+    }
+    if (obj.items === null || typeof obj.items !== 'object' || Array.isArray(obj.items)) {
+      return 'items must be an object';
+    }
+    if (obj.series === null || typeof obj.series !== 'object' || Array.isArray(obj.series)) {
+      return 'series must be an object';
+    }
+    return null;
+  }
+
+  if (importBtn && importInput) {
+    importBtn.addEventListener('click', () => {
+      // Reset so re-picking the same file path still fires `change`.
+      importInput.value = '';
+      importInput.click();
+    });
+
+    importInput.addEventListener('change', async () => {
+      const file = importInput.files?.[0];
+      if (!file) return;
+
+      let parsed: unknown;
+      try {
+        const text = await file.text();
+        parsed = JSON.parse(text);
+      } catch (err) {
+        showToast(fmt(i18n.toastEditorialImportInvalidTpl, {
+          reason: err instanceof Error ? err.message : 'parse error',
+        }));
+        return;
+      }
+
+      const shapeError = validateEditorialShape(parsed);
+      if (shapeError) {
+        showToast(fmt(i18n.toastEditorialImportInvalidTpl, { reason: shapeError }));
+        return;
+      }
+
+      const payload = parsed as {
+        version: 1;
+        items: Record<string, ContentMetadata>;
+        series: Record<string, SeriesMetadata>;
+      };
+      const itemCount = Object.keys(payload.items).length;
+      const seriesCount = Object.keys(payload.series).length;
+
+      const ok = window.confirm(
+        fmt(i18n.importConfirmTpl, { items: itemCount, series: seriesCount }),
+      );
+      if (!ok) return;
+
+      replaceAllMetadata(payload.items);
+      replaceAllSeriesMetadata(payload.series);
+
+      // Stash the success toast for the next page, then reload so the
+      // book/series tables and stats repaint from the new stores.
+      try {
+        sessionStorage.setItem(
+          'yuval_admin_import_toast',
+          JSON.stringify({ items: itemCount, series: seriesCount }),
+        );
+      } catch {
+        // Quota / disabled — losing the toast is acceptable; the data
+        // was already written and the reload will still happen.
+      }
+      location.reload();
+    });
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Confirmation modal — shared by book delete AND series delete.

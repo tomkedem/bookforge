@@ -137,6 +137,15 @@ const REQUIRED_FACE: FaceKey = 'front';
  *     drops the item from the orbit and the existing medallion
  *     fallback remains in place for non-orbit views (e.g. mobile
  *     carousel).
+ *
+ * Discovery model: this function is queried per-slug by callers that
+ * already have a discovered LibraryItem in hand — the slug list comes
+ * from `discoverAllBooks()` (book-discovery.ts), which requires a real
+ * `output/<slug>/` folder with chapters. As a result, ORPHAN folders
+ * here (artwork left behind after a book was deleted, never re-imported)
+ * are silently ignored: they live in the cache, but no caller ever
+ * queries them. knowledge-cards is asset storage; it never produces a
+ * book on its own.
  */
 export function getKnowledgeCardAssets(slug: string): KnowledgeCardAssets | undefined {
   if (assetsCache === null) assetsCache = buildCache();
