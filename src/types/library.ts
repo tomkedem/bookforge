@@ -164,6 +164,15 @@ export interface LibraryItem {
   seriesId?: string;
   courseSlug?: string;
   orderInSeries?: number;
+  /**
+   * Editorial series link (raw `seriesName` as authored in
+   * `output/_editorial.json`). Distinct from `seriesId` — the latter is
+   * the auto-derived course id (`course-<courseSlug>`), the former is
+   * the free-text grouping the project owner edits in /admin. SSR-only
+   * source today; the browser may overwrite `data-series-name` from
+   * localStorage in `initLinkedGlow` (index.astro). Optional everywhere.
+   */
+  seriesName?: string;
 
   /** Visual metadata only. Not a UI token. */
   coverImage?: string;
