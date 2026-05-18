@@ -33,7 +33,6 @@ import LibraryHero from '../components/library/LibraryHero.astro';
 import LibraryStatsPanel from '../components/library/LibraryStatsPanel.astro';
 import ContinueLearningCard from '../components/library/ContinueLearningCard.astro';
 import LibraryCard from '../components/library/LibraryCard.astro';
-import MobileGalaxyCarousel from '../components/library/MobileGalaxyCarousel.astro';
 import LibraryQuickActions from '../components/library/LibraryQuickActions.astro';
 import FloatingSidebar from '../components/library/FloatingSidebar.astro';
 
@@ -287,16 +286,11 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
           <LibraryHero language={language} />
         </div>
 
-        {/*
-          Mobile-only discovery slot. Lives directly inside .lb-area-stage
-          so on mobile (where .lb-area-stage is display:contents) it
-          becomes its own flex item of .library-body with explicit
-          `order: 3` — placed right after the recommended starting card.
-          Hidden on desktop, where the orbit stage below takes over.
-        */}
-        <div class="lb-area-mobile-discovery">
-          <MobileGalaxyCarousel items={readableItems} language={language} />
-        </div>
+        {/* MobileGalaxyCarousel was removed: the galaxy orbit below now
+            renders on mobile too, matching CLAUDE.md's "same composition,
+            scaled down" rule. A separate horizontal rail above the orbit
+            duplicated the same items without series functionality, so
+            removing it gives mobile feature parity with desktop. */}
 
         <section class="lb-area-featured" aria-label={t('library.galaxy.welcome', language)}>
           <div
@@ -832,14 +826,12 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
   }
 
   /* ── Mobile content area ──────────────────────────────────────────
-     Mobile slots that stay hidden:
-        .lb-area-mobile-discovery  — legacy MobileGalaxyCarousel
-        .lb-area-quick-mobile      — legacy AI assistant / quick-actions
-     `.lb-area-featured` (galaxy orbit stage) is now visible on mobile
-     too — the user wants the SAME orbit composition that desktop shows,
-     just scaled down proportionally. The mobile-specific orbit sizing
-     lives in the `@media (max-width: 1023px)` block further below. */
-  .lb-area-mobile-discovery,  /* legacy mobile order: 2 */
+     `.lb-area-featured` (galaxy orbit stage) is visible on mobile too,
+     scaled down proportionally — see CLAUDE.md "same orbit composition
+     on mobile". The mobile-specific orbit sizing lives in the
+     `@media (max-width: 1023px)` block further below.
+     `.lb-area-quick-mobile` is a legacy slot for an AI assistant /
+     quick-actions row that is currently suppressed. */
   .lb-area-quick-mobile {
     display: none;
   }
@@ -1438,10 +1430,6 @@ if (isLesson && matchingCourse && continueItem?.orderInSeries) {
     .lb-area-hero,
     .lb-area-featured,
     .lb-area-quick-mobile { order: initial; }
-
-    /* Mobile-only discovery slot is hidden on desktop — the orbit
-       stage in .lb-area-featured takes over there. */
-    .lb-area-mobile-discovery { display: none; }
 
     /* Restore the orbit stage that the mobile baseline hid above.
        `.lb-area-hero` no longer needs an explicit restore here
